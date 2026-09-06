@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Atmaca Next</string>
+    <string name="accessibility_service_description">Başlattığınız hesap taraması sırasında X ekranındaki kullanıcı adlarını ve sayaçları okur; hesap seçmek için ekrandaki düğmelere basar. Şifreleri okumaz. Hesaplar yalnız bu telefonda saklanır. İzni dilediğiniz zaman kapatabilirsiniz.</string>
+</resources>

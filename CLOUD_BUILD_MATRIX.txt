@@ -1,0 +1,9 @@
+Atmaca Next V19 cloud build matrix
+AGP: 9.3.0
+Gradle: 9.5.0
+JDK: 17
+compileSdk/targetSdk: 37
+Android Build Tools: 36.0.0
+Kotlin: 2.3.21
+KSP: 2.3.9
+Compose BOM: 2026.08.00

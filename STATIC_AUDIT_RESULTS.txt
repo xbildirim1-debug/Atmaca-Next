@@ -1,0 +1,19 @@
+PASS	applicationId	
+PASS	versionCode19	
+PASS	versionNameV19	
+PASS	AGP9.3	
+PASS	Kotlin2.3.21	
+PASS	KSP2.3.9	
+PASS	Xpackage	
+PASS	gestures	
+PASS	drawerTR	
+FAIL	outsideSuppress	
+FAIL	relaunchGuard	
+PASS	drawerVerify	
+PASS	unfollow100	
+PASS	verifiedSafety	
+PASS	accounts10	
+PASS	batchDialog	
+PASS	xmlParse	
+PASS	legacyScan	[]
+FAIL	basicDelimiterBalance	[('app/src/main/java/com/atmacanext/app/automation/AtmacaAccessibilityService.kt', (2, 2)), ('app/src/main/java/com/atmacanext/app/data/report/ErrorReportExporter.kt', (-1, -1))]

@@ -1,0 +1,196 @@
+package com.atmacanext.app.automation
+
+import android.view.accessibility.AccessibilityNodeInfo
+
+/** X/Twitter screen detector using independent accessibility labels rather than fixed pixels. */
+object ScreenDetector {
+    fun detect(root: AccessibilityNodeInfo?): XScreen {
+        when (RelationshipTabInspector.selectedTab(root)) {
+            RelationshipTabInspector.FOLLOWING -> return XScreen.FOLLOWING_LIST
+            RelationshipTabInspector.FOLLOWERS -> return XScreen.FOLLOWERS_LIST
+        }
+        return detect(AccessibilityTree.snapshots(root))
+    }
+
+    internal fun detect(nodes: List<NodeSnapshot>): XScreen {
+        if (nodes.isEmpty()) return XScreen.UNKNOWN
+        val labels = nodes.flatMap { listOfNotNull(it.text, it.contentDescription) }
+            .map(XUiVocabulary::normalize)
+            .filter(String::isNotBlank)
+        val corpus = labels.joinToString(" ")
+
+        if (looksLikeDialog(nodes, corpus)) return XScreen.DIALOG
+
+        val hasEditable = nodes.any { node ->
+            node.editable || node.className?.contains("EditText", ignoreCase = true) == true
+        }
+        val hasComposerId = nodes.any { node ->
+            val id = node.viewId.orEmpty().lowercase()
+            id.contains("tweet_box") || id.contains("composer") || id.contains("post_text")
+        }
+        val hasSubmitId = nodes.any { node ->
+            val id = node.viewId.orEmpty().lowercase()
+            id.contains("tweet_button") || id.contains("post_button") || id.contains("reply_button")
+        }
+        val composerByText = labels.any { label -> XUiVocabulary.composerSignals.any { token -> label.contains(token) } }
+        if ((hasEditable && (hasComposerId || hasSubmitId || composerByText)) || (hasComposerId && composerByText)) {
+            return XScreen.COMPOSER
+        }
+
+        val explicitHandles = labels.mapNotNull(XIdentityDetector::extractHandle).distinct()
+        val handleCount = explicitHandles.size
+        val scrollable = nodes.any { it.scrollable }
+        val clickableCount = nodes.count { it.clickable }
+
+        val verifiedHeader = labels.any { it in XUiVocabulary.verifiedFollowersHeaders }
+        if (verifiedHeader && listEvidence(labels, handleCount, scrollable)) {
+            return XScreen.VERIFIED_FOLLOWERS_LIST
+        }
+
+        val switcherStrong = labels.any { it in XUiVocabulary.accountSwitcherSignals }
+        val switcherTitle = labels.any { it in XUiVocabulary.accountSwitcherLabels }
+        if ((switcherStrong && handleCount >= 1) || (switcherTitle && handleCount >= 2)) {
+            return XScreen.ACCOUNT_SWITCHER
+        }
+
+        val drawerSignalCount = XUiVocabulary.drawerSignals.count { token ->
+            labels.any { it == token || it.contains(token) }
+        }
+        if (drawerSignalCount >= 3 && clickableCount >= 3) return XScreen.ACCOUNT_DRAWER
+
+        // X aynı üst sekme şeridinde Followers, Following, Subscribers ve
+        // Subscriptions etiketlerini birlikte tutuyor. Ekran türünü yalnızca etiketin
+        // varlığıyla seçmek yanlış sekmeyi başarı sayar. Önce Android'in seçili/checked
+        // sekme kanıtını veya erişilebilirlik açıklamasındaki selected/seçili durumunu oku.
+        val followingHeader = labels.any { label ->
+            XUiVocabulary.followingHeaders.any { token -> containsToken(label, token) }
+        }
+        val followersHeader = labels.any { label ->
+            XUiVocabulary.followersHeaders.any { token -> containsToken(label, token) }
+        }
+        val selectedFollowingTab = nodes.any { node ->
+            isSelectedRelationshipTab(node, XUiVocabulary.followingHeaders)
+        }
+        val selectedFollowersTab = nodes.any { node ->
+            isSelectedRelationshipTab(node, XUiVocabulary.followersHeaders)
+        }
+        if (selectedFollowingTab && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWING_LIST
+        if (selectedFollowersTab && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWERS_LIST
+
+        // Profile must win over list heuristics: profile pages can themselves be scrollable and contain
+        // "Following" / "Followers" stats, which CP9 could mistake for a list.
+        val ownProfile = labels.any { it in XUiVocabulary.ownProfileSignals }
+        val hasHandle = handleCount >= 1
+        // Following/Followers listelerindeki düz sekme başlıklarını profil sayacı
+        // sanma. Profil kanıtı için aynı erişilebilirlik düğümünde sayı + başlık veya
+        // açık bir count view-id gerekir.
+        val hasFollowersStat = hasNumberedProfileStat(nodes, XUiVocabulary.followersHeaders, followers = true)
+        val hasFollowingStat = hasNumberedProfileStat(nodes, XUiVocabulary.followingHeaders, followers = false)
+        val hasJoined = XUiVocabulary.joinedSignals.any(corpus::contains)
+        if (ownProfile || (hasHandle && hasFollowersStat && hasFollowingStat && (hasJoined || !scrollable || clickableCount >= 2))) {
+            return XScreen.PROFILE
+        }
+
+        // Eski X varyantlarında sekme şeridi yalnızca açık sekmenin etiketini
+        // yayınlayabilir. İki başlık birden görünüyorsa seçili durum kanıtı olmadan
+        // Following/Followers tahmini yapma.
+        if (followingHeader && !followersHeader && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWING_LIST
+        if (followersHeader && !followingHeader && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWERS_LIST
+
+        val engagementHeader = labels.any { label -> XUiVocabulary.engagementSignals.any { token -> label == token || label.contains(token) } }
+        if (engagementHeader && listEvidence(labels, handleCount, scrollable)) return XScreen.ENGAGEMENT_LIST
+
+        // Home timelines contain many reply/like/repost/bookmark controls. Those controls must
+        // never be sufficient to classify a feed as a single tweet detail screen.
+        val homeSignalCount = XUiVocabulary.homeSignals.count { token -> labels.any { it == token } }
+        val hasHomeNavigation = labels.any { it == "anasayfa" || it == "home" } &&
+            labels.any { it == "ara" || it == "search" } &&
+            labels.any { it == "bildirimler" || it == "notifications" }
+        val hasHomeId = nodes.any { node ->
+            val id = node.viewId.orEmpty().lowercase()
+            id.contains("bottom_navigation") || id.contains("home_timeline") ||
+                id.endsWith("/home") || id.contains("navigation_home")
+        }
+        if (hasHomeId || hasHomeNavigation || homeSignalCount >= 3) return XScreen.HOME
+
+        val tweetActionCount = listOf(
+            XUiVocabulary.replyActions,
+            XUiVocabulary.likeActions,
+            XUiVocabulary.unlikeActions,
+            XUiVocabulary.repostActions,
+            XUiVocabulary.undoRepostActions,
+            XUiVocabulary.bookmarkActions,
+            XUiVocabulary.removeBookmarkActions,
+        ).sumOf { vocabulary -> labels.count { it in vocabulary } }
+        val tweetIds = nodes.count { node ->
+            val id = node.viewId.orEmpty().lowercase()
+            id.contains("tweet") || id.contains("status") || id.contains("toolbar_like") || id.contains("toolbar_retweet")
+        }
+        val explicitDetailId = nodes.any { node ->
+            val id = node.viewId.orEmpty().lowercase()
+            id.contains("tweet_detail") || id.contains("status_detail") ||
+                id.contains("tweet_permalink") || id.contains("detail_header")
+        }
+        val hasBack = labels.any { it in XUiVocabulary.backSignals } || nodes.any { node ->
+            val id = node.viewId.orEmpty().lowercase()
+            id.endsWith("/back") || id.contains("toolbar_back") || id.contains("navigate_up")
+        }
+        val hasDetailTitle = labels.any { it in XUiVocabulary.tweetDetailSignals }
+        if (explicitDetailId || (hasBack && hasDetailTitle && tweetActionCount >= 2 && tweetIds >= 1)) {
+            return XScreen.TWEET_DETAIL
+        }
+
+        return XScreen.UNKNOWN
+    }
+
+    private fun listEvidence(labels: List<String>, handleCount: Int, scrollable: Boolean): Boolean {
+        if (handleCount >= 2) return true
+        val actionCount = labels.count { it in XUiVocabulary.followActions || it in XUiVocabulary.followingActions }
+        return handleCount >= 1 && (scrollable || actionCount >= 1)
+    }
+
+    private fun hasNumberedProfileStat(
+        nodes: List<NodeSnapshot>,
+        headers: Set<String>,
+        followers: Boolean,
+    ): Boolean {
+        val strongIdTokens = if (followers) {
+            listOf("followers_count", "follower_count")
+        } else {
+            listOf("following_count")
+        }
+        return nodes.any { node ->
+            val id = node.viewId.orEmpty().lowercase()
+            val nodeLabels = listOfNotNull(node.text, node.contentDescription).map(XUiVocabulary::normalize)
+            strongIdTokens.any(id::contains) || nodeLabels.any { label ->
+                label.any { character -> character.isDigit() } && headers.any { token -> containsToken(label, token) }
+            }
+        }
+    }
+
+    private fun isSelectedRelationshipTab(node: NodeSnapshot, headers: Set<String>): Boolean {
+        val nodeLabels = listOfNotNull(node.text, node.contentDescription)
+            .map(XUiVocabulary::normalize)
+            .filter(String::isNotBlank)
+        val labelMatches = nodeLabels.any { label ->
+            headers.any { token -> containsToken(label, token) || label.contains(token) }
+        }
+        if (!labelMatches) return false
+        val id = node.viewId.orEmpty().lowercase()
+        val stateInLabel = nodeLabels.any { label ->
+            listOf("selected", "seçili", "active", "aktif").any(label::contains)
+        }
+        return node.selected || node.checked || stateInLabel || id.contains("selected") || id.contains("active")
+    }
+
+    private fun looksLikeDialog(nodes: List<NodeSnapshot>, corpus: String): Boolean {
+        val dialogTokens = listOf(
+            "takibi bırak", "takipten çık", "unfollow", "iptal", "cancel", "tamam", "ok",
+            "tekrar dene", "try again", "bir sorun oluştu", "something went wrong",
+        ).count(corpus::contains)
+        return dialogTokens >= 2 && nodes.any { it.className?.contains("button", ignoreCase = true) == true }
+    }
+
+    private fun containsToken(label: String, token: String): Boolean =
+        label == token || label.startsWith("$token ") || label.endsWith(" $token") || label.contains(" $token ")
+}
