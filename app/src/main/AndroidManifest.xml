@@ -27,9 +27,11 @@
           crashing the process before the app could start. Remove the provider
           entirely; WorkManager is configured lazily by AtmacaNextApplication.
         -->
+        <!-- Merge-removal marker only; CI verifies this provider is absent from the APK. -->
         <provider
             android:name="androidx.startup.InitializationProvider"
-            tools:node="remove" />
+            tools:node="remove"
+            tools:ignore="MissingClass" />
 
         <activity
             android:name=".MainActivity"
