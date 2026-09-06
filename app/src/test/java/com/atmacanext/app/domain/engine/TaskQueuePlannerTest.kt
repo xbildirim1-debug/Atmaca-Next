@@ -29,7 +29,8 @@ class TaskQueuePlannerTest {
 
         val queue = TaskQueuePlanner.build(accounts, tasks)
 
-        assertEquals(listOf("a1", "a2", "b"), queue.map { it.taskId })
+        // Legacy time is no longer scheduled; current queue orders by task type, then id.
+        assertEquals(listOf("a2", "a1", "b"), queue.map { it.taskId })
         assertEquals(listOf("1", "1", "2"), queue.map { it.accountId })
         assertEquals(List(3) { QueueItemStatus.PENDING }, queue.map { it.status })
     }
