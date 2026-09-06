@@ -24,13 +24,13 @@ Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Bu sürümün kullanı
 
 ## Geliştirme / APK
 
-JDK 17, Gradle 9.5.0 ve Android SDK 36 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.1-APK** çıktısını indirin.
+JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.1-APK** çıktısını indirin.
 
 ```sh
 gradle testDebugUnitTest lintDebug :app:assembleDebug
 ```
 
-Android araç zinciri sürümleri gönderilen kaynaktaki sürümlerdir. Gradle wrapper JAR dosyası gönderilen kaynakta yoktu; CI Gradle'ı setup-gradle ile kurar.
+Android araç zinciri sürümleri gönderilen kaynak temel alınarak yapılandırılmış; AndroidX gereksinimleri için compileSdk 37.1 kullanılmıştır. targetSdk 36 ve minSdk 26 korunmuştur. Gradle wrapper JAR dosyası gönderilen kaynakta yoktu; CI Gradle'ı setup-gradle ile kurar.
 
 ## Doğrulama
 
