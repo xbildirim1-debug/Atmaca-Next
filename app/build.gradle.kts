@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.atmacanext.app"
-    compileSdk = 37
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
 
     defaultConfig {
         applicationId = "com.atmacanext.v258"
