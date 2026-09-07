@@ -2,6 +2,17 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.6 teslim ve inceleme sonucu — 7 Eylül 2026
+
+- 1000026724.mp4 incelendi (9,51 saniye): BildirimHaber1 menüsü ve hesap seçici art arda açılıp kapanıyor; aktif hesap değişmiyor. Bu kayıt takipten çıkma işlemini göstermiyor. Kullanıcının limit 5 iken 1 işlem sonrası durma bildirimi için cihaz sonucu hâlâ açık.
+- Diğer sohbetin 1219b9d0f12c644e7e6287a310d05c0637f15b86 commit'indeki 26.6 düzeltmeleri incelendi; çalışan 26.5 hesap import akışı korundu. Bu incelemede yeni motor değişikliği yapılmadı.
+- Test edilmiş 26.6 kaynak commit'i: 1219b9d0f12c644e7e6287a310d05c0637f15b86, dal: fix/task-switch-unfollow-26-6. Bu not commit'i aynı kaynağın devamıdır ve main'e ileri taşıma ile aktarılır. Main'in kodu 26.6 ile aynı; ek değişiklik devir notudur.
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34111507110 . İndirilen XML raporlarında 108 test, 0 hata, 0 başarısız, 0 atlanan; lint, APK derleme ve imza/manifest doğrulama adımları başarılı.
+- Teslim APK: AtmacaNext-26.6.apk, 20.524.752 bayt, versionCode 54; SHA256 d42ac79b403103f809ae31a128158ba26ab3cedd0555b8a79e7532aa1164314b. APK artifact 10014628414; test raporu artifact 10014629217. ZIP CRC ve APK SHA256 kontrol edildi. Manifest INTERNET ve InitializationProvider içermiyor.
+- APK sertifika SHA256: 08548462e04814cb2425e2d56f414fcbf8e636709826b64a7f3f9dc09db69fd1. Teslim edilen 26.5 sertifikasından farklı; üzerine güncelleme kurulamaz. Kaldırma uygulama verilerini siler. Kullanıcıya bu somut risk belirtilir; kalıcı imzalama çözülmedi.
+- Gerçek telefonda 26.6 görev hesabı geçişi ve 5 doğrulanmış takipten çıkma henüz test edilmedi. Kullanıcının mevcut kurulu sürümü videodan belirlenemiyor; videodaki hatanın 26.6'da tekrarlandığı varsayılmamalı. Sonraki çalışma önce 26.6 cihaz sonucu ve RUNTIME/NAV loglarını esas almalı.
+- Aşağıdaki 26.5 test/APK bölümleri tarihsel kayıttır; güncel teslim bilgileri bu bölümdedir.
+
 ## 26.6 güncellemesi — görev hesabı seçimi / takipten çıkma
 
 Kullanıcı 26.5 hesap eklemesini cihazında BAŞARILI doğruladı: 4 hesap, 0 okunamayan; Atmaca'ya dönüş de doğrulandı (7 Eylül 12:56:15–12:56:55). Hesap ekleme tamamlandı kabul ediliyor; bu akışı yeniden tasarlama.
@@ -17,7 +28,7 @@ Kodda bulunan nedenler ve 26.6 değişiklikleri:
 - İlişki sonucu kontrolü hedef kullanıcı adı yaprağında durmak yerine o kullanıcıya ait düğmeyi içeren satırı arıyor. Geometrik geri dönüş yalnız dikey olarak örtüşen kullanıcı adı/düğmeyi bağlıyor; komşu satır veya üstteki Following sekmesi bağlanmıyor. RelationshipRowGeometry eklendi.
 - Çelişkili Follow/Following kanıtı başarı sayılmıyor. Takip durumunun geri dönmesi tek başına günlük limit sayılıp görev tamamlanmıyor; doğrulanamayan durum duraklatılıyor. Gerçek X limit penceresinde duraklama korunuyor.
 - Hesap ekleme kayıt/sayaç/harvest akışı değişmedi. İlk işlemden sonra durmanın kullanıcı cihazındaki kesin nedeni ikinci deneme logu olmadan kanıtlanmış değildir; yukarıdakiler kaynakta bulunan hatalardır.
-- Sürüm: 26.6-task-account-switch, versionCode 54. 13 yeni regresyon testi eklendi; CI sonucu aşağıdaki çalışma tamamlanınca güncellenecek.
+- Sürüm: 26.6-task-account-switch, versionCode 54. 13 yeni regresyon testi eklendi; 108 testin tamamı geçti, güncel teslim ve test bilgileri en üstte.
 
 ## Kullanıcının çalışma tercihi
 
