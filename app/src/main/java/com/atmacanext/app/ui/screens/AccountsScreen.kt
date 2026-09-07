@@ -89,7 +89,7 @@ fun AccountsScreen(modifier: Modifier = Modifier) {
                     if (sync.active) {
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("${sync.processed} kaydedildi / ${sync.discovered} bulundu", Modifier.weight(1f),
+                            Text("${sync.processed} kaydedildi / ${sync.discovered} bulundu · ${sync.skipped} atlandı", Modifier.weight(1f),
                                 color = TextSecondary, fontSize = 12.sp)
                             TextButton(onClick = { AccountSyncController.cancel() }) { Text("Durdur") }
                         }

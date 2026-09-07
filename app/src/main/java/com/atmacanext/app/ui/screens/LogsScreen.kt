@@ -1,5 +1,11 @@
 package com.atmacanext.app.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -67,7 +73,22 @@ fun LogsScreen(modifier: Modifier = Modifier) {
     val logs by AppServices.repository.recentLogs.collectAsStateWithLifecycle(initialValue = emptyList())
     var level by remember { mutableStateOf<String?>(null) }
     var confirmClear by remember { mutableStateOf(false) }
-    val shown = logs.filter { level == null || it.level == level }
+    var accountsOnly by remember { mutableStateOf(false) }
+    var exportText by remember { mutableStateOf("") }
+    val shown = logs.filter { (level == null || it.level == level) && (!accountsOnly || it.category in setOf("ACCOUNT_SYNC", "SYNC")) }
+    val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        if (uri != null) {
+            val snapshot = exportText
+            scope.launch {
+                val saved = withContext(Dispatchers.IO) {
+                    runCatching {
+                        checkNotNull(context.contentResolver.openOutputStream(uri)).bufferedWriter().use { it.write(snapshot) }
+                    }.isSuccess
+                }
+                Toast.makeText(context, if (saved) "Kayıt dosyası kaydedildi" else "Dosya kaydedilemedi", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
@@ -86,7 +107,7 @@ fun LogsScreen(modifier: Modifier = Modifier) {
                 }
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(null to "Tümü", "INFO" to "Bilgi", "WARN" to "Uyarı", "ERROR" to "Hata").forEach { (value, label) ->
                         AssistChip(
                             onClick = { level = value },
@@ -94,6 +115,15 @@ fun LogsScreen(modifier: Modifier = Modifier) {
                             colors = if (level == value) AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.primaryContainer) else AssistChipDefaults.assistChipColors(),
                         )
                     }
+                }
+            }
+            item {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AssistChip(onClick = { accountsOnly = !accountsOnly }, label = { Text(if (accountsOnly) "✓ Yalnız hesap taraması" else "Yalnız hesap taraması") })
+                    OutlinedButton(enabled = shown.isNotEmpty(), onClick = {
+                        exportText = "Atmaca Next 26.2\n" + shown.asReversed().joinToString("\n") { it.asText() }
+                        export.launch("AtmacaNext-kayitlar-${System.currentTimeMillis()}.txt")
+                    }) { Text("Dışa aktar") }
                 }
             }
             if (shown.isEmpty()) {

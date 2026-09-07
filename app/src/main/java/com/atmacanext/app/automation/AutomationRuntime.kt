@@ -366,11 +366,7 @@ object AutomationController {
             accountSettleUntil = 0L
             stageStartedAt = now
             _state.value = current.copy(status = RuntimeStatus.SWITCHING_ACCOUNT, message = "Seçilen hesabın kendi profiliyle doğrulama yapılıyor")
-            // X'in hesap seçici alt sayfası hesap değiştikten sonra açık kalabiliyor.
-            // Bu yüzey açıkken gönderilen profil bağlantısı bazı X sürümlerinde yutuluyor.
-            // Önce seçiciyi kapat; ardından aynı actor turunda hedef profili açıp yeni
-            // snapshot'ı zamanla. Profil kimliği yine aşağıdaki kesin @handle kanıtıyla
-            // doğrulanmadan hiçbir görev eylemi başlamaz.
+            // Continue through the visible drawer/profile flow after switching.
             if (screen == XScreen.ACCOUNT_SWITCHER) {
                 service.pressBack()
                 accountSettleUntil = now + 450L
@@ -381,9 +377,6 @@ object AutomationController {
                 service.requestAutomationTick(450L)
                 return
             }
-            if (!service.launchXProfile(target)) recoverAccount(service, "Seçilen hesabın profili açılamadı")
-            else service.requestAutomationTick(700L)
-            return
         }
 
         if (screen == XScreen.PROFILE) {

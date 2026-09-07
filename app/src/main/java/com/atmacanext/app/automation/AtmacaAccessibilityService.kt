@@ -30,6 +30,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
     private val processing = AtomicBoolean(false)
     private val refreshPending = AtomicBoolean(false)
     private var scheduledTick: Runnable? = null
+    private var scheduledDue: Long? = null
     @Volatile private var pendingPackageName: String? = null
     private var lastLaunchAt = 0L
     private var lastLaunchKey = ""
@@ -70,9 +71,12 @@ class AtmacaAccessibilityService : AccessibilityService() {
 
     fun requestAutomationTick(delayMillis: Long) {
         synchronized(scheduleLock) {
+            val due = SystemClock.uptimeMillis() + delayMillis.coerceAtLeast(0L)
+            if (!AccountScanPolicy.replaceTick(scheduledDue, due)) return
             scheduledTick?.let(mainHandler::removeCallbacks)
+            scheduledDue = due
             val tick = Runnable {
-                synchronized(scheduleLock) { scheduledTick = null }
+                synchronized(scheduleLock) { scheduledTick = null; scheduledDue = null }
                 enqueueSnapshot()
             }
             scheduledTick = tick
@@ -245,6 +249,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
         synchronized(scheduleLock) {
             scheduledTick?.let(mainHandler::removeCallbacks)
             scheduledTick = null
+            scheduledDue = null
         }
         workerHandler?.removeCallbacksAndMessages(null)
         workerHandler = null

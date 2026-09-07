@@ -103,6 +103,10 @@ class TaskOrchestrator(
 
     fun resume() {
         scope.launch {
+            if (AccountSyncController.isActive) {
+                OperationLog.w("QUEUE", "Hesap taraması sürerken görev devam ettirilemez")
+                return@launch
+            }
             val current = _state.value
             if (current.status != QueueStatus.PAUSED) return@launch
             val runtime = AutomationController.state.value
@@ -219,6 +223,7 @@ class TaskOrchestrator(
         val targets = if (task.type.isDiscoveryFollow) repository.getActiveTargets(task.accountId).map { it.handle } else emptyList()
         if (task.type.isDiscoveryFollow && targets.isEmpty()) return skipAndAdvance("Bu hesap için Ayarlar'da hedef kullanıcı tanımlanmamış")
 
+        if (task.useGemini) return failAndAdvance("Bu sürüm API kullanmaz. Görevi düzenleyip metni elle gir.")
         val contents = if (task.type.supportsGemini) {
             val appSettings = settingsFlow.first()
             runCatching { contentService.prepare(task, account, appSettings.geminiModel) }.getOrElse { error ->

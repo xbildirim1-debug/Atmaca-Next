@@ -1,6 +1,6 @@
-# Atmaca Next — 26.1 hesaplar önizlemesi
+# Atmaca Next — 26.2
 
-Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Bu sürümün kullanıcı akışı yalnızca hesap tarama ve hesap değiştirmedir. Eski görev motoru kaynakta korunur; görev ekranı bu sürümde çalıştırma sunmaz.
+Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap geçişi ve görev oluşturma/çalıştırma açıktır. Görevler yalnız kullanıcı başlattığında mevcut ekran otomasyon motoruyla çalışır. API ile içerik üretimi kapalıdır; içerik elle girilir.
 
 ## Kullanım
 
@@ -8,7 +8,7 @@ Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Bu sürümün kullanı
 2. Atmaca Next > Ayarlar > Ekran okuma bölümünden erişilebilirlik hizmetini etkinleştirin.
 3. Hesaplar > X hesaplarını tara. Telefonun kilidi açık kalmalı; tarama sırasında X'i elle değiştirmeyin.
 4. En fazla 10 hesap, kullanıcı adı / takipçi / takip edilen bilgileriyle eklenir. Eksik sayaç başarılı kayıt sayılmaz.
-5. Her karttaki **Hesaba geç**, X'in hesap seçicisinde ilgili oturumu seçer; kendi profil kimliğini doğrular, sayaçları günceller ve Atmaca'ya döner.
+5. Her karttaki **Hesaba geç**, X'in hesap seçicisinde ilgili oturumu seçer; hesap menüsündeki kimliği doğrular, sayaçları günceller ve Atmaca'ya döner.
 6. Durdur, sonraki gezinmeyi keser. Daha önce tamamlanan kayıtlar korunur. Yeniden tarama kullanıcı adına göre günceller.
 
 ## Sınırlar
@@ -24,7 +24,7 @@ Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Bu sürümün kullanı
 
 ## Geliştirme / APK
 
-JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.1-APK** çıktısını indirin.
+JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.2-APK** çıktısını indirin.
 
 ```sh
 gradle testDebugUnitTest lintDebug :app:assembleDebug
@@ -40,3 +40,13 @@ Android araç zinciri sürümleri gönderilen kaynak temel alınarak yapılandı
 - Fiziksel test: 1/2/10 hesap, kaydırılan hesap seçici, tekrar tarama, eksik sayaç, yanlış hesap, ekran kilidi, hizmet bağlantısının kesilmesi ve geri dönüş.
 
 Eski VALIDATION/BUILD_STATUS dosyaları V25.12.17 paketinden gelen tarihsel notlardır; bu sürümün test sonucu olarak kullanılmamalıdır.
+
+## 26.2 değişiklikleri
+
+- Hesap geçişinden sonra profil bağlantısına bağımlılık kaldırıldı: menüde tam kullanıcı adı ve iki sayaç doğrulanır.
+- Okunamayan hesap atlanır, diğer oturumlar denenir. Aşama başına 20 saniye ve hesap başına 45 saniye sınırı vardır.
+- Ekran olayları bekleyen otomasyon kontrolünü sürekli erteleyemez.
+- Görevler sekmesi gerçek oluşturma/düzenleme ve seri çalıştırma ekranına bağlandı. Tarama ve görev aynı anda çalıştırılamaz.
+- Ayarlarda işlem/geçiş/görev bekleme süreleri, hata sonrası devam ve kayıt saklama süresi; keşif görevleri için hesap başına hedef listesi.
+- Kayıtlarda hesap taraması filtresi, aşama/ekran/hedef bilgisi ve TXT dışa aktarma.
+- Kullanıcının videosunda dört oturum ve ilk seçimden sonra X ana sayfasında kalma görüldü. Yeni sürüm için fiziksel cihaz doğrulaması gereklidir; birim testler ekran uyumluluğunu kanıtlamaz.

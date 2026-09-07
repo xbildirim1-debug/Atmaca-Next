@@ -34,7 +34,7 @@ fun AtmacaNextApp() {
         val modifier = Modifier.padding(padding).fillMaxSize()
         when (tab) {
             AppTab.ACCOUNTS -> AccountsScreen(modifier)
-            AppTab.TASKS -> TasksPreviewScreen(modifier)
+            AppTab.TASKS -> TasksScreen(modifier)
             AppTab.SETTINGS -> AccountSettingsScreen(modifier)
         }
     }

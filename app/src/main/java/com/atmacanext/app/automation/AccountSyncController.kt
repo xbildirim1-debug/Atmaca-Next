@@ -16,11 +16,11 @@ import java.util.UUID
 /** User-started screen navigation only. All state mutations share this object's monitor. */
 object AccountSyncController {
     enum class Mode { NONE, IMPORT, SWITCH }
-    private enum class Stage { IDLE, HOME, DRAWER, SWITCHER, HARVEST, SELECT, SETTLE, PROFILE, STATS, SAVING }
+    private enum class Stage { IDLE, HOME, DRAWER, SWITCHER, HARVEST, SELECT, SETTLE, VERIFY_DRAWER, SAVING }
     data class State(
         val active: Boolean = false, val mode: Mode = Mode.NONE,
         val message: String = "Hazır", val discovered: Int = 0, val processed: Int = 0,
-        val target: String? = null, val completed: Boolean = false, val failed: Boolean = false,
+        val skipped: Int = 0, val target: String? = null, val completed: Boolean = false, val failed: Boolean = false,
     )
     private val _state = MutableStateFlow(State())
     val state = _state.asStateFlow()
@@ -37,6 +37,11 @@ object AccountSyncController {
     private var target: String? = null
     private val discovered = linkedSetOf<String>()
     private val processed = linkedSetOf<String>()
+    private val skipped = linkedSetOf<String>()
+    private var targetStartedAt = 0L
+    private var timedTarget: String? = null
+    private var lastObserved = ""
+    private var lastObservedAt = 0L
     private var harvestSignature: String? = null
     private var stableHarvests = 0
     private var searchForward = false
@@ -66,9 +71,10 @@ object AccountSyncController {
             return false
         }
         saveJob?.cancel(); generation++
-        discovered.clear(); processed.clear()
+        discovered.clear(); processed.clear(); skipped.clear(); lastObserved = ""
         target = username?.let(XIdentityDetector::normalizeUsername)
         if (mode == Mode.SWITCH && target?.matches(Regex("[A-Za-z0-9_]{1,15}")) != true) return false
+        timedTarget = null; targetStartedAt = 0L
         recoveries = 0; harvestDone = false; harvestSignature = null; stableHarvests = 0
         startedAt = SystemClock.elapsedRealtime()
         _state.value = State(active = true, mode = mode)
@@ -111,13 +117,27 @@ object AccountSyncController {
     @Synchronized fun onSnapshot(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, popup: PopupType) {
         if (!isActive || !checkDeadline(service)) return
         val now = SystemClock.elapsedRealtime()
+        if (target != null && target == timedTarget && now - targetStartedAt > 45_000L && stage != Stage.SAVING) {
+            skipTarget(service, "45 saniyede hesap doğrulanamadı")
+            return
+        }
         if (now - stageAt > 20_000L) {
+            OperationLog.w("ACCOUNT_SYNC", "Zaman aşımı stage=$stage target=$target screen=$screen")
+            if (target != null && stage != Stage.SAVING) {
+                skipTarget(service, "20 saniyede hesap doğrulanamadı")
+                return
+            }
             if (stage == Stage.SAVING || ++recoveries > 3) {
                 finish(false, "${_state.value.message}: ekran doğrulanamadı. Kaydedilen hesaplar korundu.")
                 return
             }
             move(Stage.HOME, "X ekranı yeniden açılıyor ($recoveries/3)")
             service.launchXHome(); tick(service, 800L); return
+        }
+        val observed = "$stage/$screen/$popup/${target.orEmpty()}"
+        if (observed != lastObserved || now - lastObservedAt >= 5_000L) {
+            OperationLog.i("ACCOUNT_SYNC", "stage=$stage screen=$screen popup=$popup target=${target.orEmpty()} saved=${processed.size} skipped=${skipped.size}")
+            lastObserved = observed; lastObservedAt = now
         }
         if (now < nextActionAt) { service.requestAutomationTick(nextActionAt - now); return }
         if (stage == Stage.SAVING) { tick(service); return }
@@ -164,7 +184,7 @@ object AccountSyncController {
                 if (screen != XScreen.ACCOUNT_SWITCHER) { tick(service); return }
                 if (XNavigator.clickExactHandle(service, root, wanted)) {
                     move(Stage.SETTLE, "@$wanted hesabı açılıyor")
-                    tick(service, AutomationTuning.accountSwitchSettleMs.coerceIn(1500L, 6000L)); return
+                    tick(service, AutomationTuning.accountSwitchSettleMs.coerceIn(1500L, 15_000L)); return
                 }
                 // Harvest may leave the list at its bottom. Search both directions, with a deadline.
                 val signature = ListViewportController.signature(root)
@@ -174,19 +194,28 @@ object AccountSyncController {
                     else ListViewportController.tryScrollBackward(root)
                 if (result != ScrollAttemptResult.SCROLLED) {
                     if (!searchForward) { searchForward = true; searchSignature = null }
-                    else { finish(false, "@$wanted açık oturumlar arasında bulunamadı. Yeniden tara."); return }
+                    else { skipTarget(service, "Açık oturumlar arasında bulunamadı"); return }
                 }
             }
             Stage.SETTLE -> {
-                if (service.launchXProfile(target.orEmpty())) move(Stage.PROFILE, "@${target} kimliği doğrulanıyor")
-                else { finish(false, "Hesap profili açılamadı"); return }
+                move(Stage.VERIFY_DRAWER, "@${target} hesap menüsünden doğrulanıyor")
+                // Never depend on a profile deep link: the supplied video remains on HOME after switching.
             }
-            Stage.PROFILE -> if (verified(root, screen)) move(Stage.STATS, "Takipçi ve takip edilen sayıları okunuyor")
-            Stage.STATS -> {
-                if (verified(root, screen)) {
-                    val stats = AccountSwitcherInspector.readProfileStats(root)
-                    if (stats.followers != null && stats.following != null) save(service, stats)
+            Stage.VERIFY_DRAWER -> when (screen) {
+                XScreen.HOME -> XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_DRAWER, "", null)
+                XScreen.ACCOUNT_SWITCHER -> service.pressBack()
+                XScreen.ACCOUNT_DRAWER -> {
+                    val account = AccountSwitcherInspector.readActiveDrawerAccount(root)
+                    if (AccountScanPolicy.canRecord(target, account.username, account.followers, account.following)) {
+                        OperationLog.i("ACCOUNT_SYNC", "Doğrulandı @${account.username} takipçi=${account.followers} takip=${account.following}")
+                        save(service, AccountSwitcherInspector.ProfileStats(account.followers, account.following))
+                    } else if (account.username != null && account.username != target) {
+                        OperationLog.w("ACCOUNT_SYNC", "Hedef @$target; menüde @${account.username}. Yeniden seçiliyor.")
+                        // Preserve the deadline when a selection did not actually take effect.
+                        stage = Stage.SWITCHER
+                    }
                 }
+                else -> Unit
             }
             Stage.SAVING, Stage.IDLE -> Unit
         }
@@ -200,17 +229,31 @@ object AccountSyncController {
     private fun finishHarvest() {
         if (discovered.isEmpty()) { finish(false, "X hesap seçicisinde okunabilir oturum bulunamadı."); return }
         harvestDone = true
-        target = discovered.firstOrNull { it !in processed }
+        target = AccountScanPolicy.next(discovered, processed, skipped)
         if (target == null) finish(true, "${processed.size} hesap eklendi") else beginSelection()
     }
+    private fun skipTarget(service: AtmacaAccessibilityService, reason: String) {
+        val failedHandle = target
+        if (_state.value.mode != Mode.IMPORT || failedHandle == null) {
+            finish(false, "${failedHandle?.let { "@$it: " }.orEmpty()}$reason"); return
+        }
+        skipped += failedHandle
+        OperationLog.w("ACCOUNT_SYNC", "@$failedHandle atlandı: $reason")
+        target = AccountScanPolicy.next(discovered, processed, skipped)
+        if (target == null) {
+            finish(false, "${processed.size} hesap kaydedildi; ${skipped.size} hesap okunamadı. Kayıtlara bak.")
+        } else {
+            move(Stage.HOME, "Sıradaki hesap deneniyor; ${skipped.size} hesap atlandı")
+            service.launchXHome(); tick(service, 800L)
+        }
+    }
+
     private fun beginSelection() {
+        if (timedTarget != target) {
+            timedTarget = target; targetStartedAt = SystemClock.elapsedRealtime()
+        }
         searchForward = false; searchSignature = null
         move(Stage.SELECT, "@${target} hesabı seçiliyor")
-    }
-    private fun verified(root: AccessibilityNodeInfo?, screen: XScreen): Boolean {
-        if (screen != XScreen.PROFILE) return false
-        val identity = XIdentityDetector.inspectOwnProfile(root, target.orEmpty())
-        return identity.isOwnProfile && identity.expectedAccountVisible
     }
     private fun save(service: AtmacaAccessibilityService, stats: AccountSwitcherInspector.ProfileStats) {
         val handle = target ?: return
@@ -243,17 +286,19 @@ object AccountSyncController {
         if (token != generation || !isActive || stage != Stage.SAVING) return
         processed += handle
         if (_state.value.mode == Mode.SWITCH) { finish(true, "@$handle artık X'te etkin"); return }
-        target = discovered.firstOrNull { it !in processed }
-        if (target == null) { finish(true, "${processed.size} hesap güncellendi"); return }
-        move(Stage.HOME, "Sıradaki hesap açılıyor")
-        serviceRef?.get()?.let { it.launchXHome(); tick(it, 800L) }
+        target = AccountScanPolicy.next(discovered, processed, skipped)
+        if (target == null) { finish(skipped.isEmpty(), "${processed.size} hesap güncellendi, ${skipped.size} hesap okunamadı"); return }
+        // The drawer already contains the exact current identity and counters. Open its switcher directly.
+        move(Stage.SWITCHER, "Sıradaki hesap seçiliyor")
+        serviceRef?.get()?.let { tick(it, 650L) }
     }
     private fun move(next: Stage, message: String) {
         stage = next; stageAt = SystemClock.elapsedRealtime(); nextActionAt = 0L; publish(message)
+        OperationLog.i("ACCOUNT_SYNC", "$next | $message")
     }
     private fun publish(message: String) {
         _state.value = _state.value.copy(message = message, discovered = discovered.size,
-            processed = processed.size, target = target?.let { "@$it" })
+            processed = processed.size, skipped = skipped.size, target = target?.let { "@$it" })
     }
     private fun tick(service: AtmacaAccessibilityService, delay: Long = 450L) {
         nextActionAt = SystemClock.elapsedRealtime() + delay
@@ -262,7 +307,7 @@ object AccountSyncController {
     private fun finish(success: Boolean, message: String, returnToApp: Boolean = true) {
         generation++; saveJob?.cancel(); saveJob = null; stage = Stage.IDLE
         _state.value = _state.value.copy(active = false, completed = success, failed = !success,
-            message = message, processed = processed.size, discovered = discovered.size)
+            message = message, processed = processed.size, discovered = discovered.size, skipped = skipped.size)
         OperationLog.i("SYNC", message)
         if (returnToApp) {
             val token = generation

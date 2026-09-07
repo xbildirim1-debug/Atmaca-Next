@@ -43,7 +43,7 @@ object XUiVocabulary {
 
     val accountSwitcherLabels = setOf("hesaplar", "accounts", "hesap değiştir", "switch account", "hesapları değiştir", "switch accounts")
     val accountSwitcherSignals = setOf(
-        "hesap ekle", "mevcut bir hesap ekle", "add an existing account",
+        "hesap ekle", "var olan bir hesabı ekle", "mevcut bir hesap ekle", "add an existing account",
         "yeni hesap oluştur", "create a new account", "hesapları yönet", "manage accounts",
     )
 

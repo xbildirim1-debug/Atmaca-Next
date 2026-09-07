@@ -97,6 +97,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.atmacanext.app.automation.AccountSyncController
 import com.atmacanext.app.automation.AutomationController
 import com.atmacanext.app.core.AppServices
 import com.atmacanext.app.domain.model.Account
@@ -217,6 +218,16 @@ fun TasksScreen(modifier: Modifier = Modifier) {
     var showCreate by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<LogicalTask?>(null) }
     var deleteRequest by remember { mutableStateOf<DeleteRequest?>(null) }
+    val sync by AccountSyncController.state.collectAsStateWithLifecycle()
+    if (sync.active) {
+        Column(modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("Hesap taraması sürüyor", style = MaterialTheme.typography.headlineSmall)
+            Text(sync.message)
+            Text("Görev başlatmak için taramanın bitmesini bekle veya taramayı durdur.")
+            OutlinedButton(onClick = AccountSyncController::cancel) { Text("Taramayı durdur") }
+        }
+        return
+    }
     val queueLocked = queue.isActive
     val taskGroups = logicalTasks(tasks)
     val completedCycles = taskGroups.sumOf { group -> group.tasks.minOfOrNull(::successfulCycleCount) ?: 0 }
@@ -887,7 +898,7 @@ private fun TaskEditorDialog(
     var prompt by remember(original) { mutableStateOf(original?.contentPrompt.orEmpty()) }
     var content by remember(original) { mutableStateOf(original?.contentText.orEmpty()) }
     var mediaUri by remember(original) { mutableStateOf(original?.mediaUri) }
-    var useGemini by remember(original) { mutableStateOf(original?.useGemini ?: false) }
+    var useGemini by remember(original) { mutableStateOf(false) }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
@@ -1033,15 +1044,6 @@ private fun TaskEditorDialog(
                 }
 
                 if (needsContent) {
-                    item(key = "gemini-switch") {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text("Gemini ile ayrı içerikler", fontWeight = FontWeight.SemiBold)
-                                Text("Her döngü/hesap için farklı metin üretir; navigasyona karar vermez.", color = TextSecondary, fontSize = 9.sp)
-                            }
-                            Switch(checked = useGemini, onCheckedChange = { useGemini = it })
-                        }
-                    }
                     item(key = if (useGemini) "gemini-prompt" else "manual-content") {
                         if (useGemini) {
                             OutlinedTextField(
