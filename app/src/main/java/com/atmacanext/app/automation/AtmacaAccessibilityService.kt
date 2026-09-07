@@ -223,11 +223,11 @@ class AtmacaAccessibilityService : AccessibilityService() {
         repeat(6) {
             val card = ancestor ?: return false
             val preview = AccessibilityTree.nodes(card, 120).firstOrNull { node ->
-                val marker = (node.viewIdResourceName.orEmpty() + " " + node.className.orEmpty()).lowercase()
+                val marker = (node.viewIdResourceName.orEmpty() + " " + node.className?.toString().orEmpty()).lowercase()
                 node.isVisibleToUser && listOf("thumbnail", "snapshot").any(marker::contains)
             }
             if (preview != null) return GestureClick.click(this, preview)
-            val marker = (card.viewIdResourceName.orEmpty() + " " + card.className.orEmpty()).lowercase()
+            val marker = (card.viewIdResourceName.orEmpty() + " " + card.className?.toString().orEmpty()).lowercase()
             if (listOf("taskview", "task_view", "taskcard", "task_card").any(marker::contains)) {
                 return GestureClick.click(this, card)
             }
