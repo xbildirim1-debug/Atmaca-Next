@@ -7,15 +7,14 @@ object ScreenDetector {
     fun detect(root: AccessibilityNodeInfo?): XScreen = detect(root, AccessibilityTree.snapshots(root))
 
     fun detect(root: AccessibilityNodeInfo?, nodes: List<NodeSnapshot>): XScreen {
-        if (PopupClassifier.classify(nodes) != PopupType.NONE) return detect(nodes)
-        when (RelationshipTabInspector.selectedTab(root)) {
-            RelationshipTabInspector.FOLLOWING -> return XScreen.FOLLOWING_LIST
-            RelationshipTabInspector.FOLLOWERS -> return XScreen.FOLLOWERS_LIST
-        }
-        return detect(nodes)
+        val selectedTab = if (PopupClassifier.classify(nodes) == PopupType.NONE)
+            RelationshipTabInspector.selectedTab(root) else RelationshipTabInspector.NONE
+        return detect(nodes, selectedTab)
     }
 
-    internal fun detect(nodes: List<NodeSnapshot>): XScreen {
+    internal fun detect(nodes: List<NodeSnapshot>): XScreen = detect(nodes, RelationshipTabInspector.NONE)
+
+    internal fun detect(nodes: List<NodeSnapshot>, selectedRelationshipTab: Int): XScreen {
         if (nodes.isEmpty()) return XScreen.UNKNOWN
         val labels = nodes.flatMap { listOfNotNull(it.text, it.contentDescription) }
             .map(XUiVocabulary::normalize)
@@ -45,15 +44,6 @@ object ScreenDetector {
         val scrollable = nodes.any { it.scrollable }
         val clickableCount = nodes.count { it.clickable }
 
-        // The selected tab wins over labels of neighboring, unselected tabs.
-        if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followingHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWING_LIST
-        if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followersHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWERS_LIST
-
-        val verifiedHeader = labels.any { it in XUiVocabulary.verifiedFollowersHeaders }
-        if (verifiedHeader && listEvidence(labels, handleCount, scrollable)) {
-            return XScreen.VERIFIED_FOLLOWERS_LIST
-        }
-
         val switcherStrong = labels.any { it in XUiVocabulary.accountSwitcherSignals }
         val switcherTitle = labels.any { it in XUiVocabulary.accountSwitcherLabels }
         if ((switcherStrong && handleCount >= 1) || (switcherTitle && handleCount >= 2)) {
@@ -64,6 +54,25 @@ object ScreenDetector {
             labels.any { it == token || it.contains(token) }
         }
         if (drawerSignalCount >= 3 && clickableCount >= 3) return XScreen.ACCOUNT_DRAWER
+
+        // The HOME pager also has a Following tab and tweet author handles. Resolve
+        // its own tab strip before either raw-node or snapshot relationship heuristics.
+        // Account overlays above must still win when the feed remains behind them.
+        if (HomeTimelineEvidence.matches(nodes)) return XScreen.HOME
+
+        when (selectedRelationshipTab) {
+            RelationshipTabInspector.FOLLOWING -> return XScreen.FOLLOWING_LIST
+            RelationshipTabInspector.FOLLOWERS -> return XScreen.FOLLOWERS_LIST
+        }
+
+        // The selected tab wins over labels of neighboring, unselected tabs.
+        if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followingHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWING_LIST
+        if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followersHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWERS_LIST
+
+        val verifiedHeader = labels.any { it in XUiVocabulary.verifiedFollowersHeaders }
+        if (verifiedHeader && listEvidence(labels, handleCount, scrollable)) {
+            return XScreen.VERIFIED_FOLLOWERS_LIST
+        }
 
         // X aynı üst sekme şeridinde Followers, Following, Subscribers ve
         // Subscriptions etiketlerini birlikte tutuyor. Ekran türünü yalnızca etiketin

@@ -179,13 +179,17 @@ object AccountSyncController {
             Stage.DRAWER -> when (screen) {
                 XScreen.ACCOUNT_DRAWER -> move(Stage.SWITCHER, "Hesap seçici açılıyor")
                 XScreen.ACCOUNT_SWITCHER -> enterSwitcher()
-                XScreen.HOME -> XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_DRAWER, "", null)
-                else -> Unit
+                XScreen.HOME -> { openDrawer(service, root); return }
+                else -> { recoverNavigation(service, screen); return }
             }
             Stage.SWITCHER -> when (screen) {
                 XScreen.ACCOUNT_SWITCHER -> enterSwitcher()
-                XScreen.ACCOUNT_DRAWER -> XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_SWITCHER, target.orEmpty(), null)
-                else -> Unit
+                XScreen.ACCOUNT_DRAWER -> {
+                    XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_SWITCHER, target.orEmpty(), null)
+                    tick(service, 1_200L); return
+                }
+                XScreen.HOME -> move(Stage.DRAWER, "Hesap menüsü yeniden açılıyor")
+                else -> { recoverNavigation(service, screen); return }
             }
             Stage.HARVEST -> {
                 if (screen != XScreen.ACCOUNT_SWITCHER) { tick(service); return }
@@ -226,7 +230,7 @@ object AccountSyncController {
                 // Never depend on a profile deep link: the supplied video remains on HOME after switching.
             }
             Stage.VERIFY_DRAWER -> when (screen) {
-                XScreen.HOME -> XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_DRAWER, "", null)
+                XScreen.HOME -> { openDrawer(service, root); return }
                 XScreen.ACCOUNT_SWITCHER -> service.pressBack()
                 XScreen.ACCOUNT_DRAWER -> {
                     val account = AccountSwitcherInspector.readActiveDrawerAccount(root)
@@ -242,11 +246,30 @@ object AccountSyncController {
                         stage = Stage.SWITCHER
                     }
                 }
-                else -> Unit
+                else -> { recoverNavigation(service, screen); return }
             }
             Stage.SAVING, Stage.IDLE -> Unit
         }
         if (isActive) tick(service, 300L)
+    }
+
+    private fun openDrawer(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?) {
+        val clicked = XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_DRAWER, "", null)
+        OperationLog.i("ACCOUNT_SYNC", "Hesap menüsü açma sonucu=$clicked stage=$stage")
+        // Wait for the drawer animation before another click can close it again.
+        tick(service, 1_200L)
+    }
+
+    private fun recoverNavigation(service: AtmacaAccessibilityService, screen: XScreen) {
+        if (SystemClock.elapsedRealtime() - stageAt < 1_500L) { tick(service, 300L); return }
+        if (++recoveries > 3) {
+            finish(false, "Hesap menüsüne ulaşılamadı ($screen). Kaydedilen hesaplar korundu.")
+            return
+        }
+        OperationLog.w("ACCOUNT_SYNC", "Beklenmeyen ekran=$screen stage=$stage; ana ekrana dönüş $recoveries/3")
+        service.pressBack()
+        move(Stage.HOME, "Hesap menüsü için ana ekrana dönülüyor")
+        tick(service, 1_000L)
     }
 
     private fun enterSwitcher() {

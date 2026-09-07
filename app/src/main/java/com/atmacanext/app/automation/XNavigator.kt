@@ -86,9 +86,11 @@ object XNavigator {
     fun clickAccountMenu(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
         if (root == null) { OperationLog.w("NAV", "drawer click: root null"); return false }
         val labeled = NodeSelector.best(root, NodeSelector.Query(
-            viewIdContains = listOf("navigation_drawer", "drawer_menu", "avatar", "profile_image", "user_image", "home_drawer"),
-            contentDescriptions = XUiVocabulary.accountMenuLabels,
-            exactTexts = XUiVocabulary.accountMenuLabels,
+            // Generic profile images also belong to tweet authors; only dedicated menu
+            // semantics may bypass the toolbar-bounds check in clickTopLeftAvatar.
+            viewIdContains = listOf("navigation_drawer", "drawer_menu", "home_drawer"),
+            contentDescriptions = XUiVocabulary.accountMenuLabels - setOf("profil fotoğrafı", "profile photo", "profile picture"),
+            exactTexts = XUiVocabulary.accountMenuLabels - setOf("profil fotoğrafı", "profile photo", "profile picture"),
             requireClickable = false,
         ))?.node
         if (labeled != null && !TargetVerifier.containsForbiddenProfilePhrase(labeled) && GestureClick.click(service, labeled)) {
@@ -126,7 +128,7 @@ object XNavigator {
                     listOf("avatar", "profil", "profile", "hesap", "account").any(blob::contains)
                 b.width() > 0 && b.height() > 0 && b.centerY() <= topLimit && b.centerX() <= leftLimit &&
                     b.width() <= rootBounds.width()*0.22f && b.height() <= rootBounds.height()*0.13f &&
-                    node.isEnabled && avatarLike && !XUiVocabulary.forbiddenProfilePhrases.any(blob::contains)
+                    node.isVisibleToUser && node.isEnabled && avatarLike && !XUiVocabulary.forbiddenProfilePhrases.any(blob::contains)
             }
             .sortedWith(compareBy<Pair<AccessibilityNodeInfo,Rect>> { it.second.centerX() }.thenBy { it.second.centerY() }).toList()
         for ((node,_) in candidates) if (GestureClick.click(service,node)) return true

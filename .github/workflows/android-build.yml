@@ -33,11 +33,11 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$APK"
           apkanalyzer manifest print "$APK" > dist/manifest.xml
           if rg -q 'android.permission.INTERNET|androidx.startup.InitializationProvider' dist/manifest.xml; then exit 1; fi
-          cp "$APK" dist/AtmacaNext-26.4.apk
-          sha256sum dist/AtmacaNext-26.4.apk > dist/AtmacaNext-26.4.apk.sha256
+          cp "$APK" dist/AtmacaNext-26.5.apk
+          sha256sum dist/AtmacaNext-26.5.apk > dist/AtmacaNext-26.5.apk.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: AtmacaNext-26.4-APK
+          name: AtmacaNext-26.5-APK
           path: dist/
           if-no-files-found: error
       - name: Test reports
