@@ -161,9 +161,9 @@ class AtmacaAccessibilityService : AccessibilityService() {
 
     fun launchAtmaca(onResult: ((Boolean) -> Unit)? = null): Boolean {
         val launchEpoch = lastLaunchAt
-        val token = ++returnGeneration
+        val token = returnGeneration.incrementAndGet()
         fun attempt(index: Int) {
-            if (token != returnGeneration || lastLaunchAt != launchEpoch) return
+            if (token != returnGeneration.get() || lastLaunchAt != launchEpoch) return
             if (AppForegroundState.resumed || isAtmacaForeground()) {
                 OperationLog.i("NAV", "Atmaca Next'e dönüş doğrulandı")
                 onResult?.invoke(true)
@@ -177,7 +177,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
             // Bring back the existing task first, preserving the screen and saved UI state.
             runCatching {
                 getSystemService(ActivityManager::class.java)?.appTasks?.firstOrNull {
-                    it.taskInfo.baseActivity?.packageName == packageName
+                    it.taskInfo?.baseActivity?.packageName == packageName
                 }?.moveToFront()
             }.onFailure { OperationLog.w("NAV", "Mevcut pencere öne alınamadı: ${it.javaClass.simpleName}") }
             runCatching {
@@ -192,7 +192,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
         return mainHandler.post { attempt(0) }
     }
 
-    private var returnGeneration = 0L
+    private val returnGeneration = java.util.concurrent.atomic.AtomicLong(0L)
 
     fun launchAtmacaOnAutomationThread(): Boolean = launchAtmaca()
 
@@ -200,6 +200,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
     fun isOutsideSuppressed(now:Long=System.currentTimeMillis()):Boolean=now<suppressOutsideUntil
 
     private fun startSafely(intent:Intent,why:String):Boolean {
+        returnGeneration.incrementAndGet() // Cancel old return attempts even when an X launch is throttled.
         val now=System.currentTimeMillis()
         if (why==lastLaunchKey && now-lastLaunchAt<RELAUNCH_GAP_MS) return true
         return try {
