@@ -2,6 +2,17 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.8 doğrulanmış APK ve ZIP teslimi
+
+- Kaynak: 3e4e49b81b217e0588ae1ca3ed6b5f9d7b8debb7, main. Bu not commit'i aynı kodun devamıdır.
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34153574384 . APK ve tam paket artifact: 10030254744; rapor artifact: 10030255188.
+- APK: AtmacaNext-26.8.apk, versionCode 56 / 26.8-verified-follow, 20.524.760 bayt. SHA256: b6e1aba207615655c45abcb9f324c43048580ea2bc54f8ca86b9ce03a01cde7b.
+- Sertifika SHA256: 023f4a43d95024eca7b98e68ce29f04123b3760172f9bcc31e5cce5d7c58a43f. 26.7 teslim sertifikasından farklı; kaldırıp kurma Atmaca verilerini siler. İmza sorunu hâlâ açık.
+- 125 test: 0 başarısız, 0 hata, 0 atlanan. ZIP CRC, manifest, APK SHA256, paket içindeki APK eşitliği ve test XML toplamları kontrol edildi. APK INTERNET izni içermez. Gerçek X cihaz testi yapılmadı.
+- Tam ZIP: APK, manifest, SHA256, NOT_DEFTERI.txt, kaynak ZIP ve test XML ZIP içerir. APK ve ZIP kullanıcıya sohbetten de teslim edilir. GitHub Actions arşivi sürelidir; kalıcı Releases yayın taslağı etkin değil.
+- Son sertleştirme: takipçi listesi yüklenmeden kaynak seçilmez; standart kaydırma yoksa erişilebilirlik hareketiyle geriye kaydırılır, sabit liste başı görülünce ilk kaynak seçilir. Başarı sonucundaki düz Follow denetimi çelişkili Follow back açıklamasını da reddeder.
+- Cihazda sıradaki kontrol: kendi profil → ilk takipçi → kaynak takipçileri → seçili Verified Followers; sadece Follow; kaynak değişimi; limitte bitiş; üç ardışık Following→Follow dönüşünde sıradaki hesaba geçiş. Bu geri dönüş kuralı kullanıcı isteğiyle uygulanan durdurma sezgisidir, X'in kesin günlük limit bilgisi değildir.
+
 ## 26.8 — onaylı kullanıcı takip akışı
 
 Kullanıcı önceki şikayette yanlış APK yüklediğini doğruladı ve doğru 26.7 sürümünün güzel çalıştığını bildirdi. 26.7 limit/arayüz düzeltmeleri korunuyor. Yeni istek yalnız onaylı kullanıcı takibi.
@@ -13,7 +24,7 @@ Kullanıcı önceki şikayette yanlış APK yüklediğini doğruladı ve doğru 
 - Takip ediliyor görüldükten sonra aynı satır yeniden Takip et olursa geri dönüş sayılır. Üç ardışık farklı işlemde geri dönüş: mevcut hesap kuyruğundaki çalıştırılabilir işler atlanır ve sıradaki hesabın görevi başlatılır. Bu, kullanıcının istediği durdurma sezgisidir; X günlük limitinin kesin teknik kanıtı değildir. Başarılı takip geri dönüş serisini sıfırlar; sayılmamış geri dönüşler başarılı sayıya eklenmez. Açık X limit/izin/uyarı pencerelerinin genel duraklama davranışı korunur.
 - Kaynakta uygun kişi kalmazsa açık onaylı listeden görülen başka kullanıcı kaynak seçilir; onun profili ve onaylı takipçileriyle devam edilir. Kendi hesap ve ziyaret edilmiş kaynaklar tekrar seçilmez. Açık listeden aday kalmazsa kendi takipçilerinden başka kaynak aranır. 100 kaynakta koruma duraklaması, kendi liste başını bulmada 30 saniye sınırı vardır.
 - Değişen bölümler: AutomationRuntime, TaskOrchestrator, RelationshipTabInspector, ScreenDetector, XUiActions, ListGesture; yeni VerifiedFollowPolicy ve 11 regresyon testi. Önceki iki ekran testi artık seçili sekme kanıtı içerir.
-- Sürüm 26.8-verified-follow, versionCode 56. CI sonucu bekleniyor. Fiziksel telefonda bu yeni akış test edilmedi.
+- Sürüm 26.8-verified-follow, versionCode 56. 125 test geçti; 0 hata/başarısız/atlanan. Test, lint, APK ve imza/manifest kontrolleri başarılı. Fiziksel telefonda bu yeni akış test edilmedi.
 - APK/TAM-PAKET.zip/kaynak/test ZIP/not defteri GitHub Actions çıktısında üretilir. Kalıcı Releases yayın yetkisi hâlâ etkin değil. Kalıcı imza çözülmedi; yeni debug imzası eski uygulama üstüne kurulumla uyuşmayabilir.
 
 ## 26.7 doğrulanmış teslim
