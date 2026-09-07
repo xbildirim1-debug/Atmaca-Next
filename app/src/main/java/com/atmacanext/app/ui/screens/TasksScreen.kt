@@ -117,6 +117,8 @@ import com.atmacanext.app.ui.theme.Divider
 import com.atmacanext.app.ui.theme.Purple
 import com.atmacanext.app.ui.theme.Success
 import com.atmacanext.app.ui.theme.Teal
+import com.atmacanext.app.ui.theme.CardBackground
+import com.atmacanext.app.ui.theme.AppBackground
 import com.atmacanext.app.ui.theme.TextPrimary
 import com.atmacanext.app.ui.theme.TextSecondary
 import com.atmacanext.app.ui.theme.Warning
@@ -126,7 +128,6 @@ import java.util.UUID
 private enum class TaskGroup(val title: String, val shortTitle: String) {
     FOLLOW("Takip İşlemleri", "Takip"),
     ENGAGEMENT("Etkileşim", "Etkileşim"),
-    CONTENT("Tweet ve Alıntı", "Tweet / Alıntı"),
 }
 
 private val TASK_TYPES_BY_GROUP = mapOf(
@@ -143,11 +144,6 @@ private val TASK_TYPES_BY_GROUP = mapOf(
         TaskType.BOOKMARK,
         TaskType.COMMENT,
     ),
-    TaskGroup.CONTENT to listOf(
-        TaskType.TEXT_TWEET,
-        TaskType.IMAGE_TWEET,
-        TaskType.QUOTE,
-    ),
 )
 
 private val SCALABLE_TYPES = setOf(
@@ -157,11 +153,11 @@ private val SCALABLE_TYPES = setOf(
     TaskType.RETWEETER_FOLLOW,
     TaskType.QUOTER_FOLLOW,
 )
-private val ScreenBackground = Color(0xFFF3F6FB)
-private val SoftBlue = Color(0xFFEAF4FF)
-private val SoftPurple = Color(0xFFF1EDFF)
-private val SoftGreen = Color(0xFFEAF9F3)
-private val SoftOrange = Color(0xFFFFF5E7)
+private val ScreenBackground = AppBackground
+private val SoftBlue = Color(0xFF1B2B35)
+private val SoftPurple = Color(0xFF29233B)
+private val SoftGreen = Color(0xFF1B3029)
+private val SoftOrange = Color(0xFF332C20)
 private const val LOGICAL_TASK_PREFIX = "group:"
 
 private data class LogicalTask(
@@ -229,7 +225,7 @@ fun TasksScreen(modifier: Modifier = Modifier) {
         return
     }
     val queueLocked = queue.isActive
-    val taskGroups = logicalTasks(tasks)
+    val taskGroups = logicalTasks(tasks.filter { it.type in TASK_TYPES_BY_GROUP.values.flatten() })
     val completedCycles = taskGroups.sumOf { group -> group.tasks.minOfOrNull(::successfulCycleCount) ?: 0 }
     val visibleTasks = taskGroups.filter { activeFilter == null || taskGroup(it.representative.type) == activeFilter }
 
@@ -291,7 +287,7 @@ fun TasksScreen(modifier: Modifier = Modifier) {
                 item(key = "filtered-empty") {
                     Surface(
                         shape = RoundedCornerShape(22.dp),
-                        color = Color.White,
+                        color = CardBackground,
                         border = BorderStroke(1.dp, Divider),
                     ) {
                         Column(
@@ -338,7 +334,7 @@ fun TasksScreen(modifier: Modifier = Modifier) {
                     enabled = !queueLocked && accounts.any { it.active },
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AtmacaNavy),
+                    colors = ButtonDefaults.buttonColors(containerColor = AtmacaBlue, contentColor = AtmacaNavy),
                 ) {
                     Icon(Icons.Filled.Add, null)
                     Spacer(Modifier.width(8.dp))
@@ -415,7 +411,7 @@ private fun TasksHero(
             .clip(RoundedCornerShape(28.dp))
             .background(
                 Brush.linearGradient(
-                    listOf(Color(0xFF092A58), Color(0xFF145EAE), Color(0xFF1688E8)),
+                    listOf(CardBackground, Color(0xFF223019), AtmacaNavy),
                 ),
             )
             .padding(20.dp),
@@ -487,7 +483,7 @@ private fun HeroMetric(modifier: Modifier, value: String, label: String, icon: I
 private fun TaskFilterBar(selected: TaskGroup?, tasks: List<ScheduledTask>, onSelected: (TaskGroup?) -> Unit) {
     Surface(
         shape = RoundedCornerShape(22.dp),
-        color = Color.White,
+        color = CardBackground,
         border = BorderStroke(1.dp, Divider),
     ) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
@@ -523,7 +519,7 @@ private fun CategoryFilterChip(label: String, count: Int, selected: Boolean, onC
         onClick = onClick,
         label = { Text("$label  $count", fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium) },
         colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = AtmacaSky,
+            selectedContainerColor = AtmacaBlue,
             selectedLabelColor = AtmacaNavy,
         ),
         border = FilterChipDefaults.filterChipBorder(
@@ -575,7 +571,7 @@ private fun SelectionActionBar(
 private fun EmptyTasksCard(hasActiveAccount: Boolean, onCreate: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = Color.White,
+        color = CardBackground,
         border = BorderStroke(1.dp, Divider),
     ) {
         Column(
@@ -651,7 +647,7 @@ private fun QueueSummary(queue: AutomationQueueState) {
 private fun RuntimeSummary(runtime: com.atmacanext.app.automation.AutomationRuntimeState, onStop: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(22.dp),
-        color = Color.White,
+        color = CardBackground,
         border = BorderStroke(1.dp, AtmacaBlue.copy(alpha = 0.2f)),
         shadowElevation = 2.dp,
     ) {
@@ -721,7 +717,7 @@ private fun TaskCard(
     val accent = taskColor(task.type)
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = Color.White,
+        color = CardBackground,
         border = BorderStroke(1.dp, if (selected) AtmacaBlue.copy(alpha = 0.5f) else Divider),
         shadowElevation = if (selected || active) 3.dp else 1.dp,
     ) {
@@ -842,7 +838,7 @@ private fun TaskCard(
                 enabled = active || (!locked && tasks.any { it.status != TaskStatus.COMPLETED && it.progress < it.totalLimit }),
                 modifier = Modifier.fillMaxWidth().height(46.dp),
                 shape = RoundedCornerShape(15.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = if (active) Color(0xFFD92D20) else AtmacaNavy),
+                colors = ButtonDefaults.buttonColors(containerColor = if (active) Color(0xFFD92D20) else AtmacaBlue, contentColor = if (active) Color.White else AtmacaNavy),
             ) {
                 Icon(if (active) Icons.Filled.Stop else Icons.Filled.PlayArrow, null)
                 Spacer(Modifier.width(6.dp))
@@ -886,7 +882,8 @@ private fun TaskEditorDialog(
     var selectedAccountIds by remember(originals, availableAccounts) {
         mutableStateOf(originals?.mapTo(linkedSetOf(), ScheduledTask::accountId) ?: setOfNotNull(availableAccounts.firstOrNull { it.isCurrent }?.id ?: availableAccounts.firstOrNull()?.id))
     }
-    var selectedTypes by remember(original) { mutableStateOf(setOf(original?.type ?: TaskType.TEXT_TWEET)) }
+    var editorGroup by remember { mutableStateOf(TaskGroup.FOLLOW) }
+    var selectedTypes by remember(original) { mutableStateOf(setOf(original?.type ?: TaskType.UNFOLLOW)) }
     var limitText by remember(original) {
         mutableStateOf(
             (original?.limit ?: if (original?.type == TaskType.UNFOLLOW) defaultUnfollowLimit else defaultFollowLimit).toString(),
@@ -970,9 +967,18 @@ private fun TaskEditorDialog(
                     HorizontalDivider()
                     Spacer(Modifier.height(5.dp))
                     Text("Görev türleri", fontWeight = FontWeight.Bold)
-                    Text("3 kategori • ${selectedTypes.size} tür seçili", color = TextSecondary, fontSize = 9.sp)
+                    Text("2 kategori • ${selectedTypes.size} tür seçili", color = TextSecondary, fontSize = 9.sp)
                 }
-                TaskGroup.entries.forEach { group ->
+                item(key = "category-tabs") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        TaskGroup.entries.forEach { group ->
+                            FilterChip(selected = editorGroup == group,
+                                onClick = { editorGroup = group },
+                                label = { Text(group.shortTitle) })
+                        }
+                    }
+                }
+                listOf(editorGroup).forEach { group ->
                     item(key = "group-${group.name}") {
                         Surface(
                             shape = RoundedCornerShape(15.dp),
@@ -980,7 +986,7 @@ private fun TaskEditorDialog(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                TaskIconBubble(groupIcon(group), taskGroupColor(group), Color.White.copy(alpha = 0.78f))
+                                TaskIconBubble(groupIcon(group), taskGroupColor(group), CardBackground)
                                 Spacer(Modifier.width(10.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(group.title, color = taskGroupColor(group), fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -988,7 +994,6 @@ private fun TaskEditorDialog(
                                         when (group) {
                                             TaskGroup.FOLLOW -> "Kitle büyütme ve takip temizliği"
                                             TaskGroup.ENGAGEMENT -> "Bağlantı üzerinden tekil X işlemleri"
-                                            TaskGroup.CONTENT -> "Metin, görsel ve alıntı yayınlama"
                                         },
                                         color = TextSecondary,
                                         fontSize = 8.sp,
@@ -1003,7 +1008,7 @@ private fun TaskEditorDialog(
                         val checked = type in selectedTypes
                         Surface(
                             shape = RoundedCornerShape(14.dp),
-                            color = if (checked) taskSoftColor(type) else Color.White,
+                            color = if (checked) taskSoftColor(type) else CardBackground,
                             border = BorderStroke(1.dp, if (checked) taskColor(type).copy(alpha = 0.32f) else Divider),
                             modifier = Modifier.fillMaxWidth().clickable(enabled = original == null) {
                                 selectedTypes = if (checked) selectedTypes - type else selectedTypes + type
@@ -1250,31 +1255,27 @@ private fun taskGroup(type: TaskType): TaskGroup = when (type) {
     TaskType.BOOKMARK,
     TaskType.COMMENT -> TaskGroup.ENGAGEMENT
 
-    else -> TaskGroup.CONTENT
+    else -> TaskGroup.ENGAGEMENT
 }
 
 private fun groupIcon(group: TaskGroup): ImageVector = when (group) {
     TaskGroup.FOLLOW -> Icons.Filled.Groups
     TaskGroup.ENGAGEMENT -> Icons.Filled.Bolt
-    TaskGroup.CONTENT -> Icons.Filled.AutoAwesome
 }
 
 private fun taskGroupColor(group: TaskGroup): Color = when (group) {
     TaskGroup.FOLLOW -> Teal
     TaskGroup.ENGAGEMENT -> AtmacaBlue
-    TaskGroup.CONTENT -> Purple
 }
 
 private fun taskGroupSoftColor(group: TaskGroup): Color = when (group) {
     TaskGroup.FOLLOW -> SoftGreen
     TaskGroup.ENGAGEMENT -> SoftBlue
-    TaskGroup.CONTENT -> SoftPurple
 }
 
 private fun taskSoftColor(type: TaskType): Color = when (taskGroup(type)) {
     TaskGroup.FOLLOW -> if (type == TaskType.UNFOLLOW) SoftOrange else SoftGreen
-    TaskGroup.ENGAGEMENT -> if (type == TaskType.LIKE) Color(0xFFFFEDF4) else SoftBlue
-    TaskGroup.CONTENT -> SoftPurple
+    TaskGroup.ENGAGEMENT -> if (type == TaskType.LIKE) Color(0xFF352431) else SoftBlue
 }
 
 private fun statusLabel(status: TaskStatus): String = when (status) {

@@ -95,7 +95,7 @@ object AutomationController {
     private const val END_STABLE_COUNT = 2
     private const val UNFOLLOW_END_STABLE_COUNT = 6
     private const val UNFOLLOW_SCROLL_SETTLE_MS = 900L
-    private const val UNFOLLOW_RESULT_STABLE_MS = 1_500L
+    private const val UNFOLLOW_RESULT_STABLE_MS = 650L
     private const val MIN_DISCOVERY_AGE_MINUTES = 90L
     private const val DISCOVERY_TWEET_LIMIT = 5
 
@@ -123,6 +123,7 @@ object AutomationController {
     private var accountSettleUntil = 0L
     private var accountSelectionMade = false
     private var cycleStartProgress = 0
+    private var unfollowIssuedCount = 0
     private var navRecoveries = 0
     private var popupRecoveries = 0
     private var listScrolls = 0
@@ -183,7 +184,8 @@ object AutomationController {
         val repeats = task.repeatCount.coerceIn(1, 100)
         val total = perCycle * repeats
         val progress = task.progress.coerceIn(0, total)
-        cycleStartProgress = progress
+        cycleStartProgress = (progress / perCycle) * perCycle
+        unfollowIssuedCount = progress
 
         _state.value = AutomationRuntimeState(
             sessionId = session,
@@ -663,7 +665,12 @@ object AutomationController {
                     fromBottom = unfollowAnchorPending || unfollowReverseMode,
                 )
                 if (target != null) {
+                    if (!UnfollowAttemptBudget.mayIssue(unfollowIssuedCount, current.limit, current.cycleIndex, current.perCycleLimit)) {
+                        pause("Takipten çıkma işlem sınırına ulaşıldı: $unfollowIssuedCount/${current.limit}. Doğrulanamayan işlemler yerine ek kişiye basılmadı.")
+                        return
+                    }
                     if (performStep(service, root, screen, "unfollow", target.handle) { XUiActions.clickRelationship(service, target) }) {
+                        unfollowIssuedCount++
                         unfollowFollowObservedAt = 0L
                         pendingAction = PendingAction(PendingKind.UNFOLLOW, target.handle)
                         _state.value = current.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now, message = "@${target.handle} için takipten çıkma sonucu doğrulanıyor")
@@ -1070,7 +1077,7 @@ object AutomationController {
         when (pending.kind) {
             PendingKind.UNFOLLOW -> {
                 val handle = pending.target ?: return fail("Takipten çıkma hedefi kayboldu")
-                val rowShowsFollow = XUiActions.rowHasAny(root, handle, setOf("takip et", "follow"))
+                val rowShowsFollow = XUiActions.rowHasAny(root, handle, XUiVocabulary.followActions)
                 val rowStillFollowing = XUiActions.rowHasAny(root, handle, XUiVocabulary.followingActions)
 
                 // Bir hedef ancak önce gerçekten "Takip et" durumuna geçtiği
@@ -1188,6 +1195,10 @@ object AutomationController {
         val current = _state.value
         pendingAction = null
         unfollowFollowObservedAt = 0L
+        if (current.taskType == TaskType.UNFOLLOW) {
+            pause("$reason: @$handle. Sonuç belirsiz; yerine başka kullanıcı işlenmedi.")
+            return
+        }
         skippedHandles += handle
         afterUnfollowTargetHandled()
         _state.value = current.copy(status = RuntimeStatus.RUNNING, message = "$reason: @$handle")
@@ -1487,6 +1498,7 @@ object AutomationController {
         pendingAction = null
         nextActionNotBefore = 0L
         cycleStartProgress = 0
+        unfollowIssuedCount = 0
         popupRecoveries = 0
         listScrolls = 0
         resetCycleNavigation()

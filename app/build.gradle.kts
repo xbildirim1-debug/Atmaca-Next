@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 54
-        versionName = "26.6-task-account-switch"
+        versionCode = 55
+        versionName = "26.7-unfollow-limit-ui"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

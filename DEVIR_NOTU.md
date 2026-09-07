@@ -2,6 +2,17 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.7 — limit, hız ve görev ekranı (7 Eylül 2026)
+
+Kullanıcı iki hesapta geçiş ve görevin Atmaca'ya dönüşünü başarılı bildirdi; ikinci hesap limit 5 olmasına rağmen fazladan takipten çıktı. 1000026740.mp4 (219,88 sn) incelendi: ikinci hesapta sonuç düğmeleri Geri Takip Et oluyor. Kod sadece takip et/follow kabul ettiği için bu işlemleri saymayıp yeni kişilere devam ediyordu.
+
+- AutomationRuntime: sonuç kontrolü XUiVocabulary.followActions kümesinin tamamını (Geri Takip Et / Follow back dahil) kullanır. Başlatılan işlem sayısına ayrı hesap/döngü sınırı eklendi; yanlış veya eksik sonuç sayımı altıncı işleme izin vermez. Belirsiz sonuç artık başka kişiyle telafi edilmez, görev duraklar. Başarı sayısı yalnız ekranda doğrulanmış işlemdir. Kısmi görev yeniden başlatılırken döngü başlangıç sayacı düzeltilmiştir.
+- Sonucun sabit görülme süresi 1500 ms yerine 650 ms; varsayılan işlemler arası bekleme 1800 yerine 800 ms. Önceden kullanıcı tarafından kaydedilmiş özel bekleme değeri korunur. Asıl 5–10 sn gecikme Geri Takip Et sonucunun okunmaması nedeniyle oluşuyordu.
+- TasksScreen: diğer ekranların koyu kart/zemin renkleri, okunaklı açık yazı ve yeşil vurgu; beyaz zemin üstünde beyaz yazı hatası giderildi. Yeni görevlerde Takip ve Etkileşim sekmeleri. Tweet/görselli tweet/alıntı oluşturma seçenekleri ve kategori kaldırıldı; eski kayıtlar veritabanından silinmedi, görev ekranındaki çalıştırılabilir listeye dahil edilmez. Yeni görev varsayılanı Takipten çık.
+- Altı yeni regresyon testi: TR/EN Follow back, yanlış etiketler, 5 deneme sınırı, iki hesap, döngü ve kısmi ilerleme.
+- Sürüm 26.7-unfollow-limit-ui, versionCode 55. CI test/lint/APK sonucu henüz bekleniyor; gerçek telefonda 26.7 test edilmedi.
+- Her derleme GitHub Actions çıktısına APK yanında kaynak ZIP, NOT_DEFTERI.txt, SHA256 ve manifest içeren TAM-PAKET.zip ekler. Yayımlama yetkili Releases taslağı etkinleştirilmedi; önceki otomatik onay engeli sürüyor. Kaynak, test ve notlar main'e kaydedilir. Kalıcı imzalama çözülmedi; farklı debug derlemeleri üzerine kurulum uyuşmayabilir.
+
 ## Kalıcı APK / ZIP ve not defteri arşivi
 
 Kullanıcının isteğiyle her başarılı main APK derlemesi için GitHub Releases arşivleme taslağı hazırlandı. OTOMATİK YAYIN HENÜZ ETKİN DEĞİL: otomatik onay incelemesi main'e contents:write yetkili kalıcı workflow eklenmesini, bu yetki kapsamı açıkça onaylanmadığı gerekçesiyle reddetti. Etkinleştirme denenmedi; taslak docs/archive-release.proposed.yml konumunda ve çalışmaz. Kullanıcıya neden ve somut kapsam sorulur. Kod/not kaydı ile mevcut Actions APK/ZIP dosyaları bu engelden etkilenmez. Aşağıdaki yayın davranışı tasarım açıklamasıdır. scripts/archive_release.py mevcut Actions çıktısını indirir, SHA256 ve test XML sonuçlarını doğrular, aynı APK'yı yeniden derlemeden yayımlar. APK yanında kaynak, raporlar, manifest ve ayrıntılı NOT_DEFTERI.txt içeren tam paket ZIP vardır. Her yayın kaynak sürüm ve build numarasıyla ayrıdır. Güncel teslim edilen 26.6 için başlangıç arşivi build 34111507110'dur. Başka build aynı sürüm numarasına sahip olsa bile farklı imzalı olabilir; teslim edilen APK kaynağı korunur. Bu değişiklik uygulama motorunu değiştirmez; arşivleme ve proje devamlılığı içindir.

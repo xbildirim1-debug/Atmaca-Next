@@ -1,4 +1,4 @@
-# Atmaca Next — 26.6
+# Atmaca Next — 26.7
 
 **Başka sohbet veya ChatGPT hesabından devam:** önce [DEVIR_NOTU.md](DEVIR_NOTU.md) dosyasını okuyun. Hesap eklemenin başarılı cihaz doğrulaması, 26.6 görev hesabı/takipten çıkma düzeltmeleri, test durumu ve APK bilgileri burada kayıtlıdır.
 
@@ -75,3 +75,7 @@ Kullanıcının logunda ilk hesap başarıyla kaydedildi, ikinci seçimde UNKNOW
 ## APK, ZIP ve ayrıntılı not defteri
 
 Her başarılı main derlemesinin APK ve tam ZIP paketini GitHub Releases bölümünde saklamak için yayın taslağı hazırlandı; otomatik onay incelemesi contents:write yetkili workflow etkinleştirmesini reddettiği için henüz etkin değil. Mevcut 26.6 APK/ZIP çıktısı [doğrulanmış derlemenin Artifacts bölümündedir](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34111507110). Aşağıdakiler planlanan yayın paketinin içeriğidir. Her yayında NOT_DEFTERI.txt, SHA256SUMS.txt ve APK bulunur. Tam paket ZIP ayrıca kaynak kodun ZIP'ini, test raporlarını ve manifesti içerir. Ayrıntılı güncel çalışma notları [DEVIR_NOTU.md](DEVIR_NOTU.md) içindedir. Yayın adındaki build numarası APK'nın tam kaynağını belirtir; farklı build'lerin imzaları aynı kabul edilmemelidir.
+
+## 26.7
+
+Geri Takip Et sonucu takipten çıkma başarısı olarak doğrulanır; hesap ve döngü başına başlatılan işlem için ayrıca kesin limit kontrolü vardır. Sonuç belirsizse yeni kişiye geçmek yerine duraklar. Varsayılan bekleme 800 ms, sonuç sabitleme 650 ms. Görev ekranı koyu temaya uyar; yeni görevler yalnız Takip ve Etkileşim sekmelerindedir. Tweet/alıntı oluşturma kaldırıldı. Her Actions APK çıktısında tam paket ZIP ve NOT_DEFTERI.txt bulunur. Cihaz doğrulaması bekleniyor.
