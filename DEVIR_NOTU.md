@@ -2,6 +2,18 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.9 — doğrulanmış derleme ve teslim (7 Eylül 2026)
+
+- Kaynak commit: 980614e2bc8296fdac40893eec3d856d85d23cf4, main. Bu sonuç kaydı yalnız belge güncellemesidir; teslim APK'sı bu kaynak commit'ten üretilmiştir.
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34156844490 . APK/tam paket artifact: 10031315464; test/lint raporları: 10031315734.
+- 142 test geçti: 0 başarısız, 0 hata, 0 atlanan. testDebugUnitTest, lintDebug, assembleDebug, APK imza ve manifest kontrolleri başarılı. ZIP CRC, APK SHA256, tam paket içindeki APK eşitliği ve test XML toplamları ayrıca doğrulandı.
+- APK: AtmacaNext-26.9.apk, 20.557.528 bayt, versionCode 57 / 26.9-followers-tab-source, package com.atmacanext.v258. SHA256: 25b38540fffa988f180fe487cf20b52046e6e99bf91c3f092d691e3720579287.
+- Sertifika SHA256: be83861dc35edd3a3b5d96a9f394095d5d994cd804a49028cbd4d742d115ed0e. Teslim 26.8 sertifikasından farklıdır; üzerine kurulum uyumsuz olabilir. Uygulamayı kaldırmak hesap/görev/bildirim verilerini siler. Kalıcı imza sorunu çözülmedi.
+- Tam ZIP: AtmacaNext-26.9-TAM-PAKET.zip; SHA256 d25a3d28b89780f61946c88944aa246681476a43727cf2a57e10af0ce352fb55. APK, hash, manifest, gerçek CI sonuçları eklenmiş NOT_DEFTERI.txt, kaynak ZIP ve test XML ZIP içerir.
+- Değişen kod: ScreenDetector, RecentFollowerSelector, AutomationRuntime, VerifiedFollowPolicy, XUiActions, AppServices, TaskOrchestrator, AtmacaNextApp, DashboardScreen; yeni NotificationStore. Regresyonlar: RecentFollowerRegressionTest, VerifiedFollowFlowTest, yeni NotificationFeedTest. Ayrıntılı davranış ve gerekçeler alttaki 26.9 bölümlerindedir.
+- Fiziksel cihaz/X testi ve yeni Anasayfa görsel cihaz doğrulaması yapılmadı. Cihazda denenecekler: gerçek Followers ilk değişken kaynak → seçili Verified followers; yalnız düz Takip et; 10/30 ilerlemeyi koruyan rastgele kaynak geçişi; üç farklı ardışık geri dönüşte hesabı atlayıp sıradaki hesap, zil bildirimi ve yeniden açılışta kalıcılık.
+- Kaynak/testler/notlar main'dedir. Actions artifact sürelidir (6 Aralık 2026). Kalıcı GitHub Releases teslimi henüz tamamlanmadı: AGENTS.md'deki önceki otomatik onay reddi nedeniyle contents:write yayın taslağı etkinleştirilmedi; bu somut kapsam için kullanıcı onayı gerekir. APK ve ZIP sohbetten ayrıca teslim edilir. Başarılı derlemeyi tekrar çalıştırıp aynı sürümü başka debug imzasıyla değiştirmeyin.
+
 ## 26.9 — kullanıcının son kuralları ve Anasayfa
 
 Kullanıcı bu çalışmada açıkça şu kapsamı ekledi: yalnız Verified followers sekmesinde Takip et/Follow; hiçbir Geri takip et/Follow back/Sen de takip et düğmesine basma. Düğmenin kendi metniyle beraber tıklanacak üst öğenin açıklaması da denetlenir; çelişki varsa işlem yapılmaz.
