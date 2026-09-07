@@ -723,12 +723,18 @@ object AutomationController {
             XFlowStage.OPEN_MY_FOLLOWERS -> {
                 if (now - stageStartedAt > 30_000L) return fail("Kendi takipçiler listesinin başı 30 saniyede doğrulanamadı")
                 if (screen == XScreen.FOLLOWERS_LIST) {
+                    if (!ListLoadVerifier.isLoaded(root, XScreen.FOLLOWERS_LIST)) {
+                        service.requestAutomationTick(500L)
+                        return
+                    }
                     val signature = ListViewportController.signature(root)
                     if (lastListSignature == signature) listEndStable++ else listEndStable = 0
                     lastListSignature = signature
-                    val moved = ListViewportController.tryScrollBackward(root) == ScrollAttemptResult.SCROLLED
-                    if (moved) listScrolls++
-                    if (!moved || listEndStable >= END_STABLE_COUNT) {
+                    val moved = ListViewportController.tryScrollBackward(root) == ScrollAttemptResult.SCROLLED ||
+                        ListGesture.backward(service, root)
+                    if (!moved) return pause("Takipçiler listesinin başına kaydırma doğrulanamadı")
+                    listScrolls++
+                    if (listEndStable >= END_STABLE_COUNT) {
                         moveStage(XFlowStage.FIND_RECENT_FOLLOWER, "Takipçiler listesinin başı doğrulandı; en yeni ziyaret edilmemiş takipçi aranıyor")
                     }
                     service.requestAutomationTick(500L)

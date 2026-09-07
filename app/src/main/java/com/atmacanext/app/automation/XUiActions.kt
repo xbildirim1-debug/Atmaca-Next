@@ -90,9 +90,10 @@ object XUiActions {
                 }
                 val actions = descendants.filter(::isRelationshipActionNode)
                 if (actions.isNotEmpty()) {
-                    return actions.any { action -> labels(action).any {
-                        matchesActionLabel(XUiVocabulary.normalize(it), normalized)
-                    } }
+                    return actions.any { action ->
+                        if (normalized == VerifiedFollowPolicy.plainFollowLabels) VerifiedFollowPolicy.isPlainFollow(labels(action))
+                        else labels(action).any { matchesActionLabel(XUiVocabulary.normalize(it), normalized) }
+                    }
                 }
                 row = current.parent
             }
