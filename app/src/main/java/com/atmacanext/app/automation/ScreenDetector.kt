@@ -61,18 +61,21 @@ object ScreenDetector {
         if (HomeTimelineEvidence.matches(nodes)) return XScreen.HOME
 
         when (selectedRelationshipTab) {
+            RelationshipTabInspector.VERIFIED -> return XScreen.VERIFIED_FOLLOWERS_LIST
             RelationshipTabInspector.FOLLOWING -> return XScreen.FOLLOWING_LIST
             RelationshipTabInspector.FOLLOWERS -> return XScreen.FOLLOWERS_LIST
         }
+
+        // A verified label beside another tab does not prove the verified list is open.
+        if (nodes.any { node -> node.visible && (node.selected || node.checked ||
+                listOfNotNull(node.contentDescription).any { it.contains("selected", true) || it.contains("seçili", true) }) &&
+                RelationshipTabInspector.classifySelectedLabels(listOfNotNull(node.text, node.contentDescription)) == RelationshipTabInspector.VERIFIED
+            }) return XScreen.VERIFIED_FOLLOWERS_LIST
 
         // The selected tab wins over labels of neighboring, unselected tabs.
         if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followingHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWING_LIST
         if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followersHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWERS_LIST
 
-        val verifiedHeader = labels.any { it in XUiVocabulary.verifiedFollowersHeaders }
-        if (verifiedHeader && listEvidence(labels, handleCount, scrollable)) {
-            return XScreen.VERIFIED_FOLLOWERS_LIST
-        }
 
         // X aynı üst sekme şeridinde Followers, Following, Subscribers ve
         // Subscriptions etiketlerini birlikte tutuyor. Ekran türünü yalnızca etiketin

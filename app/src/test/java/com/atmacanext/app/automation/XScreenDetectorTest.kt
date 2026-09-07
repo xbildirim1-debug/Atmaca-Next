@@ -20,12 +20,12 @@ class XScreenDetectorTest {
     )
 
     @Test fun detectsVerifiedFollowersBeforePlainFollowers() {
-        val nodes = listOf(n("Verified Followers"), n("@source"), n("Follow", true), n(scrollable = true))
+        val nodes = listOf(n("Verified Followers", selected = true), n("@source"), n("Follow", true), n(scrollable = true))
         assertEquals(XScreen.VERIFIED_FOLLOWERS_LIST, ScreenDetector.detect(nodes))
     }
 
     @Test fun detectsTurkishVerifiedFollowersVariantFromWorkingXBuild() {
-        val nodes = listOf(n("Doğrulanmış Takipçiler"), n("@source"), n("Sen de takip et", true), n(scrollable = true))
+        val nodes = listOf(n("Doğrulanmış Takipçiler", selected = true), n("@source"), n("Sen de takip et", true), n(scrollable = true))
         assertEquals(XScreen.VERIFIED_FOLLOWERS_LIST, ScreenDetector.detect(nodes))
     }
 

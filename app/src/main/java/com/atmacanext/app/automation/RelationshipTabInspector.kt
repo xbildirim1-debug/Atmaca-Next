@@ -8,6 +8,7 @@ object RelationshipTabInspector {
     const val FOLLOWING = 1
     const val FOLLOWERS = 2
     const val OTHER = 3
+    const val VERIFIED = 4
 
     private val following = setOf("following", "takip edilen", "takip ediliyor")
     private val followers = setOf("followers", "takipçiler", "takipçi")
@@ -24,7 +25,7 @@ object RelationshipTabInspector {
             label == it || label.startsWith("$it,") || label.startsWith("$it ·") ||
                 label.startsWith("$it sekme") || label.startsWith("$it tab")
         } }
-        val types = listOf(FOLLOWING to following, FOLLOWERS to followers, OTHER to other)
+        val types = listOf(VERIFIED to XUiVocabulary.verifiedFollowersHeaders, FOLLOWING to following, FOLLOWERS to followers, OTHER to other)
             .filter { matches(it.second) }.map { it.first }
         return types.singleOrNull() ?: NONE
     }
@@ -32,6 +33,7 @@ object RelationshipTabInspector {
     fun selectedTab(root: AccessibilityNodeInfo?): Int {
         if (root == null) return NONE
         for (node in AccessibilityTree.nodes(root, maxNodes = 900)) {
+            if (!node.isVisibleToUser) continue
             val ownDescription = XUiVocabulary.normalize(node.contentDescription?.toString())
             val selected = node.isSelected || node.isChecked || selectedState.any(ownDescription::contains)
             if (!selected) continue

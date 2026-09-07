@@ -21,10 +21,14 @@ object ListGesture {
     fun backward(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         swipe(service, root, forward = false)
 
+    fun left(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
+        swipe(service, root, forward = true, horizontal = true)
+
     private fun swipe(
         service: AccessibilityService,
         root: AccessibilityNodeInfo?,
         forward: Boolean,
+        horizontal: Boolean = false,
     ): Boolean {
         if (root == null) return false
         val rootBounds = Rect().also(root::getBoundsInScreen)
@@ -47,8 +51,14 @@ object ListGesture {
         val startY = if (forward) adaptiveBottom.toFloat() else adaptiveTop.toFloat()
         val endY = if (forward) adaptiveTop.toFloat() else adaptiveBottom.toFloat()
         val path = Path().apply {
-            moveTo(x, startY)
-            lineTo(x, endY)
+            if (horizontal) {
+                val y = rootBounds.top + rootBounds.height() * 0.55f
+                moveTo(rootBounds.left + rootBounds.width() * 0.82f, y)
+                lineTo(rootBounds.left + rootBounds.width() * 0.18f, y)
+            } else {
+                moveTo(x, startY)
+                lineTo(x, endY)
+            }
         }
         val stroke = GestureDescription.StrokeDescription(path, 0L, 420L)
         return try {

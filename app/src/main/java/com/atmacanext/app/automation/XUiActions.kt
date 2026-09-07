@@ -49,6 +49,7 @@ object XUiActions {
         val accepted = acceptedLabels.map(XUiVocabulary::normalize).toSet()
         val strictMatches = AccessibilityTree.nodes(root, maxNodes = 1_000).mapNotNull { node ->
             if (!isRelationshipActionNode(node)) return@mapNotNull null
+            if (accepted == VerifiedFollowPolicy.plainFollowLabels && !VerifiedFollowPolicy.isPlainFollow(labels(node))) return@mapNotNull null
             val label = normalizedLabel(node) ?: return@mapNotNull null
             if (!matchesActionLabel(label, accepted)) return@mapNotNull null
             val button = clickableAncestor(node) ?: node.takeIf { it.isEnabled } ?: return@mapNotNull null
@@ -185,8 +186,30 @@ object XUiActions {
             XUiVocabulary.postActions,
         )
 
-    fun clickVerifiedTab(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
-        clickByIdOrLabel(service, root, listOf("verified_followers", "verified"), XUiVocabulary.verifiedFollowersHeaders)
+    fun clickFollowersTab(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        val tab = AccessibilityTree.nodes(root, maxNodes = 900).firstOrNull { node ->
+            node.isVisibleToUser && node.isEnabled &&
+                RelationshipTabInspector.classifySelectedLabels(labels(node)) == RelationshipTabInspector.FOLLOWERS
+        } ?: return false
+        return GestureClick.click(service, tab)
+    }
+
+    fun clickVerifiedTab(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        val tab = AccessibilityTree.nodes(root, maxNodes = 900).firstOrNull { node ->
+            if (!node.isVisibleToUser || !node.isEnabled) return@firstOrNull false
+            val raw = labels(node)
+            val id = node.viewIdResourceName.orEmpty().lowercase(Locale.ROOT)
+            val fullHeader = raw.any { label ->
+                val value = XUiVocabulary.normalize(label)
+                setOf("verified followers", "onaylı takipçiler", "doğrulanmış takipçiler").any {
+                    value == it || value.startsWith("$it,") || value.startsWith("$it sekme") || value.startsWith("$it tab")
+                }
+            }
+            fullHeader || ((id.contains("tab") || node.className.toString().contains("tab", true)) &&
+                RelationshipTabInspector.classifySelectedLabels(raw) == RelationshipTabInspector.VERIFIED)
+        } ?: return false
+        return GestureClick.click(service, tab)
+    }
 
     fun clickProfileFollowers(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         XNavigator.clickProfileStat(service, root, followers = true)
@@ -246,9 +269,8 @@ object XUiActions {
         .firstOrNull(String::isNotBlank)
         ?.let(XUiVocabulary::normalize)
 
-    private fun matchesActionLabel(label: String, expected: Set<String>): Boolean = expected.any { token ->
-        label == token || label.startsWith("$token @") || label.startsWith("$token, @")
-    }
+    private fun matchesActionLabel(label: String, expected: Set<String>): Boolean =
+        VerifiedFollowPolicy.matchesAction(label, expected)
 
     private fun findBottomExactAction(root: AccessibilityNodeInfo?, labels: Set<String>): AccessibilityNodeInfo? {
         if (root == null) return null
@@ -288,6 +310,7 @@ object XUiActions {
         return nodes.asSequence().mapNotNull { node ->
             val label = normalizedLabel(node) ?: return@mapNotNull null
             if (!isRelationshipActionNode(node) || !matchesActionLabel(label, accepted)) return@mapNotNull null
+            if (accepted == VerifiedFollowPolicy.plainFollowLabels && !VerifiedFollowPolicy.isPlainFollow(labels(node))) return@mapNotNull null
             val button = clickableAncestor(node) ?: node
             val buttonBounds = android.graphics.Rect().also(button::getBoundsInScreen)
             if (buttonBounds.isEmpty) return@mapNotNull null

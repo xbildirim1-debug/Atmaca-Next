@@ -19,6 +19,7 @@ enum class XFlowStage {
     OPEN_REQUIRED_SURFACE,
     SEEK_UNFOLLOW_DEPTH,
     PROCESS_UNFOLLOW,
+    OPEN_VERIFIED_OWN_PROFILE,
     OPEN_MY_FOLLOWERS,
     FIND_RECENT_FOLLOWER,
     OPEN_SOURCE_PROFILE,
@@ -71,6 +72,7 @@ data class AutomationRuntimeState(
     val sourceIndex: Int = 0,
     val sourceHandle: String? = null,
     val unfollowRevertCount: Int = 0,
+    val verifiedFollowAccountStopped: Boolean = false,
 )
 
 /**
@@ -122,6 +124,10 @@ object AutomationController {
     private var nextActionNotBefore = 0L
     private var accountSettleUntil = 0L
     private var accountSelectionMade = false
+    private val verifiedSourceCandidates = LinkedHashSet<String>()
+    private var verifiedFollowingObservedAt = 0L
+    private var verifiedFollowingStableAt = 0L
+    private var verifiedRevertStreak = 0
     private var cycleStartProgress = 0
     private var unfollowIssuedCount = 0
     private var navRecoveries = 0
@@ -508,8 +514,8 @@ object AutomationController {
                 if (!service.launchXProfile(current.username.orEmpty())) fail("Kendi X profili açılamadı")
             }
             TaskType.VERIFIED_FOLLOW -> {
-                moveStage(XFlowStage.OPEN_MY_FOLLOWERS, "En yeni takipçi için kendi takipçiler listesi açılıyor")
-                if (!service.launchXFollowers(current.username.orEmpty())) fail("Takipçiler bağlantısı açılamadı")
+                moveStage(XFlowStage.OPEN_VERIFIED_OWN_PROFILE, "En yeni takipçi için kendi profilin açılıyor")
+                if (!service.launchXProfile(current.username.orEmpty())) fail("Kendi profilin açılamadı")
             }
             TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW -> openDiscoveryTarget(service)
             TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET -> {
@@ -704,7 +710,18 @@ object AutomationController {
     private fun handleVerifiedFollow(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
         val current = _state.value
         when (current.flowStage) {
+            XFlowStage.OPEN_VERIFIED_OWN_PROFILE -> {
+                val own = XIdentityDetector.normalizeUsername(current.username.orEmpty())
+                if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == own) {
+                    if (XUiActions.clickProfileFollowers(service, root)) {
+                        moveStage(XFlowStage.OPEN_MY_FOLLOWERS, "Kendi takipçiler listenin başı aranıyor")
+                        nextActionNotBefore = now + 700L
+                    } else if (stageTimedOut(now)) return fail("Kendi profilinde takipçiler sayacı bulunamadı")
+                } else if (stageTimedOut(now)) return fail("Kendi profil kimliği doğrulanamadı")
+                service.requestAutomationTick(700L)
+            }
             XFlowStage.OPEN_MY_FOLLOWERS -> {
+                if (now - stageStartedAt > 30_000L) return fail("Kendi takipçiler listesinin başı 30 saniyede doğrulanamadı")
                 if (screen == XScreen.FOLLOWERS_LIST) {
                     val signature = ListViewportController.signature(root)
                     if (lastListSignature == signature) listEndStable++ else listEndStable = 0
@@ -715,6 +732,13 @@ object AutomationController {
                         moveStage(XFlowStage.FIND_RECENT_FOLLOWER, "Takipçiler listesinin başı doğrulandı; en yeni ziyaret edilmemiş takipçi aranıyor")
                     }
                     service.requestAutomationTick(500L)
+                } else if (screen == XScreen.VERIFIED_FOLLOWERS_LIST || screen == XScreen.FOLLOWING_LIST) {
+                    if (XUiActions.clickFollowersTab(service, root)) {
+                        nextActionNotBefore = now + 600L
+                        service.requestAutomationTick(600L)
+                    }
+                    else if (stageTimedOut(now)) fail("Kendi takipçiler sekmesi açılamadı")
+                    else service.requestAutomationTick(500L)
                 } else if (stageTimedOut(now)) recoverOperation(service, "Kendi takipçiler listesi açılamadı")
                 else service.requestAutomationTick(TICK_MS)
             }
@@ -739,10 +763,11 @@ object AutomationController {
             XFlowStage.OPEN_SOURCE_PROFILE -> {
                 val source = sourceHandle ?: return nextVerifiedSource(service, "Kaynak takipçi kayboldu")
                 if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == source) {
+                    sourceHandles += source
                     if (performStep(service, root, screen, "open_source_followers", source) { XUiActions.clickProfileFollowers(service, root) }) {
                         moveStage(XFlowStage.OPEN_SOURCE_FOLLOWERS, "@$source takipçileri açılıyor")
                         service.requestAutomationTick(500L)
-                    }
+                    } else if (stageTimedOut(now)) nextVerifiedSource(service, "@$source takipçiler sayacı bulunamadı")
                 } else if (stageTimedOut(now)) nextVerifiedSource(service, "@$source profili doğrulanamadı")
                 else service.requestAutomationTick(TICK_MS)
             }
@@ -761,27 +786,40 @@ object AutomationController {
                     nextVerifiedSource(service, "Onaylı Takipçiler sekmesi bulunamadı")
                 } else {
                     stageAttempts++
-                    XUiActions.clickVerifiedTab(service, root)
-                    service.requestAutomationTick(500L)
+                    if (!XUiActions.clickVerifiedTab(service, root)) ListGesture.left(service, root)
+                    nextActionNotBefore = now + 650L
+                    service.requestAutomationTick(650L)
                 }
             }
             XFlowStage.PROCESS_VERIFIED_FOLLOW -> {
                 if (screen != XScreen.VERIFIED_FOLLOWERS_LIST) {
-                    nextVerifiedSource(service, "Onaylı Takipçiler listesi kayboldu")
+                    stageAttempts++
+                    if (stageAttempts >= 6) nextVerifiedSource(service, "Onaylı Takipçiler listesi doğrulanamadı")
+                    else {
+                        XUiActions.clickVerifiedTab(service, root)
+                        nextActionNotBefore = now + 650L
+                        service.requestAutomationTick(650L)
+                    }
                     return
                 }
+                stageAttempts = 0
                 if (cycleTargetReached()) {
                     finishCycleOrTask(service, "Onaylı takip döngü limiti tamamlandı")
                     return
                 }
+                XListInspector.visibleHandleRows(root).forEach { row ->
+                    if (verifiedSourceCandidates.size < 200 && row.handle != sourceHandle) verifiedSourceCandidates += row.handle
+                }
                 val target = XUiActions.findRelationshipTarget(
                     root,
-                    acceptedLabels = setOf("takip et", "follow"),
+                    acceptedLabels = VerifiedFollowPolicy.plainFollowLabels,
                     excludedHandles = processedHandles + skippedHandles,
                     fromBottom = false,
                 )
                 if (target != null) {
                     if (performStep(service, root, screen, "follow_verified", target.handle) { XUiActions.clickRelationship(service, target) }) {
+                        verifiedFollowingObservedAt = 0L
+                        verifiedFollowingStableAt = 0L
                         pendingAction = PendingAction(PendingKind.FOLLOW, target.handle)
                         _state.value = current.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now, message = "@${target.handle} takip sonucu doğrulanıyor")
                         service.requestAutomationTick(450L)
@@ -1123,6 +1161,10 @@ object AutomationController {
             }
             PendingKind.FOLLOW -> {
                 val handle = pending.target ?: return fail("Takip hedefi kayboldu")
+                if (_state.value.taskType == TaskType.VERIFIED_FOLLOW) {
+                    verifyVerifiedFollow(service, root, now, pending, handle)
+                    return
+                }
                 if (XUiActions.rowHasAny(root, handle, XUiVocabulary.followingActions)) recordSuccess(service, "@$handle")
                 else if (elapsed >= ACTION_TIMEOUT_MS) {
                     pendingAction = null
@@ -1165,6 +1207,40 @@ object AutomationController {
                 if (screen in setOf(XScreen.HOME, XScreen.TWEET_DETAIL, XScreen.PROFILE) && elapsed >= 700L) recordSuccess(service, pending.target)
                 else if (elapsed >= ACTION_TIMEOUT_MS + 2_000L) fail("Gönderim sonrası oluşturucu kapanmadı; gönderim doğrulanamadı")
                 else service.requestAutomationTick(450L)
+            }
+        }
+    }
+
+    private fun verifyVerifiedFollow(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, now: Long,
+                                     pending: PendingAction, handle: String) {
+        val following = XUiActions.rowHasAny(root, handle, XUiVocabulary.followingActions)
+        val plainFollow = XUiActions.rowHasAny(root, handle, VerifiedFollowPolicy.plainFollowLabels)
+        if (following && !plainFollow && verifiedFollowingObservedAt == 0L) verifiedFollowingObservedAt = now
+        if (following && !plainFollow) {
+            if (verifiedFollowingStableAt == 0L) verifiedFollowingStableAt = now
+        } else verifiedFollowingStableAt = 0L
+        val outcome = VerifiedFollowPolicy.outcome(verifiedFollowingObservedAt > 0L, following, plainFollow,
+            if (verifiedFollowingStableAt > 0L) now - verifiedFollowingStableAt else 0L, now - pending.startedAt)
+        verifiedRevertStreak = VerifiedFollowPolicy.nextStreak(verifiedRevertStreak, outcome)
+        when (outcome) {
+            VerifiedFollowOutcome.WAIT -> service.requestAutomationTick(300L)
+            VerifiedFollowOutcome.SUCCESS -> recordSuccess(service, "@$handle")
+            VerifiedFollowOutcome.REVERTED -> {
+                pendingAction = null
+                skippedHandles += handle
+                if (VerifiedFollowPolicy.stopAccount(verifiedRevertStreak)) {
+                    _state.value = _state.value.copy(status = RuntimeStatus.FAILED, verifiedFollowAccountStopped = true,
+                        message = "Üç ardışık takip Takip et durumuna döndü; bu hesap için takip durduruldu, sıradaki hesaba geçilecek")
+                } else {
+                    _state.value = _state.value.copy(status = RuntimeStatus.RUNNING,
+                        message = "@$handle takip durumu geri döndü ($verifiedRevertStreak/3); başarı sayılmadı")
+                    nextActionNotBefore = now + AutomationTuning.betweenActionsMs
+                    service.requestAutomationTick(AutomationTuning.betweenActionsMs)
+                }
+            }
+            VerifiedFollowOutcome.UNKNOWN -> {
+                pendingAction = null
+                pause("@$handle takip sonucu kesinleşmedi; geri dönüş veya başarı sayılmadı")
             }
         }
     }
@@ -1261,12 +1337,25 @@ object AutomationController {
 
     private fun nextVerifiedSource(service: AtmacaAccessibilityService, reason: String) {
         sourceHandle?.let(sourceHandles::add)
-        sourceHandle = null
+        val own = XIdentityDetector.normalizeUsername(_state.value.username.orEmpty())
+        val next = VerifiedFollowPolicy.nextSource(verifiedSourceCandidates, own, sourceHandles)
+        if (sourceHandles.size >= 100) {
+            pause("100 kaynak profil tarandı; yeni işlem yapılmadan duraklatıldı")
+            return
+        }
         listEndStable = 0
         lastListSignature = ""
-        moveStage(XFlowStage.OPEN_MY_FOLLOWERS, "$reason; kendi takipçiler listesine dönülüyor")
-        if (!service.launchXFollowers(_state.value.username.orEmpty())) fail("Sıradaki kaynak için kendi takipçiler listesi açılamadı")
-        else service.requestAutomationTick(650L)
+        sourceHandle = next
+        if (next != null) {
+            sourceHandles += next
+            verifiedSourceCandidates.remove(next)
+            moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "$reason; açık listeden @$next kaynak profiline geçiliyor")
+            if (!service.launchXProfile(next)) fail("Kaynak profil açılamadı")
+        } else {
+            moveStage(XFlowStage.OPEN_VERIFIED_OWN_PROFILE, "$reason; yeni kaynak için kendi profiline dönülüyor")
+            if (!service.launchXProfile(own)) fail("Yeni kaynak için kendi profilin açılamadı")
+        }
+        service.requestAutomationTick(650L)
     }
 
     private fun openDiscoveryTarget(service: AtmacaAccessibilityService) {
@@ -1498,6 +1587,10 @@ object AutomationController {
         pendingAction = null
         nextActionNotBefore = 0L
         cycleStartProgress = 0
+        verifiedFollowingObservedAt = 0L
+        verifiedFollowingStableAt = 0L
+        verifiedRevertStreak = 0
+        verifiedSourceCandidates.clear()
         unfollowIssuedCount = 0
         popupRecoveries = 0
         listScrolls = 0

@@ -260,6 +260,11 @@ class TaskOrchestrator(
             repository.log("INFO", "ACCOUNT_VERIFIED", item.taskId, item.username, "Görev öncesi aktif X hesabı doğrulandı")
         }
 
+        if (runtime.verifiedFollowAccountStopped) {
+            if (item.status in RUNNABLE_ITEM_STATUSES) skipAndAdvance(runtime.message, skipAccount = true)
+            return
+        }
+
         when (runtime.status) {
             RuntimeStatus.COMPLETED -> {
                 if (item.status == QueueItemStatus.COMPLETED) return

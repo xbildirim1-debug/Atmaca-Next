@@ -1,4 +1,4 @@
-# Atmaca Next — 26.7
+# Atmaca Next — 26.8
 
 **Başka sohbet veya ChatGPT hesabından devam:** önce [DEVIR_NOTU.md](DEVIR_NOTU.md) dosyasını okuyun. Hesap eklemenin başarılı cihaz doğrulaması, 26.6 görev hesabı/takipten çıkma düzeltmeleri, test durumu ve APK bilgileri burada kayıtlıdır.
 
@@ -79,3 +79,7 @@ Her başarılı main derlemesinin APK ve tam ZIP paketini GitHub Releases bölü
 ## 26.7
 
 Geri Takip Et sonucu takipten çıkma başarısı olarak doğrulanır; hesap ve döngü başına başlatılan işlem için ayrıca kesin limit kontrolü vardır. Sonuç belirsizse yeni kişiye geçmek yerine duraklar. Varsayılan bekleme 800 ms, sonuç sabitleme 650 ms. Görev ekranı koyu temaya uyar; yeni görevler yalnız Takip ve Etkileşim sekmelerindedir. Tweet/alıntı oluşturma kaldırıldı. Her Actions APK çıktısında tam paket ZIP ve NOT_DEFTERI.txt bulunur. Cihaz doğrulaması bekleniyor.
+
+## 26.8 — Onaylı kullanıcı takip et
+
+Görevler → Yeni görev → Takip → Onaylı kullanıcı takip et. Kendi profilinin takipçilerinden ilk kaynak açılır; seçili Verified Followers / Onaylı Takipçiler listesinde yalnız Takip et düğmeleri işlenir. Geri takip et ve Takip ediliyor atlanır. Kaynak biterse açık listeden başka profilin onaylı takipçileriyle devam edilir. Üç ardışık Takip ediliyor → Takip et dönüşünde başarı yazılmadan o hesap atlanır ve sıradaki hesap çalışır. Sonuç belirsizse duraklar. Kaynak/profil/sekme doğrulaması ve görev limitleri korunur. Cihaz testi bekleniyor.

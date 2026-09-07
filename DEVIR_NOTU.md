@@ -2,6 +2,20 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.8 — onaylı kullanıcı takip akışı
+
+Kullanıcı önceki şikayette yanlış APK yüklediğini doğruladı ve doğru 26.7 sürümünün güzel çalıştığını bildirdi. 26.7 limit/arayüz düzeltmeleri korunuyor. Yeni istek yalnız onaylı kullanıcı takibi.
+
+- Kendi profil kimliği doğrulanır, takipçi sayacına girilir ve takipçiler listesinin başındaki ilk ziyaret edilmemiş kullanıcı kaynak seçilir. Bu sıralama X'in görünen liste sırasıdır; görünmeyen zaman bilgisi tahmin edilmez.
+- Kaynak profilin takipçileri açılır. Onaylı/Doğrulanmış Takipçiler veya Verified Followers sekmesinin seçili olduğu doğrulanır. Etiket görünüyorsa tıklanır; görünmüyorsa ekran boyutuna göre sola kaydırıp tekrar aranır (en fazla 6 deneme). Görünen ama seçili olmayan başlık takip yetkisi değildir.
+- Yalnız Takip et / Follow düğmeleri işlenir. Geri takip et, Sen de takip et, Follow back ve Takip ediliyor / Following atlanır. Çelişkili metin-açıklama varsa düğmeye basılmaz.
+- Aynı kullanıcı satırında Takip ediliyor durumu en az 2 saniye sabit görülünce başarı sayılır. Satır yoksa veya durum kesinleşmezse 7 saniye sonunda duraklar; başarı veya X limiti uydurulmaz.
+- Takip ediliyor görüldükten sonra aynı satır yeniden Takip et olursa geri dönüş sayılır. Üç ardışık farklı işlemde geri dönüş: mevcut hesap kuyruğundaki çalıştırılabilir işler atlanır ve sıradaki hesabın görevi başlatılır. Bu, kullanıcının istediği durdurma sezgisidir; X günlük limitinin kesin teknik kanıtı değildir. Başarılı takip geri dönüş serisini sıfırlar; sayılmamış geri dönüşler başarılı sayıya eklenmez. Açık X limit/izin/uyarı pencerelerinin genel duraklama davranışı korunur.
+- Kaynakta uygun kişi kalmazsa açık onaylı listeden görülen başka kullanıcı kaynak seçilir; onun profili ve onaylı takipçileriyle devam edilir. Kendi hesap ve ziyaret edilmiş kaynaklar tekrar seçilmez. Açık listeden aday kalmazsa kendi takipçilerinden başka kaynak aranır. 100 kaynakta koruma duraklaması, kendi liste başını bulmada 30 saniye sınırı vardır.
+- Değişen bölümler: AutomationRuntime, TaskOrchestrator, RelationshipTabInspector, ScreenDetector, XUiActions, ListGesture; yeni VerifiedFollowPolicy ve 11 regresyon testi. Önceki iki ekran testi artık seçili sekme kanıtı içerir.
+- Sürüm 26.8-verified-follow, versionCode 56. CI sonucu bekleniyor. Fiziksel telefonda bu yeni akış test edilmedi.
+- APK/TAM-PAKET.zip/kaynak/test ZIP/not defteri GitHub Actions çıktısında üretilir. Kalıcı Releases yayın yetkisi hâlâ etkin değil. Kalıcı imza çözülmedi; yeni debug imzası eski uygulama üstüne kurulumla uyuşmayabilir.
+
 ## 26.7 doğrulanmış teslim
 
 - Kaynak commit: c9a1853f48c115f4d88476db1eebae55e99ec6f1 (main). Bu not güncellemesi aynı kodun devamıdır; başka sohbetten daha yeni kaynak olup olmadığını kontrol et.
