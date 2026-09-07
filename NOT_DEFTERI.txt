@@ -2,6 +2,17 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.7 doğrulanmış teslim
+
+- Kaynak commit: c9a1853f48c115f4d88476db1eebae55e99ec6f1 (main). Bu not güncellemesi aynı kodun devamıdır; başka sohbetten daha yeni kaynak olup olmadığını kontrol et.
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34127246584 . APK/TAM-PAKET ZIP artifact: 10020680411, test/lint rapor artifact: 10020681215.
+- AtmacaNext-26.7.apk: 20.524.764 bayt, SHA256 4c1e0c0a1650e2ed3787b65495993597049e898d3ab440ede2dabfd89d857ab5.
+- Sertifika SHA256: c69d27cbfcaa3e5c38cb42e63559fba4983bc275498a9c9fe84695aeba57fb9d. Teslim 26.6 imzasından farklı; üzerine kurulum mümkün olmayabilir, kaldırma verileri siler. Kullanıcı bilgilendirildi.
+- 114 test geçti. APK sürümü 55 / 26.7-unfollow-limit-ui; INTERNET ve InitializationProvider yok. ZIP CRC, APK hash, tam paketteki APK eşitliği ve test XML toplamları doğrulandı.
+- Tam paket kaynak ZIP, test XML ZIP, APK, SHA256, manifest ve gerçek CI sonuçları eklenmiş NOT_DEFTERI.txt içerir. Kullanıcıya APK ve ZIP doğrudan verilir; GitHub Actions üzerinde aynı paket saklanır. Releases otomatik yayın taslağı önceki yetki engeli nedeniyle etkin değil. Actions artifact sürelidir; kalıcı Releases arşivi tamamlanmış sayılmamalı.
+- Yeni görev sekmeleri arasında geçerken önceki sekmenin seçimi temizlenir; görünmeyen bir görev türü yanlışlıkla eklenmez. Düzenleme ilk açılışında mevcut görevin kategorisi seçilir.
+- Açık cihaz kontrolü: iki hesapta 5+5 (Geri Takip Et sonuçları dahil), belirsiz sonuçta ek kişiye geçmeme, daha kısa aralıklar ve yeni arayüz. Birim test/derleme fiziksel X doğrulaması değildir.
+
 ## 26.7 — limit, hız ve görev ekranı (7 Eylül 2026)
 
 Kullanıcı iki hesapta geçiş ve görevin Atmaca'ya dönüşünü başarılı bildirdi; ikinci hesap limit 5 olmasına rağmen fazladan takipten çıktı. 1000026740.mp4 (219,88 sn) incelendi: ikinci hesapta sonuç düğmeleri Geri Takip Et oluyor. Kod sadece takip et/follow kabul ettiği için bu işlemleri saymayıp yeni kişilere devam ediyordu.
@@ -10,7 +21,7 @@ Kullanıcı iki hesapta geçiş ve görevin Atmaca'ya dönüşünü başarılı 
 - Sonucun sabit görülme süresi 1500 ms yerine 650 ms; varsayılan işlemler arası bekleme 1800 yerine 800 ms. Önceden kullanıcı tarafından kaydedilmiş özel bekleme değeri korunur. Asıl 5–10 sn gecikme Geri Takip Et sonucunun okunmaması nedeniyle oluşuyordu.
 - TasksScreen: diğer ekranların koyu kart/zemin renkleri, okunaklı açık yazı ve yeşil vurgu; beyaz zemin üstünde beyaz yazı hatası giderildi. Yeni görevlerde Takip ve Etkileşim sekmeleri. Tweet/görselli tweet/alıntı oluşturma seçenekleri ve kategori kaldırıldı; eski kayıtlar veritabanından silinmedi, görev ekranındaki çalıştırılabilir listeye dahil edilmez. Yeni görev varsayılanı Takipten çık.
 - Altı yeni regresyon testi: TR/EN Follow back, yanlış etiketler, 5 deneme sınırı, iki hesap, döngü ve kısmi ilerleme.
-- Sürüm 26.7-unfollow-limit-ui, versionCode 55. CI test/lint/APK sonucu henüz bekleniyor; gerçek telefonda 26.7 test edilmedi.
+- Sürüm 26.7-unfollow-limit-ui, versionCode 55. 114 birim testi geçti (0 hata, 0 başarısız, 0 atlanan); test/lint/APK ve imza/manifest kontrolü başarılı. Gerçek telefonda 26.7 test edilmedi.
 - Her derleme GitHub Actions çıktısına APK yanında kaynak ZIP, NOT_DEFTERI.txt, SHA256 ve manifest içeren TAM-PAKET.zip ekler. Yayımlama yetkili Releases taslağı etkinleştirilmedi; önceki otomatik onay engeli sürüyor. Kaynak, test ve notlar main'e kaydedilir. Kalıcı imzalama çözülmedi; farklı debug derlemeleri üzerine kurulum uyuşmayabilir.
 
 ## Kalıcı APK / ZIP ve not defteri arşivi
