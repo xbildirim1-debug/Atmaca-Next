@@ -1,0 +1,32 @@
+name: APK ve ZIP Arsivi
+on:
+  workflow_run:
+    workflows: ["Atmaca Next APK"]
+    types: [completed]
+    branches: [main]
+  push:
+    branches: [main]
+    paths: [".github/workflows/archive-release.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: apk-archive-${{ github.event.workflow_run.id || '34111507110' }}
+  cancel-in-progress: false
+jobs:
+  archive:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: APK, kaynak ZIP ve not defterini yayinla
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id || '34111507110' }}
+        run: python3 scripts/archive_release.py
