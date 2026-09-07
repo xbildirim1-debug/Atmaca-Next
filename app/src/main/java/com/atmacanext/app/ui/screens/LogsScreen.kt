@@ -121,7 +121,7 @@ fun LogsScreen(modifier: Modifier = Modifier) {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AssistChip(onClick = { accountsOnly = !accountsOnly }, label = { Text(if (accountsOnly) "✓ Yalnız hesap taraması" else "Yalnız hesap taraması") })
                     OutlinedButton(enabled = shown.isNotEmpty(), onClick = {
-                        exportText = "Atmaca Next 26.2\n" + shown.asReversed().joinToString("\n") { it.asText() }
+                        exportText = "Atmaca Next 26.3\n" + shown.asReversed().joinToString("\n") { it.asText() }
                         export.launch("AtmacaNext-kayitlar-${System.currentTimeMillis()}.txt")
                     }) { Text("Dışa aktar") }
                 }

@@ -38,6 +38,7 @@ object AccountSyncController {
     private val discovered = linkedSetOf<String>()
     private val processed = linkedSetOf<String>()
     private val skipped = linkedSetOf<String>()
+    private var selectedAt = 0L
     private var targetStartedAt = 0L
     private var timedTarget: String? = null
     private var lastObserved = ""
@@ -183,8 +184,9 @@ object AccountSyncController {
                 val wanted = target ?: run { finish(false, "Hedef hesap bulunamadı"); return }
                 if (screen != XScreen.ACCOUNT_SWITCHER) { tick(service); return }
                 if (XNavigator.clickExactHandle(service, root, wanted)) {
+                    selectedAt = now
                     move(Stage.SETTLE, "@$wanted hesabı açılıyor")
-                    tick(service, AutomationTuning.accountSwitchSettleMs.coerceIn(1500L, 15_000L)); return
+                    tick(service, 300L); return
                 }
                 // Harvest may leave the list at its bottom. Search both directions, with a deadline.
                 val signature = ListViewportController.signature(root)
@@ -210,6 +212,9 @@ object AccountSyncController {
                         OperationLog.i("ACCOUNT_SYNC", "Doğrulandı @${account.username} takipçi=${account.followers} takip=${account.following}")
                         save(service, AccountSwitcherInspector.ProfileStats(account.followers, account.following))
                     } else if (account.username != null && account.username != target) {
+                        if (now - selectedAt < AutomationTuning.accountSwitchSettleMs.coerceIn(1500L, 15_000L)) {
+                            tick(service, 250L); return
+                        }
                         OperationLog.w("ACCOUNT_SYNC", "Hedef @$target; menüde @${account.username}. Yeniden seçiliyor.")
                         // Preserve the deadline when a selection did not actually take effect.
                         stage = Stage.SWITCHER
@@ -219,7 +224,7 @@ object AccountSyncController {
             }
             Stage.SAVING, Stage.IDLE -> Unit
         }
-        if (isActive) tick(service, 650L)
+        if (isActive) tick(service, 300L)
     }
 
     private fun enterSwitcher() {
@@ -290,7 +295,7 @@ object AccountSyncController {
         if (target == null) { finish(skipped.isEmpty(), "${processed.size} hesap güncellendi, ${skipped.size} hesap okunamadı"); return }
         // The drawer already contains the exact current identity and counters. Open its switcher directly.
         move(Stage.SWITCHER, "Sıradaki hesap seçiliyor")
-        serviceRef?.get()?.let { tick(it, 650L) }
+        serviceRef?.get()?.let { tick(it, 300L) }
     }
     private fun move(next: Stage, message: String) {
         stage = next; stageAt = SystemClock.elapsedRealtime(); nextActionAt = 0L; publish(message)
@@ -314,8 +319,12 @@ object AccountSyncController {
             serviceRef?.get()?.let { service ->
                 service.runOnAutomationThread {
                     synchronized(this@AccountSyncController) {
-                        if (token == generation && !isActive && !service.launchAtmaca()) {
-                            _state.value = _state.value.copy(message = "$message. Atmaca Next'i elle aç.")
+                        if (token == generation && !isActive) service.launchAtmaca { returned ->
+                            synchronized(this@AccountSyncController) {
+                                if (!returned && token == generation && !isActive) {
+                                    _state.value = _state.value.copy(message = "$message. Android dönüşü engelledi; Atmaca Next'i aç.")
+                                }
+                            }
                         }
                     }
                 }

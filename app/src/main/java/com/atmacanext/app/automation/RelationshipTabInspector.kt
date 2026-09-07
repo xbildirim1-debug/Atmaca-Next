@@ -16,19 +16,30 @@ object RelationshipTabInspector {
     )
     private val selectedState = setOf("selected", "seçili", "active", "aktif")
 
+    internal fun classifySelectedLabels(raw: List<String>): Int {
+        val labels = raw.map(XUiVocabulary::normalize)
+        // Selected account rows and a selected pager containing several tabs are not tab evidence.
+        if (labels.any { XIdentityDetector.extractHandle(it) != null }) return NONE
+        fun matches(tokens: Set<String>) = labels.any { label -> tokens.any {
+            label == it || label.startsWith("$it,") || label.startsWith("$it ·") ||
+                label.startsWith("$it sekme") || label.startsWith("$it tab")
+        } }
+        val types = listOf(FOLLOWING to following, FOLLOWERS to followers, OTHER to other)
+            .filter { matches(it.second) }.map { it.first }
+        return types.singleOrNull() ?: NONE
+    }
+
     fun selectedTab(root: AccessibilityNodeInfo?): Int {
         if (root == null) return NONE
         for (node in AccessibilityTree.nodes(root, maxNodes = 900)) {
             val ownDescription = XUiVocabulary.normalize(node.contentDescription?.toString())
             val selected = node.isSelected || node.isChecked || selectedState.any(ownDescription::contains)
             if (!selected) continue
-            for (candidate in AccessibilityTree.nodes(node, maxNodes = 16)) {
-                val labels = listOfNotNull(candidate.text?.toString(), candidate.contentDescription?.toString())
-                    .map(XUiVocabulary::normalize)
-                if (labels.any { label -> following.any(label::contains) }) return FOLLOWING
-                if (labels.any { label -> followers.any(label::contains) }) return FOLLOWERS
-                if (labels.any { label -> other.any(label::contains) }) return OTHER
+            val labels = AccessibilityTree.nodes(node, maxNodes = 16).flatMap {
+                listOfNotNull(it.text?.toString(), it.contentDescription?.toString())
             }
+            val tab = classifySelectedLabels(labels)
+            if (tab != NONE) return tab
         }
         return NONE
     }

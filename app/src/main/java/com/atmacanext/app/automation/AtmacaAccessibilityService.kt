@@ -156,56 +156,45 @@ class AtmacaAccessibilityService : AccessibilityService() {
         rootInActiveWindow?.packageName?.toString() == packageName
     }.getOrDefault(false)
 
-    /** X is left in the background. Android 14+ forbids killing another app's process. */
-    private fun closeXBackground() {
-        if (android.os.Build.VERSION.SDK_INT >= 34) {
-            OperationLog.i("NAV", "Atmaca önde; X arka planda (Android kısıtlaması)")
-            return
-        }
-        runCatching {
-            getSystemService(ActivityManager::class.java)?.killBackgroundProcesses(X_PACKAGE)
-            OperationLog.i("NAV", "X için arka plan kapatma isteği gönderildi; zorla durdurma değildir")
-        }
-    }
-
     fun runOnAutomationThread(action: () -> Unit): Boolean =
         workerHandler?.post { action() } == true
 
-    fun launchAtmaca(): Boolean {
-        if (isAtmacaForeground()) { closeXBackground(); return true }
-        return runCatching {
-            startActivity(Intent(this, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            })
-            // Called on the automation worker, never the main UI thread.
-            repeat(5) {
-                SystemClock.sleep(250L)
-                if (isAtmacaForeground()) {
-                    closeXBackground()
-                    OperationLog.i("NAV", "Atmaca Next'e dönüş doğrulandı")
-                    return true
-                }
+    fun launchAtmaca(onResult: ((Boolean) -> Unit)? = null): Boolean {
+        val launchEpoch = lastLaunchAt
+        val token = ++returnGeneration
+        fun attempt(index: Int) {
+            if (token != returnGeneration || lastLaunchAt != launchEpoch) return
+            if (AppForegroundState.resumed || isAtmacaForeground()) {
+                OperationLog.i("NAV", "Atmaca Next'e dönüş doğrulandı")
+                onResult?.invoke(true)
+                return
             }
-            OperationLog.w("NAV", "Atmaca dönüş isteği gönderildi ancak ön plan doğrulanamadı")
-            false
-        }.getOrDefault(false)
+            if (index >= 4) {
+                OperationLog.e("NAV", "Atmaca dönüşü 4 denemede doğrulanamadı; Android ön plana geçişi engelliyor olabilir")
+                onResult?.invoke(false)
+                return
+            }
+            // Bring back the existing task first, preserving the screen and saved UI state.
+            runCatching {
+                getSystemService(ActivityManager::class.java)?.appTasks?.firstOrNull {
+                    it.taskInfo.baseActivity?.packageName == packageName
+                }?.moveToFront()
+            }.onFailure { OperationLog.w("NAV", "Mevcut pencere öne alınamadı: ${it.javaClass.simpleName}") }
+            runCatching {
+                startActivity(Intent(this, MainActivity::class.java).apply {
+                    action = Intent.ACTION_MAIN
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                })
+            }.onFailure { OperationLog.w("NAV", "Atmaca açılışı reddedildi: ${it.javaClass.simpleName}") }
+            mainHandler.postDelayed({ attempt(index + 1) }, 700L)
+        }
+        return mainHandler.post { attempt(0) }
     }
 
-    fun launchAtmacaOnAutomationThread(): Boolean {
-        val handler = workerHandler
-        if (handler != null && handler.looper != Looper.myLooper()) {
-            val returnAttempt = Runnable { launchAtmaca() }
-            val posted = handler.postDelayed(returnAttempt, 150L)
-            // İlk dönüş isteği Android/X geçişi sırasında yutulursa aynı güvenli
-            // akışı bir kez daha çalıştır. launchAtmaca ön-plan kontrolü yaptığı
-            // için ilk deneme başarılıysa bu tekrar hiçbir ekranı değiştirmez.
-            handler.postDelayed(returnAttempt, 5_000L)
-            return posted
-        }
-        val returned = launchAtmaca()
-        handler?.postDelayed({ launchAtmaca() }, 5_000L)
-        return returned
-    }
+    private var returnGeneration = 0L
+
+    fun launchAtmacaOnAutomationThread(): Boolean = launchAtmaca()
 
     fun pressBack():Boolean=performGlobalAction(GLOBAL_ACTION_BACK)
     fun isOutsideSuppressed(now:Long=System.currentTimeMillis()):Boolean=now<suppressOutsideUntil
@@ -233,7 +222,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
             return
         }
         val snapshots = AccessibilityTree.snapshots(root)
-        val screen=ScreenDetector.detect(snapshots)
+        val screen=ScreenDetector.detect(root, snapshots)
         val popup=PopupClassifier.classify(snapshots)
         XUiDiagnostics.record(this,snapshots.take(260),screen,popup)
         AccessibilityServiceState.onEvent(resolvedPackage,screen,popup)

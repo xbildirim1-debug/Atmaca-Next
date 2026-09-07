@@ -534,7 +534,7 @@ object AutomationController {
                     unfollowReverseMode = false
                     listEndStable = 0
                     lastListSignature = ""
-                    moveStage(XFlowStage.SEEK_UNFOLLOW_DEPTH, "Takip edilenlerde 100 farklı kullanıcı derinliği aranıyor")
+                    moveStage(XFlowStage.PROCESS_UNFOLLOW, "Takip edilenler doğrulandı; görünür kullanıcılardan başlanıyor")
                     service.requestAutomationTick(150L)
                 } else if (selectedRelationshipTab == RelationshipTabInspector.FOLLOWING) {
                     // Doğru sekme seçildi fakat satırlar henüz yüklenmedi. Profil
@@ -641,7 +641,7 @@ object AutomationController {
                             lastListSignature = ""
                             _state.value = current.copy(
                                 status = RuntimeStatus.NAVIGATING,
-                                message = "100. hesaptan sonra listenin sonuna ulaşıldı; kalan Limit için geriye doğru güvenle devam ediliyor",
+                                message = "Listenin sonuna ulaşıldı; işlenmemiş kullanıcılar kontrol ediliyor",
                             )
                         }
                     }

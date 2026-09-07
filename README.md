@@ -1,4 +1,4 @@
-# Atmaca Next — 26.2
+# Atmaca Next — 26.3
 
 Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap geçişi ve görev oluşturma/çalıştırma açıktır. Görevler yalnız kullanıcı başlattığında mevcut ekran otomasyon motoruyla çalışır. API ile içerik üretimi kapalıdır; içerik elle girilir.
 
@@ -24,7 +24,7 @@ Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap
 
 ## Geliştirme / APK
 
-JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.2-APK** çıktısını indirin.
+JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.3-APK** çıktısını indirin.
 
 ```sh
 gradle testDebugUnitTest lintDebug :app:assembleDebug
@@ -50,3 +50,12 @@ Eski VALIDATION/BUILD_STATUS dosyaları V25.12.17 paketinden gelen tarihsel notl
 - Ayarlarda işlem/geçiş/görev bekleme süreleri, hata sonrası devam ve kayıt saklama süresi; keşif görevleri için hesap başına hedef listesi.
 - Kayıtlarda hesap taraması filtresi, aşama/ekran/hedef bilgisi ve TXT dışa aktarma.
 - Kullanıcının videosunda dört oturum ve ilk seçimden sonra X ana sayfasında kalma görüldü. Yeni sürüm için fiziksel cihaz doğrulaması gereklidir; birim testler ekran uyumluluğunu kanıtlamaz.
+
+## 26.3 düzeltmeleri
+
+- Kalıcı erişilebilirlik izni ile Android hizmet bağlantısı ayrıldı. İzin açıkken tekrar ayarlara yönlendirme yok; bağlantı için en fazla 10 saniye beklenir. Android tarafından gerçekten kaldırılan izni uygulama kendi kendine veremez.
+- Takipten çıkma artık 100 kullanıcı derinliğini beklemeden doğrulanan Takip edilenler listesindeki görünür kullanıcılardan başlar. Kullanıcı adı, düğme ve işlem sonucu doğrulaması korunur.
+- Servis seçili sekme bilgisini ham erişilebilirlik ağacından okur; sekme açıklamasındaki ek metin liste yüklenmesini engellemez. Seçili sekme, komşu doğrulanmış takipçi başlığından önceliklidir.
+- Tarama aşamaları arası gecikme azaltıldı. Hesap değiştiği kesin olarak görüldüğünde sabit bekleme sonuna kadar beklenmez.
+- Dönüş mevcut Android uygulama penceresini öne alır, açılışı ana iş parçacığında tekrar dener ve Activity yaşam döngüsüyle doğrular. X sürecini öldürme kaldırıldı. Yeni X işlemi başlarsa eski dönüş denemeleri iptal edilir.
+- Yeni APK için fiziksel telefon doğrulaması yapılmadı; birim testler cihazdaki X arayüzü uyumluluğunu kanıtlamaz.

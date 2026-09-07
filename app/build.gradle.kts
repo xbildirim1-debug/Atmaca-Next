@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 50
-        versionName = "26.2-tasks-and-scan-fix"
+        versionCode = 51
+        versionName = "26.3-reliable-navigation"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

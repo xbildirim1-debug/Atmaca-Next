@@ -1,6 +1,11 @@
 package com.atmacanext.app
 
 import android.os.Bundle
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import com.atmacanext.app.automation.AppForegroundState
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -10,6 +15,7 @@ import com.atmacanext.app.ui.AtmacaNextApp
 import com.atmacanext.app.ui.theme.AtmacaNextTheme
 
 class MainActivity : ComponentActivity() {
+    private var connectionCheck: Job? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AccessibilityServiceState.refreshEnabled(this)
@@ -22,8 +28,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onPause() {
+        AppForegroundState.resumed = false
+        connectionCheck?.cancel()
+        super.onPause()
+    }
+
     override fun onResume() {
         super.onResume()
-        AccessibilityServiceState.refreshEnabled(this)
+        AppForegroundState.resumed = true
+        connectionCheck?.cancel()
+        connectionCheck = lifecycleScope.launch {
+            repeat(20) {
+                AccessibilityServiceState.refreshEnabled(this@MainActivity)
+                if (AccessibilityServiceState.health.value.connected) return@launch
+                delay(500L)
+            }
+        }
     }
 }

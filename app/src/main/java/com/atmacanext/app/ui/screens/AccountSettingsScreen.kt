@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
             Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Icon(Icons.Default.AccessibilityNew, null, tint = AtmacaBlue)
                 Text("Ekran okuma", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                StatusLabel(if (health.connected) "Bağlı ve hazır" else "İzin gerekli", health.connected)
+                StatusLabel(if (health.connected) "Bağlı ve hazır" else if (health.enabled) "İzin açık, bağlantı bekleniyor" else "İzin gerekli", health.connected)
                 Text("Başlattığın işlem sırasında X ekranındaki hesap adları ve sayaçlar okunur, hesap değiştirmek için ekrana dokunulur. Şifre veya oturum anahtarı istenmez.", color = TextSecondary)
                 Button(onClick = { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }, enabled = !sync.active) {
                     Text("Erişilebilirlik ayarlarını aç")
@@ -62,7 +62,7 @@ import kotlinx.coroutines.launch
         OutlinedButton(onClick = { logs = true }, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Default.History, null); Spacer(Modifier.width(8.dp)); Text("İşlem kayıtları")
         }
-        Text("Atmaca Next · 26.2\nHesaplar, görevler ve işlem kayıtları", color = TextSecondary, fontSize = 12.sp)
+        Text("Atmaca Next · 26.3\nHesaplar, görevler ve işlem kayıtları", color = TextSecondary, fontSize = 12.sp)
     }
 }
 

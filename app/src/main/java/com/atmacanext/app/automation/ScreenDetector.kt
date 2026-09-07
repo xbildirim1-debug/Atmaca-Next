@@ -4,12 +4,15 @@ import android.view.accessibility.AccessibilityNodeInfo
 
 /** X/Twitter screen detector using independent accessibility labels rather than fixed pixels. */
 object ScreenDetector {
-    fun detect(root: AccessibilityNodeInfo?): XScreen {
+    fun detect(root: AccessibilityNodeInfo?): XScreen = detect(root, AccessibilityTree.snapshots(root))
+
+    fun detect(root: AccessibilityNodeInfo?, nodes: List<NodeSnapshot>): XScreen {
+        if (PopupClassifier.classify(nodes) != PopupType.NONE) return detect(nodes)
         when (RelationshipTabInspector.selectedTab(root)) {
             RelationshipTabInspector.FOLLOWING -> return XScreen.FOLLOWING_LIST
             RelationshipTabInspector.FOLLOWERS -> return XScreen.FOLLOWERS_LIST
         }
-        return detect(AccessibilityTree.snapshots(root))
+        return detect(nodes)
     }
 
     internal fun detect(nodes: List<NodeSnapshot>): XScreen {
@@ -41,6 +44,10 @@ object ScreenDetector {
         val handleCount = explicitHandles.size
         val scrollable = nodes.any { it.scrollable }
         val clickableCount = nodes.count { it.clickable }
+
+        // The selected tab wins over labels of neighboring, unselected tabs.
+        if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followingHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWING_LIST
+        if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followersHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWERS_LIST
 
         val verifiedHeader = labels.any { it in XUiVocabulary.verifiedFollowersHeaders }
         if (verifiedHeader && listEvidence(labels, handleCount, scrollable)) {

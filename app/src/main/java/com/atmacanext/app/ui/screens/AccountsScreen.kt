@@ -1,5 +1,7 @@
 package com.atmacanext.app.ui.screens
 
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.flow.first
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.BorderStroke
@@ -42,7 +44,8 @@ fun AccountsScreen(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var deleteCandidate by remember { mutableStateOf<Account?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    val busy = sync.active || queue.isActive
+    var connecting by remember { mutableStateOf(false) }
+    val busy = sync.active || queue.isActive || connecting
     LazyColumn(modifier, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -60,17 +63,25 @@ fun AccountsScreen(modifier: Modifier = Modifier) {
             Column(Modifier.fillMaxWidth().background(
                 Brush.linearGradient(listOf(CardBackground, AtmacaSky)), RoundedCornerShape(28.dp)).padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                StatusLabel(if (health.connected) "Ekran okuma hazır" else "Kurulum gerekli", health.connected)
+                StatusLabel(if (health.connected) "Ekran okuma hazır" else if (health.enabled) "İzin açık · bağlantı bekleniyor" else "Ekran okuma izni kapalı", health.connected)
                 Text("Tüm hesapların.\nTek bir yerde.", fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold)
                 Text("X'teki açık oturumlarını ekle. Hesaplarını gör, kontrol et ve aralarında geçiş yap.",
                     color = TextSecondary, fontSize = 14.sp, lineHeight = 21.sp)
                 Button(onClick = {
-                    if (!health.connected) context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                    else AccountSyncController.startImport()
+                    AccessibilityServiceState.refreshEnabled(context)
+                    if (!AccessibilityServiceState.health.value.enabled) context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    else scope.launch {
+                        connecting = true
+                        try {
+                            val ready = withTimeoutOrNull(10_000L) { AccessibilityServiceState.health.first { it.connected } }
+                            if (ready != null) AccountSyncController.startImport()
+                            else error = "Ekran okuma iznin açık, ancak Android hizmeti henüz bağlamadı. Biraz sonra tekrar dene."
+                        } finally { connecting = false }
+                    }
                 }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)) {
                     Icon(if (health.connected) Icons.Default.Radar else Icons.Default.AccessibilityNew, null)
                     Spacer(Modifier.width(10.dp))
-                    Text(if (health.connected) "X hesaplarını tara" else "Ekran okumayı etkinleştir")
+                    Text(if (connecting) "Bağlantı bekleniyor…" else if (health.enabled || health.connected) "X hesaplarını tara" else "Ekran okumayı etkinleştir")
                 }
                 Text("Yalnız bu telefonda saklanır · En fazla 10 hesap", fontSize = 11.sp, color = TextSecondary)
             }
