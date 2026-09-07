@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         AppForegroundState.resumed = true
+        getSystemService(android.app.NotificationManager::class.java)?.cancel(1210)
         connectionCheck?.cancel()
         connectionCheck = lifecycleScope.launch {
             repeat(20) {

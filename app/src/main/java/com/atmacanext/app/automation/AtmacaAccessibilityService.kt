@@ -218,8 +218,22 @@ class AtmacaAccessibilityService : AccessibilityService() {
         val title = AccessibilityTree.nodes(root, 700).firstOrNull { node ->
             node.isVisibleToUser && listOf(node.text?.toString(), node.contentDescription?.toString()).any { it?.trim() == "Atmaca Next" }
         } ?: return false
-        // Only the exact app-title card may be opened; never swipe or close another app.
-        return GestureClick.click(this, title)
+        // A header/icon tap can open app-info menus. Prefer the preview in the same card.
+        var ancestor: android.view.accessibility.AccessibilityNodeInfo? = title.parent
+        repeat(6) {
+            val card = ancestor ?: return false
+            val preview = AccessibilityTree.nodes(card, 120).firstOrNull { node ->
+                val marker = (node.viewIdResourceName.orEmpty() + " " + node.className.orEmpty()).lowercase()
+                node.isVisibleToUser && listOf("thumbnail", "snapshot").any(marker::contains)
+            }
+            if (preview != null) return GestureClick.click(this, preview)
+            val marker = (card.viewIdResourceName.orEmpty() + " " + card.className.orEmpty()).lowercase()
+            if (listOf("taskview", "task_view", "taskcard", "task_card").any(marker::contains)) {
+                return GestureClick.click(this, card)
+            }
+            ancestor = card.parent
+        }
+        return false
     }
 
     private val returnGeneration = java.util.concurrent.atomic.AtomicLong(0L)
