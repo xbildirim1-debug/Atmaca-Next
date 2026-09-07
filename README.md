@@ -1,6 +1,6 @@
-# Atmaca Next — 26.5
+# Atmaca Next — 26.6
 
-**Başka sohbet veya ChatGPT hesabından devam:** önce [DEVIR_NOTU.md](DEVIR_NOTU.md) dosyasını okuyun. Son hata, 26.5 düzeltmesi, 95 başarılı test, APK bağlantısı, imza farkı ve kalan cihaz doğrulamaları burada kayıtlıdır.
+**Başka sohbet veya ChatGPT hesabından devam:** önce [DEVIR_NOTU.md](DEVIR_NOTU.md) dosyasını okuyun. Hesap eklemenin başarılı cihaz doğrulaması, 26.6 görev hesabı/takipten çıkma düzeltmeleri, test durumu ve APK bilgileri burada kayıtlıdır.
 
 Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap geçişi ve görev oluşturma/çalıştırma açıktır. Görevler yalnız kullanıcı başlattığında mevcut ekran otomasyon motoruyla çalışır. API ile içerik üretimi kapalıdır; içerik elle girilir.
 
@@ -26,7 +26,7 @@ Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap
 
 ## Geliştirme / APK
 
-JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.5-APK** çıktısını indirin.
+JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.6-APK** çıktısını indirin.
 
 ```sh
 gradle testDebugUnitTest lintDebug :app:assembleDebug

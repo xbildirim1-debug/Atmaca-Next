@@ -296,12 +296,21 @@ object AutomationController {
         }
 
         val pending = pendingAction
-        if (pending?.kind == PendingKind.UNFOLLOW && popup == PopupType.ACTION_CONFIRMATION && !pending.confirmationClicked) {
-            if (XUiActions.clickUnfollowConfirmation(service, root)) {
-                pendingAction = pending.copy(confirmationClicked = true, startedAt = now)
-                _state.value = current.copy(status = RuntimeStatus.VERIFYING, message = "Takibi bırak onayı verildi; ilişki durumu yeniden okunuyor")
-                service.requestAutomationTick(500L)
-            } else fail("Takibi bırak onay düğmesi güvenle bulunamadı")
+        if (pending?.kind == PendingKind.UNFOLLOW && popup == PopupType.ACTION_CONFIRMATION) {
+            when (UnfollowConfirmationPolicy.decide(pending.confirmationClicked, now - pending.startedAt, ACTION_TIMEOUT_MS)) {
+                UnfollowConfirmationDecision.CLICK -> {
+                    if (XUiActions.clickUnfollowConfirmation(service, root)) {
+                        pendingAction = pending.copy(confirmationClicked = true, startedAt = now)
+                        _state.value = current.copy(status = RuntimeStatus.VERIFYING, message = "Takibi bırak onayı verildi; ilişki durumu yeniden okunuyor")
+                        service.requestAutomationTick(500L)
+                    } else fail("Takibi bırak onay düğmesi güvenle bulunamadı")
+                }
+                UnfollowConfirmationDecision.WAIT -> service.requestAutomationTick(350L)
+                UnfollowConfirmationDecision.PAUSE -> {
+                    pendingAction = null
+                    pause("Takibi bırak onayı kapanmadı; sonuç doğrulanamadı")
+                }
+            }
             return
         }
 
@@ -410,12 +419,11 @@ object AutomationController {
             XScreen.HOME -> {
                 if (!performStep(service, root, screen, "open_drawer", target) { XUiActions.clickDrawer(service, root) }) {
                     retryOrRecover(service, "X hesap çekmecesi açılamadı")
-                }
+                } else waitForAccountNavigation(service, now)
             }
             XScreen.ACCOUNT_DRAWER -> {
                 val activeDrawerAccount = AccountSwitcherInspector.readActiveDrawerAccount(root).username
-                val visibleHandles = AccountSwitcherInspector.visibleAccountHandles(root)
-                val targetConfirmed = activeDrawerAccount == target || visibleHandles.singleOrNull() == target
+                val targetConfirmed = activeDrawerAccount == target
                 if (targetConfirmed) {
                     // Çekmece açıkken profil deep-link'i bazı X sürümlerinde yutuluyor.
                     // Aktif hesap kesin olarak kanıtlandıktan sonra çekmecedeki gerçek
@@ -436,29 +444,19 @@ object AutomationController {
                             message = "@$target aktif; çekmecedeki Profil satırı açıldı ve kimlik doğrulanacak",
                         )
                         service.requestAutomationTick(650L)
+                        nextActionNotBefore = now + 1_200L
                     } else {
                         retryOrRecover(service, "Doğrulanan hesabın Profil satırı açılamadı")
                     }
                 } else if (!performStep(service, root, screen, "open_account_switcher", target) { XUiActions.clickAccountSwitcher(service, root) }) {
                     retryOrRecover(service, "X hesap seçici açılamadı")
-                }
+                } else waitForAccountNavigation(service, now)
             }
             XScreen.ACCOUNT_SWITCHER -> {
                 val visibleHandles = AccountSwitcherInspector.visibleAccountHandles(root)
-                if (AccountSwitcherInspector.isSelectedAccount(root, target)) {
-                    // Yeşil seçim işareti + aynı satırdaki kesin @handle aktif hesap
-                    // kanıtıdır. X alt sayfayı kendisi kapatmadığı için geri kapat;
-                    // profil intent'ini ayrı actor turunda göndererek geri eylemiyle
-                    // yarışmasını önle.
-                    accountSelectionMade = true
-                    accountSettleUntil = now + 450L
-                    _state.value = current.copy(
-                        status = RuntimeStatus.SWITCHING_ACCOUNT,
-                        message = "@$target seçili; hesap sayfası kapatılıp profil doğrulanacak",
-                    )
-                    service.pressBack()
-                    service.requestAutomationTick(450L)
-                } else if (performStep(service, root, screen, "select_account", target) { XUiActions.clickExactHandle(service, root, target) }) {
+                // Import already proved this path on the user's device. Always click the
+                // exact target row; a checkmark elsewhere in the sheet is not identity proof.
+                if (performStep(service, root, screen, "select_account", target) { XUiActions.clickExactHandle(service, root, target) }) {
                     accountSelectionMade = true
                     accountSettleUntil = now + AutomationTuning.accountSwitchSettleMs
                     _state.value = current.copy(status = RuntimeStatus.SWITCHING_ACCOUNT, message = "@$target seçildi; X oturumu doğrulanacak")
@@ -476,6 +474,11 @@ object AutomationController {
                 else service.requestAutomationTick(600L)
             }
         }
+    }
+
+    private fun waitForAccountNavigation(service: AtmacaAccessibilityService, now: Long) {
+        nextActionNotBefore = now + 1_200L
+        service.requestAutomationTick(1_200L)
     }
 
     private fun markAccountVerified(service: AtmacaAccessibilityService, detected: String) {
@@ -1075,13 +1078,19 @@ object AutomationController {
                 // "Takip ediliyor" olursa X'in günlük limiti doğrulanmış olur.
                 if (pending.confirmationClicked && unfollowFollowObservedAt > 0L) {
                     when {
-                        rowStillFollowing -> completeUnfollowForDailyLimit(service, handle)
-                        now - unfollowFollowObservedAt >= UNFOLLOW_RESULT_STABLE_MS -> recordSuccess(service, "@$handle")
+                        rowStillFollowing && !rowShowsFollow -> {
+                            // A reverted relationship is not proof of a daily limit. Keep
+                            // successes truthful and pause without rotating to another account.
+                            pendingAction = null
+                            pause("@$handle yeniden Takip ediliyor göründü; işlem doğrulanamadı. X durumunu kontrol et.")
+                        }
+                        rowShowsFollow && !rowStillFollowing && now - unfollowFollowObservedAt >= UNFOLLOW_RESULT_STABLE_MS -> recordSuccess(service, "@$handle")
+                        elapsed >= ACTION_TIMEOUT_MS * 2L -> skipUnfollowTarget(service, handle, "İlişki sonucu kararsız; başarı sayılmadan kullanıcı atlandı")
                         else -> service.requestAutomationTick(350L)
                     }
                     return
                 }
-                if (pending.confirmationClicked && rowShowsFollow) {
+                if (pending.confirmationClicked && rowShowsFollow && !rowStillFollowing) {
                     unfollowFollowObservedAt = now
                     _state.value = _state.value.copy(
                         status = RuntimeStatus.VERIFYING,
@@ -1183,20 +1192,6 @@ object AutomationController {
         afterUnfollowTargetHandled()
         _state.value = current.copy(status = RuntimeStatus.RUNNING, message = "$reason: @$handle")
         service.requestAutomationTick(350L)
-    }
-
-    private fun completeUnfollowForDailyLimit(service: AtmacaAccessibilityService, handle: String) {
-        val current = _state.value
-        pendingAction = null
-        unfollowFollowObservedAt = 0L
-        processedHandles += handle
-        _state.value = current.copy(
-            status = RuntimeStatus.COMPLETED,
-            lastTarget = "@$handle",
-            lastActionAt = System.currentTimeMillis(),
-            message = "@$handle onaydan sonra yeniden Takip ediliyor oldu; X günlük takipten çıkma limiti dolu kabul edildi ve bu hesabın görevi tamamlandı.",
-        )
-        service.launchAtmacaOnAutomationThread()
     }
 
     private fun afterUnfollowTargetHandled() {

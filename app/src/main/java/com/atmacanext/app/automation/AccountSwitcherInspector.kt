@@ -19,17 +19,6 @@ object AccountSwitcherInspector {
 
     private val drawerFollowingLabels = setOf("takip ediyor", "takip edilen", "following")
     private val drawerFollowerLabels = setOf("takipçiler", "takipçi", "followers", "follower")
-    private val selectionTokens = setOf(
-        "selected",
-        "current account",
-        "checked",
-        "checkmark",
-        "seçili",
-        "aktif hesap",
-        "işaretli",
-        "onay işareti",
-    )
-
     fun dedicatedHandle(raw: String?): String? {
         if (raw.isNullOrBlank()) return null
         val text = raw.trim()
@@ -55,15 +44,12 @@ object AccountSwitcherInspector {
         var current: AccessibilityNodeInfo? = handleNode
         repeat(6) {
             val row = current ?: return@repeat
-            val descendants = AccessibilityTree.nodes(row, maxNodes = 45)
-            if (row.isSelected || row.isChecked || descendants.any { it.isSelected || it.isChecked }) {
-                return true
-            }
-            val corpus = descendants.asSequence()
-                .flatMap(::nodeLabels)
-                .joinToString(" ")
-                .let(XUiVocabulary::normalize)
-            if (selectionTokens.any(corpus::contains)) return true
+            val descendants = AccessibilityTree.snapshots(row, maxNodes = 900)
+            // Stop before a shared list/container can lend another account's checkmark.
+            val handles = descendants.flatMap { listOfNotNull(it.text, it.contentDescription) }
+                .mapNotNull(::dedicatedHandle).toSet()
+            if (descendants.size >= 900 || handles != setOf(XIdentityDetector.normalizeUsername(username))) return false
+            if (AccountRowSelectionEvidence.isSelected(descendants, username)) return true
             current = row.parent
         }
         return false

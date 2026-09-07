@@ -22,7 +22,7 @@ object UnfollowOutcomePolicy {
         rowStillFollowing: Boolean,
         timeoutMs: Long,
     ): UnfollowOutcome = when {
-        confirmationClicked && rowShowsFollow -> UnfollowOutcome.SUCCESS
+        confirmationClicked && rowShowsFollow && !rowStillFollowing -> UnfollowOutcome.SUCCESS
         !confirmationClicked && elapsedMs >= timeoutMs -> UnfollowOutcome.UNCONFIRMED
         confirmationClicked && elapsedMs >= timeoutMs && rowStillFollowing -> UnfollowOutcome.UNKNOWN
         confirmationClicked && elapsedMs >= timeoutMs * 2L -> UnfollowOutcome.UNKNOWN

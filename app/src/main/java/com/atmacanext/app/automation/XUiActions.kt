@@ -48,6 +48,7 @@ object XUiActions {
         if (root == null) return null
         val accepted = acceptedLabels.map(XUiVocabulary::normalize).toSet()
         val strictMatches = AccessibilityTree.nodes(root, maxNodes = 1_000).mapNotNull { node ->
+            if (!isRelationshipActionNode(node)) return@mapNotNull null
             val label = normalizedLabel(node) ?: return@mapNotNull null
             if (!matchesActionLabel(label, accepted)) return@mapNotNull null
             val button = clickableAncestor(node) ?: node.takeIf { it.isEnabled } ?: return@mapNotNull null
@@ -73,15 +74,42 @@ object XUiActions {
 
     fun rowHasAny(root: AccessibilityNodeInfo?, handle: String, vocabulary: Set<String>): Boolean {
         val wanted = XIdentityDetector.normalizeUsername(handle)
-        val row = AccessibilityTree.nodes(root, maxNodes = 1_000).asSequence()
-            .filter { node -> labels(node).any { XIdentityDetector.extractHandle(it) == wanted } }
-            .mapNotNull(::userRow)
-            .firstOrNull { rowHandles(it) == setOf(wanted) }
         val normalized = vocabulary.map(XUiVocabulary::normalize).toSet()
-        if (row != null && AccessibilityTree.nodes(row, maxNodes = 100).any { node ->
-                normalizedLabel(node)?.let { matchesActionLabel(it, normalized) } == true
-            }) return true
+        val handles = AccessibilityTree.nodes(root, maxNodes = 1_000).filter { node ->
+            node.isVisibleToUser && labels(node).any { AccountSwitcherInspector.dedicatedHandle(it) == wanted }
+        }
+        for (handleNode in handles) {
+            var row: AccessibilityNodeInfo? = handleNode
+            repeat(7) {
+                val current = row ?: return@repeat
+                val descendants = AccessibilityTree.nodes(current, maxNodes = 100)
+                if (descendants.size >= 100 || rowHandles(current) != setOf(wanted)) {
+                    row = null
+                    return@repeat
+                }
+                val actions = descendants.filter(::isRelationshipActionNode)
+                if (actions.isNotEmpty()) {
+                    return actions.any { action -> labels(action).any {
+                        matchesActionLabel(XUiVocabulary.normalize(it), normalized)
+                    } }
+                }
+                row = current.parent
+            }
+        }
         return relaxedRelationshipTargets(root, normalized, emptySet()).any { it.handle == wanted }
+    }
+
+    private fun isRelationshipActionNode(node: AccessibilityNodeInfo): Boolean {
+        if (!node.isVisibleToUser || !node.isEnabled) return false
+        val id = node.viewIdResourceName.orEmpty().lowercase(Locale.ROOT)
+        val clazz = node.className?.toString().orEmpty().lowercase(Locale.ROOT)
+        if (id.contains("tab") || clazz.contains("tab") || labels(node).any {
+            val label = XUiVocabulary.normalize(it)
+            label.contains("sekme") || label.contains(" tab")
+        }) return false
+        val relationLabels = XUiVocabulary.followActions + XUiVocabulary.followingActions
+        return labels(node).any { matchesActionLabel(XUiVocabulary.normalize(it), relationLabels) } &&
+            (node.isClickable || clazz.contains("button") || id.contains("follow") || node.parent?.isClickable == true)
     }
 
     fun clickUnfollowConfirmation(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
@@ -250,7 +278,8 @@ object XUiActions {
         if (root == null) return emptyList()
         val nodes = AccessibilityTree.nodes(root, maxNodes = 1_100)
         val handleNodes = nodes.asSequence().mapNotNull { node ->
-            val handle = labels(node).asSequence().mapNotNull(XIdentityDetector::extractHandle).firstOrNull()
+            if (!node.isVisibleToUser) return@mapNotNull null
+            val handle = labels(node).asSequence().mapNotNull(AccountSwitcherInspector::dedicatedHandle).firstOrNull()
                 ?: return@mapNotNull null
             val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
             if (bounds.isEmpty) null else Triple(handle, node, bounds)
@@ -258,7 +287,7 @@ object XUiActions {
 
         return nodes.asSequence().mapNotNull { node ->
             val label = normalizedLabel(node) ?: return@mapNotNull null
-            if (!matchesActionLabel(label, accepted) || !node.isEnabled) return@mapNotNull null
+            if (!isRelationshipActionNode(node) || !matchesActionLabel(label, accepted)) return@mapNotNull null
             val button = clickableAncestor(node) ?: node
             val buttonBounds = android.graphics.Rect().also(button::getBoundsInScreen)
             if (buttonBounds.isEmpty) return@mapNotNull null
@@ -276,10 +305,10 @@ object XUiActions {
     }
 
     private fun sameVisualRow(first: android.graphics.Rect, second: android.graphics.Rect): Boolean {
-        val overlap = minOf(first.bottom, second.bottom) - maxOf(first.top, second.top)
-        if (overlap > 0) return true
-        val distance = kotlin.math.abs(first.centerY() - second.centerY())
-        return distance <= maxOf(first.height(), second.height()).coerceAtLeast(1)
+        return RelationshipRowGeometry.matches(
+            first.left, first.top, first.right, first.bottom,
+            second.left, second.top, second.right, second.bottom,
+        )
     }
 
     private fun clickableAncestor(start: AccessibilityNodeInfo): AccessibilityNodeInfo? {

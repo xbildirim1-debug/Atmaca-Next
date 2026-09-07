@@ -2,6 +2,23 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.6 güncellemesi — görev hesabı seçimi / takipten çıkma
+
+Kullanıcı 26.5 hesap eklemesini cihazında BAŞARILI doğruladı: 4 hesap, 0 okunamayan; Atmaca'ya dönüş de doğrulandı (7 Eylül 12:56:15–12:56:55). Hesap ekleme tamamlandı kabul ediliyor; bu akışı yeniden tasarlama.
+
+Yeni sorun: aktif hesabın dışındaki iki hesap seçilerek başlatılan takipten çıkma görevinde hedefe geçilmiyor. Logda hedefin seçili olduğu söylenerek hesap seçici kapanıyor, yanlış aktif hesabın menüsünde seçici tekrar açılıyor. 4 kurtarma denemesi aynı döngüyü tekrarlıyor. Kullanıcı aktif hesapta 1 takipten çıkma sonrası durma da bildirdi; gönderilen log 12:57:46'da ilk denemenin ortasında kesiliyor, ikinci denemenin logu yok. 1000026723.mp4 47 saniye ve başarılı hesap ekleme akışını gösteriyor; görev hatasını gösteren video olarak değerlendirilmemeli.
+
+Kodda bulunan nedenler ve 26.6 değişiklikleri:
+
+- AccountSwitcherInspector.isHandleSelected hedef satırından ortak liste atasına çıkarak başka hesabın seçim işaretini hedefe ait sayabiliyordu. Seçim kanıtı yalnız tek kullanıcı adını içeren alt ağaçla sınırlandı; AccountRowSelectionEvidence eklendi.
+- AutomationRuntime görev hesap seçicisini görünce artık seçili işaretine dayanarak satırı atlamıyor; hesap eklemede cihazda çalışan tam kullanıcı adı tıklamasını yapıyor. Sonrasında aktif menü kimliği ve kendi profilindeki hedef doğrulanıyor. Yanlış hesaptan işlem yapılmıyor.
+- Menü/seçici/profil açılışına 1200 ms yerleşme beklemesi eklendi; olay akışının art arda tıklama üretmesi engelleniyor.
+- Takibi bırak onayına basıldıktan sonra hâlâ görünür olan aynı pencere, genel popup kolunda görevi durdurabiliyordu. UnfollowConfirmationPolicy ile yalnız bir kez onay, kapanış için sınırlı bekleme ve gerçek zaman aşımında duraklatma eklendi.
+- İlişki sonucu kontrolü hedef kullanıcı adı yaprağında durmak yerine o kullanıcıya ait düğmeyi içeren satırı arıyor. Geometrik geri dönüş yalnız dikey olarak örtüşen kullanıcı adı/düğmeyi bağlıyor; komşu satır veya üstteki Following sekmesi bağlanmıyor. RelationshipRowGeometry eklendi.
+- Çelişkili Follow/Following kanıtı başarı sayılmıyor. Takip durumunun geri dönmesi tek başına günlük limit sayılıp görev tamamlanmıyor; doğrulanamayan durum duraklatılıyor. Gerçek X limit penceresinde duraklama korunuyor.
+- Hesap ekleme kayıt/sayaç/harvest akışı değişmedi. İlk işlemden sonra durmanın kullanıcı cihazındaki kesin nedeni ikinci deneme logu olmadan kanıtlanmış değildir; yukarıdakiler kaynakta bulunan hatalardır.
+- Sürüm: 26.6-task-account-switch, versionCode 54. 13 yeni regresyon testi eklendi; CI sonucu aşağıdaki çalışma tamamlanınca güncellenecek.
+
 ## Kullanıcının çalışma tercihi
 
 Kullanıcı sohbet dolduğunda başka ChatGPT hesabından devam ediyor. Yapılan bütün kod değişiklikleri, testler ve güncel durum bu depoda kalmalı. İşi yalnız sohbet mesajında veya geçici çalışma dizininde bırakma. Sonraki düzeltmelerde bu notu güncelle; hangi dalda/commit'te olduklarını ve ana dala aktarılıp aktarılmadıklarını açık yaz. Şifre, token ve özel imzalama anahtarı ekleme.
@@ -10,7 +27,7 @@ Kullanıcı sohbet dolduğunda başka ChatGPT hesabından devam ediyor. Yapılan
 
 - Depo: https://github.com/xbildirim1-debug/Atmaca-Next
 - Ana dal: main.
-- Güncel düzeltme: 26.5-account-sync-home, versionCode 53.
+- Güncel düzeltme: 26.6-task-account-switch, versionCode 54.
 - Android paket adı: com.atmacanext.v258; namespace: com.atmacanext.app.
 - Önceki sürüm: 26.4-reliable-navigation, versionCode 52.
 - 26.5 kod commit'i: 782349ccd7f7a4c9b7808e144623d9fa5c62dbd4.
@@ -58,8 +75,8 @@ Başarılı çalışma: https://github.com/xbildirim1-debug/Atmaca-Next/actions/
 - Türkçe/İngilizce ana akış, seçili Following akışı, gönderi yazarları yüklenirken ekran ayrımı, ham seçili sekme, süslenmiş sekmeler, akış üzerindeki menü/seçici, gerçek ilişki listesi, gizli ana akış ve profil örnekleri kontrol edildi.
 - testDebugUnitTest, lintDebug, assembleDebug ve apksigner verify başarılı.
 - İndirilen APK manifesti ve SHA256 dosyası doğrulandı.
-- Gerçek Android cihazında X oturumlarıyla uçtan uca test YAPILMADI. Birim testi ve başarılı APK derlemesi, kullanıcının telefonundaki tüm akışların çalıştığını kanıtlamaz. Yeni kullanıcı videosu/logu henüz alınmadı.
-- Görevlerin tamamının düzeldiği veya hesapların başarıyla eklendiği iddia edilmemeli.
+- Gerçek Android cihazında X oturumlarıyla uçtan uca test YAPILMADI. Birim testi ve başarılı APK derlemesi, kullanıcının telefonundaki tüm akışların çalıştığını kanıtlamaz. Bu tarihten sonra kullanıcı 26.5 hesap eklemesini cihazında başarıyla doğruladı; yeni görev sorunu en üstte kayıtlı.
+- Görevlerin tamamının düzeldiği iddia edilmemeli. Hesap ekleme için son kullanıcı doğrulaması en üstte.
 
 ## Kullanıcıya teslim edilen APK
 
@@ -96,7 +113,7 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 ## Sonraki asistanın başlayacağı yer
 
 1. Bu dosyayı, README'yi, güncel main commit'ini ve app/build.gradle.kts sürümünü oku. Başka bir sohbetin daha yeni commit eklemiş olabileceğini kontrol et.
-2. Kullanıcıdan gelen yeni 26.5 cihaz testini esas al; henüz gelmemişse test edilmiş gibi konuşma.
+2. Hesap ekleme 26.5 cihaz doğrulaması tamamlandı. Yeni görev düzeltmesinin cihaz sonucunu esas al; henüz yapılmayan testi yapılmış gibi yazma.
 3. Beklenen import akışı: HOME → DRAWER → ACCOUNT_DRAWER → SWITCHER → ACCOUNT_SWITCHER → HARVEST → SELECT → VERIFY_DRAWER → SAVING; sonra sıradaki hesap ve sonunda Atmaca'ya dönüş.
 4. Sorun sürerse ACCOUNT_SYNC ve NAV loglarını, ilgili ekranın erişilebilirlik kanıtını incele. Kullanıcı adını/takip sayaçlarını okumadan hesaba başarı yazma; açılmayan menüye başarılı deme.
 5. Hesap ekleme doğrulandıktan sonra çoklu hesap görev sırası, görev sonu dönüş ve diğer bildirilen görev sorunlarını ayrı kanıtlarla değerlendir. Bu değişiklik bunların tamamını doğrulamaz.
