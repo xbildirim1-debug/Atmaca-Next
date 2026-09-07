@@ -61,10 +61,19 @@ object ScreenDetector {
         if (HomeTimelineEvidence.matches(nodes)) return XScreen.HOME
 
         when (selectedRelationshipTab) {
+            RelationshipTabInspector.OTHER -> return XScreen.UNKNOWN
             RelationshipTabInspector.VERIFIED -> return XScreen.VERIFIED_FOLLOWERS_LIST
             RelationshipTabInspector.FOLLOWING -> return XScreen.FOLLOWING_LIST
             RelationshipTabInspector.FOLLOWERS -> return XScreen.FOLLOWERS_LIST
         }
+
+        val selectedSnapshotTab = nodes.firstNotNullOfOrNull { node ->
+            val selected = node.visible && (node.selected || node.checked ||
+                node.contentDescription.orEmpty().let { it.contains("selected", true) || it.contains("seçili", true) })
+            if (!selected) null else RelationshipTabInspector.classifySelectedLabels(listOfNotNull(node.text, node.contentDescription))
+                .takeIf { it != RelationshipTabInspector.NONE }
+        }
+        if (selectedSnapshotTab == RelationshipTabInspector.OTHER) return XScreen.UNKNOWN
 
         // A verified label beside another tab does not prove the verified list is open.
         if (nodes.any { node -> node.visible && (node.selected || node.checked ||

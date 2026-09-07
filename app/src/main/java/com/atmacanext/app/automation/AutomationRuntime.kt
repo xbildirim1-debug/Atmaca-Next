@@ -727,10 +727,10 @@ object AutomationController {
                         service.requestAutomationTick(500L)
                         return
                     }
-                    val signature = ListViewportController.signature(root)
+                    val signature = RecentFollowerSelector.orderedHandles(AccessibilityTree.snapshots(root), emptySet()).joinToString("|")
                     if (lastListSignature == signature) listEndStable++ else listEndStable = 0
                     lastListSignature = signature
-                    val moved = ListViewportController.tryScrollBackward(root) == ScrollAttemptResult.SCROLLED ||
+                    val moved = ListViewportController.tryScrollUserRowsBackward(root) == ScrollAttemptResult.SCROLLED ||
                         ListGesture.backward(service, root)
                     if (!moved) return pause("Takipçiler listesinin başına kaydırma doğrulanamadı")
                     listScrolls++
@@ -738,15 +738,18 @@ object AutomationController {
                         moveStage(XFlowStage.FIND_RECENT_FOLLOWER, "Takipçiler listesinin başı doğrulandı; en yeni ziyaret edilmemiş takipçi aranıyor")
                     }
                     service.requestAutomationTick(500L)
-                } else if (screen == XScreen.VERIFIED_FOLLOWERS_LIST || screen == XScreen.FOLLOWING_LIST) {
+                } else {
                     if (XUiActions.clickFollowersTab(service, root)) {
                         nextActionNotBefore = now + 600L
                         service.requestAutomationTick(600L)
                     }
-                    else if (stageTimedOut(now)) fail("Kendi takipçiler sekmesi açılamadı")
-                    else service.requestAutomationTick(500L)
-                } else if (stageTimedOut(now)) recoverOperation(service, "Kendi takipçiler listesi açılamadı")
-                else service.requestAutomationTick(TICK_MS)
+                    else if (stageTimedOut(now)) fail("Kendi Followers sekmesi açılamadı")
+                    else {
+                        ListGesture.left(service, root)
+                        nextActionNotBefore = now + 600L
+                        service.requestAutomationTick(600L)
+                    }
+                }
             }
             XFlowStage.FIND_RECENT_FOLLOWER -> {
                 if (screen != XScreen.FOLLOWERS_LIST) {
@@ -754,15 +757,15 @@ object AutomationController {
                     return
                 }
                 val own = XIdentityDetector.normalizeUsername(current.username.orEmpty())
-                val row = XListInspector.visibleHandleRows(root).firstOrNull { it.handle != own && it.handle !in sourceHandles }
-                if (row == null) {
+                val source = RecentFollowerSelector.orderedHandles(AccessibilityTree.snapshots(root), sourceHandles + own).firstOrNull()
+                if (source == null) {
                     if (!scrollForwardAndTrack(service, root)) finishCycleOrTask(service, "Ziyaret edilecek yeni takipçi kalmadı; bulunan kadar onaylı kullanıcı takip edildi")
                     service.requestAutomationTick(500L)
                     return
                 }
-                sourceHandle = row.handle
-                if (performStep(service, root, screen, "open_source_follower", row.handle) { GestureClick.click(service, row.row) }) {
-                    moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "@${row.handle} profili açılıyor")
+                sourceHandle = source
+                if (performStep(service, root, screen, "open_source_follower", source) { service.launchXProfile(source) }) {
+                    moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "Followers listesinin en üstündeki @$source profili açılıyor")
                     service.requestAutomationTick(500L)
                 }
             }
@@ -778,7 +781,8 @@ object AutomationController {
                 else service.requestAutomationTick(TICK_MS)
             }
             XFlowStage.OPEN_SOURCE_FOLLOWERS -> {
-                if (screen == XScreen.FOLLOWERS_LIST || screen == XScreen.VERIFIED_FOLLOWERS_LIST) {
+                if (screen == XScreen.FOLLOWERS_LIST || screen == XScreen.VERIFIED_FOLLOWERS_LIST ||
+                    RelationshipTabInspector.selectedTab(root) == RelationshipTabInspector.OTHER) {
                     moveStage(XFlowStage.OPEN_VERIFIED_TAB, "Onaylı Takipçiler sekmesi aranıyor")
                     service.requestAutomationTick(150L)
                 } else if (stageTimedOut(now)) nextVerifiedSource(service, "Kaynak takipçinin takipçileri açılamadı")
@@ -792,7 +796,7 @@ object AutomationController {
                     nextVerifiedSource(service, "Onaylı Takipçiler sekmesi bulunamadı")
                 } else {
                     stageAttempts++
-                    if (!XUiActions.clickVerifiedTab(service, root)) ListGesture.left(service, root)
+                    if (!XUiActions.clickVerifiedTab(service, root)) ListGesture.right(service, root)
                     nextActionNotBefore = now + 650L
                     service.requestAutomationTick(650L)
                 }
@@ -813,8 +817,9 @@ object AutomationController {
                     finishCycleOrTask(service, "Onaylı takip döngü limiti tamamlandı")
                     return
                 }
-                XListInspector.visibleHandleRows(root).forEach { row ->
-                    if (verifiedSourceCandidates.size < 200 && row.handle != sourceHandle) verifiedSourceCandidates += row.handle
+                RecentFollowerSelector.orderedHandles(AccessibilityTree.snapshots(root), sourceHandles +
+                    XIdentityDetector.normalizeUsername(current.username.orEmpty())).forEach { handle ->
+                    if (verifiedSourceCandidates.size < 200) verifiedSourceCandidates += handle
                 }
                 val target = XUiActions.findRelationshipTarget(
                     root,

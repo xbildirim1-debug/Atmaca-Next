@@ -2,6 +2,18 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.9 — gerçek Followers sekmesi ve değişken ilk kullanıcı
+
+1000026767.mp4 (28,07 sn) incelendi. X, kendi profilinden takipçilere girince Followers you know sekmesinde kalıyor. 1000026769.jpg ve 1000026772.jpg işaretleri gerçek Followers listesinin en üstündeki kullanıcı profilini, ardından o profilin Verified followers listesini gösteriyor. Kullanıcı bu kişinin sürekli değişeceğini açıkça belirtti; örnek kullanıcı adı kodda sabitlenmedi.
+
+- RelationshipTabInspector, Followers you know etiketini OTHER olarak ayırır. ScreenDetector bu seçili sekmeyi düz Followers gibi sınıflamaz; görünür komşu Followers başlığı yeterli değildir.
+- OPEN_MY_FOLLOWERS gerçek Followers sekmesine tıklar; seçili olmasını bekler. Liste başına kaydırmada yatay pager yerine kullanıcı satırlarının dikey kapsayıcısı kullanılır.
+- RecentFollowerSelector görünür, ayrı @kullanıcı_adı alanlarını üstten alta sıralar. Biyografideki bahsetmeler, gizli düğümler, kendi hesap ve ziyaret edilmiş kaynaklar dışarıda kalır. Takip ediliyor veya Geri takip et olması kaynak profil seçimini engellemez. En üst kullanıcı her çalıştırmada yeniden okunur; örnek resimdeki ad kaydedilmez.
+- Kaynak profil, okunan kullanıcı adıyla X içinde açılır ve kimliği doğrulanır. Kaynağın takipçilerinde Followers you know açılırsa yine Verified followers seçimine devam edilir. Resimde Verified followers sol tarafta olduğundan görünmüyorsa sağa hareketle sol sekme gösterilir; öncelik görünür sekmeye doğrudan tıklamadır.
+- Sadece Takip et düğmesini işleme, doğrulanmış işlem limiti, üç ardışık geri dönüşte hesap değiştirme, koyu görev arayüzü korunur.
+- Sürüm 26.9-followers-tab-source, versionCode 57. Sekme ayrımı ve değişken kaynak için 8 yeni regresyon testi. CI bekleniyor; fiziksel cihazda 26.9 test edilmedi.
+- Kod/notlar main, APK ve tam ZIP GitHub Actions çıktısında. Kalıcı imza ve Releases yetkisi konusundaki önceki sınırlamalar devam ediyor.
+
 ## 26.8 doğrulanmış APK ve ZIP teslimi
 
 - Kaynak: 3e4e49b81b217e0588ae1ca3ed6b5f9d7b8debb7, main. Bu not commit'i aynı kodun devamıdır.

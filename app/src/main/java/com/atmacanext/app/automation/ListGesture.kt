@@ -24,6 +24,9 @@ object ListGesture {
     fun left(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         swipe(service, root, forward = true, horizontal = true)
 
+    fun right(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
+        swipe(service, root, forward = false, horizontal = true)
+
     private fun swipe(
         service: AccessibilityService,
         root: AccessibilityNodeInfo?,
@@ -53,8 +56,8 @@ object ListGesture {
         val path = Path().apply {
             if (horizontal) {
                 val y = rootBounds.top + rootBounds.height() * 0.55f
-                moveTo(rootBounds.left + rootBounds.width() * 0.82f, y)
-                lineTo(rootBounds.left + rootBounds.width() * 0.18f, y)
+                moveTo(rootBounds.left + rootBounds.width() * (if (forward) 0.82f else 0.18f), y)
+                lineTo(rootBounds.left + rootBounds.width() * (if (forward) 0.18f else 0.82f), y)
             } else {
                 moveTo(x, startY)
                 lineTo(x, endY)

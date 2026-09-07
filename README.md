@@ -1,4 +1,4 @@
-# Atmaca Next — 26.8
+# Atmaca Next — 26.9
 
 **Başka sohbet veya ChatGPT hesabından devam:** önce [DEVIR_NOTU.md](DEVIR_NOTU.md) dosyasını okuyun. Hesap eklemenin başarılı cihaz doğrulaması, 26.6 görev hesabı/takipten çıkma düzeltmeleri, test durumu ve APK bilgileri burada kayıtlıdır.
 
@@ -83,3 +83,7 @@ Geri Takip Et sonucu takipten çıkma başarısı olarak doğrulanır; hesap ve 
 ## 26.8 — Onaylı kullanıcı takip et
 
 Görevler → Yeni görev → Takip → Onaylı kullanıcı takip et. Kendi profilinin takipçilerinden ilk kaynak açılır; seçili Verified Followers / Onaylı Takipçiler listesinde yalnız Takip et düğmeleri işlenir. Geri takip et ve Takip ediliyor atlanır. Kaynak biterse açık listeden başka profilin onaylı takipçileriyle devam edilir. Üç ardışık Takip ediliyor → Takip et dönüşünde başarı yazılmadan o hesap atlanır ve sıradaki hesap çalışır. Sonuç belirsizse duraklar. Kaynak/profil/sekme doğrulaması ve görev limitleri korunur. Cihaz testi bekleniyor.
+
+## 26.9
+
+Followers you know ile gerçek Followers ayrıldı. Followers listesinin en üstündeki güncel kullanıcı, takip durumundan bağımsız kaynak seçilir. Kullanıcı adı sabit değildir. Ardından onun Verified followers sekmesi açılır. Tam düzeltme ve teslim durumu NOT_DEFTERI.txt içindedir.

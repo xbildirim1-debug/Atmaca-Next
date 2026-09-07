@@ -13,7 +13,7 @@ object RelationshipTabInspector {
     private val following = setOf("following", "takip edilen", "takip ediliyor")
     private val followers = setOf("followers", "takipçiler", "takipçi")
     private val other = setOf(
-        "subscribers", "subscriptions", "aboneler", "abonelikler", "you know", "tanıyor olabileceğin",
+        "subscribers", "subscriptions", "aboneler", "abonelikler", "you know", "followers you know", "tanıdığın takipçiler", "tanıdığınız takipçiler", "tanıyor olabileceğin",
     )
     private val selectedState = setOf("selected", "seçili", "active", "aktif")
 
