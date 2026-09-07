@@ -882,7 +882,7 @@ private fun TaskEditorDialog(
     var selectedAccountIds by remember(originals, availableAccounts) {
         mutableStateOf(originals?.mapTo(linkedSetOf(), ScheduledTask::accountId) ?: setOfNotNull(availableAccounts.firstOrNull { it.isCurrent }?.id ?: availableAccounts.firstOrNull()?.id))
     }
-    var editorGroup by remember { mutableStateOf(TaskGroup.FOLLOW) }
+    var editorGroup by remember(original) { mutableStateOf(original?.type?.let(::taskGroup) ?: TaskGroup.FOLLOW) }
     var selectedTypes by remember(original) { mutableStateOf(setOf(original?.type ?: TaskType.UNFOLLOW)) }
     var limitText by remember(original) {
         mutableStateOf(
@@ -973,7 +973,10 @@ private fun TaskEditorDialog(
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         TaskGroup.entries.forEach { group ->
                             FilterChip(selected = editorGroup == group,
-                                onClick = { editorGroup = group },
+                                onClick = {
+                                    if (editorGroup != group && original == null) selectedTypes = emptySet()
+                                    editorGroup = group
+                                },
                                 label = { Text(group.shortTitle) })
                         }
                     }

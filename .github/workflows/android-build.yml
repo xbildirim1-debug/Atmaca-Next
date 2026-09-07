@@ -36,8 +36,9 @@ jobs:
           cp "$APK" dist/AtmacaNext-26.7.apk
           sha256sum dist/AtmacaNext-26.7.apk > dist/AtmacaNext-26.7.apk.sha256
           cp NOT_DEFTERI.txt dist/NOT_DEFTERI.txt
+          python3 scripts/package_build_notes.py
           git archive --format=zip --output=dist/AtmacaNext-26.7-Kaynak.zip HEAD
-          (cd dist && zip AtmacaNext-26.7-TAM-PAKET.zip *.apk *.sha256 *.xml *.txt *-Kaynak.zip)
+          (cd dist && zip AtmacaNext-26.7-TAM-PAKET.zip *.apk *.sha256 *.xml *.txt *-Kaynak.zip *-Testler.zip)
       - uses: actions/upload-artifact@v4
         with:
           name: AtmacaNext-26.7-APK
