@@ -42,6 +42,8 @@ fun AccountsScreen(modifier: Modifier = Modifier) {
     val queue by AppServices.orchestrator.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var targetOwner by remember { mutableStateOf<Account?>(null) }
+    val targets by AppServices.repository.targetAccounts.collectAsStateWithLifecycle(initialValue = emptyList())
     var deleteCandidate by remember { mutableStateOf<Account?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var connecting by remember { mutableStateOf(false) }
@@ -133,12 +135,13 @@ fun AccountsScreen(modifier: Modifier = Modifier) {
             }
         }
         items(accounts, key = { it.id }) { account ->
-            ModernAccountCard(account, busy, onSwitch = { AccountSyncController.switchTo(account) },
+            ModernAccountCard(account, busy, targets.count { it.ownerAccountId == account.id }, onTargets = { targetOwner = account }, onSwitch = { AccountSyncController.switchTo(account) },
                 onDelete = { deleteCandidate = account })
         }
         item { Text("Sayaçlar X ekranında göründüğü biçimde kaydedilir. Etkin hesap bilgisi son doğrulamayı gösterir.",
             color = TextSecondary, fontSize = 11.sp, lineHeight = 17.sp) }
     }
+    targetOwner?.let { account -> AccountTargetsDialog(account, busy, onDismiss = { targetOwner = null }) }
     deleteCandidate?.let { account ->
         AlertDialog(onDismissRequest = { deleteCandidate = null }, title = { Text("Hesap kaydını kaldır?") },
             text = { Text("${account.username} Atmaca listesinden ve varsa bağlı eski görevlerden kaldırılır. X oturumun açık kalır.") },
@@ -166,7 +169,7 @@ private fun SummaryTile(label: String, value: String, subtitle: String, modifier
 }
 
 @Composable
-private fun ModernAccountCard(account: Account, locked: Boolean, onSwitch: () -> Unit, onDelete: () -> Unit) {
+private fun ModernAccountCard(account: Account, locked: Boolean, targetCount: Int, onTargets: () -> Unit, onSwitch: () -> Unit, onDelete: () -> Unit) {
     Surface(color = CardBackground, shape = RoundedCornerShape(24.dp),
         border = BorderStroke(1.dp, if (account.isCurrent) AtmacaBlue.copy(alpha = .45f) else Divider)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -190,6 +193,9 @@ private fun ModernAccountCard(account: Account, locked: Boolean, onSwitch: () ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 Counter("Takipçi", account.followers, Modifier.weight(1f))
                 Counter("Takip edilen", account.following, Modifier.weight(1f))
+            }
+            OutlinedButton(onClick = onTargets, enabled = !locked, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.PersonAdd, null); Spacer(Modifier.width(8.dp)); Text("Hedef hesap ekle · $targetCount/3")
             }
             OutlinedButton(onClick = onSwitch, enabled = !locked, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 border = BorderStroke(1.dp, Divider)) {

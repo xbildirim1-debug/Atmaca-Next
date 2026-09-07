@@ -4,7 +4,7 @@ import java.util.Locale
 
 object XUiVocabulary {
     val followersHeaders = setOf("takipçiler", "takipçi", "followers", "follower")
-    val followingHeaders = setOf("takip edilen", "following")
+    val followingHeaders = setOf("takip edilen", "takip edilenler", "takip ediliyor", "takip ediyor", "following")
     val verifiedFollowersHeaders = setOf(
         "onaylı takipçiler", "doğrulanmış takipçiler", "verified followers",
         "onaylı", "doğrulanmış", "verified",

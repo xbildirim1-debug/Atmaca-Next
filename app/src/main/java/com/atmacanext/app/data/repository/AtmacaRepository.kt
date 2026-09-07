@@ -270,7 +270,29 @@ class AtmacaRepository(private val db: AtmacaDatabase) {
     }
 
     suspend fun isAccountActive(accountId: String): Boolean = db.accountDao().getAll().firstOrNull { it.id == accountId }?.active == true
-    suspend fun upsertTarget(target: TargetAccount) = db.targetAccountDao().upsert(target.toEntity())
+    suspend fun upsertTarget(target: TargetAccount) = db.withTransaction {
+        val handle = requireNotNull(com.atmacanext.app.domain.policy.TargetPagePolicy.normalize(target.handle)) { "Geçerli bir kullanıcı adı gir" }
+        val owner = requireNotNull(db.accountDao().getAll().firstOrNull { it.id == target.ownerAccountId }) { "Hesap bulunamadı" }
+        require(handle != com.atmacanext.app.domain.policy.TargetPagePolicy.normalize(owner.username)) { "Kendi hesabını hedef seçme" }
+        val existing = db.targetAccountDao().getAll().filter { it.ownerAccountId == target.ownerAccountId }
+        require(com.atmacanext.app.domain.policy.TargetPagePolicy.canAdd(existing.map { it.handle }, handle)) { "Her hesaba en fazla 3 hedef eklenebilir" }
+        val id = existing.firstOrNull { it.handle.equals(handle, true) }?.id
+            ?: java.util.UUID.nameUUIDFromBytes("${target.ownerAccountId}:$handle".toByteArray()).toString()
+        db.targetAccountDao().upsert(target.copy(id = id, handle = handle).toEntity())
+    }
+    suspend fun replaceTargets(ownerId: String, handles: List<String>) = db.withTransaction {
+        require(handles.size <= 3) { "En fazla 3 hedef eklenebilir" }
+        val names = handles.map { requireNotNull(com.atmacanext.app.domain.policy.TargetPagePolicy.normalize(it)) { "Geçersiz kullanıcı adı" } }
+        require(names.distinct().size == names.size) { "Aynı hedef iki kez eklenemez" }
+        val account = requireNotNull(db.accountDao().getAll().firstOrNull { it.id == ownerId }) { "Hesap bulunamadı" }
+        require(names.none { it == com.atmacanext.app.domain.policy.TargetPagePolicy.normalize(account.username) }) { "Kendi hesabını hedef seçme" }
+        db.targetAccountDao().getAll().filter { it.ownerAccountId == ownerId && it.handle !in names }
+            .forEach { db.targetAccountDao().deleteById(it.id) }
+        names.forEach { handle ->
+            upsertTarget(TargetAccount(java.util.UUID.nameUUIDFromBytes("$ownerId:$handle".toByteArray()).toString(), ownerId, handle))
+        }
+    }
+
     suspend fun deleteTarget(id: String) = db.targetAccountDao().deleteById(id)
     suspend fun getActiveTargets(accountId: String): List<TargetAccount> = db.targetAccountDao().getActiveForAccount(accountId).map { it.toDomain() }
 

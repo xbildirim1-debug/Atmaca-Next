@@ -59,3 +59,9 @@ Eski VALIDATION/BUILD_STATUS dosyaları V25.12.17 paketinden gelen tarihsel notl
 - Tarama aşamaları arası gecikme azaltıldı. Hesap değiştiği kesin olarak görüldüğünde sabit bekleme sonuna kadar beklenmez.
 - Dönüş mevcut Android uygulama penceresini öne alır, açılışı ana iş parçacığında tekrar dener ve Activity yaşam döngüsüyle doğrular. X sürecini öldürme kaldırıldı. Yeni X işlemi başlarsa eski dönüş denemeleri iptal edilir.
 - Yeni APK için fiziksel telefon doğrulaması yapılmadı; birim testler cihazdaki X arayüzü uyumluluğunu kanıtlamaz.
+
+## Hesap başına hedef sayfalar
+
+Hesaplar kartındaki **Hedef hesap ekle** ile en fazla üç kullanıcı adı kaydedilir. Yorumcu ve retweetçi görevleri görevi çalıştıran hesabın kendi hedeflerini kullanır. Alan boşaltılıp kaydedilirse hedef kaldırılır; kayıt tek işlemle yapılır.
+
+Hedef profilin en son beş gönderisi taranır; önceki 90 dakika alt sınırı kaldırılmıştır. Ekranda sabitlenmiş/reklam işaretli gönderiler atlanır. Yorum satırında takip düğmesi yoksa erişilebilirlikte açıkça görülen yazar alanından profil açılır; tam kullanıcı adı ve takip sonucu doğrulanır. Yazar bilgisi X tarafından paylaşılmıyorsa metin içindeki @bahsetmelerden hedef üretilmez. Hedef kaydetmek görev başlatmaz; kullanıcı Görevler'den başlatır.

@@ -31,6 +31,8 @@ object XTweetInspector {
                 val corpus = AccessibilityTree.nodes(row, maxNodes = 180)
                     .flatMap { listOfNotNull(it.text?.toString(), it.contentDescription?.toString()) }
                     .joinToString(" ")
+                val rowLabels = AccessibilityTree.nodes(row, 180).flatMap { listOfNotNull(it.text?.toString(), it.contentDescription?.toString()) }.map(XUiVocabulary::normalize)
+                if (rowLabels.any { it in setOf("pinned", "sabitlendi", "sabitlenmiş", "promoted", "reklam") }) return@mapNotNull null
                 val key = statusKey(corpus) ?: stableTextKey(corpus)
                 if (key.isBlank()) return@mapNotNull null
                 val bounds = Rect().also(row::getBoundsInScreen)
@@ -41,6 +43,16 @@ object XTweetInspector {
             .sortedBy { it.bounds.top }
             .toList()
     }
+
+    /** Only the author field of an actual reply row is evidence; body mentions are excluded. */
+    fun visibleReplyAuthors(root: AccessibilityNodeInfo?): List<String> = visibleTweets(root).mapNotNull { tweet ->
+        AccessibilityTree.nodes(tweet.row, 180).firstNotNullOfOrNull { node ->
+            val id = node.viewIdResourceName.orEmpty().lowercase(Locale.ROOT)
+            if (listOf("screen_name", "username", "user_name").none(id::contains)) null
+            else listOfNotNull(node.text?.toString(), node.contentDescription?.toString())
+                .firstNotNullOfOrNull(AccountSwitcherInspector::dedicatedHandle)
+        }
+    }.distinct()
 
     fun eligibleLatestFive(
         rows: Collection<TweetRow>,

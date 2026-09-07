@@ -157,7 +157,7 @@ private fun TaskTargetsPreferences(enabled: Boolean) {
                             id = java.util.UUID.nameUUIDFromBytes("$accountId:$targetHandle".toByteArray()).toString(),
                             ownerAccountId = accountId, handle = targetHandle))
                         handle = ""; feedback = "Hedef eklendi"
-                    } catch (_: Exception) { feedback = "Hedef kaydedilemedi" }
+                    } catch (_: Exception) { feedback = "Hedef kaydedilemedi. Her hesaba en fazla 3 hedef eklenebilir." }
                 }
             }) { Text("Hedef ekle") }
             targets.filter { it.ownerAccountId == owner?.id }.forEach { target ->

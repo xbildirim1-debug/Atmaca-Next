@@ -34,6 +34,8 @@ enum class XFlowStage {
     SCAN_LATEST_TWEETS,
     OPEN_ENGAGEMENT,
     PROCESS_ENGAGEMENT,
+    OPEN_ENGAGER_PROFILE,
+    RETURN_ENGAGEMENT,
     WAIT_INTERVAL,
 }
 
@@ -97,7 +99,7 @@ object AutomationController {
     private const val MIN_DISCOVERY_AGE_MINUTES = 90L
     private const val DISCOVERY_TWEET_LIMIT = 5
 
-    private enum class PendingKind { UNFOLLOW, FOLLOW, DIRECT_FOLLOW, LIKE, RETWEET, BOOKMARK, POST }
+    private enum class PendingKind { UNFOLLOW, FOLLOW, ENGAGER_FOLLOW, DIRECT_FOLLOW, LIKE, RETWEET, BOOKMARK, POST }
     private data class PendingAction(
         val kind: PendingKind,
         val target: String?,
@@ -111,6 +113,7 @@ object AutomationController {
     private var serviceRef: WeakReference<AtmacaAccessibilityService>? = null
     private var activeTask: ScheduledTask? = null
     private var preparedContents: List<String> = emptyList()
+    private var engagerHandle: String? = null
     private var discoveryTargets: List<String> = emptyList()
     private var activeSessionToken: String? = null
     private var pendingAction: PendingAction? = null
@@ -175,7 +178,7 @@ object AutomationController {
         activeSessionToken = session
         activeTask = task
         preparedContents = contents.filter(String::isNotBlank).ifEmpty { listOfNotNull(task.contentText) }
-        discoveryTargets = targets.map(XIdentityDetector::normalizeUsername).filter(String::isNotBlank).distinct().take(10)
+        discoveryTargets = targets.map(XIdentityDetector::normalizeUsername).filter(String::isNotBlank).distinct().take(3)
         val perCycle = task.limit.coerceIn(1, 100)
         val repeats = task.repeatCount.coerceIn(1, 100)
         val total = perCycle * repeats
@@ -918,7 +921,7 @@ object AutomationController {
         when (current.flowStage) {
             XFlowStage.OPEN_DISCOVERY_TARGET -> {
                 if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == target) {
-                    moveStage(XFlowStage.SCAN_LATEST_TWEETS, "@$target profilindeki son 5 gönderi taranıyor; 90 dakikadan yeniler atlanacak")
+                    moveStage(XFlowStage.SCAN_LATEST_TWEETS, "@$target profilindeki en son 5 gönderi taranıyor")
                     service.requestAutomationTick(150L)
                 } else if (stageTimedOut(now)) nextDiscoveryTarget(service, "@$target profili açılamadı")
                 else service.requestAutomationTick(TICK_MS)
@@ -932,13 +935,13 @@ object AutomationController {
                 val rows = XTweetInspector.visibleTweets(root)
                 rows.forEach { row -> if (seen.size < DISCOVERY_TWEET_LIMIT) seen.putIfAbsent(row.key, row.ageMinutes) }
                 val eligible = rows.firstOrNull { row ->
-                    row.key in seen && row.key !in discoveryProcessedTweets && (row.ageMinutes ?: -1L) >= MIN_DISCOVERY_AGE_MINUTES
+                    row.key in seen && row.key !in discoveryProcessedTweets
                 }
                 if (eligible != null) {
                     discoveryTweetKey = eligible.key
                     discoveryProcessedTweets += eligible.key
                     if (performStep(service, root, screen, "open_discovery_tweet", eligible.key) { XTweetInspector.click(service, eligible) }) {
-                        moveStage(XFlowStage.OPEN_ENGAGEMENT, "90+ dakikalık gönderinin etkileşimleri açılıyor")
+                        moveStage(XFlowStage.OPEN_ENGAGEMENT, "Son gönderinin etkileşimleri açılıyor")
                         service.requestAutomationTick(500L)
                     }
                     return
@@ -1003,14 +1006,54 @@ object AutomationController {
                     }
                     return
                 }
+                if (current.taskType == TaskType.COMMENTER_FOLLOW) {
+                    val author = XTweetInspector.visibleReplyAuthors(root).firstOrNull { it !in excluded }
+                    if (author != null) {
+                        engagerHandle = author
+                        moveStage(XFlowStage.OPEN_ENGAGER_PROFILE, "Yorumcu @$author profili doğrulanıyor")
+                        if (!service.launchXProfile(author)) {
+                            skippedHandles += author
+                            returnFromEngager(service)
+                        } else service.requestAutomationTick(500L)
+                        return
+                    }
+                }
                 if (!scrollForwardAndTrack(service, root)) {
                     listEndStable++
                     if (listEndStable >= 3) nextDiscoveryTweet(service, "Bu gönderide yeni takip edilebilir etkileşim kalmadı")
                 }
                 service.requestAutomationTick(500L)
             }
+            XFlowStage.OPEN_ENGAGER_PROFILE -> {
+                val handle = engagerHandle ?: return nextDiscoveryTweet(service, "Yorumcu kimliği bulunamadı")
+                if (screen != XScreen.PROFILE || XIdentityDetector.detectProfileHandle(root) != handle) {
+                    if (stageTimedOut(now)) { skippedHandles += handle; returnFromEngager(service) }
+                    else service.requestAutomationTick(350L)
+                } else if (XUiActions.isDirectFollowing(root)) {
+                    skippedHandles += handle
+                    returnFromEngager(service)
+                } else if (performStep(service, root, screen, "follow_comment_author", handle) { XUiActions.clickDirectFollow(service, root) }) {
+                    pendingAction = PendingAction(PendingKind.ENGAGER_FOLLOW, handle)
+                    service.requestAutomationTick(450L)
+                } else if (stageTimedOut(now)) { skippedHandles += handle; returnFromEngager(service) }
+                else service.requestAutomationTick(350L)
+            }
+            XFlowStage.RETURN_ENGAGEMENT -> {
+                if (screen == XScreen.TWEET_DETAIL) {
+                    moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Sıradaki yorumcu aranıyor")
+                    service.requestAutomationTick(250L)
+                } else if (stageTimedOut(now)) nextDiscoveryTweet(service, "Yorumlara dönüş doğrulanamadı")
+                else service.requestAutomationTick(350L)
+            }
             else -> recoverOperation(service, "Etkileşim takip state'i tutarsızlaştı")
         }
+    }
+
+    private fun returnFromEngager(service: AtmacaAccessibilityService) {
+        engagerHandle = null
+        moveStage(XFlowStage.RETURN_ENGAGEMENT, "Gönderinin yorumlarına dönülüyor")
+        service.pressBack()
+        service.requestAutomationTick(450L)
     }
 
     private fun verifyPendingAction(
@@ -1072,6 +1115,15 @@ object AutomationController {
                     service.requestAutomationTick(250L)
                 } else service.requestAutomationTick(400L)
             }
+            PendingKind.ENGAGER_FOLLOW -> {
+                if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == pending.target && XUiActions.isDirectFollowing(root)) {
+                    recordSuccess(service, pending.target)
+                } else if (elapsed >= ACTION_TIMEOUT_MS) {
+                    pending.target?.let(skippedHandles::add)
+                    pendingAction = null
+                    returnFromEngager(service)
+                } else service.requestAutomationTick(350L)
+            }
             PendingKind.DIRECT_FOLLOW -> {
                 if (XUiActions.isDirectFollowing(root)) recordSuccess(service, pending.target?.let { "@$it" })
                 else if (elapsed >= ACTION_TIMEOUT_MS) fail("Profil takip sonucu doğrulanamadı")
@@ -1117,6 +1169,7 @@ object AutomationController {
         )
         if (cycleTargetReached(next)) finishCycleOrTask(service, "Döngüde ${current.perCycleLimit} doğrulanmış işlem tamamlandı")
         else {
+            if (current.flowStage == XFlowStage.OPEN_ENGAGER_PROFILE) returnFromEngager(service)
             nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.betweenActionsMs
             service.requestAutomationTick(AutomationTuning.betweenActionsMs)
         }
