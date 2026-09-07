@@ -62,7 +62,7 @@ import kotlinx.coroutines.launch
         OutlinedButton(onClick = { logs = true }, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Default.History, null); Spacer(Modifier.width(8.dp)); Text("İşlem kayıtları")
         }
-        Text("Atmaca Next · 26.3\nHesaplar, görevler ve işlem kayıtları", color = TextSecondary, fontSize = 12.sp)
+        Text("Atmaca Next · 26.4\nHesaplar, görevler ve işlem kayıtları", color = TextSecondary, fontSize = 12.sp)
     }
 }
 

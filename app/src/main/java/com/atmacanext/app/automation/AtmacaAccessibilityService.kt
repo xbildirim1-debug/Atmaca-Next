@@ -169,8 +169,26 @@ class AtmacaAccessibilityService : AccessibilityService() {
                 onResult?.invoke(true)
                 return
             }
+            if (index == 2) {
+                OperationLog.w("NAV", "Doğrudan dönüş doğrulanamadı; son uygulamalar açılıyor")
+                performGlobalAction(GLOBAL_ACTION_RECENTS)
+                mainHandler.postDelayed({ attempt(3) }, 1_100L)
+                return
+            }
+            if (index == 3) {
+                val clicked = openOwnRecentTask()
+                OperationLog.i("NAV", "Son uygulamalarda Atmaca kartı tıklama=$clicked")
+                mainHandler.postDelayed({ attempt(4) }, 1_100L)
+                return
+            }
             if (index >= 4) {
-                OperationLog.e("NAV", "Atmaca dönüşü 4 denemede doğrulanamadı; Android ön plana geçişi engelliyor olabilir")
+                OperationLog.e("NAV", "Atmaca dönüşü doğrudan ve son uygulamalar yoluyla doğrulanamadı")
+                runCatching {
+                    val notification = com.atmacanext.app.service.AutomationNotification.build(this, "İşlem sona erdi", "Atmaca Next'e dönmek için dokun", includeActions = false)
+                    if (android.os.Build.VERSION.SDK_INT < 33 || checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        getSystemService(android.app.NotificationManager::class.java)?.notify(1210, notification)
+                    }
+                }.onFailure { OperationLog.w("NAV", "Dönüş bildirimi gösterilemedi: ${it.javaClass.simpleName}") }
                 onResult?.invoke(false)
                 return
             }
@@ -190,6 +208,18 @@ class AtmacaAccessibilityService : AccessibilityService() {
             mainHandler.postDelayed({ attempt(index + 1) }, 700L)
         }
         return mainHandler.post { attempt(0) }
+    }
+
+    private fun openOwnRecentTask(): Boolean {
+        val root = rootInActiveWindow ?: return false
+        val rootPackage = root.packageName?.toString() ?: return false
+        val launcher = packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName
+        if (rootPackage !in setOf(launcher, "com.android.systemui", "com.miui.home")) return false
+        val title = AccessibilityTree.nodes(root, 700).firstOrNull { node ->
+            node.isVisibleToUser && listOf(node.text?.toString(), node.contentDescription?.toString()).any { it?.trim() == "Atmaca Next" }
+        } ?: return false
+        // Only the exact app-title card may be opened; never swipe or close another app.
+        return GestureClick.click(this, title)
     }
 
     private val returnGeneration = java.util.concurrent.atomic.AtomicLong(0L)

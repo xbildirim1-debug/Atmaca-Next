@@ -191,11 +191,16 @@ object ScreenDetector {
     }
 
     private fun looksLikeDialog(nodes: List<NodeSnapshot>, corpus: String): Boolean {
-        val dialogTokens = listOf(
-            "takibi bırak", "takipten çık", "unfollow", "iptal", "cancel", "tamam", "ok",
-            "tekrar dene", "try again", "bir sorun oluştu", "something went wrong",
-        ).count(corpus::contains)
-        return dialogTokens >= 2 && nodes.any { it.className?.contains("button", ignoreCase = true) == true }
+        val dismiss = setOf("iptal", "cancel", "tamam", "ok", "vazgeç", "tekrar dene", "try again", "şimdi değil", "not now", "kapat", "close")
+        val control = nodes.any { node ->
+            node.visible && node.enabled && (node.clickable || node.className.orEmpty().contains("button", true)) &&
+                listOfNotNull(node.text, node.contentDescription).any { XUiVocabulary.normalize(it) in dismiss }
+        }
+        val container = nodes.any {
+            it.visible && (it.className.orEmpty().contains("dialog", true) ||
+                it.viewId.orEmpty().substringAfterLast('/') in setOf("alertTitle", "parentPanel", "dialog_title", "dialog_message"))
+        }
+        return control || container
     }
 
     private fun containsToken(label: String, token: String): Boolean =

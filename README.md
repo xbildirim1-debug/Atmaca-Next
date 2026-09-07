@@ -1,4 +1,4 @@
-# Atmaca Next — 26.3
+# Atmaca Next — 26.4
 
 Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap geçişi ve görev oluşturma/çalıştırma açıktır. Görevler yalnız kullanıcı başlattığında mevcut ekran otomasyon motoruyla çalışır. API ile içerik üretimi kapalıdır; içerik elle girilir.
 
@@ -24,7 +24,7 @@ Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap
 
 ## Geliştirme / APK
 
-JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.3-APK** çıktısını indirin.
+JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.4-APK** çıktısını indirin.
 
 ```sh
 gradle testDebugUnitTest lintDebug :app:assembleDebug
@@ -65,3 +65,7 @@ Eski VALIDATION/BUILD_STATUS dosyaları V25.12.17 paketinden gelen tarihsel notl
 Hesaplar kartındaki **Hedef hesap ekle** ile en fazla üç kullanıcı adı kaydedilir. Yorumcu ve retweetçi görevleri görevi çalıştıran hesabın kendi hedeflerini kullanır. Alan boşaltılıp kaydedilirse hedef kaldırılır; kayıt tek işlemle yapılır.
 
 Hedef profilin en son beş gönderisi taranır; önceki 90 dakika alt sınırı kaldırılmıştır. Ekranda sabitlenmiş/reklam işaretli gönderiler atlanır. Yorum satırında takip düğmesi yoksa erişilebilirlikte açıkça görülen yazar alanından profil açılır; tam kullanıcı adı ve takip sonucu doğrulanır. Yazar bilgisi X tarafından paylaşılmıyorsa metin içindeki @bahsetmelerden hedef üretilmez. Hedef kaydetmek görev başlatmaz; kullanıcı Görevler'den başlatır.
+
+## 26.4 — ikinci hesapta uyarı nedeniyle durma
+
+Kullanıcının logunda ilk hesap başarıyla kaydedildi, ikinci seçimde UNKNOWN_DIALOG nedeniyle tüm tarama kesildi. Metin içindeki “ok” gibi alt dizeler artık ileti penceresi kanıtı sayılmaz; gerçek kontroller/pencere işaretleri kullanılır. Uyarılarda onay verme yoktur: bilinen isteğe bağlı istemler olumsuz düğmeyle, diğerleri geri eylemiyle en fazla iki kez kapatılır; çözülemeyen hesap atlanır. Deneme ve sınırlı arayüz kanıtı kayda eklenir. Doğrudan Atmaca dönüşü doğrulanmazsa son uygulamalarda yalnız tam “Atmaca Next” başlıklı kart açılmaya çalışılır. Bu da başarısızsa izin mevcut olduğunda dönüş bildirimi gösterilir. Gerçek telefonda doğrulama henüz yapılmadı.

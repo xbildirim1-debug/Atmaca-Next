@@ -38,6 +38,8 @@ object AccountSyncController {
     private val discovered = linkedSetOf<String>()
     private val processed = linkedSetOf<String>()
     private val skipped = linkedSetOf<String>()
+    private var popupAttempts = 0
+    private var popupSince = 0L
     private var selectedAt = 0L
     private var targetStartedAt = 0L
     private var timedTarget: String? = null
@@ -73,6 +75,7 @@ object AccountSyncController {
         }
         saveJob?.cancel(); generation++
         discovered.clear(); processed.clear(); skipped.clear(); lastObserved = ""
+        popupAttempts = 0; popupSince = 0L
         target = username?.let(XIdentityDetector::normalizeUsername)
         if (mode == Mode.SWITCH && target?.matches(Regex("[A-Za-z0-9_]{1,15}")) != true) return false
         timedTarget = null; targetStartedAt = 0L
@@ -143,8 +146,27 @@ object AccountSyncController {
         if (now < nextActionAt) { service.requestAutomationTick(nextActionAt - now); return }
         if (stage == Stage.SAVING) { tick(service); return }
         if (popup != PopupType.NONE) {
-            // Account import never accepts arbitrary X confirmations.
-            finish(false, "X bir uyarı gösteriyor. Uyarıyı kontrol edip yeniden dene.")
+            if (popupSince == 0L) {
+                popupSince = now
+                val evidence = AccessibilityTree.snapshots(root, 100).filter {
+                    it.clickable || it.className.orEmpty().contains("dialog", true) ||
+                        it.viewId.orEmpty().contains("alert", true)
+                }.take(16).joinToString(" | ") {
+                    "${XDiagnosticSanitizer.sanitizeViewId(it.viewId)}:${XDiagnosticSanitizer.sanitizeLabel(it.text)}:${it.className?.substringAfterLast('.')}"
+                }
+                OperationLog.w("ACCOUNT_SYNC", "Uyarı @$target tür=$popup stage=$stage controls=$evidence")
+            }
+            // Wait for the switch animation before dismissing; never approve an unknown dialog.
+            if (now - popupSince < 1_200L) { tick(service, 300L); return }
+            if (popupAttempts < 2) {
+                popupAttempts++
+                val closed = ScanPopupRecovery.dismiss(service, root, popup)
+                OperationLog.w("ACCOUNT_SYNC", "Uyarı kapatma @$target deneme=$popupAttempts sonuç=$closed")
+                tick(service, 1_000L)
+            } else {
+                service.pressBack()
+                skipTarget(service, "X uyarısı kapatılamadı ($popup); diğer hesaplar deneniyor")
+            }
             return
         }
         when (stage) {
@@ -255,6 +277,7 @@ object AccountSyncController {
 
     private fun beginSelection() {
         if (timedTarget != target) {
+            popupAttempts = 0; popupSince = 0L
             timedTarget = target; targetStartedAt = SystemClock.elapsedRealtime()
         }
         searchForward = false; searchSignature = null

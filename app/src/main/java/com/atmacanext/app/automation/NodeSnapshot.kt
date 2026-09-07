@@ -15,6 +15,7 @@ data class NodeSnapshot(
     val selected: Boolean = false,
     val checked: Boolean = false,
     val editable: Boolean = false,
+    val visible: Boolean = true,
 )
 
 fun AccessibilityNodeInfo.toSnapshot(): NodeSnapshot {
@@ -32,5 +33,6 @@ fun AccessibilityNodeInfo.toSnapshot(): NodeSnapshot {
         selected = isSelected,
         checked = isChecked,
         editable = isEditable,
+        visible = isVisibleToUser,
     )
 }

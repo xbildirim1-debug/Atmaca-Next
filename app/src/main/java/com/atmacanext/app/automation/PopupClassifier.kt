@@ -14,7 +14,7 @@ object PopupClassifier {
 
     internal fun classify(nodes: List<NodeSnapshot>): PopupType {
         if (nodes.isEmpty()) return PopupType.NONE
-        val corpus = nodes.joinToString(" ") {
+        val corpus = nodes.filter { it.visible }.joinToString(" ") {
             listOfNotNull(it.text, it.contentDescription, it.viewId).joinToString(" ")
         }.lowercase(Locale.ROOT).replace("\u0307", "")
         fun any(vararg tokens: String) = tokens.any(corpus::contains)
