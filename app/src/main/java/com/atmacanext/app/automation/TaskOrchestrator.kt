@@ -29,6 +29,7 @@ class TaskOrchestrator(
     private val contentService: GeminiContentService,
     private val settingsFlow: kotlinx.coroutines.flow.Flow<com.atmacanext.app.data.settings.AppSettings>,
     private val scope: CoroutineScope,
+    private val notifications: com.atmacanext.app.data.notifications.NotificationStore,
 ) {
     private val mutex = Mutex()
     private val _state = MutableStateFlow(AutomationQueueState())
@@ -261,7 +262,20 @@ class TaskOrchestrator(
         }
 
         if (runtime.verifiedFollowAccountStopped) {
-            if (item.status in RUNNABLE_ITEM_STATUSES) skipAndAdvance(runtime.message, skipAccount = true)
+            if (item.status in RUNNABLE_ITEM_STATUSES) {
+                val nextAccount = queue.items.drop(queue.currentIndex + 1).firstOrNull {
+                    it.accountId != item.accountId && it.status in RUNNABLE_ITEM_STATUSES
+                }?.username
+                val continuation = nextAccount?.let { "Sıradaki hesap: $it." } ?: "Kuyrukta başka hesap kalmadı."
+                val message = "Üç farklı kullanıcı art arda Takip ediliyor durumundan Takip et durumuna döndü. " +
+                    "Bu hesabın onaylı takibi durduruldu. Doğrulanan: ${runtime.verifiedCount}/${runtime.limit}. $continuation"
+                val saved = notifications.add(com.atmacanext.app.data.notifications.AccountNotification(
+                    id = "verified-reverts:${queue.sessionId}:${item.accountId}", username = item.username,
+                    message = message, createdAt = System.currentTimeMillis()))
+                repository.log(if (saved) "WARN" else "ERROR", "ACCOUNT_NOTIFICATION", item.taskId, item.username,
+                    message, if (saved) "Bildirim kaydedildi" else "Bildirim gösterildi; kalıcı kayıt başarısız")
+                skipAndAdvance(runtime.message, skipAccount = true)
+            }
             return
         }
 

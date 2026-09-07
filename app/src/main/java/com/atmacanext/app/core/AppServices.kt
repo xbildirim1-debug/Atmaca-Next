@@ -33,6 +33,8 @@ object AppServices {
         private set
     lateinit var contentService: GeminiContentService
         private set
+    lateinit var notifications: com.atmacanext.app.data.notifications.NotificationStore
+        private set
     lateinit var orchestrator: TaskOrchestrator
         private set
     lateinit var reportExporter: ErrorReportExporter
@@ -51,7 +53,8 @@ object AppServices {
         settings = SettingsStore(appContext)
         geminiKeyStore = GeminiKeyStore(appContext)
         contentService = GeminiContentService(geminiKeyStore)
-        orchestrator = TaskOrchestrator(repository, contentService, settings.settings, scope)
+        notifications = com.atmacanext.app.data.notifications.NotificationStore(appContext)
+        orchestrator = TaskOrchestrator(repository, contentService, settings.settings, scope, notifications)
         reportExporter = ErrorReportExporter(appContext, repository, settings)
 
         scope.launch {

@@ -53,6 +53,8 @@ object XUiActions {
             val label = normalizedLabel(node) ?: return@mapNotNull null
             if (!matchesActionLabel(label, accepted)) return@mapNotNull null
             val button = clickableAncestor(node) ?: node.takeIf { it.isEnabled } ?: return@mapNotNull null
+            if (accepted == VerifiedFollowPolicy.plainFollowLabels &&
+                !VerifiedFollowPolicy.isPlainFollow(labels(node) + labels(button))) return@mapNotNull null
             val row = userRow(button) ?: return@mapNotNull null
             val handles = rowHandles(row)
             if (handles.size != 1) return@mapNotNull null
@@ -91,7 +93,7 @@ object XUiActions {
                 val actions = descendants.filter(::isRelationshipActionNode)
                 if (actions.isNotEmpty()) {
                     return actions.any { action ->
-                        if (normalized == VerifiedFollowPolicy.plainFollowLabels) VerifiedFollowPolicy.isPlainFollow(labels(action))
+                        if (normalized == VerifiedFollowPolicy.plainFollowLabels) VerifiedFollowPolicy.isPlainFollow(labels(action) + (clickableAncestor(action)?.let(::labels) ?: emptyList()))
                         else labels(action).any { matchesActionLabel(XUiVocabulary.normalize(it), normalized) }
                     }
                 }
@@ -313,6 +315,8 @@ object XUiActions {
             if (!isRelationshipActionNode(node) || !matchesActionLabel(label, accepted)) return@mapNotNull null
             if (accepted == VerifiedFollowPolicy.plainFollowLabels && !VerifiedFollowPolicy.isPlainFollow(labels(node))) return@mapNotNull null
             val button = clickableAncestor(node) ?: node
+            if (accepted == VerifiedFollowPolicy.plainFollowLabels &&
+                !VerifiedFollowPolicy.isPlainFollow(labels(node) + labels(button))) return@mapNotNull null
             val buttonBounds = android.graphics.Rect().also(button::getBoundsInScreen)
             if (buttonBounds.isEmpty) return@mapNotNull null
             val directHandle = (labels(node) + labels(button)).asSequence()

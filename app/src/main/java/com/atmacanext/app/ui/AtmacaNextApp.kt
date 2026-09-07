@@ -12,6 +12,7 @@ import com.atmacanext.app.ui.screens.*
 import com.atmacanext.app.ui.theme.*
 
 private enum class AppTab(val title: String, val icon: ImageVector) {
+    HOME("Anasayfa", Icons.Default.Home),
     ACCOUNTS("Hesaplar", Icons.Default.PeopleOutline),
     TASKS("Görevler", Icons.Default.TaskAlt),
     SETTINGS("Ayarlar", Icons.Default.Tune),
@@ -19,7 +20,7 @@ private enum class AppTab(val title: String, val icon: ImageVector) {
 
 @Composable
 fun AtmacaNextApp() {
-    var selected by rememberSaveable { mutableStateOf(AppTab.ACCOUNTS.name) }
+    var selected by rememberSaveable { mutableStateOf(AppTab.HOME.name) }
     val tab = AppTab.valueOf(selected)
     Scaffold(containerColor = AppBackground, bottomBar = {
         NavigationBar(containerColor = AppBackground) {
@@ -33,6 +34,7 @@ fun AtmacaNextApp() {
     }) { padding ->
         val modifier = Modifier.padding(padding).fillMaxSize()
         when (tab) {
+            AppTab.HOME -> DashboardScreen(modifier, onAccounts = { selected = AppTab.ACCOUNTS.name }, onTasks = { selected = AppTab.TASKS.name })
             AppTab.ACCOUNTS -> AccountsScreen(modifier)
             AppTab.TASKS -> TasksScreen(modifier)
             AppTab.SETTINGS -> AccountSettingsScreen(modifier)

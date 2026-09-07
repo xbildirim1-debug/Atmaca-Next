@@ -723,11 +723,14 @@ object AutomationController {
             XFlowStage.OPEN_MY_FOLLOWERS -> {
                 if (now - stageStartedAt > 30_000L) return fail("Kendi takipçiler listesinin başı 30 saniyede doğrulanamadı")
                 if (screen == XScreen.FOLLOWERS_LIST) {
-                    if (!ListLoadVerifier.isLoaded(root, XScreen.FOLLOWERS_LIST)) {
+                    val followerNodes = AccessibilityTree.snapshots(root)
+                    // A source can already be followed or have no exposed follow button.
+                    // Dedicated visible usernames, not action buttons, prove source rows.
+                    if (RecentFollowerSelector.orderedHandles(followerNodes, emptySet()).isEmpty()) {
                         service.requestAutomationTick(500L)
                         return
                     }
-                    val signature = RecentFollowerSelector.orderedHandles(AccessibilityTree.snapshots(root), emptySet()).joinToString("|")
+                    val signature = RecentFollowerSelector.viewportSignature(followerNodes)
                     if (lastListSignature == signature) listEndStable++ else listEndStable = 0
                     lastListSignature = signature
                     val moved = ListViewportController.tryScrollUserRowsBackward(root) == ScrollAttemptResult.SCROLLED ||
@@ -1350,10 +1353,9 @@ object AutomationController {
         sourceHandle?.let(sourceHandles::add)
         val own = XIdentityDetector.normalizeUsername(_state.value.username.orEmpty())
         val next = VerifiedFollowPolicy.nextSource(verifiedSourceCandidates, own, sourceHandles)
-        if (sourceHandles.size >= 100) {
-            pause("100 kaynak profil tarandı; yeni işlem yapılmadan duraklatıldı")
-            return
-        }
+        // Preserve verified progress across sources; candidates belong to the list
+        // just exhausted, not an unrelated earlier source.
+        verifiedSourceCandidates.clear()
         listEndStable = 0
         lastListSignature = ""
         sourceHandle = next

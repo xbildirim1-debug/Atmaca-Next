@@ -2,6 +2,28 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.9 — kullanıcının son kuralları ve Anasayfa
+
+Kullanıcı bu çalışmada açıkça şu kapsamı ekledi: yalnız Verified followers sekmesinde Takip et/Follow; hiçbir Geri takip et/Follow back/Sen de takip et düğmesine basma. Düğmenin kendi metniyle beraber tıklanacak üst öğenin açıklaması da denetlenir; çelişki varsa işlem yapılmaz.
+
+Üç farklı hedefte ardışık Takip ediliyor→Takip et geri dönüşü hesabın onaylı takip işlemini durdurur. Başarı sayısı artmaz; sıradaki kuyruk hesabıyla devam edilir. Bu bir kullanıcı durdurma kuralıdır, X günlük limitinin teknik kanıtı değildir. Kuyrukta aynı hesabın kalan çalıştırılabilir işleri önceki akıştaki gibi atlanır. NotificationStore bu olay için kullanıcı adı, doğrulanan/hedef sayısı, tarih ve sıradaki hesabı kalıcı uygulama içi bildirim olarak kaydeder. Olay kimliği kuyruk+hesap bazındadır; tekrar eden runtime olayı bildirim çoğaltmaz. Son 200 bildirim ve okundu durumu SharedPreferences içinde saklanır; uygulama silinirse bunlar da silinir.
+
+Yeni Anasayfa varsayılan sekmedir: sağ üst bildirim zili/okunmamış rozeti, durum özeti, aktif hesap, çalışan görev ve Görevler/Hesaplar kısayolları. Bildirimler zil ile açılır, açılınca mevcut bildirimler okundu işaretlenir. Android push/izin sistemi eklenmedi; istenen bildirim alanı uygulama içindedir.
+
+Kaynakta uygun kişi biterse O KAYNAĞIN onaylı listesinde görülen kullanıcılar arasından rastgele, ziyaret edilmemiş ve kendi hesap olmayan bir kaynak seçilir. Sonraki kaynak açılırken aday havuzu temizlenir; eski kaynaklardan rastgele seçim yapılmaz. 100 kaynakta keyfi durdurma kaldırıldı. Doğrulanmış ilerleme ve işlenmiş hedefler korunur; 10/30 sonrasında kalan 20 için devam edilir. Erişilebilir aday hiç kalmaması, belirsiz işlem sonucu veya gerçek X uyarısı gibi durumlarda limit dolmuş sayılmaz. İlk kaynak yine gerçek Followers listesinin en üstündeki değişken kullanıcıdır; örnek kullanıcı adı kodda sabitlenmez.
+
+4 bildirim regresyon testi eklendi, rastgele kaynak testi uygun aday kümesini/ziyaret edilmiş kaynak dışlamasını denetler. 26.9 tamamlanmış yeni kapsamın CI sonucu ve teslim bilgisi sonraki kayıtla güncellenecek. Yeni Anasayfa ve X akışının fiziksel cihazda çalıştırıldığı iddia edilmez.
+
+## 26.9 tamamlama — gerçek seçili sekme / değişken kaynak
+
+Kullanıcının 1000026767.mp4 videosu yeniden incelendi: Followers you know sekmesinde kalınıyor. İşaretli ekranlar gerçek Followers sekmesinin ilk satırındaki DEĞİŞKEN kullanıcıyı ve onun Verified followers sekmesini gösteriyor. Örnekteki kullanıcı adı sabitlenmedi.
+
+Önceki 26.9 CI (34154887746) 133 testten 1'inde kaldı: switchingToActualFollowersAllowsSourceSelection. Ham seçili sekme ve snapshot yolları farklı davranıyordu; snapshot'ta tek kullanıcı/ilişki düğmesi olmayan liste UNKNOWN oluyordu. ScreenDetector artık her iki yolda da seçili sekmeyi satır yüklenmesinden bağımsız tanır. Followers you know OTHER olarak korunur; başlığın yalnız görünmesi yetmez.
+
+AutomationRuntime kaynak listesi yükleme kontrolünde takip düğmesi aramıyor; görünür, ayrı kullanıcı adı alanını esas alıyor. RecentFollowerSelector liste başı denetiminde kullanıcı adlarıyla beraber dikey sınırları da izler; aynı isimler kayarken erken liste başı kararı verilmez. Her çalıştırmada ilk uygun kullanıcı güncel ekrandan yeniden seçilir. Kaynak profil kimliği doğrulanır, ardından Verified followers seçili olmadan takip işlemi başlamaz. Soldaki Verified followers görünmüyorsa sağa kaydırma ve görünür sekmeye tıklama 26.9 akışında korunur.
+
+5 ek regresyon testi: tek satır/boş seçili sekme, ham-snapshot eşitliği, komşu Verified başlığı, kaymaya devam eden aynı kullanıcılar. Önceki başarısız test değiştirilmeden korunmuştur. CI sonucu bekleniyor; gerçek cihazda yeni 26.9 çalıştırılmadı. Sürüm adı 26.9-followers-tab-source / versionCode 57 korunur; önceki 26.9 yayımlanmış APK üretmemişti. İmza ve kalıcı Releases workflow onay sınırlamaları devam eder.
+
 ## 26.9 — gerçek Followers sekmesi ve değişken ilk kullanıcı
 
 1000026767.mp4 (28,07 sn) incelendi. X, kendi profilinden takipçilere girince Followers you know sekmesinde kalıyor. 1000026769.jpg ve 1000026772.jpg işaretleri gerçek Followers listesinin en üstündeki kullanıcı profilini, ardından o profilin Verified followers listesini gösteriyor. Kullanıcı bu kişinin sürekli değişeceğini açıkça belirtti; örnek kullanıcı adı kodda sabitlenmedi.

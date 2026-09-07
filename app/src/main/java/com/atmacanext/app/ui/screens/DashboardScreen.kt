@@ -15,6 +15,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.rememberCoroutineScope
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Flight
@@ -72,7 +89,7 @@ private fun dashboardCompletedLogicalTaskCount(tasks: List<ScheduledTask>): Int 
     }
 
 @Composable
-fun DashboardScreen(modifier: Modifier = Modifier) {
+fun DashboardScreen(modifier: Modifier = Modifier, onAccounts: () -> Unit = {}, onTasks: () -> Unit = {}) {
     val context = LocalContext.current
     val accessibility by AccessibilityServiceState.health.collectAsStateWithLifecycle()
     val runtime by AutomationController.state.collectAsStateWithLifecycle()
@@ -83,6 +100,32 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
     val sync by AccountSyncController.state.collectAsStateWithLifecycle()
     val currentAccount = accounts.firstOrNull { it.isCurrent }
     var accountMenu by remember { mutableStateOf(false) }
+    val notifications by AppServices.notifications.notifications.collectAsStateWithLifecycle()
+    var showNotifications by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val unread = notifications.count { !it.read }
+    if (showNotifications) {
+        AlertDialog(onDismissRequest = { showNotifications = false }, title = { Text("Bildirimler") },
+            text = {
+                if (notifications.isEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Henüz bildirim yok", fontWeight = FontWeight.SemiBold)
+                        Text("Hesaplarda durdurulan onaylı takip işlemleri ve sonraki hesaba geçişler burada görünecek.")
+                    }
+                } else LazyColumn(Modifier.height(420.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    items(notifications, key = { it.id }) { event ->
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(event.username, color = AtmacaBlue, fontWeight = FontWeight.Bold)
+                            Text("Onaylı takip durduruldu", fontWeight = FontWeight.SemiBold)
+                            Text(event.message, fontSize = 13.sp)
+                            Text(SimpleDateFormat("dd MMM • HH:mm", Locale.forLanguageTag("tr-TR")).format(Date(event.createdAt)),
+                                fontSize = 11.sp, color = TextSecondary)
+                            HorizontalDivider()
+                        }
+                    }
+                }
+            }, confirmButton = { TextButton(onClick = { showNotifications = false }) { Text("Kapat") } })
+    }
 
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
@@ -95,10 +138,26 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
                     CircleIcon(Icons.Filled.Flight, AtmacaBlue)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("Atmaca Next", fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                        Text("Doğrulamalı X görev motoru", color = TextSecondary, fontSize = 12.sp)
+                        Text("Anasayfa", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                        Text("ATMACA NEXT", color = TextSecondary, fontSize = 11.sp)
                     }
+                    IconButton(onClick = {
+                        showNotifications = true
+                        scope.launch { withContext(Dispatchers.IO) { AppServices.notifications.markAllRead() } }
+                    }) {
+                        BadgedBox(badge = { if (unread > 0) Badge { Text(if (unread > 99) "99+" else unread.toString()) } }) {
+                            Icon(Icons.Filled.Notifications, contentDescription = "Bildirimler, $unread okunmamış")
+                        }
+                    }
+                }
+            }
+            item {
+                AtmacaCard {
+                    Text("Kontrol sende.", fontWeight = FontWeight.Bold, fontSize = 30.sp)
+                    Text("Hesaplarını izle, görevlerini yönet.", color = TextSecondary)
+                    Spacer(Modifier.height(12.dp))
                     val statusText = when {
+                        queue.status == QueueStatus.PAUSED -> "Duraklatıldı"
                         queue.isActive -> "Çalışıyor"
                         !accessibility.enabled -> "Servis kapalı"
                         !accessibility.connected -> "Bağlantı bekleniyor"
@@ -113,6 +172,17 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
                             QueueStatus.FAILED,
                         ),
                     )
+                }
+            }
+
+            item {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(onClick = onTasks, modifier = Modifier.weight(1f)) {
+                        Text("Görevlere git")
+                        Spacer(Modifier.width(6.dp))
+                        Icon(Icons.Filled.ArrowForward, null)
+                    }
+                    OutlinedButton(onClick = onAccounts, modifier = Modifier.weight(1f)) { Text("Hesaplarım") }
                 }
             }
 
@@ -144,7 +214,8 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
                         CircleIcon(Icons.Filled.Person, AtmacaNavy)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(currentAccount?.username ?: "Aktif hesap henüz doğrulanmadı", fontWeight = FontWeight.Bold)
+                            Text(currentAccount?.username ?: "Henüz hesap seçilmedi", fontWeight = FontWeight.Bold,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 currentAccount?.displayName?.ifBlank { "X uygulamasındaki açık hesap" }
                                     ?: "Hesaplar bölümünden X hesaplarını ekle",
@@ -216,7 +287,7 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(runtime.message, color = TextSecondary, fontSize = 11.sp)
-                        Text("Ekran ${runtime.activeScreen.name} • Döngü ${runtime.cycleIndex + 1}/${runtime.repeatCount}", color = TextSecondary, fontSize = 10.sp)
+                        Text("Döngü ${runtime.cycleIndex + 1}/${runtime.repeatCount}", color = TextSecondary, fontSize = 11.sp)
                         Spacer(Modifier.height(10.dp))
                         OutlinedButton(onClick = AppServices.orchestrator::stop, modifier = Modifier.fillMaxWidth()) {
                             Icon(Icons.Filled.Stop, null)

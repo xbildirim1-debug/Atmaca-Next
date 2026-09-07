@@ -39,4 +39,34 @@ class RecentFollowerRegressionTest {
         val rows = listOf(n("@own", 0), n("@visited", 100), n("@next", 200), n("@next", 200))
         assertEquals(listOf("next"), RecentFollowerSelector.orderedHandles(rows, setOf("own", "visited")))
     }
+    @Test fun selectedFollowersWithoutRowsIsIdentifiedButNoSourceIsInvented() {
+        val nodes = listOf(n("Followers", selected = true))
+        assertEquals(XScreen.FOLLOWERS_LIST, ScreenDetector.detect(nodes))
+        assertTrue(RecentFollowerSelector.orderedHandles(nodes, emptySet()).isEmpty())
+    }
+    @Test fun selectedVerifiedWithoutRowsIsIdentifiedWithoutInventingTargets() {
+        assertEquals(XScreen.VERIFIED_FOLLOWERS_LIST, ScreenDetector.detect(listOf(n("Verified followers", selected = true))))
+    }
+    @Test fun rawAndSnapshotTabEvidenceAgreeForSingleSource() {
+        for ((title, tab, expected) in listOf(
+            Triple("Followers", RelationshipTabInspector.FOLLOWERS, XScreen.FOLLOWERS_LIST),
+            Triple("Following", RelationshipTabInspector.FOLLOWING, XScreen.FOLLOWING_LIST),
+            Triple("Verified followers", RelationshipTabInspector.VERIFIED, XScreen.VERIFIED_FOLLOWERS_LIST),
+            Triple("Followers you know", RelationshipTabInspector.OTHER, XScreen.UNKNOWN),
+        )) {
+            val nodes = listOf(n(title, selected = true), n("@dynamic_source"))
+            assertEquals(expected, ScreenDetector.detect(nodes))
+            assertEquals(expected, ScreenDetector.detect(nodes, tab))
+        }
+    }
+    @Test fun sameUsersStillMovingCannotProveTopOfList() {
+        val before = listOf(n("@first", 110), n("@second", 300))
+        val moving = listOf(n("@first", 140), n("@second", 330))
+        assertNotEquals(RecentFollowerSelector.viewportSignature(before), RecentFollowerSelector.viewportSignature(moving))
+        assertEquals(RecentFollowerSelector.viewportSignature(before), RecentFollowerSelector.viewportSignature(before.reversed()))
+    }
+    @Test fun unselectedVerifiedTitleDoesNotOverrideActualFollowers() {
+        assertEquals(XScreen.FOLLOWERS_LIST, ScreenDetector.detect(listOf(n("Verified followers"),
+            n("Followers you know"), n("Followers", selected = true), n("@changed_user"))))
+    }
 }

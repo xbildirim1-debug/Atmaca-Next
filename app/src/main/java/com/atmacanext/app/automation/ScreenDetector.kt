@@ -73,13 +73,14 @@ object ScreenDetector {
             if (!selected) null else RelationshipTabInspector.classifySelectedLabels(listOfNotNull(node.text, node.contentDescription))
                 .takeIf { it != RelationshipTabInspector.NONE }
         }
-        if (selectedSnapshotTab == RelationshipTabInspector.OTHER) return XScreen.UNKNOWN
-
-        // A verified label beside another tab does not prove the verified list is open.
-        if (nodes.any { node -> node.visible && (node.selected || node.checked ||
-                listOfNotNull(node.contentDescription).any { it.contains("selected", true) || it.contains("seçili", true) }) &&
-                RelationshipTabInspector.classifySelectedLabels(listOfNotNull(node.text, node.contentDescription)) == RelationshipTabInspector.VERIFIED
-            }) return XScreen.VERIFIED_FOLLOWERS_LIST
+        // Tab identity is independent of row loading and relationship buttons.
+        // Apply the same rule to snapshots as to the raw accessibility tree.
+        when (selectedSnapshotTab) {
+            RelationshipTabInspector.OTHER -> return XScreen.UNKNOWN
+            RelationshipTabInspector.VERIFIED -> return XScreen.VERIFIED_FOLLOWERS_LIST
+            RelationshipTabInspector.FOLLOWERS -> return XScreen.FOLLOWERS_LIST
+            RelationshipTabInspector.FOLLOWING -> return XScreen.FOLLOWING_LIST
+        }
 
         // The selected tab wins over labels of neighboring, unselected tabs.
         if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followingHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWING_LIST

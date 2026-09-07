@@ -24,6 +24,7 @@ internal object VerifiedFollowPolicy {
         VerifiedFollowOutcome.WAIT -> previous
     }
     fun stopAccount(streak: Int): Boolean = streak >= 3
-    fun nextSource(candidates: Collection<String>, own: String, visited: Set<String>): String? =
-        candidates.firstOrNull { it.isNotBlank() && it != own && it !in visited }
+    fun nextSource(candidates: Collection<String>, own: String, visited: Set<String>,
+                   random: kotlin.random.Random = kotlin.random.Random.Default): String? =
+        candidates.filter { it.isNotBlank() && it != own && it !in visited }.distinct().randomOrNull(random)
 }

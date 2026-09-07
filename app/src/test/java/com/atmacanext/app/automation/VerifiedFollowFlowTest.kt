@@ -56,7 +56,9 @@ class VerifiedFollowFlowTest {
         assertEquals(2, VerifiedFollowPolicy.nextStreak(2, VerifiedFollowOutcome.WAIT))
     }
     @Test fun nextSourceUsesOpenListAndAvoidsOwnAndVisitedProfiles() {
-        assertEquals("next", VerifiedFollowPolicy.nextSource(listOf("self", "old", "next", "later"), "self", setOf("old")))
+        val picked = (0..40).map { seed -> VerifiedFollowPolicy.nextSource(
+            listOf("self", "old", "next", "later"), "self", setOf("old"), kotlin.random.Random(seed)) }.toSet()
+        assertEquals(setOf("next", "later"), picked)
         assertNull(VerifiedFollowPolicy.nextSource(listOf("self", "old"), "self", setOf("old")))
     }
 }
