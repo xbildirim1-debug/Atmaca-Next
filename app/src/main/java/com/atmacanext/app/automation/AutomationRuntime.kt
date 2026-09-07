@@ -419,7 +419,6 @@ object AutomationController {
                     // "Profil" satırını tıkla; profil ekranındaki @handle kanıtı gelmeden
                     // hesabı doğrulanmış veya görevi başlamış sayma.
                     accountSelectionMade = true
-                    stageStartedAt = now
                     val profileOpened = XNavigator.execute(
                         service = service,
                         root = root,
@@ -428,22 +427,14 @@ object AutomationController {
                         detectedUsername = activeDrawerAccount,
                     )
                     if (profileOpened) {
+                        stageStartedAt = now
                         _state.value = current.copy(
                             status = RuntimeStatus.SWITCHING_ACCOUNT,
                             message = "@$target aktif; çekmecedeki Profil satırı açıldı ve kimlik doğrulanacak",
                         )
                         service.requestAutomationTick(650L)
                     } else {
-                        // Semantik profil satırı görünmüyorsa çekmeceyi kapatıp profil
-                        // bağlantısını ayrı actor turunda dene. Böylece BACK ile intent
-                        // aynı anda yarışmaz.
-                        accountSettleUntil = now + 450L
-                        _state.value = current.copy(
-                            status = RuntimeStatus.SWITCHING_ACCOUNT,
-                            message = "@$target aktif; çekmece kapatılıp profil bağlantısıyla doğrulanacak",
-                        )
-                        service.pressBack()
-                        service.requestAutomationTick(450L)
+                        retryOrRecover(service, "Doğrulanan hesabın Profil satırı açılamadı")
                     }
                 } else if (!performStep(service, root, screen, "open_account_switcher", target) { XUiActions.clickAccountSwitcher(service, root) }) {
                     retryOrRecover(service, "X hesap seçici açılamadı")
@@ -468,10 +459,7 @@ object AutomationController {
                     accountSelectionMade = true
                     accountSettleUntil = now + AutomationTuning.accountSwitchSettleMs
                     _state.value = current.copy(status = RuntimeStatus.SWITCHING_ACCOUNT, message = "@$target seçildi; X oturumu doğrulanacak")
-                    // X hesap değişimini uygular fakat Hesaplar alt sayfasını açık
-                    // bırakabilir. Seçim tıklaması tamamlandıktan sonra kapatmak,
-                    // 2.5 saniyelik bekleme sonunda profil intent'inin yutulmasını önler.
-                    service.pressBack()
+                    // Wait for the selected account to settle before closing any remaining sheet.
                     service.requestAutomationTick(AutomationTuning.accountSwitchSettleMs)
                 } else if (target in visibleHandles) {
                     // Görünür olmak seçili olmak değildir. Yanlış hesaptan işlem
