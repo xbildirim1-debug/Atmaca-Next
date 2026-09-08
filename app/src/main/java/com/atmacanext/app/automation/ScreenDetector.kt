@@ -171,7 +171,8 @@ object ScreenDetector {
             label.length < 100 && label.any(Char::isDigit) &&
                 listOf("yanıt", "replies", "beğeni", "likes", "yeniden gönder", "reposts").any(label::contains)
         }
-        if (explicitDetailId || (hasBack && hasDetailTitle &&
+        val scrolledDetail = detailReplyEntry && labels.any(EngagementListEvidence::openLabel)
+        if (explicitDetailId || scrolledDetail || (hasBack && hasDetailTitle &&
                 ((tweetActionCount >= 2 && tweetIds >= 1) || detailReplyEntry || numberedActions >= 2))) {
             return XScreen.TWEET_DETAIL
         }

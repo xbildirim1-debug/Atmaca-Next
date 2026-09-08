@@ -17,6 +17,7 @@ object XTweetInspector {
         val row: AccessibilityNodeInfo,
         val bounds: Rect,
         val author: String? = null,
+        val textTarget: AccessibilityNodeInfo? = null,
     )
 
     fun visibleTweets(root: AccessibilityNodeInfo?, nowMillis: Long = System.currentTimeMillis()): List<TweetRow> {
@@ -27,7 +28,7 @@ object XTweetInspector {
                 val raw = listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(" ")
                 val hasTweetId = id.contains("tweet") || id.contains("status") || raw.contains("/status/")
                 if (!node.isVisibleToUser) return@mapNotNull null
-                val age = listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).firstNotNullOfOrNull { parseAgeMinutes(it, nowMillis) }
+                val age = listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).firstNotNullOfOrNull { TweetContentEvidence.header(it)?.ageMinutes ?: parseAgeMinutes(it, nowMillis) }
                 if (!hasTweetId && age == null) return@mapNotNull null
                 val row = tweetRowAncestor(node) ?: return@mapNotNull null
                 val corpus = AccessibilityTree.nodes(row, maxNodes = 180)
@@ -42,7 +43,7 @@ object XTweetInspector {
                 val rowNodes = AccessibilityTree.nodes(row, 180)
                 val author = rowNodes.asSequence().filter { it.isVisibleToUser }.firstNotNullOfOrNull { child ->
                     listOfNotNull(child.text?.toString(), child.contentDescription?.toString())
-                        .firstNotNullOfOrNull(AccountSwitcherInspector::dedicatedHandle)
+                        .firstNotNullOfOrNull { TweetContentEvidence.header(it)?.handle ?: AccountSwitcherInspector.dedicatedHandle(it) }
                 }
                 val timestampAge = rowNodes.asSequence().filter { it.isVisibleToUser }.mapNotNull { child ->
                     val t = child.text?.toString().orEmpty()
@@ -50,7 +51,14 @@ object XTweetInspector {
                     listOf(t, d).filter { it.length < 100 && !it.contains("@") }
                         .firstNotNullOfOrNull { parseAgeMinutes(it, nowMillis) }
                 }.firstOrNull()
-                TweetRow(key, timestampAge ?: age, row, bounds, author)
+                val headerNode = rowNodes.firstOrNull { child ->
+                    listOfNotNull(child.text?.toString(), child.contentDescription?.toString()).any {
+                        TweetContentEvidence.header(it) != null || AccountSwitcherInspector.dedicatedHandle(it) == author
+                    }
+                }
+                val headerBottom = headerNode?.let { Rect().also(it::getBoundsInScreen).bottom } ?: bounds.top
+                val textIndex = TweetContentEvidence.bodyIndex(rowNodes.map { it.toSnapshot() }, headerBottom)
+                TweetRow(key, timestampAge ?: age, row, bounds, author, textIndex?.let(rowNodes::get))
             }
             .distinctBy(TweetRow::key)
             .sortedBy { it.bounds.top }
@@ -59,6 +67,16 @@ object XTweetInspector {
 
     /** Only the author field of an actual reply row is evidence; body mentions are excluded. */
     fun visibleReplyAuthors(root: AccessibilityNodeInfo?): List<String> = visibleTweets(root).mapNotNull { it.author }.distinct()
+
+    fun clickReplyAuthor(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, handle: String): Boolean {
+        val row = visibleTweets(root).firstOrNull { it.author == handle } ?: return false
+        val node = AccessibilityTree.nodes(row.row, 180).firstOrNull { child ->
+            child.isVisibleToUser && listOfNotNull(child.text?.toString(), child.contentDescription?.toString()).any {
+                TweetContentEvidence.header(it)?.handle == handle || AccountSwitcherInspector.dedicatedHandle(it) == handle
+            }
+        } ?: return false
+        return GestureClick.gestureTap(service, node)
+    }
 
     fun eligibleLatestFive(
         rows: Collection<TweetRow>,
@@ -69,7 +87,8 @@ object XTweetInspector {
         .filter { (it.ageMinutes ?: -1L) >= minimumAgeMinutes }
         .toList()
 
-    fun click(service: AtmacaAccessibilityService, row: TweetRow): Boolean = GestureClick.click(service, row.row)
+    fun click(service: AtmacaAccessibilityService, row: TweetRow): Boolean =
+        row.textTarget?.let { GestureClick.gestureTap(service, it) } ?: false
 
     internal fun parseAgeMinutes(raw: String?, nowMillis: Long = System.currentTimeMillis()): Long? {
         val text = raw.orEmpty().trim().lowercase(Locale("tr", "TR"))
@@ -114,7 +133,12 @@ object XTweetInspector {
             val ids = descendants.mapNotNull { it.viewIdResourceName?.lowercase(Locale.ROOT) }
             val corpus = descendants.flatMap { listOfNotNull(it.text?.toString(), it.contentDescription?.toString()) }.joinToString(" ").lowercase()
             val hasActions = listOf(setOf("reply", "yanıt", "yorum"), setOf("like", "beğeni"), setOf("retweet", "repost", "yeniden gönder"), setOf("bookmark", "yer işareti")).count { words -> words.any { token -> ids.any { it.contains(token) } || corpus.contains(token) } }
-            if (descendants.size < 180 && hasActions >= 2) return current
+            val authors = descendants.filter { it.isVisibleToUser }.mapNotNull { child ->
+                val labels = listOfNotNull(child.text?.toString(), child.contentDescription?.toString())
+                labels.firstNotNullOfOrNull { TweetContentEvidence.header(it)?.handle ?: AccountSwitcherInspector.dedicatedHandle(it) }
+                    ?.let { handle -> handle to Rect().also(child::getBoundsInScreen).top }
+            }.distinct()
+            if (descendants.size < 180 && hasActions >= 2 && authors.size == 1) return current
             node = current.parent
         }
         return null

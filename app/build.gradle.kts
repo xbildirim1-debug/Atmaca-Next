@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 65
-        versionName = "26.17-search-profile-navigation"
+        versionCode = 66
+        versionName = "26.18-vertical-discovery-feed"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

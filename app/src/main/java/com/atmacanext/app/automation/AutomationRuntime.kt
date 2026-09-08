@@ -1105,14 +1105,20 @@ object AutomationController {
                 val seen = discoverySeenTweets.getOrPut(target) { LinkedHashMap() }
                 val rows = XTweetInspector.visibleTweets(root).filter { it.author == target }
                 rows.forEach { row -> seen.putIfAbsent(row.key, row.ageMinutes) }
+                OperationLog.i("DISCOVERY_SCAN", "target=@$target screen=$screen rows=${rows.size} ages=${rows.map { it.ageMinutes }} scroll=$listScrolls")
                 val eligible = rows.firstOrNull { row ->
                     row.key !in discoveryProcessedTweets && XTweetInspector.eligibleAge(row.ageMinutes)
                 }
                 if (eligible != null) {
                     discoveryTweetKey = eligible.key
-                    discoveryProcessedTweets += eligible.key
+                    OperationLog.i("DISCOVERY_TWEET", "target=@$target age=${eligible.ageMinutes} text=${eligible.textTarget != null} key=${eligible.key}")
+                    if (eligible.textTarget == null) {
+                        pause("Uygun gönderi bulundu fakat metin alanı okunamadı; yanlış yere basılmadı")
+                        return
+                    }
                     if (performStep(service, root, screen, "open_discovery_tweet", eligible.key) { XTweetInspector.click(service, eligible) }) {
-                        moveStage(XFlowStage.OPEN_ENGAGEMENT, "Son gönderinin etkileşimleri açılıyor")
+                        discoveryProcessedTweets += eligible.key
+                        moveStage(XFlowStage.OPEN_ENGAGEMENT, "Gönderi metni açıldı; detay ekranı doğrulanıyor")
                         service.requestAutomationTick(500L)
                     }
                     return
@@ -1146,8 +1152,12 @@ object AutomationController {
                         if (XUiActions.clickEngagementList(service, root, quotes)) {
                             nextActionNotBefore = now + 700L
                             service.requestAutomationTick(500L)
-                        } else if (stageAttempts++ >= 5) nextDiscoveryTweet(service, "Bu gönderide ilgili etkileşim listesi yok")
-                        else service.requestAutomationTick(TICK_MS)
+                        } else if (stageAttempts++ >= 12) nextDiscoveryTweet(service, "Bu gönderide ilgili etkileşim listesi yok")
+                        else {
+                            // Quotes entry sits below the post's media, not always in the first viewport.
+                            scrollForwardAndTrack(service, root)
+                            service.requestAutomationTick(800L)
+                        }
                     }
                     else -> Unit
                 }
@@ -1186,7 +1196,7 @@ object AutomationController {
                     if (author != null) {
                         engagerHandle = author
                         moveStage(XFlowStage.OPEN_ENGAGER_PROFILE, "Yorumcu @$author profili doğrulanıyor")
-                        if (!XUiActions.clickSourceProfile(service, root, author)) {
+                        if (!XTweetInspector.clickReplyAuthor(service, root, author)) {
                             skippedHandles += author
                             returnFromEngager(service)
                         } else service.requestAutomationTick(500L)
@@ -1585,12 +1595,9 @@ object AutomationController {
             ?: return finishCycleOrTask(service, "Tüm hedef hesaplar tarandı")
         listEndStable = 0
         lastListSignature = ""
-        // Hesap doğrulaması kendi profil ekranını yeni açmıştır. Aynı callback içinde
-        // deep-link göndermek bazı X sürümlerinde yutuluyor. OPEN_DISCOVERY_TARGET
-        // görünür ekran oturduktan sonra hedefi gönderir ve hedef @handle görünene
-        // kadar sınırlı sayıda yeniden dener.
-        moveStage(XFlowStage.OPEN_DISCOVERY_TARGET, "@$target profiline yönlendirme hazırlanıyor (${discoveryTargetIndex + 1}/${discoveryTargets.size})")
-        service.requestAutomationTick(DiscoveryTargetLaunchPolicy.INITIAL_DELAY_MS)
+        // 26.17 device evidence: all three deep links leave X on the own profile.
+        // Use the proven in-app search immediately after account verification.
+        beginDiscoverySearch(service, target)
     }
 
     private fun nextDiscoveryTweet(service: AtmacaAccessibilityService, reason: String) {
@@ -1688,6 +1695,7 @@ object AutomationController {
         if (dispatched) {
             listScrolls++
             _state.value = _state.value.copy(listScrolls = listScrolls)
+            if (_state.value.taskType.isDiscoveryFollow) nextActionNotBefore = System.currentTimeMillis() + 850L
             if (_state.value.taskType == TaskType.UNFOLLOW) {
                 nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + UNFOLLOW_SCROLL_SETTLE_MS)
             }
@@ -1706,6 +1714,7 @@ object AutomationController {
         if (dispatched) {
             listScrolls++
             _state.value = _state.value.copy(listScrolls = listScrolls)
+            if (_state.value.taskType.isDiscoveryFollow) nextActionNotBefore = System.currentTimeMillis() + 850L
             if (_state.value.taskType == TaskType.UNFOLLOW) {
                 nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + UNFOLLOW_SCROLL_SETTLE_MS)
             }
@@ -1725,6 +1734,11 @@ object AutomationController {
         root: AccessibilityNodeInfo?,
         forward: Boolean,
     ): Boolean {
+        if (_state.value.taskType.isDiscoveryFollow) {
+            // ACTION_SCROLL_FORWARD on X's profile pager changes Posts to Replies
+            // and Videos. Discovery must use an explicitly vertical gesture only.
+            return if (forward) ListGesture.forward(service, root) else ListGesture.backward(service, root)
+        }
         if (_state.value.taskType in setOf(TaskType.UNFOLLOW, TaskType.VERIFIED_FOLLOW)) {
             val rowContainerResult = if (forward) {
                 ListViewportController.tryScrollUserRowsForward(root)

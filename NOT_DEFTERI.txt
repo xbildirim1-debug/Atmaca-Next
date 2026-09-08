@@ -1,3 +1,14 @@
+## 26.18 — Gönderiler listesinde dikey kaydırma ve metinden gönderi açma
+
+- Kullanıcı 26.17 hedef aramasının fiziksel cihazda çalıştığını doğruladı. 1000026954.mp4 ve 8 Eylül 19:15 logu incelendi: hedeften sonra Yanıtlar, ardından Videolar sekmesine kayılıyor. Kodun genel ACTION_SCROLL_FORWARD seçimi profilin yatay pager'ını ilerletiyordu; istenen aşağı kaydırma gerçekleşmiyordu.
+- Yorumcu/retweetçi keşif kaydırmaları artık yalnız dikey ListGesture kullanır. Profilde açık Gönderiler sekmesine ekstra giriş yok. 850 ms yerleşme süresiyle okunur. Çalışmayan üç deep-link denemesi başlangıçtan çıkarıldı; doğrudan cihazda doğrulanan X içi arama kullanılır.
+- XTweetInspector tek satırdaki isim/@handle/2 sa başlığını okur. Kartın genel tıklaması kaldırıldı: gönderinin metin düğümüne gesture tap yapılır, video/medya/aksiyon düğmeleri seçilmez. Uygun gönderi metni bulunamazsa yanlış yere basmak yerine açık nedenle duraklar. Yorumcu yazarının birleşik başlığı da tıklanabilir. Birden fazla yazar başlığı içeren liste kapsayıcısı gönderi sayılmaz.
+- Kaydırılmış yorum ekranı Yanıtını gönder + Alıntıları görüntüle kanıtıyla tanınır. Retweetçi akışı Alıntıları görüntüle görünene kadar aşağı ilerler, sonra seçili ve sayısı değişken yeniden gönderenler sekmesini doğrular.
+- Görev toplam limiti dolunca durur; gönderinin adayları yetmezse aynı hedefte alttaki en az 120 dakikalık gönderiye geçer. Tek hedef, işlem/kimlik doğrulaması ve Beklemede sayımı korunur.
+- DISCOVERY_SCAN görünür gönderi/saat/kaydırma; DISCOVERY_TWEET seçilen gönderi/metin kanıtını kaydeder.
+- Yeni 9 regresyon testi: TR/EN birleşik başlık, yaş sınırı, gövde bahsetmesi reddi, metin/medya seçimi, gizli düğüm, kaydırılmış yorum ekranı ve 66 değişken sekme etiketi.
+- code66 / 26.18-vertical-discovery-feed. CI sonucu henüz bekleniyor; fiziksel yeni sürüm testi yapılmadı. Kullanıcının main gönderimi ve APK derleme onayı geçerlidir. Kalıcı imza ve GitHub Releases workflow yetkisi değiştirilmedi.
+
 ## 26.17 — başarılı derleme ve teslim
 
 - Kullanıcı main gönderimini açıkça onayladı. Kaynak main commit: 4865258e0d6f4de5fd9b8f240f5165ff32e241ca. CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34245948585 . Önceki gönderim engeli bu açık onayla aşılmıştır.
