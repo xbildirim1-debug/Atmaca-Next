@@ -23,7 +23,7 @@ data class AppSettings(
     val betweenTasksMs: Long = 3_000L,
     val continueAfterFailedTask: Boolean = true,
     val rateLimitCooldownMinutes: Int = 30,
-    val minimumTweetAgeMinutes: Int = 90,
+    val minimumTweetAgeMinutes: Int = 120,
     val tweetsPerTarget: Int = 5,
     val geminiModel: String = "auto",
     val setupAcknowledged: Boolean = false,
@@ -63,7 +63,7 @@ class SettingsStore(private val context: Context) {
             betweenTasksMs = (p[Keys.betweenTasksMs] ?: 3_000L).coerceIn(1_000L, 60_000L),
             continueAfterFailedTask = p[Keys.continueAfterFailedTask] ?: true,
             rateLimitCooldownMinutes = (p[Keys.rateLimitCooldownMinutes] ?: 30).coerceIn(5, 180),
-            minimumTweetAgeMinutes = (p[Keys.minimumTweetAgeMinutes] ?: 90).coerceIn(90, 1_440),
+            minimumTweetAgeMinutes = (p[Keys.minimumTweetAgeMinutes] ?: 120).coerceIn(120, 1_440),
             tweetsPerTarget = (p[Keys.tweetsPerTarget] ?: 5).coerceIn(1, 5),
             geminiModel = p[Keys.geminiModel]?.trim().orEmpty().ifBlank { "auto" },
             setupAcknowledged = p[Keys.setupAcknowledged] ?: false,
@@ -99,9 +99,9 @@ class SettingsStore(private val context: Context) {
         context.atmacaDataStore.edit { it[Keys.continueAfterFailedTask] = enabled }
     }
 
-    suspend fun setDiscoveryRules(minimumAgeMinutes: Int = 90, tweetsPerTarget: Int = 5) {
+    suspend fun setDiscoveryRules(minimumAgeMinutes: Int = 120, tweetsPerTarget: Int = 5) {
         context.atmacaDataStore.edit { p ->
-            p[Keys.minimumTweetAgeMinutes] = minimumAgeMinutes.coerceIn(90, 1_440)
+            p[Keys.minimumTweetAgeMinutes] = minimumAgeMinutes.coerceIn(120, 1_440)
             p[Keys.tweetsPerTarget] = tweetsPerTarget.coerceIn(1, 5)
         }
     }

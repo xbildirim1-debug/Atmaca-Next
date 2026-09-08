@@ -112,7 +112,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             item {
                 SectionTitle("Yorumcu / Retweetçi / Alıntıcı Hedefleri")
                 AtmacaCard {
-                    Text("Bu liste seçili hesabın üç etkileşim görevi için ortaktır. Her hedefte yalnız son 5 tweet taranır; 90 dakikadan yeni tweetler atlanır.", color = TextSecondary, fontSize = 10.sp)
+                    Text("Hesap başına tek hedef kullanılır. Yorumcu ve retweetçi takibi en az iki saatlik gönderilerden eskiye doğru ilerler.", color = TextSecondary, fontSize = 10.sp)
                     Spacer(Modifier.height(10.dp))
                     Box {
                         OutlinedButton(
@@ -165,7 +165,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                     val ownTargets = targets.filter { it.ownerAccountId == selectedAccountId }
                     if (ownTargets.isEmpty()) {
                         Spacer(Modifier.height(8.dp))
-                        Text("Bu hesap için hedef yok. Örneğin 3 hedef ekleyebilirsin.", color = TextSecondary, fontSize = 10.sp)
+                        Text("Bu hesap için hedef yok. Tek hedef hesap ekleyebilirsin.", color = TextSecondary, fontSize = 10.sp)
                     } else {
                         ownTargets.forEach { target ->
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

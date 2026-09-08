@@ -195,7 +195,7 @@ private fun ModernAccountCard(account: Account, locked: Boolean, targetCount: In
                 Counter("Takip edilen", account.following, Modifier.weight(1f))
             }
             OutlinedButton(onClick = onTargets, enabled = !locked, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.PersonAdd, null); Spacer(Modifier.width(8.dp)); Text("Hedef hesap ekle · $targetCount/3")
+                Icon(Icons.Default.PersonAdd, null); Spacer(Modifier.width(8.dp)); Text("Hedef hesabı düzenle")
             }
             OutlinedButton(onClick = onSwitch, enabled = !locked, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 border = BorderStroke(1.dp, Divider)) {

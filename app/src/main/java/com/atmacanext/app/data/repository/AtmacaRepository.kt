@@ -275,13 +275,13 @@ class AtmacaRepository(private val db: AtmacaDatabase) {
         val owner = requireNotNull(db.accountDao().getAll().firstOrNull { it.id == target.ownerAccountId }) { "Hesap bulunamadı" }
         require(handle != com.atmacanext.app.domain.policy.TargetPagePolicy.normalize(owner.username)) { "Kendi hesabını hedef seçme" }
         val existing = db.targetAccountDao().getAll().filter { it.ownerAccountId == target.ownerAccountId }
-        require(com.atmacanext.app.domain.policy.TargetPagePolicy.canAdd(existing.map { it.handle }, handle)) { "Her hesaba en fazla 3 hedef eklenebilir" }
+        require(com.atmacanext.app.domain.policy.TargetPagePolicy.canAdd(existing.map { it.handle }, handle)) { "Her hesaba en fazla 1 hedef eklenebilir" }
         val id = existing.firstOrNull { it.handle.equals(handle, true) }?.id
             ?: java.util.UUID.nameUUIDFromBytes("${target.ownerAccountId}:$handle".toByteArray()).toString()
         db.targetAccountDao().upsert(target.copy(id = id, handle = handle).toEntity())
     }
     suspend fun replaceTargets(ownerId: String, handles: List<String>) = db.withTransaction {
-        require(handles.size <= 3) { "En fazla 3 hedef eklenebilir" }
+        require(handles.size <= 1) { "En fazla 1 hedef eklenebilir" }
         val names = handles.map { requireNotNull(com.atmacanext.app.domain.policy.TargetPagePolicy.normalize(it)) { "Geçersiz kullanıcı adı" } }
         require(names.distinct().size == names.size) { "Aynı hedef iki kez eklenemez" }
         val account = requireNotNull(db.accountDao().getAll().firstOrNull { it.id == ownerId }) { "Hesap bulunamadı" }

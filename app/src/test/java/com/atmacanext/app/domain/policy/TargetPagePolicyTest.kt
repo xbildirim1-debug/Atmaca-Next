@@ -10,10 +10,11 @@ class TargetPagePolicyTest {
     @Test fun rejectsLinksAndInvalidHandlesInsteadOfSilentlyChangingThem() {
         listOf("https://x.com/page", "two names", "@", "1234567890123456", "çağrı").forEach { assertNull(TargetPagePolicy.normalize(it)) }
     }
-    @Test fun fourthTargetIsRejectedButExistingOneCanBeUpdated() {
+    @Test fun oneTargetPerAccountCanBeUpdated() {
         val existing = listOf("one", "two", "three")
         assertFalse(TargetPagePolicy.canAdd(existing, "four"))
         assertTrue(TargetPagePolicy.canAdd(existing, "two"))
-        assertTrue(TargetPagePolicy.canAdd(listOf("one", "two"), "three"))
+        assertFalse(TargetPagePolicy.canAdd(listOf("one"), "two"))
+        assertTrue(TargetPagePolicy.canAdd(emptyList(), "one"))
     }
 }

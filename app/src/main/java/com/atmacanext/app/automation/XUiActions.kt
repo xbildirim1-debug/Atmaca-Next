@@ -163,12 +163,18 @@ object XUiActions {
         hasIdOrLabel(root, emptyList(), XUiVocabulary.quoteActions)
 
     fun clickDirectFollow(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
-        val node = findByIdOrLabel(root, listOf("follow_button", "profile_follow"), setOf("takip et", "follow")) ?: return false
-        return GestureClick.click(service, node)
+        val nodes = AccessibilityTree.nodes(root)
+        val snapshots = nodes.map { it.toSnapshot() }
+        val profile = ProfileSurfaceEvidence.read(snapshots) ?: return false
+        val statY = snapshots[profile.followersIndex].bounds.top
+        val node = nodes.firstOrNull { n -> val snap = n.toSnapshot()
+            snap.visible && snap.enabled && snap.bounds.bottom <= statY &&
+                VerifiedFollowPolicy.isPlainFollow(listOfNotNull(snap.text, snap.contentDescription))
+        } ?: return false
+        return GestureClick.gestureTap(service, node)
     }
 
-    fun isDirectFollowing(root: AccessibilityNodeInfo?): Boolean =
-        hasIdOrLabel(root, listOf("following_button", "profile_following"), XUiVocabulary.followingActions)
+    fun isDirectFollowing(root: AccessibilityNodeInfo?): Boolean = directFollowState(root, XUiVocabulary.followingActions)
 
     fun setComposerText(root: AccessibilityNodeInfo?, value: String): Boolean {
         if (root == null || value.isBlank()) return false
@@ -230,9 +236,26 @@ object XUiActions {
         XNavigator.clickProfileStat(service, root, followers = false)
 
     fun clickEngagementList(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, quotes: Boolean): Boolean {
-        val labels = if (quotes) setOf("alıntılar", "alıntı", "quotes", "quote posts") else setOf("retweetler", "retweet", "reposts", "repost")
-        val ids = if (quotes) listOf("quote", "quotes_count") else listOf("retweet_count", "repost_count")
-        return clickByIdOrLabel(service, root, ids, labels)
+        val nodes = AccessibilityTree.nodes(root)
+        val list = nodes.map { it.toSnapshot() }
+        val node = nodes.firstOrNull { n -> n.isVisibleToUser && n.isEnabled &&
+            listOfNotNull(n.text?.toString(), n.contentDescription?.toString()).any {
+                if (EngagementListEvidence.title(list)) EngagementListEvidence.isReposts(it)
+                else EngagementListEvidence.openLabel(it)
+            }
+        } ?: return false
+        return GestureClick.gestureTap(service, node)
+    }
+
+    fun directRequested(root: AccessibilityNodeInfo?): Boolean =
+        directFollowState(root, XUiVocabulary.requestedActions)
+
+    private fun directFollowState(root: AccessibilityNodeInfo?, accepted: Set<String>): Boolean {
+        val nodes = AccessibilityTree.snapshots(root)
+        val profile = ProfileSurfaceEvidence.read(nodes) ?: return false
+        val statY = nodes[profile.followersIndex].bounds.top
+        return nodes.any { n -> n.visible && n.bounds.bottom <= statY &&
+            listOfNotNull(n.text, n.contentDescription).any { VerifiedFollowPolicy.matchesAction(it, accepted) } }
     }
 
     private fun clickByIdOrLabel(

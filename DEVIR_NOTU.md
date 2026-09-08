@@ -1,3 +1,17 @@
+## 26.14 — Beklemede, boş kaynak, tek hedefli yorumcu/retweetçi takip
+
+Kullanıcı 26.13 onaylı takibin fiziksel telefonda başarılı çalıştığını doğruladı. Bu cihaz doğrulaması önceki test edilmedi kayıtlarından daha günceldir; 26.13 taze erişilebilirlik okuma yolu korunur. Yeni istek: yeni takip sonrası Beklemede/Requested işlem sayılacak, boş onaylı kaynakta başka kullanıcı aranacak; hesap başına tek hedef ve en az 120 dakikalık gönderilerden eskiye ilerleyen yorumcu/retweetçi takip.
+
+- VerifiedFollowPolicy istek gönderildi sonucunu başarı sayar; aynı anda Follow varsa çelişkili sonuç sayılmaz. Önceden Beklemede olan düğme takip adayı olmaz. Başarı processedHandles'a girer, sayaç bir kere artar; sonraki tick tekrar saymaz. İstek gönderme, karşı tarafın onayladığı anlamına gelmez. FOLLOW_REQUEST kaydı bunu belirtir.
+- Onaylı kaynak aday havuzu boşsa RETURN_VERIFIED_SOURCE ile önceki profile/listelere geri gidilir. Görünür ziyaret edilmemiş kullanıcı kaynak seçilir; sayaç/işlenmiş kullanıcılar korunur. Onaylı sekmesi olmayan kaynak da atlanır. Ziyaret edilmiş kaynak yeniden seçilmez; 30 saniye içinde erişilebilir aday bulunamazsa kısmi ilerleme korunarak duraklar.
+- Tek hedef: yeni hedef politikası en fazla 1. Hedef düzenleme tek alan; Kaydet eski çoklu kaydı bu hedefle değiştirir. Eski çoklu kayıtlar kullanıcı kaydedene kadar silinmez, runtime ilk aktif hedefi kullanır.
+- Son beş gönderi sınırı kaldırıldı. Hedef yazar kimliği eşleşen, yaşı en az 120 dakika olan gönderiler işlenir; yaşı bilinmeyen/yeni/sabitlenmiş/reklam gönderileri atlanır. Kaynak biterse Geri ile aynı hedefin daha eski gönderilerine devam edilir, ilerleme sıfırlanmaz. Tarih-only kayıtlar saat bilinmediğinden gün sonuna göre muhafazakâr hesaplanır.
+- Retweetçi akışı videodaki Alıntıları görüntüle → Gönderi Etkileşimleri → sayısı değişken '... tarafından yeniden gönderildi' seçili sekmesi. Retweet/Repost eylem düğmesi seçici değildir; seçili sekme doğrulanmadan takip yok. Türkçe/İngilizce adlar ve değişken sayılar için EngagementListEvidence.
+- Yorumcu profil geçişi gerçek satırdaki tam kullanıcı adına dokunur; biyografi bahsetmesi kullanılmaz. Gönderinin yazarı ve kendi hesap dışlanır. Profilde header üstündeki düz Follow seçilir; öneri kullanıcılarının düğmesi seçilmez. Following/Beklemede sonucu aynı kimlikte doğrulanır, yorumlara Geri ile dönülür. Yorum ekranında genel Follow düğmelerine doğrudan basılmaz.
+- Keşif başlangıcı hedef profile ACTION_VIEW/NEW_TASK ile yönlenir; eski REORDER_TO_FRONT bayrağı kullanılmaz. Sonraki dönüşler profil URL tekrarı yerine Geri kullanır. 26.13 fresh-root okuma yorumcu/retweetçi görevlerinde de etkin; import ve unfollow yolu korunur.
+- 9 ek regresyon: değişken yeniden gönderim sayısı, yanlış sekme/eylem reddi, seçili sekme zorunluluğu, Requested sonucu/çelişki/seri sıfırlama, 119-120 dk sınırı ve belirsiz yaş, değişen zaman/etkileşim sayısıyla gönderi anahtarı, etkileşim giriş etiketi. Tek hedef testi yeni kurala güncellendi. CI sonucu bekleniyor.
+- Sürüm 26.14-engagement-follow / code62. Bu yeni akışlar fiziksel cihazda çalıştırılmadı; birim testler X'in tüm cihaz varyantlarında uyumluluğu kanıtlamaz. Kalıcı imza ve Releases contents:write önceki otomatik onay engeli devam ediyor.
+
 ## 26.13 — doğrulanmış derleme ve teslim
 
 - APK kaynak commit: 79ee50f3be170db16e497ee5193255d9e732a049. Main kaynak kodu korunarak bu sonuç kaydı yalnız belgelere eklenir; APK tekrar derlenmez.

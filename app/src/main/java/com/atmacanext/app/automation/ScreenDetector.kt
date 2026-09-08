@@ -59,6 +59,7 @@ object ScreenDetector {
         // its own tab strip before either raw-node or snapshot relationship heuristics.
         // Account overlays above must still win when the feed remains behind them.
         if (HomeTimelineEvidence.matches(nodes)) return XScreen.HOME
+        if (EngagementListEvidence.title(nodes)) return XScreen.ENGAGEMENT_LIST
 
         when (selectedRelationshipTab) {
             RelationshipTabInspector.OTHER -> return XScreen.UNKNOWN

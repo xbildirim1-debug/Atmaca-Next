@@ -10,9 +10,10 @@ internal object VerifiedFollowPolicy {
     }
     fun isPlainFollow(labels: List<String>): Boolean =
         labels.any { matchesAction(it, plainFollowLabels) } &&
-            labels.none { matchesAction(it, XUiVocabulary.followActions - plainFollowLabels + XUiVocabulary.followingActions) }
+            labels.none { matchesAction(it, XUiVocabulary.followActions - plainFollowLabels + XUiVocabulary.followingActions + XUiVocabulary.requestedActions) }
     fun outcome(observedFollowing: Boolean, followingNow: Boolean, plainFollowNow: Boolean,
-                stableMs: Long, elapsedMs: Long): VerifiedFollowOutcome = when {
+                stableMs: Long, elapsedMs: Long, requestedNow: Boolean = false): VerifiedFollowOutcome = when {
+        requestedNow && !plainFollowNow && !followingNow -> VerifiedFollowOutcome.SUCCESS
         observedFollowing && plainFollowNow && !followingNow -> VerifiedFollowOutcome.REVERTED
         observedFollowing && followingNow && !plainFollowNow && stableMs >= 2_000L -> VerifiedFollowOutcome.SUCCESS
         elapsedMs >= 7_000L -> VerifiedFollowOutcome.UNKNOWN

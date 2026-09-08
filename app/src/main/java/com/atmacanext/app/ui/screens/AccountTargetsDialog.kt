@@ -15,14 +15,14 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AccountTargetsDialog(account: Account, locked: Boolean, onDismiss: () -> Unit) {
-    var fields by remember(account.id) { mutableStateOf(List(3) { "" }) }
+    var fields by remember(account.id) { mutableStateOf(List(1) { "" }) }
     var initialized by remember(account.id) { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(account.id) {
         val rows = AppServices.repository.getActiveTargets(account.id)
-        fields = List(3) { rows.getOrNull(it)?.handle?.let { h -> "@$h" }.orEmpty() }
+        fields = List(1) { rows.getOrNull(it)?.handle?.let { h -> "@$h" }.orEmpty() }
         initialized = true
     }
     val entered = fields.filter { it.isNotBlank() }
@@ -31,16 +31,16 @@ fun AccountTargetsDialog(account: Account, locked: Boolean, onDismiss: () -> Uni
         names.none { it == TargetPagePolicy.normalize(account.username) }
     AlertDialog(
         onDismissRequest = { if (!saving) onDismiss() },
-        title = { Text("${account.username} · Hedef hesaplar") },
+        title = { Text("${account.username} · Hedef hesap") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("En fazla 3 hedef kullanıcı adı gir. Yorumcu ve retweetçi görevleri bu hedeflerin son 5 gönderisini tarar. Görevler ekranından başlattığında çalışır.")
+                Text("Bu hesap için tek hedef gir. Yorumcu ve retweetçi görevleri en az iki saatlik gönderilerden başlar; kişiler bitince daha eski gönderiye geçer.")
                 fields.forEachIndexed { i, value ->
                     OutlinedTextField(value = value, onValueChange = { text -> fields = fields.toMutableList().also { it[i] = text.take(16) } },
                         label = { Text("Hedef ${i + 1} · @kullanıcı_adı") }, singleLine = true,
                         enabled = initialized && !locked && !saving, modifier = Modifier.fillMaxWidth())
                 }
-                Text("Bir hedefi kaldırmak için alanını boşaltıp kaydet.")
+                Text("Hedefi değiştirmek için yeni kullanıcı adını yaz; kaldırmak için boşaltıp kaydet. Önceki birden fazla hedef kaydı varsa Kaydet bunları bu tek hedefle değiştirir.")
                 if (!valid) Text("Geçerli, birbirinden farklı kullanıcı adları gir. Kendi hesabını hedef seçme.", color = MaterialTheme.colorScheme.error)
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }

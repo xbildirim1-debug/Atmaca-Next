@@ -12,6 +12,7 @@ object XUiVocabulary {
         "onaylı", "doğrulanmış", "verified",
     )
 
+    val requestedActions = setOf("beklemede", "bekliyor", "pending", "requested", "request sent", "istek gönderildi")
     val followActions = setOf("takip et", "geri takip et", "sen de takip et", "sende takip et", "follow", "follow back")
     val followingActions = setOf("takip ediliyor", "takip ediyor", "following")
     val unfollowConfirmationActions = setOf("takipten çık", "takibi bırak", "unfollow")
