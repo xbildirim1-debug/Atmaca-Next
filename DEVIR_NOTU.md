@@ -2,6 +2,16 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.11 — doğrulanmış derleme sonucu
+
+- Kaynak commit: 3ab25eab6570e268fd7a5e07802475f2ea45f154 (main). Bu sonuç kaydı belgedir; APK bu kaynak commit'ten üretildi.
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34187259126 . APK/tam paket artifact 10040984103; raporlar 10040984479. 154 test geçti; 0 başarısız, hata, atlanan. Test/lint/assemble ve APK imza/manifest kontrolleri başarılı.
+- AtmacaNext-26.11.apk, code59 / 26.11-public-profile-evidence, 20557532 bayt. SHA256 92f8ae4418f4c52b65f4b98768a9cfbc5e8bcb85565286c0a6b11ff6a8b9c7df.
+- Tam ZIP SHA256 9067a2f8e959b9c4e680f4b4dcff2e2fdbddc777f07c856caff78382f14223ff. ZIP CRC, test XML toplamları, gerçek manifest ve paket içi APK eşitliği doğrulandı. Paket kaynak ZIP, test XML ZIP, APK, manifest, hash ve gerçek CI sonuçları ekli NOT_DEFTERI içerir.
+- Sertifika SHA256 83e98b0b3cf9298107d1a449539e5702bc943e1b99fa73a8891554a7b100f474. Önceki 26.10 sertifikasından farklı. Üzerine kurulum uyumsuz olabilir; kaldırmak hesap/görev/bildirim verilerini siler. Kalıcı imza sorunu açık.
+- Fiziksel telefonda/X üzerinde yeni sürüm test edilmedi. Kullanıcının 26.10 cihaz kanıtı kaynak profiline dokunmanın çalıştığı; profil UNKNOWN kaldığıdır. 26.11'in split-counter düzeltmesi sentetik ağaç testleriyle doğrulandı, cihazdaki kesin node ayrımı henüz paylaşılmadı. Başarısızlıkta PROFILE_EVIDENCE satırını ve erişilebilirlik teşhisini incele; süre artırarak veya rastgele kimlik kabul ederek geçme.
+- Kod/test/notlar main'dedir, APK/ZIP ayrıca sohbet teslimidir. Actions artifact 7 Aralık 2026'da sona erer. Kalıcı Releases yayını önceki contents:write otomatik onay reddi nedeniyle tamamlanmadı; kullanıcı bu kapsamı onaylamadı. Yayın workflow yetkisi değiştirilmedi; eski APK'lar silinmedi.
+
 ## 26.11 — başka profil UNKNOWN / ortak profil kanıtı
 
 8 Eylül 07:25 cihaz logu: 26.10 artık doğru dinamik kullanıcının profiline giriyor; sonra UNKNOWN olarak kalıyor ve 15 saniyede duraklıyor. Kullanıcı profilin açıldığını doğruladı. Ham erişilebilirlik ağacı paylaşılmadığı için alanların cihazdaki kesin ayrımı henüz bilinmiyor. Kod incelemesi: kendi profil Edit profile ile tanınırken başka profil için iki sayacın sayı+etiketinin aynı düğümde olması şarttı; split/stacked sayaçlar desteklenmiyordu. Önceki 147 test bu varyantı kapsamıyordu.
