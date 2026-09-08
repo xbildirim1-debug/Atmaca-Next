@@ -9,7 +9,7 @@ internal object EngagementListEvidence {
             Regex("(?:reposts [0-9.,kmb ]+|[0-9.,kmb ]+ reposts|reposted by [0-9.,kmb ]+)").matches(s)
     }
     fun selected(root: android.view.accessibility.AccessibilityNodeInfo?): Boolean = AccessibilityTree.nodes(root).any { node ->
-        node.isVisibleToUser && (node.isSelected || node.isChecked || node.contentDescription.orEmpty().let {
+        node.isVisibleToUser && (node.isSelected || node.isChecked || node.contentDescription?.toString().orEmpty().let {
             it.contains("selected", true) || it.contains("seçili", true) }) &&
             AccessibilityTree.snapshots(node, 12).any { child -> listOfNotNull(child.text, child.contentDescription).any(::isReposts) }
     }
