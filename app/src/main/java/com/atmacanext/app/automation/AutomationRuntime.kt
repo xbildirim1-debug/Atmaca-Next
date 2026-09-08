@@ -746,14 +746,19 @@ object AutomationController {
                     val signature = RecentFollowerSelector.viewportSignature(followerNodes)
                     if (lastListSignature == signature) listEndStable++ else listEndStable = 0
                     lastListSignature = signature
-                    val moved = ListViewportController.tryScrollUserRowsBackward(root) == ScrollAttemptResult.SCROLLED ||
-                        ListGesture.backward(service, root)
-                    if (!moved) return pause("Takipçiler listesinin başına kaydırma doğrulanamadı")
-                    listScrolls++
+                    // Never drag down at the top: X treats that as pull-to-refresh.
+                    // Read the settled viewport before issuing another native scroll.
                     if (listEndStable >= END_STABLE_COUNT) {
                         moveStage(XFlowStage.FIND_RECENT_FOLLOWER, "Takipçiler listesinin başı doğrulandı; en yeni ziyaret edilmemiş takipçi aranıyor")
+                        service.requestAutomationTick(150L)
+                        return
                     }
-                    service.requestAutomationTick(500L)
+                    val scroll = ListViewportController.tryScrollUserRowsBackward(root)
+                    if (scroll == ScrollAttemptResult.NO_SCROLL_CONTAINER)
+                        return pause("Takipçiler listesinin dikey kapsayıcısı okunamadı; yenileme hareketi yapılmadı")
+                    if (scroll == ScrollAttemptResult.SCROLLED) listScrolls++
+                    nextActionNotBefore = now + 700L
+                    service.requestAutomationTick(700L)
                 } else {
                     if (XUiActions.clickFollowersTab(service, root)) {
                         nextActionNotBefore = now + 600L
@@ -842,7 +847,7 @@ object AutomationController {
                     moveStage(XFlowStage.PROCESS_VERIFIED_FOLLOW, "Onaylı Takipçiler doğrulandı; yalnız Takip Et düğmeleri işlenecek")
                     service.requestAutomationTick(150L)
                 } else if (stageAttempts >= 6) {
-                    nextVerifiedSource(service, "Onaylı Takipçiler sekmesi bulunamadı")
+                    pauseVerifiedTab(root, screen, "Onaylı Takipçiler sekmesi doğrulanamadı")
                 } else {
                     stageAttempts++
                     if (!XUiActions.clickVerifiedTab(service, root)) ListGesture.right(service, root)
@@ -853,7 +858,7 @@ object AutomationController {
             XFlowStage.PROCESS_VERIFIED_FOLLOW -> {
                 if (screen != XScreen.VERIFIED_FOLLOWERS_LIST) {
                     stageAttempts++
-                    if (stageAttempts >= 6) nextVerifiedSource(service, "Onaylı Takipçiler listesi doğrulanamadı")
+                    if (stageAttempts >= 6) pauseVerifiedTab(root, screen, "Onaylı Takipçiler listesi doğrulanamadı")
                     else {
                         XUiActions.clickVerifiedTab(service, root)
                         nextActionNotBefore = now + 650L
@@ -1408,10 +1413,20 @@ object AutomationController {
         if (next != null) {
             moveStage(XFlowStage.LOCATE_SOURCE_ROW, "$reason; onaylı listede rastgele @$next satırı bulunup açılacak")
         } else {
-            moveStage(XFlowStage.OPEN_VERIFIED_OWN_PROFILE, "$reason; yeni kaynak için kendi profiline dönülüyor")
-            // Return through X navigation; an accepted URL intent is not a profile transition.
+            pause("$reason; son onaylı listede ziyaret edilmemiş kaynak kalmadı. ${_state.value.verifiedCount}/${_state.value.limit} korundu; kendi profile dönülmedi.")
+            return
         }
         service.requestAutomationTick(650L)
+    }
+
+    private fun pauseVerifiedTab(root: AccessibilityNodeInfo?, screen: XScreen, reason: String) {
+        val headers = AccessibilityTree.snapshots(root).filter { it.visible }.mapNotNull { node ->
+            val labels = listOfNotNull(node.text, node.contentDescription)
+            if (labels.none { it.contains("takip", true) || it.contains("follower", true) }) null
+            else "${labels.joinToString("/").take(120)} selected=${node.selected} checked=${node.checked}"
+        }.take(12).joinToString(" | ")
+        OperationLog.w("VERIFIED_TAB", "screen=$screen selected=${RelationshipTabInspector.selectedTab(root)} headers=$headers")
+        pause("$reason; ekran teşhisi kaydedildi, sayfa yeniden açılmadı")
     }
 
     private fun openDiscoveryTarget(service: AtmacaAccessibilityService) {
@@ -1555,7 +1570,7 @@ object AutomationController {
         root: AccessibilityNodeInfo?,
         forward: Boolean,
     ): Boolean {
-        if (_state.value.taskType == TaskType.UNFOLLOW) {
+        if (_state.value.taskType in setOf(TaskType.UNFOLLOW, TaskType.VERIFIED_FOLLOW)) {
             val rowContainerResult = if (forward) {
                 ListViewportController.tryScrollUserRowsForward(root)
             } else {
@@ -1700,3 +1715,4 @@ object AutomationController {
 
     private val CONTENT_TYPES = setOf(TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET, TaskType.COMMENT, TaskType.QUOTE)
 }
+

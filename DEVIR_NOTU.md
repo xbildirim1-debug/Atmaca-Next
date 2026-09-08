@@ -1,3 +1,17 @@
+## 26.12 — cihazdaki Onaylanmış takipçiler etiketi ve yenileme düzeltmesi
+
+8 Eylül 2026, 07:39–07:40 cihaz logu ve 1000026806.mp4 incelendi. Kullanıcının 26.11 cihazında dört hesap taranmış ve Atmaca dönüşü doğrulanmış. Dinamik kaynak profili artık PROFILE olarak okunuyor. Video açık/seçili sekmenin tam Türkçe adının "Onaylanmış takipçiler" olduğunu gösteriyor; önceki sözlük yalnız "Onaylı" ve "Doğrulanmış" biçimlerini içerdiğinden ekran UNKNOWN kalıyor. Bu, ham ağacın seçili alanının paylaşıldığını tek başına kanıtlamaz; düzeltme sonrası cihaz doğrulaması gerekir.
+
+- XUiVocabulary.fullVerifiedFollowersHeaders ortak tam başlık sözlüğü eklendi. XUiActions sekme tıklaması ve RelationshipTabInspector/ScreenDetector aynı yeni Türkçe varyantı tanır. Sadece görünür başlık yeterli değildir: gerçekten seçili sekme kanıtı korunur.
+- Kendi Followers listesinin başında geri kaydırma reddedildiğinde ListGesture.backward ile pull-to-refresh üretilmez. Yerel dikey liste eylemi kullanılır; kullanıcı adı ve konumları sabitlenince yeni bir kaydırma göndermeden kaynak seçilir. Kapsayıcı okunamıyorsa tahmini hareket yerine duraklar.
+- Verified liste kaydırmaları da kullanıcı satırının dikey kapsayıcısından yapılır; genel yatay pager seçimi engellenir.
+- Onaylı sekme doğrulanamazsa kendi profile gidip gezinmeyi tekrar başlatmak yerine VERIFIED_TAB teşhisiyle duraklar. Ekran, seçili sekme ve görünür takip başlıkları loglanır.
+- Limit eksikse yalnız en son onaylı listeden toplanan adaylar arasından rastgele, ziyaret edilmemiş kullanıcı seçme ve gerçek satırına dokunma korunur. Doğrulanmış ilerleme ve işlenmiş hedefler sıfırlanmaz. Son listede aday kalmazsa kendi Followers listesinden başka kaynak üretmez; eksik sayıyı açıkça göstererek duraklar.
+- Yalnız Takip et; Geri takip et/Takip ediliyor atlama, üç farklı ardışık geri dönüş ve bildirim davranışları korunur. Hesap importu ve takipten çıkma değişmedi.
+- Beş regresyon testi: gerçek Türkçe başlık/ortak sözlük, yüklenmekte olan seçili sekme, komşu sekme yanlış pozitif reddi, ilişki düğmesi ayrımı, son listeden rastgele kaynak/ziyaret edilmiş hesap reddi.
+- versionCode 60 / 26.12-verified-tab-label. CI henüz çalıştırılmadı; sonuçlar aşağıdaki sonraki kayıtta belirtilecek. Yeni APK fiziksel telefonda test edilmedi. Main'e kod/test/notlar kaydedilecek; yerel eski 26.9 çalışma dosyaları kullanılmadı ve ezilmedi.
+- Kalıcı debug imzası ve Releases contents:write onay engeli sürüyor; yayın yetkisi değiştirilmedi. Mevcut Actions APK/tam ZIP üretimi korunur.
+
 # Atmaca Next — sohbetler arası devir notu
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
@@ -268,3 +282,4 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 5. Hesap ekleme doğrulandıktan sonra çoklu hesap görev sırası, görev sonu dönüş ve diğer bildirilen görev sorunlarını ayrı kanıtlarla değerlendir. Bu değişiklik bunların tamamını doğrulamaz.
 6. Mevcut telefon uygulaması kararlı olmadan daha önce ertelenen çoklu emülatör mimarisine geçme.
 7. Her yeni düzeltmeyi test et, GitHub'a kaydet, bu notu son testler, APK ve kalan sorunlarla güncelle. Kullanıcı aynı talimatları başka hesapta tekrar etmek zorunda kalmasın.
+

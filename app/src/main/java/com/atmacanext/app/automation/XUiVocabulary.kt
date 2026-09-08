@@ -5,8 +5,10 @@ import java.util.Locale
 object XUiVocabulary {
     val followersHeaders = setOf("takipçiler", "takipçi", "followers", "follower")
     val followingHeaders = setOf("takip edilen", "takip edilenler", "takip ediliyor", "takip ediyor", "following")
-    val verifiedFollowersHeaders = setOf(
-        "onaylı takipçiler", "doğrulanmış takipçiler", "verified followers",
+    val fullVerifiedFollowersHeaders = setOf(
+        "onaylı takipçiler", "onaylanmış takipçiler", "doğrulanmış takipçiler", "verified followers",
+    )
+    val verifiedFollowersHeaders = fullVerifiedFollowersHeaders + setOf(
         "onaylı", "doğrulanmış", "verified",
     )
 
@@ -86,3 +88,4 @@ object XUiVocabulary {
     fun normalize(raw: String?): String = raw.orEmpty().lowercase(Locale.ROOT).trim()
     fun containsExact(labels: Collection<String>, vocabulary: Set<String>): Boolean = labels.any { normalize(it) in vocabulary }
 }
+

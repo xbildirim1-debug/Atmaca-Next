@@ -213,7 +213,7 @@ object XUiActions {
             val id = node.viewIdResourceName.orEmpty().lowercase(Locale.ROOT)
             val fullHeader = raw.any { label ->
                 val value = XUiVocabulary.normalize(label)
-                setOf("verified followers", "onaylı takipçiler", "doğrulanmış takipçiler").any {
+                XUiVocabulary.fullVerifiedFollowersHeaders.any {
                     value == it || value.startsWith("$it,") || value.startsWith("$it sekme") || value.startsWith("$it tab")
                 }
             }
@@ -375,3 +375,4 @@ object XUiActions {
             .mapNotNull(XIdentityDetector::extractHandle)
             .toSet()
 }
+
