@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 66
-        versionName = "26.18-vertical-discovery-feed"
+        versionCode = 67
+        versionName = "26.19-compose-feed-recovery"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

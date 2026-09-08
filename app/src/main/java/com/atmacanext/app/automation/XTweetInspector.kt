@@ -18,10 +18,19 @@ object XTweetInspector {
         val bounds: Rect,
         val author: String? = null,
         val textTarget: AccessibilityNodeInfo? = null,
+        val authorTarget: AccessibilityNodeInfo? = null,
     )
 
     fun visibleTweets(root: AccessibilityNodeInfo?, nowMillis: Long = System.currentTimeMillis()): List<TweetRow> {
         if (root == null) return emptyList()
+        val flatNodes = AccessibilityTree.nodes(root, maxNodes = 1_200)
+        val flatRows = FeedRowEvidence.rows(flatNodes.map { it.toSnapshot() }).map { r ->
+            val header = flatNodes[r.headerIndex]
+            TweetRow(r.key, r.age, header, Rect().also(header::getBoundsInScreen), r.author,
+                r.bodyIndex?.let(flatNodes::get), header)
+        }
+        // Do not require offscreen reply/like controls, legacy IDs, or a common parent.
+        if (flatRows.isNotEmpty()) return flatRows
         return AccessibilityTree.nodes(root, maxNodes = 1_200).asSequence()
             .mapNotNull { node ->
                 val id = node.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
@@ -70,6 +79,7 @@ object XTweetInspector {
 
     fun clickReplyAuthor(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, handle: String): Boolean {
         val row = visibleTweets(root).firstOrNull { it.author == handle } ?: return false
+        row.authorTarget?.let { return GestureClick.gestureTap(service, it) }
         val node = AccessibilityTree.nodes(row.row, 180).firstOrNull { child ->
             child.isVisibleToUser && listOfNotNull(child.text?.toString(), child.contentDescription?.toString()).any {
                 TweetContentEvidence.header(it)?.handle == handle || AccountSwitcherInspector.dedicatedHandle(it) == handle

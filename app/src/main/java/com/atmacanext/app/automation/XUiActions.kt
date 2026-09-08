@@ -175,6 +175,7 @@ object XUiActions {
     }
 
     fun isDirectFollowing(root: AccessibilityNodeInfo?): Boolean = directFollowState(root, XUiVocabulary.followingActions)
+    fun directFollowAvailable(root: AccessibilityNodeInfo?): Boolean = directFollowState(root, VerifiedFollowPolicy.plainFollowLabels)
 
     fun setComposerText(root: AccessibilityNodeInfo?, value: String): Boolean {
         if (root == null || value.isBlank()) return false
@@ -398,4 +399,3 @@ object XUiActions {
             .mapNotNull(XIdentityDetector::extractHandle)
             .toSet()
 }
-

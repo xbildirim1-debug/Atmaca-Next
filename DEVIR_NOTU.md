@@ -1,3 +1,13 @@
+## 26.19 — 23:28 cihaz hatası ve ortak keşif akışı
+
+- 1000026994.mp4 (66,88 sn) ve 8 Eylül 23:27–23:28 logu: hedef açılıyor, 4 sa gönderi atlanıyor, her taramada rows=0. Son ekran BaBaLa TV / Kimi takip etmeli kartıyla hâlâ Gönderiler; FOLLOWING_LIST bir sınıflama hatasıdır. 0/5 COMPLETED hatalıdır. 26.18 cihaz testini geçmedi.
+- FeedRowEvidence: ortak parent/etkileşim düğmesi şartı olmadan birleşik veya aynı satırda ayrı yazar+saat alanı; ayrı metin/contentDescription. Yeni gönderi, medya ve öneri sınırını aşmadan metin seçimi. Sabitlenmiş/reklam işaretlerini atlama. SHA256 gönderi anahtarı yazar+metindir; yaş/sayaç/kaydırma değişimi aynı gönderiyi yeniden işlemeye neden olmaz. Ham cihaz node ağacı yok; bu yol sentetik düzen testleriyle sınanır.
+- ScreenDetector: Gönderiler + gönderi sayısı/yazar-saat kanıtı öneri takip etiketlerinden önce gelir. Yorum yazma/alıntıları görüntüle kanıtı yorumları ilişki listesi sanmayı önler.
+- Runtime: eksik keşif limiti artık COMPLETED olamaz; ilerleme korunarak PAUSED. Gönderi ancak detay açılınca işlenmiş sayılır. Başarısız yorumcu dokunuşunda kör Geri yok. Daralmış hedef profil başlığında feed/yazar kanıtıyla dönüş kabul edilir. Sonucu belirsiz takip yerine başka kullanıcı işlenmez; Follow ile Following/Requested çelişkisi başarı değildir. Yeni DISCOVERY_READ sınırlı, parola/girdi dışı ekran kanıtı kaydeder; tarama 180 sn bütçelidir.
+- 14 yeni birim testi: ayrı/birleşik başlık, eksik aksiyonlar, açıklama metni, yanlış satır yaşı, body mention, medya, öneri, komşu gönderi sınırı, sabit anahtar, gizli/sabitlenmiş içerik, ekran sınıflama, ölçek.
+- versionCode67 / 26.19-compose-feed-recovery. Derleme ve test sonuçları henüz bekleniyor; gerçek X cihaz testi yapılmadı. Kaynak/testler main'e gönderilecek. Kullanıcı doğrudan sohbetten APK teslimi istiyor.
+- Kalıcı imza ve önceden reddedilen Releases workflow yetkisi değiştirilmedi. Yeni debug imza önceki APK üzerine kurulumla uyumsuz olabilir; kaldırma veri kaybıdır.
+
 ## 26.18 — Gönderiler listesinde dikey kaydırma ve metinden gönderi açma
 
 - Kullanıcı 26.17 hedef aramasının fiziksel cihazda çalıştığını doğruladı. 1000026954.mp4 ve 8 Eylül 19:15 logu incelendi: hedeften sonra Yanıtlar, ardından Videolar sekmesine kayılıyor. Kodun genel ACTION_SCROLL_FORWARD seçimi profilin yatay pager'ını ilerletiyordu; istenen aşağı kaydırma gerçekleşmiyordu.

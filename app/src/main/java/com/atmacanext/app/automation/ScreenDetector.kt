@@ -60,6 +60,10 @@ object ScreenDetector {
         // Account overlays above must still win when the feed remains behind them.
         if (HomeTimelineEvidence.matches(nodes)) return XScreen.HOME
         if (EngagementListEvidence.title(nodes)) return XScreen.ENGAGEMENT_LIST
+        // A scrolled profile retains Posts, even when recommendation cards contain Following.
+        if (FeedRowEvidence.profileFeed(nodes)) return XScreen.PROFILE
+        if (labels.any { it in setOf("yanıtını gönder", "post your reply", "yanıt gönder") } &&
+            (labels.any(EngagementListEvidence::openLabel) || FeedRowEvidence.rows(nodes).isNotEmpty())) return XScreen.TWEET_DETAIL
 
         when (selectedRelationshipTab) {
             RelationshipTabInspector.OTHER -> return XScreen.UNKNOWN

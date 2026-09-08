@@ -1,4 +1,8 @@
-# Atmaca Next — 26.18
+# Atmaca Next — 26.19
+
+26.19: ayrı Compose yazar/saat/metin alanlarından gönderi okuma, öneri kartı/profil ayrımı,
+yorumcu profilinden kontrollü dönüş, retweetçi sonuç çelişkisi kontrolü ve eksik limitte duraklama.
+26.18 cihazda başarısızdır. 26.19 cihaz doğrulaması beklenir; birim testler cihaz testi değildir.
 
 **Başka sohbet veya ChatGPT hesabından devam:** önce [DEVIR_NOTU.md](DEVIR_NOTU.md) dosyasını okuyun. Hesap eklemenin başarılı cihaz doğrulaması, 26.16 yerel hedef profil yönlendirmesi, test durumu ve APK bilgileri burada kayıtlıdır.
 

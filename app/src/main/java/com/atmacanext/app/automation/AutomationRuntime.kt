@@ -1059,7 +1059,9 @@ object AutomationController {
         when (current.flowStage) {
             XFlowStage.RETURN_DISCOVERY_TARGET -> {
                 if ((screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == target) ||
-                    (screen == XScreen.UNKNOWN && XTweetInspector.visibleTweets(root).any { it.author == target })) {
+                    (FeedRowEvidence.profileFeed(AccessibilityTree.snapshots(root)) &&
+                        XIdentityDetector.detectProfileHandle(root).let { it == null || it == target } &&
+                        XTweetInspector.visibleTweets(root).any { it.author == target })) {
                     moveStage(XFlowStage.SCAN_LATEST_TWEETS, "Hedefte sıradaki en az iki saatlik gönderi aranıyor")
                 } else if (now - stageStartedAt >= 15_000L) return pause("Hedefin gönderi listesine dönüş doğrulanamadı")
                 else if (screen != XScreen.UNKNOWN) service.pressBack()
@@ -1099,11 +1101,21 @@ object AutomationController {
             XFlowStage.SEARCH_DISCOVERY_TARGET -> handleDiscoverySearch(service, root, screen, now, target)
             XFlowStage.SCAN_LATEST_TWEETS -> {
                 if (screen !in setOf(XScreen.PROFILE, XScreen.UNKNOWN)) {
-                    if (stageTimedOut(now)) nextDiscoveryTarget(service, "@$target gönderi listesi doğrulanamadı") else service.requestAutomationTick(TICK_MS)
+                    if (stageTimedOut(now)) pause("@$target gönderi listesi doğrulanamadı; görev tamamlanmadı") else service.requestAutomationTick(TICK_MS)
                     return
                 }
                 val seen = discoverySeenTweets.getOrPut(target) { LinkedHashMap() }
                 val rows = XTweetInspector.visibleTweets(root).filter { it.author == target }
+                if (rows.isEmpty() && listScrolls % 3 == 0) {
+                    val evidence = AccessibilityTree.snapshots(root).filter { it.visible && !it.editable }
+                        .filter { it.text != null || it.contentDescription != null }.take(24)
+                        .joinToString(" | ") { "${it.viewId}:${(it.text ?: it.contentDescription).orEmpty().take(140)}@${it.bounds}" }
+                    OperationLog.w("DISCOVERY_READ", "Gönderi okunamadı; ekran kanıtı=$evidence")
+                }
+                if (now - stageStartedAt > 180_000L) {
+                    pause("Üç dakikada yeni uygun gönderi açılamadı; tarama kanıtı DISCOVERY_READ kaydında")
+                    return
+                }
                 rows.forEach { row -> seen.putIfAbsent(row.key, row.ageMinutes) }
                 OperationLog.i("DISCOVERY_SCAN", "target=@$target screen=$screen rows=${rows.size} ages=${rows.map { it.ageMinutes }} scroll=$listScrolls")
                 val eligible = rows.firstOrNull { row ->
@@ -1117,7 +1129,6 @@ object AutomationController {
                         return
                     }
                     if (performStep(service, root, screen, "open_discovery_tweet", eligible.key) { XTweetInspector.click(service, eligible) }) {
-                        discoveryProcessedTweets += eligible.key
                         moveStage(XFlowStage.OPEN_ENGAGEMENT, "Gönderi metni açıldı; detay ekranı doğrulanıyor")
                         service.requestAutomationTick(500L)
                     }
@@ -1139,9 +1150,10 @@ object AutomationController {
                     return
                 }
                 if (screen != XScreen.TWEET_DETAIL) {
-                    if (stageTimedOut(now)) nextDiscoveryTweet(service, "Gönderi detay ekranı açılamadı") else service.requestAutomationTick(TICK_MS)
+                    if (stageTimedOut(now)) pause("Gönderi metnine dokunuldu fakat detay açılmadı; gönderi işlenmiş sayılmadı") else service.requestAutomationTick(TICK_MS)
                     return
                 }
+                discoveryTweetKey?.let(discoveryProcessedTweets::add)
                 when (current.taskType) {
                     TaskType.COMMENTER_FOLLOW -> {
                         moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Yorum yapan kullanıcılar taranıyor")
@@ -1198,7 +1210,8 @@ object AutomationController {
                         moveStage(XFlowStage.OPEN_ENGAGER_PROFILE, "Yorumcu @$author profili doğrulanıyor")
                         if (!XTweetInspector.clickReplyAuthor(service, root, author)) {
                             skippedHandles += author
-                            returnFromEngager(service)
+                            moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Yorumcu profili açılmadı; yorumlarda sıradaki kullanıcı aranıyor")
+                            service.requestAutomationTick(350L)
                         } else service.requestAutomationTick(500L)
                         return
                     }
@@ -1212,7 +1225,14 @@ object AutomationController {
             XFlowStage.OPEN_ENGAGER_PROFILE -> {
                 val handle = engagerHandle ?: return nextDiscoveryTweet(service, "Yorumcu kimliği bulunamadı")
                 if (screen != XScreen.PROFILE || XIdentityDetector.detectProfileHandle(root) != handle) {
-                    if (stageTimedOut(now)) { skippedHandles += handle; returnFromEngager(service) }
+                    if (stageTimedOut(now)) {
+                        skippedHandles += handle
+                        if (screen == XScreen.TWEET_DETAIL) {
+                            engagerHandle = null
+                            moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Profil açılmadı; sıradaki yorumcu aranıyor")
+                            service.requestAutomationTick(350L)
+                        } else pause("Yorumcu profili doğrulanamadı; yanlış ekranda takip yapılmadı")
+                    }
                     else service.requestAutomationTick(350L)
                 } else if (XUiActions.isDirectFollowing(root) || XUiActions.directRequested(root)) {
                     skippedHandles += handle
@@ -1302,21 +1322,20 @@ object AutomationController {
                     verifyVerifiedFollow(service, root, now, pending, handle)
                     return
                 }
-                if (XUiActions.rowHasAny(root, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)) recordSuccess(service, "@$handle")
+                if (XUiActions.rowHasAny(root, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions) &&
+                    !XUiActions.rowHasAny(root, handle, VerifiedFollowPolicy.plainFollowLabels)) recordSuccess(service, "@$handle")
                 else if (elapsed >= ACTION_TIMEOUT_MS) {
                     pendingAction = null
-                    skippedHandles += handle
-                    _state.value = _state.value.copy(status = RuntimeStatus.RUNNING, message = "@$handle takip sonucu doğrulanamadı; kullanıcı atlandı")
-                    service.requestAutomationTick(250L)
+                    pause("@$handle takip sonucu kesinleşmedi; limit aşılmaması için yeni takip yapılmadı")
                 } else service.requestAutomationTick(400L)
             }
             PendingKind.ENGAGER_FOLLOW -> {
-                if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == pending.target && (XUiActions.isDirectFollowing(root) || XUiActions.directRequested(root))) {
+                if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == pending.target &&
+                    (XUiActions.isDirectFollowing(root) || XUiActions.directRequested(root)) && !XUiActions.directFollowAvailable(root)) {
                     recordSuccess(service, pending.target)
                 } else if (elapsed >= ACTION_TIMEOUT_MS) {
-                    pending.target?.let(skippedHandles::add)
                     pendingAction = null
-                    returnFromEngager(service)
+                    pause("Yorumcu takip sonucu kesinleşmedi; limit aşılmaması için yeni takip yapılmadı")
                 } else service.requestAutomationTick(350L)
             }
             PendingKind.DIRECT_FOLLOW -> {
@@ -1430,6 +1449,10 @@ object AutomationController {
 
     private fun finishCycleOrTask(service: AtmacaAccessibilityService, reason: String) {
         val current = _state.value
+        if (current.taskType?.isDiscoveryFollow == true && !cycleTargetReached()) {
+            pause("$reason. ${current.verifiedCount}/${current.limit}; limit tamamlanmadı, ilerleme korundu")
+            return
+        }
         pendingAction = null
         val nextCycle = current.cycleIndex + 1
         if (nextCycle >= current.repeatCount || current.verifiedCount >= current.limit) {

@@ -1,3 +1,11 @@
+## 26.19 — Compose gönderi okuma ve eksik görev düzeltmesi
+
+26.18 cihaz testi başarısız: rows=0, profil öneri kartını FOLLOWING_LIST sanma ve 0/5 COMPLETED.
+26.19 ayrı yazar/saat/metin alanlarını okur; öneri ve medya sınırlarını korur. Yorum/retweetçi ortak tarama,
+sonraki gönderiye dönüş, başarısız dokunuşta kör Geri ve belirsiz takip sonuçları ele alındı.
+Eksik limit tamamlandı sayılmaz. 14 yeni regresyon testi eklendi. CI ve gerçek cihaz doğrulaması bekleniyor.
+Ayrıntılar DEVIR_NOTU.md içinde. Kalıcı imza/Releases izinleri değiştirilmedi.
+
 ## 26.18 — Gönderiler listesinde dikey kaydırma ve metinden gönderi açma
 
 - Kullanıcı 26.17 hedef aramasının fiziksel cihazda çalıştığını doğruladı. 1000026954.mp4 ve 8 Eylül 19:15 logu incelendi: hedeften sonra Yanıtlar, ardından Videolar sekmesine kayılıyor. Kodun genel ACTION_SCROLL_FORWARD seçimi profilin yatay pager'ını ilerletiyordu; istenen aşağı kaydırma gerçekleşmiyordu.

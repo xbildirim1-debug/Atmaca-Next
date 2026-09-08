@@ -12,7 +12,7 @@ internal object TweetContentEvidence {
     fun bodyIndex(nodes: List<NodeSnapshot>, headerBottom: Int): Int? {
         val candidates = nodes.indices.filter { i ->
             val n = nodes[i]
-            val t = n.text.orEmpty().trim()
+            val t = (n.text ?: n.contentDescription).orEmpty().trim()
             val id = n.viewId.orEmpty().lowercase()
             n.visible && n.enabled && n.bounds.top >= headerBottom &&
                 n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
@@ -22,6 +22,7 @@ internal object TweetContentEvidence {
                 header(t) == null && XTweetInspector.parseAgeMinutes(t) == null &&
                 !t.startsWith("@") && !t.startsWith("http", true) &&
                 !Regex("^[0-9., kmb]+(?:yanıt|replies|beğeni|likes|yeniden gönder|reposts|görüntüleme|views).*", RegexOption.IGNORE_CASE).matches(t) &&
+                !Regex("^(?:video|fotoğraf|resim|image|photo|play|oynat|beğen|yanıtla|reply|repost|retweet|bookmark)(?:\\s.*)?$", RegexOption.IGNORE_CASE).matches(t) &&
                 XUiVocabulary.normalize(t) !in setOf("daha fazlasını göster", "show more", "takip et", "follow", "yanıtını gönder", "alıntıları görüntüle")
         }
         return candidates.firstOrNull { nodes[it].viewId.orEmpty().let { id -> id.contains("tweet_text") || id.contains("tweet_content") || id.contains("status_text") } }
