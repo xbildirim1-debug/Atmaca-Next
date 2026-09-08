@@ -1,3 +1,16 @@
+## 26.14 — doğrulanmış derleme ve teslim sonucu
+
+- APK kaynak commit: cf753f84eb60567cf5ee4e06f94b0848f03023cb. Son üç düzeltme Compose gönderi ayrıntısı tanıma, erişilebilirlik açıklaması dönüşümü ve gövde tarihlerinin gönderi yaşı sayılmamasıdır.
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34210727302 . APK/tam paket artifact 10049890216; rapor artifact 10049891213. 174 test geçti; 0 başarısız, hata veya atlanan. Test, lint, assemble, apksigner ve manifest kontrolleri başarılı.
+- AtmacaNext-26.14.apk: versionCode62 / 26.14-engagement-follow, 20557532 bayt. SHA256 4fbba8da1c25feb43b96e44f990cd9a3e6ea85642b27ed3d50aad1c91e14e0da.
+- Tam ZIP SHA256 42404ac7286798f5a89533c9fa206361d3d55c1f72c7003b886e031ce68f9c5a. ZIP CRC, paket içi/dışı APK eşitliği, sürüm manifesti, INTERNET izni yokluğu ve test XML toplamları ayrıca doğrulandı.
+- Sertifika SHA256 b6786a2083b288229609c1185a5f5532f4499d7f6b72b9441a7102aac9ee32f9; 26.13 imzasından farklı. Üzerine kurulum reddedilebilir; kaldırmak kayıtlı hesap/görev/ayar/bildirimleri siler. Kalıcı imza sorunu sürüyor.
+- 26.13 onaylı kullanıcı takibi kullanıcı tarafından fiziksel telefonda başarılı doğrulandı. 26.14'ün Beklemede sayımı, boş kaynak geçişi ve yorumcu/retweetçi akışları fiziksel telefonda henüz doğrulanmadı. 174 test sentetik erişilebilirlik/birim testidir; gerçek X cihaz uyumluluğunu tek başına kanıtlamaz.
+- Hesap başına tek hedef nihai kullanıcı talimatıdır. Hedefin yalnız kendi gönderileri arasından yaşı en az 120 dakika olanlar işlenir; yeni, belirsiz yaşlı, sabitlenmiş ve reklam gönderileri atlanır. Değişken yeniden gönderim sayısı yalnız seçili etkileşim sekmesi kanıtı olarak okunur.
+- Yeni takip sonrası Beklemede/Requested görülürse işlem bir kez sayılır; önceden Beklemede olan kullanıcı tekrar hedeflenmez. Onaylı kaynakta aday yoksa ilerleme korunarak önceki listeye dönülür ve ziyaret edilmemiş başka kullanıcı açılır.
+- Kod/test/notlar main'dedir. APK ve tam ZIP Actions çıktısında ve sohbet teslimindedir. Actions artifact 7 Aralık 2026'da sona erer. Kalıcı Releases yayını önceki contents:write otomatik onay engeli nedeniyle yapılmadı; workflow yetkisi değiştirilmedi.
+
+
 ## 26.14 — Beklemede, boş kaynak, tek hedefli yorumcu/retweetçi takip
 
 Kullanıcı 26.13 onaylı takibin fiziksel telefonda başarılı çalıştığını doğruladı. Bu cihaz doğrulaması önceki test edilmedi kayıtlarından daha günceldir; 26.13 taze erişilebilirlik okuma yolu korunur. Yeni istek: yeni takip sonrası Beklemede/Requested işlem sayılacak, boş onaylı kaynakta başka kullanıcı aranacak; hesap başına tek hedef ve en az 120 dakikalık gönderilerden eskiye ilerleyen yorumcu/retweetçi takip.
@@ -332,4 +345,3 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 5. Hesap ekleme doğrulandıktan sonra çoklu hesap görev sırası, görev sonu dönüş ve diğer bildirilen görev sorunlarını ayrı kanıtlarla değerlendir. Bu değişiklik bunların tamamını doğrulamaz.
 6. Mevcut telefon uygulaması kararlı olmadan daha önce ertelenen çoklu emülatör mimarisine geçme.
 7. Her yeni düzeltmeyi test et, GitHub'a kaydet, bu notu son testler, APK ve kalan sorunlarla güncelle. Kullanıcı aynı talimatları başka hesapta tekrar etmek zorunda kalmasın.
-
