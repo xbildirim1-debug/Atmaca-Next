@@ -1695,7 +1695,7 @@ object AutomationController {
         if (dispatched) {
             listScrolls++
             _state.value = _state.value.copy(listScrolls = listScrolls)
-            if (_state.value.taskType.isDiscoveryFollow) nextActionNotBefore = System.currentTimeMillis() + 850L
+            if (_state.value.taskType?.isDiscoveryFollow == true) nextActionNotBefore = System.currentTimeMillis() + 850L
             if (_state.value.taskType == TaskType.UNFOLLOW) {
                 nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + UNFOLLOW_SCROLL_SETTLE_MS)
             }
@@ -1714,7 +1714,7 @@ object AutomationController {
         if (dispatched) {
             listScrolls++
             _state.value = _state.value.copy(listScrolls = listScrolls)
-            if (_state.value.taskType.isDiscoveryFollow) nextActionNotBefore = System.currentTimeMillis() + 850L
+            if (_state.value.taskType?.isDiscoveryFollow == true) nextActionNotBefore = System.currentTimeMillis() + 850L
             if (_state.value.taskType == TaskType.UNFOLLOW) {
                 nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + UNFOLLOW_SCROLL_SETTLE_MS)
             }
@@ -1734,7 +1734,7 @@ object AutomationController {
         root: AccessibilityNodeInfo?,
         forward: Boolean,
     ): Boolean {
-        if (_state.value.taskType.isDiscoveryFollow) {
+        if (_state.value.taskType?.isDiscoveryFollow == true) {
             // ACTION_SCROLL_FORWARD on X's profile pager changes Posts to Replies
             // and Videos. Discovery must use an explicitly vertical gesture only.
             return if (forward) ListGesture.forward(service, root) else ListGesture.backward(service, root)
