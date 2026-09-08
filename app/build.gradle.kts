@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 62
-        versionName = "26.14-engagement-follow"
+        versionCode = 63
+        versionName = "26.15-discovery-target-start"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -79,4 +79,3 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
 }
-

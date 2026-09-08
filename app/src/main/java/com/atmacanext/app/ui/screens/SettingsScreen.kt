@@ -295,10 +295,10 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                                 AppServices.settings.setLimits(followLimit.toIntOrNull() ?: 35, unfollowLimit.toIntOrNull() ?: 35)
                                 AppServices.settings.setDailyAccountLimits(followLimit.toIntOrNull() ?: 35, unfollowLimit.toIntOrNull() ?: 35)
                                 AppServices.settings.setAutomationTiming(
-                                    actionMs.toLongOrNull() ?: 1_800L,
-                                    switchMs.toLongOrNull() ?: 2_500L,
+                                    actionMs.toLongOrNull() ?: 500L,
+                                    switchMs.toLongOrNull() ?: 1_800L,
                                     settings.rateLimitCooldownMinutes,
-                                    taskGapMs.toLongOrNull() ?: 3_000L,
+                                    taskGapMs.toLongOrNull() ?: 1_500L,
                                 )
                             }
                         },

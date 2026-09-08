@@ -18,9 +18,9 @@ data class AppSettings(
     val dailyFollowLimitPerAccount: Int = 35,
     val dailyUnfollowLimitPerAccount: Int = 35,
     val keepLogDays: Int = 14,
-    val betweenActionsMs: Long = 800L,
-    val accountSwitchSettleMs: Long = 2_500L,
-    val betweenTasksMs: Long = 3_000L,
+    val betweenActionsMs: Long = 500L,
+    val accountSwitchSettleMs: Long = 1_800L,
+    val betweenTasksMs: Long = 1_500L,
     val continueAfterFailedTask: Boolean = true,
     val rateLimitCooldownMinutes: Int = 30,
     val minimumTweetAgeMinutes: Int = 120,
@@ -58,9 +58,9 @@ class SettingsStore(private val context: Context) {
             dailyFollowLimitPerAccount = (p[Keys.dailyFollowLimitPerAccount] ?: 35).coerceIn(1, 100),
             dailyUnfollowLimitPerAccount = (p[Keys.dailyUnfollowLimitPerAccount] ?: 35).coerceIn(1, 100),
             keepLogDays = (p[Keys.keepLogDays] ?: 14).coerceIn(1, 365),
-            betweenActionsMs = (p[Keys.betweenActionsMs] ?: 800L).coerceIn(800L, 15_000L),
-            accountSwitchSettleMs = (p[Keys.accountSwitchSettleMs] ?: 2_500L).coerceIn(1_000L, 15_000L),
-            betweenTasksMs = (p[Keys.betweenTasksMs] ?: 3_000L).coerceIn(1_000L, 60_000L),
+            betweenActionsMs = (p[Keys.betweenActionsMs] ?: 500L).coerceIn(500L, 15_000L),
+            accountSwitchSettleMs = (p[Keys.accountSwitchSettleMs] ?: 1_800L).coerceIn(1_500L, 15_000L),
+            betweenTasksMs = (p[Keys.betweenTasksMs] ?: 1_500L).coerceIn(1_000L, 60_000L),
             continueAfterFailedTask = p[Keys.continueAfterFailedTask] ?: true,
             rateLimitCooldownMinutes = (p[Keys.rateLimitCooldownMinutes] ?: 30).coerceIn(5, 180),
             minimumTweetAgeMinutes = (p[Keys.minimumTweetAgeMinutes] ?: 120).coerceIn(120, 1_440),
@@ -86,10 +86,10 @@ class SettingsStore(private val context: Context) {
         }
     }
 
-    suspend fun setAutomationTiming(betweenActionsMs: Long, accountSwitchSettleMs: Long, cooldownMinutes: Int, betweenTasksMs: Long = 3_000L) {
+    suspend fun setAutomationTiming(betweenActionsMs: Long, accountSwitchSettleMs: Long, cooldownMinutes: Int, betweenTasksMs: Long = 1_500L) {
         context.atmacaDataStore.edit { p ->
-            p[Keys.betweenActionsMs] = betweenActionsMs.coerceIn(800L, 15_000L)
-            p[Keys.accountSwitchSettleMs] = accountSwitchSettleMs.coerceIn(1_000L, 15_000L)
+            p[Keys.betweenActionsMs] = betweenActionsMs.coerceIn(500L, 15_000L)
+            p[Keys.accountSwitchSettleMs] = accountSwitchSettleMs.coerceIn(1_500L, 15_000L)
             p[Keys.betweenTasksMs] = betweenTasksMs.coerceIn(1_000L, 60_000L)
             p[Keys.rateLimitCooldownMinutes] = cooldownMinutes.coerceIn(5, 180)
         }

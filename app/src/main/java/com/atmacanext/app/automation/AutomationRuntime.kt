@@ -90,7 +90,7 @@ data class AutomationRuntimeState(
  * - Sabit ekran koordinatı kullanılmaz.
  */
 object AutomationController {
-    private const val TICK_MS = 350L
+    private const val TICK_MS = 250L
     private const val UI_TIMEOUT_MS = 6_000L
     private const val ACTION_TIMEOUT_MS = 5_000L
     private const val MAX_NAV_RECOVERIES = 4
@@ -1067,8 +1067,31 @@ object AutomationController {
                 if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == target) {
                     moveStage(XFlowStage.SCAN_LATEST_TWEETS, "@$target profilindeki en az 2 saatlik gönderiler taranıyor")
                     service.requestAutomationTick(150L)
-                } else if (stageTimedOut(now)) nextDiscoveryTarget(service, "@$target profili açılamadı")
-                else service.requestAutomationTick(TICK_MS)
+                } else {
+                    when (DiscoveryTargetLaunchPolicy.decide(
+                        exactTargetVisible = false,
+                        launchAttempts = stageAttempts,
+                        elapsedMs = now - stageStartedAt,
+                    )) {
+                        DiscoveryTargetLaunchDecision.WAIT -> service.requestAutomationTick(TICK_MS)
+                        DiscoveryTargetLaunchDecision.LAUNCH -> {
+                            val attempt = ++stageAttempts
+                            OperationLog.i(
+                                "DISCOVERY_TARGET",
+                                "Hedef profil yönlendirmesi gönderiliyor target=@$target attempt=$attempt screen=$screen",
+                            )
+                            if (!service.launchDiscoveryProfile(target, attempt)) {
+                                nextDiscoveryTarget(service, "@$target profil bağlantısı açılamadı")
+                            } else {
+                                nextActionNotBefore = now + DiscoveryTargetLaunchPolicy.SETTLE_MS
+                                service.requestAutomationTick(DiscoveryTargetLaunchPolicy.SETTLE_MS)
+                            }
+                        }
+                        DiscoveryTargetLaunchDecision.GIVE_UP -> {
+                            nextDiscoveryTarget(service, "@$target profili ${stageAttempts} yönlendirmede doğrulanamadı")
+                        }
+                    }
+                }
             }
             XFlowStage.SCAN_LATEST_TWEETS -> {
                 if (screen !in setOf(XScreen.PROFILE, XScreen.UNKNOWN)) {
@@ -1473,8 +1496,12 @@ object AutomationController {
             ?: return finishCycleOrTask(service, "Tüm hedef hesaplar tarandı")
         listEndStable = 0
         lastListSignature = ""
-        moveStage(XFlowStage.OPEN_DISCOVERY_TARGET, "@$target profili açılıyor (${discoveryTargetIndex + 1}/${discoveryTargets.size})")
-        if (!service.launchDiscoveryProfile(target)) nextDiscoveryTarget(service, "@$target açılamadı")
+        // Hesap doğrulaması kendi profil ekranını yeni açmıştır. Aynı callback içinde
+        // deep-link göndermek bazı X sürümlerinde yutuluyor. OPEN_DISCOVERY_TARGET
+        // görünür ekran oturduktan sonra hedefi gönderir ve hedef @handle görünene
+        // kadar sınırlı sayıda yeniden dener.
+        moveStage(XFlowStage.OPEN_DISCOVERY_TARGET, "@$target profiline yönlendirme hazırlanıyor (${discoveryTargetIndex + 1}/${discoveryTargets.size})")
+        service.requestAutomationTick(DiscoveryTargetLaunchPolicy.INITIAL_DELAY_MS)
     }
 
     private fun nextDiscoveryTweet(service: AtmacaAccessibilityService, reason: String) {
@@ -1754,4 +1781,3 @@ object AutomationController {
 
     private val CONTENT_TYPES = setOf(TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET, TaskType.COMMENT, TaskType.QUOTE)
 }
-

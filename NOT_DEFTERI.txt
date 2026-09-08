@@ -1,3 +1,14 @@
+## 26.15 — yorumcu/retweetçi hedef başlangıcı ve hız ayarları
+
+8 Eylül 2026 tarihli 1000026864.mp4 cihaz videosunda retweetçi takip görevi oluşturuluyor, `@bildirimhaber1` görev hesabı doğrulanıyor fakat kayıtlı hedef hesaba yönlenmeden görev hesabının kendi profilinde kalıyor ve durduruluyor. Kaynak incelemesinde hedef profil ACTION_VIEW isteğinin, hesap doğrulamasını tamamlayan kendi-profil erişilebilirlik callback'i içinde hemen gönderildiği görüldü. X geçiş hâlindeyken bu bağlantıyı yutabiliyor; runtime yine de OPEN_DISCOVERY_TARGET aşamasında yalnız zaman aşımını bekliyordu.
+
+- Hedef açılışı hesap doğrulama callback'inden ayrıldı. Kendi profil geçişinin oturması için 450 ms beklenir; sonra kayıtlı tek hedefe gidilir. Ekrandaki tam hedef `@handle` görülmeden gönderi taraması başlamaz.
+- İlk bağlantı X tarafından yutulursa farklı yönlendirme anahtarıyla en fazla üç kontrollü deneme yapılır. Her deneme `DISCOVERY_TARGET` logunda hedef kullanıcı adı, deneme numarası ve mevcut ekranla görünür. Üç denemede de hedef kimliği doğrulanmazsa görev yanlış profilde işlem yapmak yerine güvenli biçimde tamamlanır/sonraki kuyruk öğesine geçer.
+- Varsayılan işlemler arası süre 800'den 500 ms'ye, hesap geçişi 2500'den 1800 ms'ye, görevler arası süre 3000'den 1500 ms'ye indirildi. Ayarlar ekranının alt sınırı 500 ms oldu. Hesap kimliği, hedef kimliği ve takip sonucu kontrolleri kaldırılmadı.
+- Runtime tick 350'den 250 ms'ye indirildi. Uzun görünen eski bekleme hız ayarı değil, başarısız hedef yönlendirmesinin zaman aşımıydı; yeni akış bunu giderir.
+- Üç yeni regresyon testi: ilk hedef açılışından önce geçiş bekleme, yutulan bağlantıda sınırlı tekrar ve tam hedef görünürken yeni yönlendirme üretmeme. Önceki testler korunur.
+- Sürüm 26.15-discovery-target-start / code63. CI ve fiziksel cihaz sonucu bu kaydın sonraki bölümünde ayrıca yazılacaktır. Bu düzeltme henüz telefonda doğrulanmadı. Kalıcı imza ve GitHub Releases `contents:write` onay engeli sürer; yayın yetkisi değiştirilmedi.
+
 ## 26.14 — doğrulanmış derleme ve teslim sonucu
 
 - APK kaynak commit: cf753f84eb60567cf5ee4e06f94b0848f03023cb. Son üç düzeltme Compose gönderi ayrıntısı tanıma, erişilebilirlik açıklaması dönüşümü ve gövde tarihlerinin gönderi yaşı sayılmamasıdır.
@@ -9,7 +20,6 @@
 - Hesap başına tek hedef nihai kullanıcı talimatıdır. Hedefin yalnız kendi gönderileri arasından yaşı en az 120 dakika olanlar işlenir; yeni, belirsiz yaşlı, sabitlenmiş ve reklam gönderileri atlanır. Değişken yeniden gönderim sayısı yalnız seçili etkileşim sekmesi kanıtı olarak okunur.
 - Yeni takip sonrası Beklemede/Requested görülürse işlem bir kez sayılır; önceden Beklemede olan kullanıcı tekrar hedeflenmez. Onaylı kaynakta aday yoksa ilerleme korunarak önceki listeye dönülür ve ziyaret edilmemiş başka kullanıcı açılır.
 - Kod/test/notlar main'dedir. APK ve tam ZIP Actions çıktısında ve sohbet teslimindedir. Actions artifact 7 Aralık 2026'da sona erer. Kalıcı Releases yayını önceki contents:write otomatik onay engeli nedeniyle yapılmadı; workflow yetkisi değiştirilmedi.
-
 
 ## 26.14 — Beklemede, boş kaynak, tek hedefli yorumcu/retweetçi takip
 

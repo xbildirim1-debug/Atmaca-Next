@@ -62,7 +62,7 @@ import kotlinx.coroutines.launch
         OutlinedButton(onClick = { logs = true }, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Default.History, null); Spacer(Modifier.width(8.dp)); Text("İşlem kayıtları")
         }
-        Text("Atmaca Next · 26.4\nHesaplar, görevler ve işlem kayıtları", color = TextSecondary, fontSize = 12.sp)
+        Text("Atmaca Next · 26.15\nHesaplar, görevler ve işlem kayıtları", color = TextSecondary, fontSize = 12.sp)
     }
 }
 
@@ -79,13 +79,13 @@ private fun AutomationPreferences(enabled: Boolean) {
     var saving by remember { mutableStateOf(false) }
     var feedback by remember { mutableStateOf("") }
     val editable = enabled && !queue.isActive && !saving
-    val valid = (actionMs.toLongOrNull() ?: -1L) in 800L..15_000L && (switchMs.toLongOrNull() ?: -1L) in 1_500L..15_000L &&
+    val valid = (actionMs.toLongOrNull() ?: -1L) in 500L..15_000L && (switchMs.toLongOrNull() ?: -1L) in 1_500L..15_000L &&
         (taskMs.toLongOrNull() ?: -1L) in 1_000L..60_000L && (days.toIntOrNull() ?: -1) in 1..365
     Card {
         Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Çalışma ayarları", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Text("Yavaş yüklenen X ekranlarında hesap geçişi beklemesini artırabilirsin. 1000 ms = 1 saniye.", color = TextSecondary)
-            PreferenceNumber("İşlemler arası (800–15000 ms)", actionMs, editable) { actionMs = it }
+            PreferenceNumber("İşlemler arası (500–15000 ms)", actionMs, editable) { actionMs = it }
             PreferenceNumber("Hesap geçişi (1500–15000 ms)", switchMs, editable) { switchMs = it }
             PreferenceNumber("Görevler arası (1000–60000 ms)", taskMs, editable) { taskMs = it }
             PreferenceNumber("Kayıt saklama süresi (1–365 gün)", days, editable) { days = it }

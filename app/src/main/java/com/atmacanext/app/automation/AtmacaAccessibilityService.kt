@@ -117,13 +117,13 @@ class AtmacaAccessibilityService : AccessibilityService() {
         val i=Intent(Intent.ACTION_VIEW,Uri.parse("https://x.com/home")).apply { setPackage(X_PACKAGE); addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT) }
         return if (startSafely(i,"home")) true else launchX()
     }
-    fun launchDiscoveryProfile(handle: String): Boolean {
+    fun launchDiscoveryProfile(handle: String, attempt: Int = 1): Boolean {
         val clean = XIdentityDetector.normalizeUsername(handle)
         if (!clean.matches(Regex("[a-z0-9_]{1,15}"))) return false
         return startSafely(Intent(Intent.ACTION_VIEW, Uri.parse("https://x.com/$clean")).apply {
             setPackage(X_PACKAGE)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }, "discovery-profile/$clean")
+        }, "discovery-profile/$clean/${attempt.coerceAtLeast(1)}")
     }
 
     fun launchXProfile(handle:String):Boolean=launchXUrl(handle,"profile") { "https://x.com/$it" }
