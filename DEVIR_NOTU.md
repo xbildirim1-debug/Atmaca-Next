@@ -1,3 +1,12 @@
+## 26.19 — doğrulanmış derleme ve doğrudan APK teslimi
+
+- Kaynak main commit: 17c54a5e4100b36ac6be11776e6d883123279894; CI 34276417091 başarıyla tamamlandı. 208 test; 0 hata, başarısız, atlanan. Lint, assemble, imza ve manifest kontrolü geçti.
+- APK: AtmacaNext-26.19.apk, code67 / 26.19-compose-feed-recovery. SHA256 c240b01c4eb8a5957e492098a1f2552b14f768cc68d5a97f616d61d9299cf4ad. TAM-PAKET SHA256 f8512a6913a0a1b70e3771fe077f039557e36d482b645eefc2f2fab61ecfe605. ZIP CRC ve paket içi/dışı APK eşitliği doğrulandı.
+- APK/tam paket artifact 10075981654; rapor artifact 10075982546. Kullanıcı APK'yı GitHub bağlantısı yerine doğrudan sohbet dosyası olarak istiyor.
+- Fiziksel X cihaz testi yapılmadı. 14 yeni test sentetik düğüm düzenidir; gerçek node ağacı olmadan her X varyantının uyumluluğu garanti edilmez. 26.18 cihaz başarısızlığı geçerlidir.
+- Git komut satırında kimlik yoktu; kaynak mevcut yetkili GitHub bağlantısıyla main'e kaydedildi. Yerel 128d245 commit'i ile yayınlanan 17c54a5 kaynak ağacı aynıdır; bu kayıt yalnız belgelerdir.
+- Kalıcı imza ve Releases workflow yetki engeli devam ediyor; yetki değişikliği veya kalıcı Releases yayını yapılmadı. APK imzası önceki sürümle uyumsuz olabilir; kaldırma kayıtları siler.
+
 ## 26.19 — 23:28 cihaz hatası ve ortak keşif akışı
 
 - 1000026994.mp4 (66,88 sn) ve 8 Eylül 23:27–23:28 logu: hedef açılıyor, 4 sa gönderi atlanıyor, her taramada rows=0. Son ekran BaBaLa TV / Kimi takip etmeli kartıyla hâlâ Gönderiler; FOLLOWING_LIST bir sınıflama hatasıdır. 0/5 COMPLETED hatalıdır. 26.18 cihaz testini geçmedi.
