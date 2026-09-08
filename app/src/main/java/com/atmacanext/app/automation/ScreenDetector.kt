@@ -166,7 +166,13 @@ object ScreenDetector {
             id.endsWith("/back") || id.contains("toolbar_back") || id.contains("navigate_up")
         }
         val hasDetailTitle = labels.any { it in XUiVocabulary.tweetDetailSignals }
-        if (explicitDetailId || (hasBack && hasDetailTitle && tweetActionCount >= 2 && tweetIds >= 1)) {
+        val detailReplyEntry = labels.any { it == "yanıtını gönder" || it == "post your reply" || it == "yanıt gönder" }
+        val numberedActions = labels.count { label ->
+            label.length < 100 && label.any(Char::isDigit) &&
+                listOf("yanıt", "replies", "beğeni", "likes", "yeniden gönder", "reposts").any(label::contains)
+        }
+        if (explicitDetailId || (hasBack && hasDetailTitle &&
+                ((tweetActionCount >= 2 && tweetIds >= 1) || detailReplyEntry || numberedActions >= 2))) {
             return XScreen.TWEET_DETAIL
         }
 

@@ -6,6 +6,13 @@ import org.junit.Test
 
 class EngagementFollowRulesTest {
     private fun tab(text: String, selected: Boolean) = NodeSnapshot(text, null, null, "TextView", true, true, Rect(), selected = selected)
+    @Test fun composeTweetDetailNeedsNoLegacyResourceIds() {
+        val nodes = listOf("Geri", "Gönderi", "@target", "24 yanıt", "378 beğeni", "Yanıtını gönder").map { tab(it, false) }
+        assertEquals(XScreen.TWEET_DETAIL, ScreenDetector.detect(nodes))
+    }
+    @Test fun aPostBodyWithoutDetailHeaderIsNotTweetDetail() {
+        assertNotEquals(XScreen.TWEET_DETAIL, ScreenDetector.detect(listOf(tab("24 yanıt", false), tab("378 beğeni", false))))
+    }
     @Test fun dynamicRepostCountsAreNotHardcoded() {
         for (label in listOf("30 tarafından yeniden gönderildi", "1.234 kişi tarafından yeniden gönderildi", "0 tarafından yeniden gönderildi", "45 reposts", "Reposts 900"))
             assertTrue(label, EngagementListEvidence.isReposts(label))
