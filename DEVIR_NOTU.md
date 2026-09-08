@@ -1,3 +1,13 @@
+## 26.12 — doğrulanmış APK ve teslim sonucu
+
+- Kaynak commit b8c023c2f6fa818ac9074b7182b3e479cd8d706f (main). Bu sonuç kaydı yalnız belgedir; APK aynı kaynak derlemesinden teslim edilir.
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34188597647 . APK/tam paket artifact 10041442033; test/lint raporları 10041442244. 159 test, 0 başarısız/hata/atlanan. Test, lint, assemble, apksigner ve manifest kontrolleri geçti.
+- AtmacaNext-26.12.apk: code60 / 26.12-verified-tab-label, 20557532 bayt; SHA256 d62945b98d7ed758f5fa3f78bd8718f8541b0191c426f81e9f941424064d8bc5.
+- Tam ZIP SHA256 ce7de6dd45e25552cf0d44573c45c0f2447dfca31f2ad0b10de290fd15638b75. ZIP CRC, paket içi/dışı APK eşitliği, manifest sürümü/INTERNET izni yokluğu ve test XML toplamları doğrulandı. Tam paket kaynak, APK, test raporları, manifest, hash ve CI sonuçlu NOT_DEFTERI içerir.
+- APK sertifikası SHA256 257e3fe18f7f1d6984a49c7ee97a0ce8036f43319e60600595db61dd2f0f4672; 26.11 sertifikasından farklı. Üzerine kurulum reddedilebilir; eski uygulamayı kaldırmak kayıtlı hesap/görev/ayar/bildirim verilerini siler. Kalıcı imza hâlâ açık sorundur.
+- Fiziksel X/telefon testi yapılmadı. Verilen 26.11 videosu Türkçe Onaylanmış takipçiler etiketinin eksikliğini ve liste başındaki yenilemeleri gösterdi; yeni davranış cihazda doğrulanmalıdır. Takılma sürerse yeni VERIFIED_TAB kaydı incelenmeli; seçili durum kanıtı olmadan takip başlatılmamalı.
+- Kod/test/notlar main'de. APK ve tam ZIP Actions üzerinde ve sohbetten teslim edilir. Kalıcı GitHub Releases yayını önceki otomatik onay reddi nedeniyle tamamlanmadı; contents:write workflow etkinleştirilmedi. Actions artifact süreli saklamadır, kalıcı Releases teslimi değildir. Eski sürümler silinmedi.
+
 ## 26.12 — cihazdaki Onaylanmış takipçiler etiketi ve yenileme düzeltmesi
 
 8 Eylül 2026, 07:39–07:40 cihaz logu ve 1000026806.mp4 incelendi. Kullanıcının 26.11 cihazında dört hesap taranmış ve Atmaca dönüşü doğrulanmış. Dinamik kaynak profili artık PROFILE olarak okunuyor. Video açık/seçili sekmenin tam Türkçe adının "Onaylanmış takipçiler" olduğunu gösteriyor; önceki sözlük yalnız "Onaylı" ve "Doğrulanmış" biçimlerini içerdiğinden ekran UNKNOWN kalıyor. Bu, ham ağacın seçili alanının paylaşıldığını tek başına kanıtlamaz; düzeltme sonrası cihaz doğrulaması gerekir.
