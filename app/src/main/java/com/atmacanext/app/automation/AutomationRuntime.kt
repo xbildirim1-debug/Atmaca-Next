@@ -1055,7 +1055,8 @@ object AutomationController {
             ?: return finishCycleOrTask(service, "Hedefin erişilebilir uygun gönderileri tarandı; bulunan kadar kullanıcı takip edildi")
         when (current.flowStage) {
             XFlowStage.RETURN_DISCOVERY_TARGET -> {
-                if (screen == XScreen.PROFILE || (screen == XScreen.UNKNOWN && XTweetInspector.visibleTweets(root).any { it.author == target })) {
+                if ((screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == target) ||
+                    (screen == XScreen.UNKNOWN && XTweetInspector.visibleTweets(root).any { it.author == target })) {
                     moveStage(XFlowStage.SCAN_LATEST_TWEETS, "Hedefte sıradaki en az iki saatlik gönderi aranıyor")
                 } else if (now - stageStartedAt >= 15_000L) return pause("Hedefin gönderi listesine dönüş doğrulanamadı")
                 else if (screen != XScreen.UNKNOWN) service.pressBack()

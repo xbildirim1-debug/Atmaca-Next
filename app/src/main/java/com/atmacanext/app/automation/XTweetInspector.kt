@@ -72,7 +72,7 @@ object XTweetInspector {
     fun click(service: AtmacaAccessibilityService, row: TweetRow): Boolean = GestureClick.click(service, row.row)
 
     internal fun parseAgeMinutes(raw: String?, nowMillis: Long = System.currentTimeMillis()): Long? {
-        val text = raw.orEmpty().lowercase(Locale("tr", "TR"))
+        val text = raw.orEmpty().trim().lowercase(Locale("tr", "TR"))
         Regex("^(\\d{1,4})\\s*(?:dk|dak|dakika|min|mins|minutes)(?:\\s*(?:ago|önce))?$").find(text)?.let {
             return it.groupValues[1].toLongOrNull()
         }
@@ -91,8 +91,7 @@ object XTweetInspector {
             DateTimeFormatter.ofPattern("MMM d", Locale.US),
         )
         for (format in formats) {
-            val candidates = Regex("[0-9]{1,2}\\s+[\\p{L}.]{3,10}(?:\\s+[0-9]{4})?|[\\p{L}.]{3,10}\\s+[0-9]{1,2}(?:,\\s*[0-9]{4})?")
-                .findAll(raw.orEmpty()).map { it.value }.toList()
+            val candidates = listOf(raw.orEmpty().trim())
             for (candidate in candidates) {
                 val date = runCatching { LocalDate.parse(candidate, format) }.getOrNull()
                     ?: runCatching { LocalDate.parse("$candidate ${today.year}", DateTimeFormatter.ofPattern("d MMM yyyy", Locale("tr", "TR"))) }.getOrNull()

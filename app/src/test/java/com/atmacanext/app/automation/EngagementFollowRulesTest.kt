@@ -38,6 +38,7 @@ class EngagementFollowRulesTest {
         assertEquals(180L, XTweetInspector.parseAgeMinutes("3 h"))
         assertNull(XTweetInspector.parseAgeMinutes("Bu iş 2 saat sürdü"))
         assertNull(XTweetInspector.parseAgeMinutes("Yeni gönderi"))
+        assertNull(XTweetInspector.parseAgeMinutes("Haber 5 Eylül 2026 tarihinde başladı"))
     }
     @Test fun ageAndCountChangesDoNotCreateANewTweetKey() {
         assertEquals(XTweetInspector.stableTextKey("@target | 2 sa | Haber metni | 30 likes"),
