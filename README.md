@@ -1,4 +1,4 @@
-# Atmaca Next — 26.16
+# Atmaca Next — 26.17
 
 **Başka sohbet veya ChatGPT hesabından devam:** önce [DEVIR_NOTU.md](DEVIR_NOTU.md) dosyasını okuyun. Hesap eklemenin başarılı cihaz doğrulaması, 26.16 yerel hedef profil yönlendirmesi, test durumu ve APK bilgileri burada kayıtlıdır.
 
@@ -99,3 +99,13 @@ Doğrulanmış 26.15 derlemesi: [GitHub Actions çalışması](https://github.co
 26.15 cihaz logu hedefin doğru `@pusholder` olarak okunduğunu fakat üç `https://x.com/pusholder` isteğinin de X tarafından yutulduğunu kanıtladı. İlk yönlendirme artık X'in yerel `twitter://user?screen_name=` şemasını kullanır. Olmazsa twitter.com ve x.com ayrı yolları denenir; her yol 2,5 saniye bekler. Tam hedef kullanıcı adı görünmeden gönderi taraması başlamaz.
 
 Doğrulanmış 26.16 derlemesi: [GitHub Actions çalışması](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34219134897), 178 test ve sıfır hata. Yerel profil rotasının fiziksel cihaz testi bekleniyor.
+
+## 26.17 — X içi hedef profil araması
+
+- 8 Eylül 14:46 logu ve 1000026873.mp4: görev hesabı bildirimhaber1 doğrulanıyor; pusholder hedefi doğru okunmasına rağmen 26.16 native-user/twitter-web/x-web yollarının üçünde de kendi profilinde kalıyor. startActivity kabulü hedefin açılması değildir; Android/X seviyesindeki kesin neden bu kanıtla belirlenemez.
+- Üç bağlantı sonucu hedef doğrulanmazsa veya bağlantı başlatılamazsa SEARCH_DISCOVERY_TARGET başlar. Kendi profilinden Geri ile alt gezinmeye, genel Ara sekmesine, arama alanına ve tam @hedef önerisine gider. Profilin üstteki kendi gönderilerinde arama simgesi kullanılmaz. Öneri gelmezse desteklenen cihazlarda IME araması bir kez gönderilir ve yalnız seçili Kişiler sekmesinde sonuç seçilir.
+- Hedef profil başlığı doğrulanmadan gönderi taraması başlamaz. Sorgu alanı, kısmi kullanıcı adı, metin içi bahsetme ve takip düğmeleri sonuç sayılmaz. 45 saniyede hedef doğrulanmazsa görev tamamlanmış sayılmadan duraklar. DISCOVERY_SEARCH adım/eylem/kabul/ekran kayıtları eklendi.
+- Değişiklikler: AutomationRuntime.kt, yeni DiscoverySearchSelector.kt ve DiscoverySearchSelectorTest.kt, sürüm code65 / 26.17-search-profile-navigation, mevcut salt-okuma build workflow paket adları.
+- Tek hedef, en az 120 dakikalık hedef gönderileri, takip limitleri, Beklemede sayımı ve hesap senkronizasyonu korunur.
+- Derleme/test sonucu henüz bekleniyor. Gerçek telefonda yeni arama yolu test edilmedi; video 26.16 hatasının kanıtıdır.
+- Kalıcı imza çözülmedi. GitHub Releases contents:write workflow için önceki otomatik onay reddi nedeniyle yetki değişikliği yapılmadı; teslim arşivi durumu ayrıca kaydedilecek.

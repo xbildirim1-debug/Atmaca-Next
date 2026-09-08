@@ -35,6 +35,7 @@ enum class XFlowStage {
     FILL_COMPOSER,
     SUBMIT_COMPOSER,
     OPEN_DISCOVERY_TARGET,
+    SEARCH_DISCOVERY_TARGET,
     SCAN_LATEST_TWEETS,
     OPEN_ENGAGEMENT,
     PROCESS_ENGAGEMENT,
@@ -155,6 +156,8 @@ object AutomationController {
     private var unfollowReverseMode = false
     private var unfollowFollowObservedAt = 0L
 
+    private var discoverySearchStep = 0
+    private var discoverySearchSubmitted = false
     private var discoveryTargetIndex = 0
     private var discoveryTweetKey: String? = null
     private val discoverySeenTweets = LinkedHashMap<String, LinkedHashMap<String, Long?>>()
@@ -1081,18 +1084,19 @@ object AutomationController {
                                 "Hedef profil yönlendirmesi gönderiliyor target=@$target attempt=$attempt screen=$screen",
                             )
                             if (!service.launchDiscoveryProfile(target, attempt)) {
-                                nextDiscoveryTarget(service, "@$target profil bağlantısı açılamadı")
+                                beginDiscoverySearch(service, target)
                             } else {
                                 nextActionNotBefore = now + DiscoveryTargetLaunchPolicy.SETTLE_MS
                                 service.requestAutomationTick(DiscoveryTargetLaunchPolicy.SETTLE_MS)
                             }
                         }
                         DiscoveryTargetLaunchDecision.GIVE_UP -> {
-                            nextDiscoveryTarget(service, "@$target profili ${stageAttempts} yönlendirmede doğrulanamadı")
+                            beginDiscoverySearch(service, target)
                         }
                     }
                 }
             }
+            XFlowStage.SEARCH_DISCOVERY_TARGET -> handleDiscoverySearch(service, root, screen, now, target)
             XFlowStage.SCAN_LATEST_TWEETS -> {
                 if (screen !in setOf(XScreen.PROFILE, XScreen.UNKNOWN)) {
                     if (stageTimedOut(now)) nextDiscoveryTarget(service, "@$target gönderi listesi doğrulanamadı") else service.requestAutomationTick(TICK_MS)
@@ -1489,6 +1493,91 @@ object AutomationController {
         }.distinct().take(24).joinToString(" | ")
         OperationLog.w("VERIFIED_TAB", "screen=$screen selected=${RelationshipTabInspector.selectedTab(root)} headers=$headers")
         pause("$reason; ekran teşhisi kaydedildi, sayfa yeniden açılmadı")
+    }
+
+    private fun beginDiscoverySearch(service: AtmacaAccessibilityService, target: String) {
+        discoverySearchStep = 0
+        discoverySearchSubmitted = false
+        moveStage(XFlowStage.SEARCH_DISCOVERY_TARGET, "@$target X içi aramayla açılıyor")
+        OperationLog.i("DISCOVERY_SEARCH", "Bağlantı hedefi açmadı; X içi arama target=@$target")
+        service.requestAutomationTick(250L)
+    }
+
+    private fun handleDiscoverySearch(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long, target: String) {
+        if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == target) {
+            OperationLog.i("DISCOVERY_SEARCH", "Hedef profil doğrulandı target=@$target")
+            moveStage(XFlowStage.SCAN_LATEST_TWEETS, "@$target profilindeki en az 2 saatlik gönderiler taranıyor")
+            service.requestAutomationTick(150L)
+            return
+        }
+        if (now - stageStartedAt >= 45_000L) {
+            pause("@$target X içi aramada açılamadı; hedef doğrulanmadığı için görev tamamlanmadı")
+            return
+        }
+        val nodes = AccessibilityTree.nodes(root)
+        val snapshots = nodes.map { it.toSnapshot() }
+        var action = "wait"
+        var accepted = false
+        when (discoverySearchStep) {
+            0 -> {
+                // Leave the own-profile page through X's back stack. Its toolbar
+                // magnifier searches only that profile, so it is never used here.
+                val tab = DiscoverySearchSelector.searchTab(snapshots)
+                if (tab != null) {
+                    accepted = GestureClick.gestureTap(service, nodes[tab])
+                    action = "open-search-tab"
+                    if (accepted) discoverySearchStep = 1
+                } else if (screen != XScreen.HOME && root != null && stageAttempts < 6) {
+                    accepted = service.pressBack()
+                    stageAttempts++
+                    action = "back-to-navigation"
+                }
+            }
+            1 -> {
+                val field = DiscoverySearchSelector.searchField(snapshots)
+                if (field != null) {
+                    val args = android.os.Bundle().apply {
+                        putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "@$target")
+                    }
+                    accepted = nodes[field].performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+                    action = "set-query"
+                    if (accepted) discoverySearchStep = 2
+                } else {
+                    val entry = DiscoverySearchSelector.searchEntry(snapshots)
+                    if (entry != null) {
+                        accepted = GestureClick.gestureTap(service, nodes[entry])
+                        action = "focus-search"
+                    }
+                }
+            }
+            2 -> {
+                val field = DiscoverySearchSelector.searchField(snapshots)
+                if (field != null && nodes[field].text?.toString()?.trim().equals("@$target", ignoreCase = true)) {
+                    val people = DiscoverySearchSelector.peopleTab(snapshots)
+                    if (discoverySearchSubmitted && (people == null || !snapshots[people].selected)) {
+                        if (people != null) GestureClick.gestureTap(service, nodes[people])
+                        nextActionNotBefore = now + 1_000L
+                        service.requestAutomationTick(1_000L)
+                        return
+                    }
+                    val result = DiscoverySearchSelector.result(snapshots, target, field)
+                    if (result != null) {
+                        accepted = GestureClick.gestureTap(service, nodes[result])
+                        action = "open-exact-result"
+                        if (accepted) discoverySearchStep = 3
+                    } else if (!discoverySearchSubmitted && now - stageStartedAt > 18_000L && android.os.Build.VERSION.SDK_INT >= 30) {
+                        accepted = nodes[field].performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id)
+                        discoverySearchSubmitted = true
+                        action = "submit-search"
+                    }
+                }
+            }
+            // Wait for the profile, without tapping any other result or button.
+            3 -> Unit
+        }
+        if (action != "wait") OperationLog.i("DISCOVERY_SEARCH", "target=@$target step=$discoverySearchStep action=$action accepted=$accepted screen=$screen")
+        nextActionNotBefore = now + 1_000L
+        service.requestAutomationTick(1_000L)
     }
 
     private fun openDiscoveryTarget(service: AtmacaAccessibilityService) {
