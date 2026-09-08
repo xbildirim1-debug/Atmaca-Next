@@ -24,4 +24,11 @@ class DiscoveryTargetLaunchPolicyTest {
     @Test fun exactTargetNeverRequestsAnotherLaunch() {
         assertEquals(DiscoveryTargetLaunchDecision.WAIT, DiscoveryTargetLaunchPolicy.decide(true, 0, 10_000L))
     }
+
+    @Test fun retriesUseActuallyDifferentXRoutes() {
+        assertEquals("twitter://user?screen_name=pusholder", DiscoveryProfileRoutePolicy.route("pusholder", 1).uri)
+        assertEquals("https://twitter.com/pusholder", DiscoveryProfileRoutePolicy.route("pusholder", 2).uri)
+        assertEquals("https://x.com/pusholder", DiscoveryProfileRoutePolicy.route("pusholder", 3).uri)
+        assertEquals(3, (1..3).map { DiscoveryProfileRoutePolicy.route("pusholder", it).uri }.distinct().size)
+    }
 }

@@ -364,3 +364,13 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 5. Hesap ekleme doğrulandıktan sonra çoklu hesap görev sırası, görev sonu dönüş ve diğer bildirilen görev sorunlarını ayrı kanıtlarla değerlendir. Bu değişiklik bunların tamamını doğrulamaz.
 6. Mevcut telefon uygulaması kararlı olmadan daha önce ertelenen çoklu emülatör mimarisine geçme.
 7. Her yeni düzeltmeyi test et, GitHub'a kaydet, bu notu son testler, APK ve kalan sorunlarla güncelle. Kullanıcı aynı talimatları başka hesapta tekrar etmek zorunda kalmasın.
+## 26.16 — X yerel kullanıcı yönlendirmesi
+
+8 Eylül 2026 13:56 cihaz logu ve 1000026868.mp4 incelendi. 26.15 görev hesabını doğru doğruladı ve kayıtlı tek hedefi `@pusholder` olarak doğru yükledi. Ancak üç deneme de aynı `https://x.com/pusholder` web yoluydu; Android `startActivity` çağrısını başarılı kabul etmesine rağmen X hedefi açmadı ve görev hesabının kendi profilinde kaldı. Bu log, hedef kaydı veya zamanlama hatası değil, cihazdaki X'in web profil intent'ini yuttuğunu kanıtlar.
+
+- Birinci deneme X'in yerel kullanıcı deep-link'i: `twitter://user?screen_name=pusholder`.
+- İkinci deneme ayrı `https://twitter.com/pusholder`, üçüncü deneme `https://x.com/pusholder` yoludur. Böylece tekrarlar aynı isteğin kopyası değildir.
+- Intent'e CLEAR_TOP ve SINGLE_TOP eklendi; açık kendi profil activity'sinin eski intent'i tutması yerine yeni hedef intent'ini alması amaçlanır.
+- Her rotaya 2,5 saniye yüklenme süresi verilir. Yalnız ekranda tam `@pusholder` profil kimliği görülürse en az 120 dakikalık gönderi taramasına geçilir. Yanlış profilde işlem yapılmaz.
+- Rota seçimi regresyon testi eklendi; üç denemenin üç farklı URI ürettiği doğrulanır. Önceki 177 test korunur.
+- Sürüm code64 / 26.16-native-profile-route. CI ve bu yeni yolun fiziksel cihaz sonucu sonraki kayıtla yazılacaktır. Hız ayarları 500/1800/1500 ms olarak korunur.

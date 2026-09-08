@@ -362,3 +362,9 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 5. Hesap ekleme doğrulandıktan sonra çoklu hesap görev sırası, görev sonu dönüş ve diğer bildirilen görev sorunlarını ayrı kanıtlarla değerlendir. Bu değişiklik bunların tamamını doğrulamaz.
 6. Mevcut telefon uygulaması kararlı olmadan daha önce ertelenen çoklu emülatör mimarisine geçme.
 7. Her yeni düzeltmeyi test et, GitHub'a kaydet, bu notu son testler, APK ve kalan sorunlarla güncelle. Kullanıcı aynı talimatları başka hesapta tekrar etmek zorunda kalmasın.
+## 26.16 — hedef web bağlantısı X tarafından yutuluyor
+
+26.15 cihaz logu: hedef listeden doğru `@pusholder` geliyor; `discovery-profile/pusholder/1..3` başlangıç çağrıları başarılı yazılıyor ama ekran `@bildirimhaber1` kendi profilinden ayrılmıyor. Üç çağrı da aynı x.com web URI'siydi. 26.16 ilk olarak X'in yerel `twitter://user?screen_name=` yolunu, ardından twitter.com ve x.com yollarını ayrı ayrı kullanır. CLEAR_TOP/SINGLE_TOP eklenmiştir; her rotaya 2500 ms verilir. Tam hedef handle doğrulanmadan tarama veya takip yoktur.
+
+- code64 / 26.16-native-profile-route. Yeni rota testi eklendi; CI ve cihaz testi bekleniyor.
+- 26.15 hızlı ayarları korunur. GitHub Releases yetkisi ve kalıcı imza durumu değiştirilmedi.
