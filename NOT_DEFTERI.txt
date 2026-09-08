@@ -1,3 +1,13 @@
+## 26.17 — başarılı derleme ve teslim
+
+- Kullanıcı main gönderimini açıkça onayladı. Kaynak main commit: 4865258e0d6f4de5fd9b8f240f5165ff32e241ca. CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34245948585 . Önceki gönderim engeli bu açık onayla aşılmıştır.
+- 185 test geçti; 0 hata, başarısız ve atlanan. Test/lint/assemble/apksigner/manifest/paketleme başarılı. Yedi yeni test sorgu alanının sonuç sayılmamasını, tam kullanıcı adı eşleşmesini, profil içi arama simgesinin reddini, TR/EN ve farklı ekran ölçeklerini kapsar.
+- APK: AtmacaNext-26.17.apk, code65 / 26.17-search-profile-navigation, 20.573.920 bayt. SHA256 64b4841567f214ff071f904ea846e2e52a018f564b448d6c6f3429c0e05303d8.
+- TAM-PAKET.zip SHA256 146e22829d68a4d728fda494e04e2e34b8fa8f63a001bd2c8c3f5f9c3deff7d9. ZIP CRC, paket içi/dışı APK eşitliği, manifest sürümü/INTERNET izni yokluğu ve test XML toplamları doğrulandı.
+- APK/tam paket artifact 10064098624; rapor artifact 10064099463. Actions çıktıları 7 Aralık 2026'da sona erer. Kalıcı Releases workflow'unun yetkilendirilmesi bu onayın kapsamına dahil edilmedi; kalıcı GitHub Releases yayını yapılmadı.
+- Fiziksel X cihaz testi yapılmadı. Beklenen yeni kayıt: DISCOVERY_SEARCH target=@... action=open-search-tab/set-query/open-exact-result ve ardından hedef profil doğrulaması. Hedef bulunamazsa 45 saniyede duraklar, başarı yazmaz.
+- Kalıcı imza çözülmedi; farklı debug sertifikası nedeniyle önceki APK üzerine kurulum reddedilebilir. Kaldırma yerel verileri siler.
+
 ## 26.17 — gönderim engeli ve doğrulama durumu
 
 - Yerel değişiklik hazırlandı; GitHub main 6eb4b6fadd8de6f3094e68ce03c247321d3762bf üzerinde kaldı.
