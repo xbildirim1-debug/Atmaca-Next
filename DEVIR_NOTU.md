@@ -362,6 +362,13 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 5. Hesap ekleme doğrulandıktan sonra çoklu hesap görev sırası, görev sonu dönüş ve diğer bildirilen görev sorunlarını ayrı kanıtlarla değerlendir. Bu değişiklik bunların tamamını doğrulamaz.
 6. Mevcut telefon uygulaması kararlı olmadan daha önce ertelenen çoklu emülatör mimarisine geçme.
 7. Her yeni düzeltmeyi test et, GitHub'a kaydet, bu notu son testler, APK ve kalan sorunlarla güncelle. Kullanıcı aynı talimatları başka hesapta tekrar etmek zorunda kalmasın.
+## 26.16 — doğrulanmış derleme sonucu
+
+- Kaynak commit b82e89d7d3267bcd01e783015d3a9eabbd7a2440; başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34219134897 . APK/tam paket artifact 10053247649, rapor artifact 10053248488.
+- 178 test, sıfır hata/başarısız/atlanan. APK code64 / 26.16-native-profile-route, 20.573.912 bayt, SHA256 `afbfd5174610264f1cd825c3f0b72cc5c397c01b1cb70a6ebb391a21e28d8b0d`.
+- Tam paket SHA256 `1fa266432501f141aa3fef83de35602f3640da577be6fb348f0d3b5a96b64179`; CRC, paket içi APK, manifest sürümü ve INTERNET izni yokluğu doğrulandı.
+- 26.16 yerel kullanıcı rotası fiziksel telefonda henüz test edilmedi. Başarılı olursa NAV kaydı `discovery-profile/native-user/pusholder/1` sonrasında ekran `@pusholder` olmalı. Olmazsa yeni log hangi alternatif rotaların tüketildiğini açıkça gösterecek.
+
 ## 26.16 — hedef web bağlantısı X tarafından yutuluyor
 
 26.15 cihaz logu: hedef listeden doğru `@pusholder` geliyor; `discovery-profile/pusholder/1..3` başlangıç çağrıları başarılı yazılıyor ama ekran `@bildirimhaber1` kendi profilinden ayrılmıyor. Üç çağrı da aynı x.com web URI'siydi. 26.16 ilk olarak X'in yerel `twitter://user?screen_name=` yolunu, ardından twitter.com ve x.com yollarını ayrı ayrı kullanır. CLEAR_TOP/SINGLE_TOP eklenmiştir; her rotaya 2500 ms verilir. Tam hedef handle doğrulanmadan tarama veya takip yoktur.

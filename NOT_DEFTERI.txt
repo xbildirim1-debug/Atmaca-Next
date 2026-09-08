@@ -364,6 +364,15 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 5. Hesap ekleme doğrulandıktan sonra çoklu hesap görev sırası, görev sonu dönüş ve diğer bildirilen görev sorunlarını ayrı kanıtlarla değerlendir. Bu değişiklik bunların tamamını doğrulamaz.
 6. Mevcut telefon uygulaması kararlı olmadan daha önce ertelenen çoklu emülatör mimarisine geçme.
 7. Her yeni düzeltmeyi test et, GitHub'a kaydet, bu notu son testler, APK ve kalan sorunlarla güncelle. Kullanıcı aynı talimatları başka hesapta tekrar etmek zorunda kalmasın.
+## 26.16 — doğrulanmış derleme sonucu
+
+- APK kaynak commit: b82e89d7d3267bcd01e783015d3a9eabbd7a2440 (`main`). Başarılı GitHub Actions: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34219134897 . APK/tam paket artifact 10053247649; rapor artifact 10053248488.
+- 178 test geçti; 0 başarısız, 0 hata, 0 atlanan. Lint, APK üretimi, apksigner, manifest ve paketleme başarılı.
+- AtmacaNext-26.16.apk: code64 / 26.16-native-profile-route; 20.573.912 bayt; SHA256 `afbfd5174610264f1cd825c3f0b72cc5c397c01b1cb70a6ebb391a21e28d8b0d`.
+- Actions tam paket SHA256 `1fa266432501f141aa3fef83de35602f3640da577be6fb348f0d3b5a96b64179`. ZIP CRC temiz, iç/dış APK eşit. Manifestte INTERNET ve InitializationProvider yok.
+- 26.15'in üç web yönlendirmesinin cihazda yutulduğu fiziksel log/video ile kanıtlandı. 26.16'nın yerel X kullanıcı rotası henüz fiziksel telefonda denenmedi; birim test sonucu cihaz davranışını tek başına kanıtlamaz.
+- Actions artifact 7 Aralık 2026'da sona erer. Kalıcı Releases yetkisi açılmadı; kalıcı imza sorunu sürer.
+
 ## 26.16 — X yerel kullanıcı yönlendirmesi
 
 8 Eylül 2026 13:56 cihaz logu ve 1000026868.mp4 incelendi. 26.15 görev hesabını doğru doğruladı ve kayıtlı tek hedefi `@pusholder` olarak doğru yükledi. Ancak üç deneme de aynı `https://x.com/pusholder` web yoluydu; Android `startActivity` çağrısını başarılı kabul etmesine rağmen X hedefi açmadı ve görev hesabının kendi profilinde kaldı. Bu log, hedef kaydı veya zamanlama hatası değil, cihazdaki X'in web profil intent'ini yuttuğunu kanıtlar.

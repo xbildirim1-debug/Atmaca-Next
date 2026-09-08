@@ -97,3 +97,5 @@ Doğrulanmış 26.15 derlemesi: [GitHub Actions çalışması](https://github.co
 ## 26.16
 
 26.15 cihaz logu hedefin doğru `@pusholder` olarak okunduğunu fakat üç `https://x.com/pusholder` isteğinin de X tarafından yutulduğunu kanıtladı. İlk yönlendirme artık X'in yerel `twitter://user?screen_name=` şemasını kullanır. Olmazsa twitter.com ve x.com ayrı yolları denenir; her yol 2,5 saniye bekler. Tam hedef kullanıcı adı görünmeden gönderi taraması başlamaz.
+
+Doğrulanmış 26.16 derlemesi: [GitHub Actions çalışması](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34219134897), 178 test ve sıfır hata. Yerel profil rotasının fiziksel cihaz testi bekleniyor.
