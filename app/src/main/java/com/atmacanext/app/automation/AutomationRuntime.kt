@@ -22,6 +22,7 @@ enum class XFlowStage {
     OPEN_VERIFIED_OWN_PROFILE,
     OPEN_MY_FOLLOWERS,
     FIND_RECENT_FOLLOWER,
+    LOCATE_SOURCE_ROW,
     OPEN_SOURCE_PROFILE,
     OPEN_SOURCE_FOLLOWERS,
     OPEN_VERIFIED_TAB,
@@ -515,7 +516,7 @@ object AutomationController {
             }
             TaskType.VERIFIED_FOLLOW -> {
                 moveStage(XFlowStage.OPEN_VERIFIED_OWN_PROFILE, "En yeni takipçi için kendi profilin açılıyor")
-                if (!service.launchXProfile(current.username.orEmpty())) fail("Kendi profilin açılamadı")
+                service.requestAutomationTick(300L)
             }
             TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW -> openDiscoveryTarget(service)
             TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET -> {
@@ -717,7 +718,19 @@ object AutomationController {
                         moveStage(XFlowStage.OPEN_MY_FOLLOWERS, "Kendi takipçiler listenin başı aranıyor")
                         nextActionNotBefore = now + 700L
                     } else if (stageTimedOut(now)) return fail("Kendi profilinde takipçiler sayacı bulunamadı")
-                } else if (stageTimedOut(now)) return fail("Kendi profil kimliği doğrulanamadı")
+                } else {
+                    if (now - stageStartedAt >= 30_000L || stageAttempts >= 10)
+                        return fail("X içinde geri gezinmeyle kendi profil kimliği doğrulanamadı")
+                    if (root != null && screen != XScreen.UNKNOWN) {
+                        when (screen) {
+                            XScreen.HOME -> XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_DRAWER, own, null)
+                            XScreen.ACCOUNT_DRAWER -> XNavigator.execute(service, root, NavigationCommand.OPEN_PROFILE_FROM_DRAWER, own, null)
+                            else -> service.pressBack()
+                        }
+                        stageAttempts++
+                        nextActionNotBefore = now + 1_200L
+                    }
+                }
                 service.requestAutomationTick(700L)
             }
             XFlowStage.OPEN_MY_FOLLOWERS -> {
@@ -767,10 +780,26 @@ object AutomationController {
                     return
                 }
                 sourceHandle = source
-                if (performStep(service, root, screen, "open_source_follower", source) { service.launchXProfile(source) }) {
+                if (performStep(service, root, screen, "open_source_follower", source) { XUiActions.clickSourceProfile(service, root, source) }) {
                     moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "Followers listesinin en üstündeki @$source profili açılıyor")
                     service.requestAutomationTick(500L)
                 }
+            }
+            XFlowStage.LOCATE_SOURCE_ROW -> {
+                val source = sourceHandle ?: return pause("Rastgele kaynak seçimi kayboldu")
+                if (screen != XScreen.VERIFIED_FOLLOWERS_LIST)
+                    return pause("Yeni kaynak için onaylı liste görünmüyor; profil bağlantısıyla atlanmadı")
+                if (XUiActions.clickSourceProfile(service, root, source)) {
+                    moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "Onaylı listedeki @$source adına dokunuldu; profil doğrulanıyor")
+                    nextActionNotBefore = now + 900L
+                } else {
+                    if (now - stageStartedAt >= 30_000L) return pause("@$source kaynak satırına geri kaydırmayla ulaşılamadı")
+                    val moved = ListViewportController.tryScrollUserRowsBackward(root) == ScrollAttemptResult.SCROLLED ||
+                        ListGesture.backward(service, root)
+                    if (!moved) return pause("Kaynak satırını bulmak için kaydırma gerçekleştirilemedi")
+                    nextActionNotBefore = now + 700L
+                }
+                service.requestAutomationTick(700L)
             }
             XFlowStage.OPEN_SOURCE_PROFILE -> {
                 val source = sourceHandle ?: return nextVerifiedSource(service, "Kaynak takipçi kayboldu")
@@ -780,8 +809,18 @@ object AutomationController {
                         moveStage(XFlowStage.OPEN_SOURCE_FOLLOWERS, "@$source takipçileri açılıyor")
                         service.requestAutomationTick(500L)
                     } else if (stageTimedOut(now)) nextVerifiedSource(service, "@$source takipçiler sayacı bulunamadı")
-                } else if (stageTimedOut(now)) nextVerifiedSource(service, "@$source profili doğrulanamadı")
-                else service.requestAutomationTick(TICK_MS)
+                } else {
+                    val elapsed = now - stageStartedAt
+                    if (elapsed >= 15_000L) return pause("@$source adına dokunuldu ancak profil kimliği 15 saniyede doğrulanamadı; takip yapılmadı")
+                    // Retry once only when the same username is still on a verified list surface.
+                    if (elapsed >= 2_000L && stageAttempts == 0 &&
+                        screen in setOf(XScreen.FOLLOWERS_LIST, XScreen.VERIFIED_FOLLOWERS_LIST)) {
+                        stageAttempts++
+                        XUiActions.clickSourceProfile(service, root, source)
+                        nextActionNotBefore = now + 900L
+                    }
+                    service.requestAutomationTick(TICK_MS)
+                }
             }
             XFlowStage.OPEN_SOURCE_FOLLOWERS -> {
                 if (screen == XScreen.FOLLOWERS_LIST || screen == XScreen.VERIFIED_FOLLOWERS_LIST ||
@@ -1360,13 +1399,10 @@ object AutomationController {
         lastListSignature = ""
         sourceHandle = next
         if (next != null) {
-            sourceHandles += next
-            verifiedSourceCandidates.remove(next)
-            moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "$reason; açık listeden @$next kaynak profiline geçiliyor")
-            if (!service.launchXProfile(next)) fail("Kaynak profil açılamadı")
+            moveStage(XFlowStage.LOCATE_SOURCE_ROW, "$reason; onaylı listede rastgele @$next satırı bulunup açılacak")
         } else {
             moveStage(XFlowStage.OPEN_VERIFIED_OWN_PROFILE, "$reason; yeni kaynak için kendi profiline dönülüyor")
-            if (!service.launchXProfile(own)) fail("Yeni kaynak için kendi profilin açılamadı")
+            // Return through X navigation; an accepted URL intent is not a profile transition.
         }
         service.requestAutomationTick(650L)
     }

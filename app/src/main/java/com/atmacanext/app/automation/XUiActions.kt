@@ -35,6 +35,15 @@ object XUiActions {
         )
     }
 
+    fun clickSourceProfile(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, username: String): Boolean {
+        val nodes = AccessibilityTree.nodes(root)
+        val index = SourceProfileTarget.index(nodes.map { it.toSnapshot() }, username) ?: return false
+        // A generic clickable ancestor may include Follow/Following. Tap only the
+        // live username bounds; the runtime must still verify the resulting profile.
+        val accepted = GestureClick.gestureTap(service, nodes[index])
+        return accepted
+    }
+
     fun clickExactHandle(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, username: String): Boolean {
         return XNavigator.clickExactHandle(service, root, username)
     }

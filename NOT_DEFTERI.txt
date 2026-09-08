@@ -1,3 +1,14 @@
+## 26.10 — 26.9 cihaz hatası: kaynak profile gerçek satır dokunuşu
+
+8 Eylül 2026. Kullanıcının 7 Eylül 23:04 logları ve 1000026774.mp4 videosu incelendi. Kendi hesap ve gerçek Followers sekmesi doğru; dinamik ilk takipçi doğru okunuyor. 23:04:54 profile/temmytiwa92 komutundan sonra ekran hiç PROFILE olmuyor, FOLLOWERS_LIST kalıyor. Aynı URL yöntemiyle kendi profile dönüş de sonuçsuz. Bu isim örnek olup kodda sabitlenmedi. Önceki birim testler sekme/kullanıcı seçimini doğruluyordu, gerçek Android URL yönlendirmesini değil.
+
+- Onaylı takip akışında kaynak için launchXProfile kaldırıldı. SourceProfileTarget görünür, etkin, ayrı ve tam @kullanıcı alanını seçer; biyografi bahsetmesi, düğme açıklaması, gizli/sıfır boyutlu alan reddedilir. XUiActions yalnız bu alanın güncel ekran sınırına erişilebilirlik dokunuşu gönderir; bütün satır/üst kapsayıcı/takip düğmesine yükselmez. Sabit koordinat yok.
+- OPEN_SOURCE_PROFILE gerçek PROFILE + tam kaynak kimliği bekler. Ekran listede kaldıysa 2 saniye sonra aynı kullanıcı alanına yalnız bir kez tekrar dokunur. 15 saniyede doğrulanmazsa kullanıcı atlayıp yanlış profilde ilerlemek yerine duraklar. Gönderilen dokunuş başarı kanıtı sayılmaz.
+- Rastgele kaynak mevcut onaylı listeden görülmüş havuzdan seçilir; LOCATE_SOURCE_ROW o kullanıcı görünmüyorsa aynı listede geriye kaydırıp gerçek satırı bulur ve dokunur. Profil doğrulanınca ziyaret edilmiş sayılır; doğrulanmış takip sayısı korunur. 30 saniyede bulunmazsa sahte başarı/URL atlaması yok, duraklama var.
+- Onaylı görevin başlangıcında zaten doğrulanmış kendi profil tekrar URL ile başlatılmaz. Kendi profile dönüş gerektiğinde X içinde Geri, Anasayfa hesap menüsü ve Profil satırı kullanılır, tam kimlik doğrulanır. 30 saniye/10 gezinme sınırı var.
+- Düz Takip et kuralı, üç farklı ardışık geri dönüşte hesap atlama, bildirimler ve Anasayfa korunur. Hesap importu ve takipten çıkma kod yolu değiştirilmedi.
+- Sürüm 26.10-source-row-navigation / versionCode 58. 5 hedef seçimi regresyon testi eklendi. CI sonucu bekleniyor; fiziksel X cihaz testi yapılmadı. Kalıcı imza ve Releases yetki engeli devam ediyor.
+
 ## 26.9 — doğrulanmış derleme ve teslim (7 Eylül 2026)
 
 - Kaynak commit: 980614e2bc8296fdac40893eec3d856d85d23cf4, main. Bu sonuç kaydı yalnız belge güncellemesidir; teslim APK'sı bu kaynak commit'ten üretilmiştir.
