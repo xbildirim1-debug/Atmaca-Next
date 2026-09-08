@@ -1,3 +1,12 @@
+## 26.15 — doğrulanmış derleme ve teslim sonucu
+
+- APK kaynak commit: 90751a59ef7bae35dd24d392a2620218c787479f (`main`). Başarılı GitHub Actions: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34215844253 . APK/tam paket artifact 10051836401; test/lint raporları artifact 10051837267. Artifacts 7 Aralık 2026 tarihinde sona erer.
+- 177 birim testi geçti; 0 başarısız, 0 hata, 0 atlanan. Lint, assembleDebug, apksigner, manifest ve paketleme adımları başarılı.
+- AtmacaNext-26.15.apk: versionCode63 / 26.15-discovery-target-start; 20.557.536 bayt; SHA256 `3ab983c9ab97d253e7a1e851f3202ec395d7e3933f021c1a018eaa2c76b9338d`.
+- Actions tam paketinin SHA256 değeri `f361fb551b2d2f497468ae9eb5e6cdc95a38bcb3f8b3f0e975fcbd7c4e9e57b9`. ZIP CRC temiz; iç/dış APK baytları ve hash eşit. Manifest sürümü doğrulandı; INTERNET ve `androidx.startup.InitializationProvider` yok.
+- Bu sürüm kullanıcının 1000026864.mp4 videosundaki hedef başlangıç sorununa göre düzeltildi; yeni APK fiziksel telefonda henüz denenmedi. Birim test ve sentetik erişilebilirlik testleri cihazdaki X sürümünün uçtan uca davranışını tek başına kanıtlamaz.
+- GitHub Releases `contents:write` workflow'u önceki otomatik onay engeli nedeniyle etkinleştirilmedi. Kalıcı imza anahtarı hâlâ yok; yeni Actions debug imzası önceki APK'yla uyumsuz olabilir. Eski uygulamayı kaldırmak cihazdaki hesap/görev/ayar kayıtlarını siler.
+
 ## 26.15 — yorumcu/retweetçi hedef başlangıcı ve hız ayarları
 
 8 Eylül 2026 tarihli 1000026864.mp4 cihaz videosunda retweetçi takip görevi oluşturuluyor, `@bildirimhaber1` görev hesabı doğrulanıyor fakat kayıtlı hedef hesaba yönlenmeden görev hesabının kendi profilinde kalıyor ve durduruluyor. Kaynak incelemesinde hedef profil ACTION_VIEW isteğinin, hesap doğrulamasını tamamlayan kendi-profil erişilebilirlik callback'i içinde hemen gönderildiği görüldü. X geçiş hâlindeyken bu bağlantıyı yutabiliyor; runtime yine de OPEN_DISCOVERY_TARGET aşamasında yalnız zaman aşımını bekliyordu.

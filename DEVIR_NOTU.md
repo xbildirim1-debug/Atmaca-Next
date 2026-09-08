@@ -1,3 +1,11 @@
+## 26.15 — doğrulanmış derleme sonucu
+
+- Kaynak commit 90751a59ef7bae35dd24d392a2620218c787479f; başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34215844253 . APK/tam paket artifact 10051836401, rapor artifact 10051837267.
+- 177 test; 0 başarısız/hata/atlanan. Lint, assemble, apksigner, manifest ve paketleme başarılı. APK code63 / 26.15-discovery-target-start, 20.557.536 bayt, SHA256 `3ab983c9ab97d253e7a1e851f3202ec395d7e3933f021c1a018eaa2c76b9338d`.
+- Actions tam ZIP SHA256 `f361fb551b2d2f497468ae9eb5e6cdc95a38bcb3f8b3f0e975fcbd7c4e9e57b9`; ZIP CRC ve paket içi APK eşitliği doğrulandı. Manifestte INTERNET/Startup provider yok.
+- Fiziksel cihaz testi yapılmadı. Kullanıcının videosu eski 26.14 başlangıç hatasının kanıtıdır; 26.15 hedef yönlendirme tekrarı telefonda ayrıca doğrulanmalıdır. Başarılı başlangıçta logda `DISCOVERY_TARGET ... target=@... attempt=...` ve ardından hedef profil görünmelidir.
+- Actions dosyaları 7 Aralık 2026'da sona erer. Releases workflow'u onay engeli nedeniyle açılmadı; kalıcı imza sorunu sürer ve kaldırarak kurulum yerel verileri silebilir.
+
 ## 26.15 — yorumcu/retweetçi hedef başlangıcı ve hız
 
 1000026864.mp4 cihaz videosu 26.14'ün retweetçi görevinde doğru görev hesabını doğruladığını, fakat kayıtlı hedefe gitmeden görev hesabının kendi profilinde kaldığını kanıtladı. Neden: `beginOperation`, hedef ACTION_VIEW isteğini kendi profil doğrulama callback'i içinde hemen gönderiyordu; X bu geçişi yuttuğunda OPEN_DISCOVERY_TARGET yalnız altı saniyelik zaman aşımını bekliyordu.

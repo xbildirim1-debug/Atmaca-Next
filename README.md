@@ -91,3 +91,5 @@ Followers you know ile gerçek Followers ayrıldı. Followers listesinin en üst
 ## 26.15
 
 Yorumcu/retweetçi görevi, görev hesabının kendi profilini doğruladıktan sonra hedef profile ayrı ve gecikmeli bir aşamada gider. X ilk bağlantıyı geçiş sırasında yutarsa hedef kullanıcı adı ekranda doğrulanana kadar en fazla üç farklı yönlendirme isteği gönderilir; açık hesabın profilinde bekleyip görevi bitirmez. Her deneme `DISCOVERY_TARGET` kaydına hedef, deneme ve ekranla yazılır. Varsayılan işlemler arası süre 500 ms, hesap geçişi 1800 ms ve görevler arası süre 1500 ms'dir; kimlik ve sonuç doğrulamaları korunur.
+
+Doğrulanmış 26.15 derlemesi: [GitHub Actions çalışması](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34215844253), 177 test ve sıfır hata. Fiziksel X cihaz testi ayrıca gereklidir.
