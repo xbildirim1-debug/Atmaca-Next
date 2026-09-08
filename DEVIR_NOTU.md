@@ -2,6 +2,16 @@
 
 Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
+## 26.10 — başarılı APK / devir sonucu
+
+- Kaynak commit: abf9a9df1816774f373063b458a73480cfb604e7 (main). Bu sonuç kaydı yalnız dokümandır; teslim APK bu kaynaktan derlendi.
+- CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34186206047 . APK/tam ZIP artifact 10040636855; raporlar 10040637307. 147 test geçti, 0 başarısız/hata/atlanan. Test, lint, assemble, APK imza/manifest kontrolü başarılı.
+- APK: AtmacaNext-26.10.apk; versionCode 58 / 26.10-source-row-navigation; 20557528 bayt; SHA256 2a3ef649832f03d6fcffc3d8a42e665b0f51d7bbc891719cbf5484c5c0cd4609.
+- Tam ZIP SHA256: 65dde36a78f1acfc5757b979d5417a33a784ce822955b80aeec4ca271718359b. ZIP CRC, manifest sürümü, dış/iç APK eşitliği, test XML toplamları doğrulandı. Tam paket APK, hash, manifest, kaynak, test raporları ve CI sonuçları ekli not defteridir.
+- Sertifika SHA256: b9a851ec7ed412309493b46667cf7140195fd75c334ec1ce8c11b4857e69856c. 26.9 teslim sertifikasından farklı; üzerine kurulum uyumsuz olabilir, kaldırma yerel hesap/görev/bildirim verilerini siler. Kalıcı imza sorunu açık.
+- Fiziksel telefon/X testi yapılmadı. Kullanıcının videosundaki ilk kaynakta kalma hatasını doğrulamak için: gerçek Followers listesindeki değişken ilk kullanıcıya dokunma → aynı kimlikte PROFILE → kaynak takipçileri → Verified followers. Rastgele sonraki kaynakta aynı listedeki satır bulunmalı; düz Follow/geri dönüş/bildirim kuralları korunur.
+- Kod/test/notlar main'de. APK/ZIP sohbetten teslim edilir. Actions dosyaları 7 Aralık 2026'ya kadar süreli; kalıcı Releases yayını önceki contents:write otomatik onay reddi nedeniyle hâlâ engelli. Kullanıcı bu kapsamı onaylamadı; workflow yetkisi değiştirilmedi. Eski derlemeler silinmedi.
+
 ## 26.10 — 26.9 cihaz hatası: kaynak profile gerçek satır dokunuşu
 
 8 Eylül 2026. Kullanıcının 7 Eylül 23:04 logları ve 1000026774.mp4 videosu incelendi. Kendi hesap ve gerçek Followers sekmesi doğru; dinamik ilk takipçi doğru okunuyor. 23:04:54 profile/temmytiwa92 komutundan sonra ekran hiç PROFILE olmuyor, FOLLOWERS_LIST kalıyor. Aynı URL yöntemiyle kendi profile dönüş de sonuçsuz. Bu isim örnek olup kodda sabitlenmedi. Önceki birim testler sekme/kullanıcı seçimini doğruluyordu, gerçek Android URL yönlendirmesini değil.
