@@ -1,3 +1,14 @@
+## 26.13 — doğrulanmış derleme ve teslim
+
+- APK kaynak commit: 79ee50f3be170db16e497ee5193255d9e732a049. Main kaynak kodu korunarak bu sonuç kaydı yalnız belgelere eklenir; APK tekrar derlenmez.
+- Başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34189529216 ; APK/tam ZIP artifact 10041766953, rapor artifact 10041767453. 163 test; 0 başarısız, hata, atlanan. Lint/assemble/apksigner/manifest kontrolleri geçti.
+- AtmacaNext-26.13.apk versionCode61 / 26.13-fresh-accessibility-tree, 20557536 bayt, SHA256 0c4635e8a33453229ca70dd97e46925eb5a58c87f953636cc5684f60ff40a888.
+- Tam ZIP SHA256 e8a9207d312f7e8ce8d3f912ed358f96aa82067f6f3348f2ddd03c42835920fb. ZIP CRC, paket içi APK eşitliği, gerçek manifest sürümü, INTERNET/Startup provider yokluğu ve test XML toplamları ayrıca doğrulandı.
+- Sertifika SHA256 c0549c123cf09a09180b1f9e0939154ecc8f5916a3ec6ece7efc21da82bc079a; 26.12'den farklı. Üzerine kurulum reddedilebilir. Kaldırmak kayıtlı hesap, görev, ayar ve bildirimleri siler. Kalıcı imza açık sorundur.
+- Cihazda yeni sürüm test edilmedi. 26.12 cihazda takip başlatamamıştır. Yeni sürümün Android cache temizlemesi bu cihazda kanıtlanmadı; UI_FRESH ve VERIFIED_TAB kayıtları kontrol edilmelidir. Ham X ağacı tazelendikten sonra da yanlış sekme veriyorsa başka erişilebilirlik/katman sorunu vardır; seçili sekme doğrulamasını kaldırarak geçilmemeli.
+- Taze root yoksa eski paket olayıyla X yeniden açılmaz; 15 saniye sınırla beklenir, sonra duraklar. Ekran yenileme hareketi yok. Başlangıç ve takip sonuçları aynı taze okuma yolunu kullanır.
+- Kaynak/test/notlar main'de; APK ve tam ZIP Actions çıktılarında ve sohbet tesliminde. Tam ZIP kaynak, APK, test raporları ve CI sonuçlu not defterini içerir. Actions dosyaları sürelidir. Önceki otomatik onay reddi nedeniyle kalıcı Releases yayını yapılmadı, contents:write yetkisi etkinleştirilmedi.
+
 ## 26.13 — ekranda onaylı sekme açıkken eski Followers ağacının okunması
 
 8 Eylül 08:03 logu ve 1000026808.mp4 incelendi. 26.12 kaynak profiline giriyor; yenileme tekrarı azalıyor. Ancak videoda Onaylanmış takipçiler açıkken VERIFIED_TAB logu selected=2/FOLLOWERS_LIST, eski Tanıdığın takipçiler/Takipçiler/Takip ediliyor başlıkları ve arkadaki profil sayacını içeriyor. Onaylı başlık logda yok. Bu nedenle önceki yalnız sözlük düzeltmesi cihaz sorununu çözmedi; 159 test cihaz doğrulaması değildi.
