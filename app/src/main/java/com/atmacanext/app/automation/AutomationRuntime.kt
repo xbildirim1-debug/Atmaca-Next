@@ -808,10 +808,17 @@ object AutomationController {
                     if (performStep(service, root, screen, "open_source_followers", source) { XUiActions.clickProfileFollowers(service, root) }) {
                         moveStage(XFlowStage.OPEN_SOURCE_FOLLOWERS, "@$source takipçileri açılıyor")
                         service.requestAutomationTick(500L)
-                    } else if (stageTimedOut(now)) nextVerifiedSource(service, "@$source takipçiler sayacı bulunamadı")
+                    } else if (stageTimedOut(now)) {
+                        pause("@$source profili doğrulandı fakat takipçiler sayacı tıklanamadı")
+                    } else service.requestAutomationTick(500L)
                 } else {
                     val elapsed = now - stageStartedAt
-                    if (elapsed >= 15_000L) return pause("@$source adına dokunuldu ancak profil kimliği 15 saniyede doğrulanamadı; takip yapılmadı")
+                    if (elapsed >= 15_000L) {
+                        val nodes = AccessibilityTree.snapshots(root)
+                        val profile = ProfileSurfaceEvidence.read(nodes)
+                        OperationLog.w("PROFILE_EVIDENCE", "screen=$screen nodes=${nodes.size} header=${XIdentityDetector.detectProfileHandle(root)} pairedCounters=${profile != null} selectedTab=${RelationshipTabInspector.selectedTab(root)}")
+                        return pause("@$source profil kimliği doğrulanamadı; PROFILE_EVIDENCE teşhisi kaydedildi, takip yapılmadı")
+                    }
                     // Retry once only when the same username is still on a verified list surface.
                     if (elapsed >= 2_000L && stageAttempts == 0 &&
                         screen in setOf(XScreen.FOLLOWERS_LIST, XScreen.VERIFIED_FOLLOWERS_LIST)) {

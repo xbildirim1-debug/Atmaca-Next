@@ -52,6 +52,13 @@ object XNavigator {
     }
 
     fun clickProfileStat(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, followers: Boolean): Boolean {
+        val nodes = AccessibilityTree.nodes(root)
+        ProfileSurfaceEvidence.read(nodes.map { it.toSnapshot() })?.let { profile ->
+            val target = nodes[if (followers) profile.followersIndex else profile.followingIndex]
+            val accepted = GestureClick.gestureTap(service, target)
+            OperationLog.i("NAV", "Doğrulanmış profil sayacına dokunma followers=$followers kabul=$accepted")
+            return accepted
+        }
         val target = findProfileStat(root, followers) ?: return false
         return GestureClick.click(service, target)
     }

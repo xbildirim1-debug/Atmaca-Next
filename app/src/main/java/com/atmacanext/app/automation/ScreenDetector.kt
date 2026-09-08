@@ -116,7 +116,7 @@ object ScreenDetector {
         val hasFollowersStat = hasNumberedProfileStat(nodes, XUiVocabulary.followersHeaders, followers = true)
         val hasFollowingStat = hasNumberedProfileStat(nodes, XUiVocabulary.followingHeaders, followers = false)
         val hasJoined = XUiVocabulary.joinedSignals.any(corpus::contains)
-        if (ownProfile || (hasHandle && hasFollowersStat && hasFollowingStat && (hasJoined || !scrollable || clickableCount >= 2))) {
+        if (ProfileSurfaceEvidence.read(nodes) != null || ownProfile || (hasHandle && hasFollowersStat && hasFollowingStat && (hasJoined || !scrollable || clickableCount >= 2))) {
             return XScreen.PROFILE
         }
 

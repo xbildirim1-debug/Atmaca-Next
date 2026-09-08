@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 58
-        versionName = "26.10-source-row-navigation"
+        versionCode = 59
+        versionName = "26.11-public-profile-evidence"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

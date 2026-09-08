@@ -29,6 +29,7 @@ object XIdentityDetector {
     fun detectProfileHandle(root: AccessibilityNodeInfo?): String? {
         if (root == null) return null
         val nodes = AccessibilityTree.nodes(root)
+        ProfileSurfaceEvidence.read(nodes.map { it.toSnapshot() })?.let { return it.handle }
         return nodes.asSequence()
             .mapNotNull { node ->
                 val id = node.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()

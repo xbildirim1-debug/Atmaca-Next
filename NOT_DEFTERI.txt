@@ -1,3 +1,13 @@
+## 26.11 — başka profil UNKNOWN / ortak profil kanıtı
+
+8 Eylül 07:25 cihaz logu: 26.10 artık doğru dinamik kullanıcının profiline giriyor; sonra UNKNOWN olarak kalıyor ve 15 saniyede duraklıyor. Kullanıcı profilin açıldığını doğruladı. Ham erişilebilirlik ağacı paylaşılmadığı için alanların cihazdaki kesin ayrımı henüz bilinmiyor. Kod incelemesi: kendi profil Edit profile ile tanınırken başka profil için iki sayacın sayı+etiketinin aynı düğümde olması şarttı; split/stacked sayaçlar desteklenmiyordu. Önceki 147 test bu varyantı kapsamıyordu.
+
+ProfileSurfaceEvidence, görünür başlık kullanıcı adı + aynı satırdaki iki gerçek sayacı okur. Sayı/etiket ayrı veya dikey bölünmüş olabilir; yakınlık ekranın gerçek metin boyutuna göredir. Biyografi bahsetmesi/tweet yazarı başlık kimliğini değiştirmez. Seçili ilişki sekmesi profil kanıtı değildir; uzak sayılar, gizli alanlar ve yalın Follow düğmesi sayaç değildir. ScreenDetector, XIdentityDetector ve XNavigator artık bu kanıtı ortak kullanır; sayaç tıklaması doğrulanan etiketin sınırına yapılır, geniş üst kapsayıcıya çıkılmaz. Eski tanıma yolları uyumluluk için korunur.
+
+OPEN_SOURCE_PROFILE sayaç tıklaması reddedildiğinde yeniden tick planlamaması da düzeltildi; bu dal artık sessizce asılı kalmaz. Zaman aşımında PROFILE_EVIDENCE satırı ekran/okunan başlık/ikili sayaç/seçili sekme durumunu loglar; sonraki teşhis yalnız UNKNOWN'a dayanmaz.
+
+7 regresyon: public split sayılar, Türkçe birleşik sayılar, dikey sayılar/farklı ölçekler, liste-profil ayrımı, gizli/uzak sayı reddi, yanlış biyografi kimliği, gerçek üretim okuyucularıyla Followers→dinamik profil→Verified→düz Follow→sonraki kaynak→3 geri dönüş sözleşmesi. Bunlar sentetik erişilebilirlik testleridir; Android/X fiziksel uçtan uca testi değildir. Fiziksel test yapılmadı. Yalnız Follow, ilerleme koruma, üç geri dönüş/bildirim kuralları korunur. Sürüm 26.11-public-profile-evidence / code59. CI bekleniyor; main/teslim sonuçları sonraki kayıtta. İmza ve kalıcı Releases yetki engeli sürer.
+
 ## 26.10 — başarılı APK / devir sonucu
 
 - Kaynak commit: abf9a9df1816774f373063b458a73480cfb604e7 (main). Bu sonuç kaydı yalnız dokümandır; teslim APK bu kaynaktan derlendi.
