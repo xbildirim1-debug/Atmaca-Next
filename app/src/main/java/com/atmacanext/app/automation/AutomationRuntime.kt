@@ -1422,9 +1422,9 @@ object AutomationController {
     private fun pauseVerifiedTab(root: AccessibilityNodeInfo?, screen: XScreen, reason: String) {
         val headers = AccessibilityTree.snapshots(root).filter { it.visible }.mapNotNull { node ->
             val labels = listOfNotNull(node.text, node.contentDescription)
-            if (labels.none { it.contains("takip", true) || it.contains("follower", true) }) null
-            else "${labels.joinToString("/").take(120)} selected=${node.selected} checked=${node.checked}"
-        }.take(12).joinToString(" | ")
+            if (RelationshipTabInspector.classifySelectedLabels(labels) == RelationshipTabInspector.NONE) null
+            else "${labels.joinToString("/").take(120)} selected=${node.selected} checked=${node.checked} bounds=${node.bounds}"
+        }.distinct().take(24).joinToString(" | ")
         OperationLog.w("VERIFIED_TAB", "screen=$screen selected=${RelationshipTabInspector.selectedTab(root)} headers=$headers")
         pause("$reason; ekran teşhisi kaydedildi, sayfa yeniden açılmadı")
     }

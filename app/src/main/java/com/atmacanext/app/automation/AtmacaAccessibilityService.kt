@@ -5,6 +5,7 @@ import android.app.ActivityManager
 import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
@@ -36,6 +37,8 @@ class AtmacaAccessibilityService : AccessibilityService() {
     private var lastLaunchKey = ""
     @Volatile private var suppressOutsideUntil: Long = 0L
     private var lastUiLogKey = ""
+    private var lastFreshReadLogKey = ""
+    private var missingFreshRootSince = 0L
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -59,6 +62,8 @@ class AtmacaAccessibilityService : AccessibilityService() {
                 AccessibilityEvent.TYPE_WINDOWS_CHANGED,
                 AccessibilityEvent.TYPE_VIEW_CLICKED,
                 AccessibilityEvent.TYPE_VIEW_SCROLLED,
+                AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
+                AccessibilityEvent.TYPE_VIEW_SELECTED,
             )
         ) return
 
@@ -257,7 +262,34 @@ class AtmacaAccessibilityService : AccessibilityService() {
         val runtime = AutomationController.state.value
         if (!AccountSyncController.isActive && (runtime.taskId == null || runtime.status in setOf(
                 RuntimeStatus.IDLE, RuntimeStatus.COMPLETED, RuntimeStatus.FAILED))) return
-        val root=rootInActiveWindow
+        // A new rootInActiveWindow call alone may still return Android-cached
+        // virtual descendants after X changes the relationship pager.
+        val verifiedTask = runtime.taskType == com.atmacanext.app.domain.model.TaskType.VERIFIED_FOLLOW &&
+            !AccountSyncController.isActive
+        var cacheCleared = false
+        val root = if (verifiedTask) FreshRootReader.read(
+            invalidate = {
+                if (Build.VERSION.SDK_INT >= 33) cacheCleared = clearCache()
+            },
+            acquire = { rootInActiveWindow },
+            refresh = { it.refresh() },
+        ) else rootInActiveWindow
+        if (verifiedTask) {
+            val key = "${runtime.flowStage}|$cacheCleared|${root?.windowId}"
+            if (key != lastFreshReadLogKey) {
+                lastFreshReadLogKey = key
+                OperationLog.i("UI_FRESH", "stage=${runtime.flowStage} sdk=${Build.VERSION.SDK_INT} cacheCleared=$cacheCleared rootRefreshed=${root != null} window=${root?.windowId}")
+            }
+        }
+        if (verifiedTask && root == null) {
+            val now = SystemClock.uptimeMillis()
+            if (missingFreshRootSince == 0L) missingFreshRootSince = now
+            if (now - missingFreshRootSince >= 15_000L)
+                AutomationController.pause("Güncel X ekran ağacı 15 saniyede alınamadı; eski ekranla işlem yapılmadı")
+            else requestAutomationTick(500L)
+            return
+        }
+        missingFreshRootSince = 0L
         val resolvedPackage=root?.packageName?.toString() ?: packageName
         if (resolvedPackage!=X_PACKAGE) {
             AccessibilityServiceState.onEvent(resolvedPackage,XScreen.UNKNOWN,PopupType.NONE)

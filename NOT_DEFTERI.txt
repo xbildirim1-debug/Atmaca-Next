@@ -1,3 +1,18 @@
+## 26.13 — ekranda onaylı sekme açıkken eski Followers ağacının okunması
+
+8 Eylül 08:03 logu ve 1000026808.mp4 incelendi. 26.12 kaynak profiline giriyor; yenileme tekrarı azalıyor. Ancak videoda Onaylanmış takipçiler açıkken VERIFIED_TAB logu selected=2/FOLLOWERS_LIST, eski Tanıdığın takipçiler/Takipçiler/Takip ediliyor başlıkları ve arkadaki profil sayacını içeriyor. Onaylı başlık logda yok. Bu nedenle önceki yalnız sözlük düzeltmesi cihaz sorununu çözmedi; 159 test cihaz doğrulaması değildi.
+
+Kodda service XML ve onAccessibilityEvent filtresi TYPE_WINDOW_CONTENT_CHANGED ile TYPE_VIEW_SELECTED olaylarını dinlemiyordu. Her yeni rootInActiveWindow çağrısının taze alt düğüm getireceği varsayılmıştı; Android cache invalidasyonu yapılmıyordu. Kesin cihaz cache içeriği elimizde yok; video/log uyuşmazlığına ve bu kod boşluğuna yönelik düzeltme yapıldı. UI erişilebilirliği hâlâ uygulamanın yayımladığı bilgiye bağlıdır.
+
+- XML ve servis filtresine içerik/sekme seçimi olayları eklendi; mevcut erken tick ve tek worker düzeni korundu.
+- Onaylı takip görevinin her okumadan önce Android 13/API33+ clearCache çağrılır, ardından yeni root alınır ve refresh doğrulanır. Eski root önce alınarak tekrar kullanılmaz. Android 8–12 yalnız root.refresh ve içerik olaylarından yararlanır; clearCache API bu sürümlerde yoktur. Bu X pull-to-refresh değildir, ekrana dokunmaz/ağ isteği yapmaz.
+- FreshRootReader bu sırayı ortak uygular. Ayrılmış veya bulunamayan root işlem için kullanılmaz. UI_FRESH logu aşama, Android sürümü, cacheCleared, rootRefreshed ve pencere kimliğini kaydeder.
+- VERIFIED_TAB teşhisi genel Takip et düğmeleriyle dolmaz; sekme başlıklarını, durumlarını ve sınırlarını kaydeder.
+- Hesap importunun cache okuma yolu ve takipten çıkma akışı değiştirilmedi. Yalnız Takip et/geri takip et ayrımı, limit ilerlemesi, son onaylı listeden rastgele yeni kaynak ve üç geri dönüş kuralları korundu. Ekranda seçili onaylı sekme kanıtı olmadan takip başlatılmadı.
+- Dört test cache temizlemenin root okumadan önce yapılması, refresh başarısızlığının reddi, eksik rootta önceki okumanın kullanılmaması ve değişen ilişki durumunun yeni okumadan alınmasını kapsar. Bunlar Android/X cache davranışının fiziksel testi değildir.
+- versionCode61 / 26.13-fresh-accessibility-tree. CI bekleniyor; sonuç sonraki kayıtta. Yeni APK fiziksel telefonda test edilmedi. Kaynak 26.12 main üzerinden alındı; eski yerel 26.9 dosyaları kullanılmadı.
+- Android resmi API33 clearCache kaynağı: https://developer.android.com/reference/android/accessibilityservice/AccessibilityService#clearCache() . Kalıcı imza ve Releases contents:write onay engeli sürüyor; yayın yetkisi değiştirilmedi.
+
 ## 26.12 — doğrulanmış APK ve teslim sonucu
 
 - Kaynak commit b8c023c2f6fa818ac9074b7182b3e479cd8d706f (main). Bu sonuç kaydı yalnız belgedir; APK aynı kaynak derlemesinden teslim edilir.

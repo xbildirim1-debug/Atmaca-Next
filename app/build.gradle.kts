@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 60
-        versionName = "26.12-verified-tab-label"
+        versionCode = 61
+        versionName = "26.13-fresh-accessibility-tree"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
