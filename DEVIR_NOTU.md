@@ -1,3 +1,12 @@
+## 26.28 — doğrulanmış teslim sonucu
+
+- Kaynak main commit b6c4d8dae6f76868bc92878fe42cbc06dc2677b2; başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34376974840 . 261 test; 0 başarısız, hata veya atlanan. Sekiz yeni gönderi açma regresyon testi dahil XML toplamları indirilen paketten doğrulandı. Test/lint/assemble, imza ve manifest kontrolleri geçti.
+- AtmacaNext-26.28.apk: 20623072 bayt; versionCode76 / 26.28-tweet-open-recovery; SHA256 c8d3997baf343e5bc933b5de9f1a9d9a32f2009a787da0038bb132809d384043.
+- AtmacaNext-26.28-TAM-PAKET.zip: 20387252 bayt; SHA256 53eda5b9c26fd1a1e2a1868148c202f21fc08e18e4ed2e55a9e905822f9a096c. ZIP CRC, paket içi/dışı APK eşitliği, sürüm ve CI SHA256 kaydı doğrulandı. APK/tam paket artifact10114398135; rapor artifact10114399107.
+- Kod/testler main'de; yerel fix/26-28-tweet-open aynı kaynak ağacına sahiptir (1343af9c8e4e1b7fa14b37708b1541041acc9e56). Sonuç notu [skip ci] belge commit'idir; APK yeniden derlenmedi. Eski yerel 26.23 değişiklikleri korunmuştur.
+- Fiziksel X cihaz testi YAPILMADI. Videoda profil içi metin genişlemesi görülür; yeni sürümün telefonda gerçekten ayrıntıyı açması henüz doğrulanmadı. Birim test başarısı cihaz başarısı diye sunulmaz. İlk cihaz kontrolü: aynı 2 saatlik gönderi -> metin genişlerse sınırlı aynı gönderi tekrarı -> Gönderi ayrıntısı; açılmazsa geri basmadan sonraki gönderi. DISCOVERY_CLICK / DISCOVERY_OPEN_RETRY / DISCOVERY_OPEN_SKIP kayıtları yeni kanıttır.
+- Debug imza farklı olabilir; uygulamayı kaldırmak yerel verileri siler. AGENTS.md'de kayıtlı önceki yayın yetki reddi korunur; contents:write Releases workflow'u etkinleştirilmedi, kalıcı Releases yayını yapılamadı. Dosyalar sohbet üzerinden ayrıca teslim edilir.
+
 ## 26.28 — 14:34 gönderi açılmama incelemesi
 
 - Temel main f35924e7cccd5a6117caf75a44c5c2bff15e6619 (26.27). 1000027080.mp4 ve 1000027081.mp4 incelendi. Pusholder akışındaki 2 saatlik Bakan Akın Gürlek gönderisinin metni profilde genişliyor; detay ekranı açılmıyor. 14:34:44 OPEN_ENGAGEMENT sonrasında PROFILE kalıyor. Bu kayıt yorumcuya ulaşmadan önceki arızayı gösterir; yorum takip başarısı kanıtı değildir.
