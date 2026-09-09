@@ -51,6 +51,31 @@ class CommenterDeviceRegression26_24Test {
     }
 
     @Test
+    fun personalizedPhysicalDeviceFollowDescriptionIsAccepted() {
+        val nodes = listOf(
+            n("Gönderi", 60, width = 180),
+            n("Fth", 180, left = 105, width = 180),
+            n("@Fthwooy", 235, left = 105, width = 230),
+            n(top = 205, left = 500, width = 145, desc = "Fth adlı kullanıcıyı takip et"),
+            n("Kardeşim köylerde traktör kullanan amcalar", 290, width = 620, height = 90),
+        )
+        assertTrue(VerifiedFollowPolicy.isPlainFollow(listOf("Fth adlı kullanıcıyı takip et")))
+        assertEquals(3, CommentDetailEvidence.actionIndex(nodes, "Fthwooy", VerifiedFollowPolicy.plainFollowLabels))
+    }
+
+    @Test
+    fun targetProfileFeedConfirmsTargetWhenHeaderHandleIsTemporarilyMissing() {
+        val nodes = listOf(
+            n("87.996 gönderileri", 30, width = 300),
+            n("Gönderiler", 100, width = 180),
+            n("Pusholder @pusholder · 2 sa", 220, width = 460),
+            n("Hedefin gönderi metni", 280, width = 620),
+        )
+        assertTrue(DiscoveryProfileEvidence.matches(nodes, null, "pusholder"))
+        assertFalse(DiscoveryProfileEvidence.matches(nodes, null, "different_target"))
+    }
+
+    @Test
     fun avatarDoesNotMakeTextReplyMedia() {
         val nodes = listOf(
             n(top = 100, left = 20, width = 72, height = 72, id = "profile_image", clazz = "android.widget.ImageView", desc = "Profil fotoğrafı"),

@@ -1072,7 +1072,8 @@ object AutomationController {
                 service.requestAutomationTick(650L)
             }
             XFlowStage.OPEN_DISCOVERY_TARGET -> {
-                if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == target) {
+                if (screen == XScreen.PROFILE && DiscoveryProfileEvidence.matches(
+                        AccessibilityTree.snapshots(root), XIdentityDetector.detectProfileHandle(root), target)) {
                     moveStage(XFlowStage.SCAN_LATEST_TWEETS, "@$target profilindeki en az 2 saatlik gönderiler taranıyor")
                     service.requestAutomationTick(150L)
                 } else {
@@ -1597,7 +1598,8 @@ object AutomationController {
     }
 
     private fun handleDiscoverySearch(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long, target: String) {
-        if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == target) {
+        if (screen == XScreen.PROFILE && DiscoveryProfileEvidence.matches(
+                AccessibilityTree.snapshots(root), XIdentityDetector.detectProfileHandle(root), target)) {
             OperationLog.i("DISCOVERY_SEARCH", "Hedef profil doğrulandı target=@$target")
             moveStage(XFlowStage.SCAN_LATEST_TWEETS, "@$target profilindeki en az 2 saatlik gönderiler taranıyor")
             service.requestAutomationTick(150L)
@@ -1700,8 +1702,13 @@ object AutomationController {
     private fun nextDiscoveryTarget(service: AtmacaAccessibilityService, reason: String) {
         discoveryTargetIndex++
         discoveryTweetKey = null
+        engagementOpenAttempts = 0
+        engagerHandle = null
+        engagerParentSignature = ""
+        engagerParentKeys = emptyList()
         listEndStable = 0
         lastListSignature = ""
+        listScrolls = 0
         if (discoveryTargetIndex >= discoveryTargets.size) finishCycleOrTask(service, reason)
         else openDiscoveryTarget(service)
     }

@@ -6,7 +6,11 @@ internal object VerifiedFollowPolicy {
     val plainFollowLabels = setOf("takip et", "follow")
     fun matchesAction(label: String, expected: Set<String>): Boolean {
         val normalized = XUiVocabulary.normalize(label)
-        return expected.any { normalized == it || normalized.startsWith("$it @") || normalized.startsWith("$it, @") }
+        return expected.any {
+            normalized == it || normalized.startsWith("$it @") || normalized.startsWith("$it, @") ||
+                (it == "follow" && normalized.startsWith("follow ")) ||
+                (it == "takip et" && normalized.endsWith(" takip et"))
+        }
     }
     fun isPlainFollow(labels: List<String>): Boolean =
         labels.any { matchesAction(it, plainFollowLabels) } &&

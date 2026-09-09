@@ -1,4 +1,7 @@
-# Atmaca Next — 26.22
+# Atmaca Next — 26.25
+
+26.25: yorumcu gönderisinin sağ üstündeki kişiye özel Takip et açıklamasını kabul eder,
+önce gerçek erişilebilirlik tıklamasını dener ve sonraki retweet hedefini gönderi yüzeyiyle doğrular.
 
 26.22: açılan yorum gönderisinin kendi üst başlığındaki Takip et düğmesi, tam yorumcu
 kimliğiyle işlenir; profil açılması da desteklenir. Geri dönüş ana yorum listesiyle

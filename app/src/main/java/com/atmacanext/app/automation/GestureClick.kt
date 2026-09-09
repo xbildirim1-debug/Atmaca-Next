@@ -12,6 +12,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** ACTION_CLICK başarısızsa node'un gerçek ekran sınırlarının merkezine Accessibility gesture gönderir. */
 object GestureClick {
+    /** Click only this exact semantic node; never climb into a row/card parent. */
+    fun clickNodeOnly(service: AccessibilityService, node: AccessibilityNodeInfo): Boolean {
+        if (node.isEnabled && node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true
+        return gestureTap(service, node)
+    }
+
     fun click(service: AccessibilityService, node: AccessibilityNodeInfo): Boolean {
         if (node.isEnabled && node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true
         var parent: AccessibilityNodeInfo? = node.parent

@@ -192,7 +192,7 @@ object XUiActions {
         if (CommentDetailEvidence.has(snapshots, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)) return false
         val n = snapshots[index]
         if (!VerifiedFollowPolicy.isPlainFollow(listOfNotNull(n.text, n.contentDescription))) return false
-        return GestureClick.gestureTap(service, nodes[index])
+        return GestureClick.clickNodeOnly(service, nodes[index])
     }
 
     fun setComposerText(root: AccessibilityNodeInfo?, value: String): Boolean {

@@ -474,3 +474,9 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 - versionCode69 / 26.21-comment-profile-loop. Yeni regresyon testi eklendi; CI ve fiziksel cihaz testi henüz yapılmadı.
 - İlk CI 34312711274 ürün kodundan değil yeni test düzeneğinin tüm düğümleri aynı koordinatta oluşturmasından dolayı tek testte başarısız oldu; gerçek ekran bantlarını temsil eden ayrı koordinatlar verilerek test düzeltildi ve yeniden çalıştırılacak.
 - İkinci CI 34313057927 aynı regresyonun satır gruplama kanıtını sınıflandırmada kullanamadığını gösterdi. Kaydırılmış ayrıntı için görünür, süre taşıyan en az iki farklı yazar başlığı doğrudan erken ekran kanıtına eklendi.
+## 26.25 — yorumcu Takip et tıklaması ve sonraki retweet hedefi
+
+- 1000027063.mp4 (61,16 sn) fiziksel 26.24 cihaz kaydı incelendi. Yorumcu Fth'nin ayrı Gönderi ekranı ve sağ üstteki Takip et düğmesi açılıyor fakat işlem yapılmadan bekleniyor. Cihazın düğme açıklamasına kişi adını ekleyebilen biçimi (`... takip et` / `Follow ...`) 26.24'ün dar düz etiket seçicisinde kabul edilmiyordu.
+- Kişiye özel düz takip açıklamaları, Takip ediliyor/Beklemede ile çelişmediği sürece kabul edilir. Seçilen gerçek düğümde önce ACTION_CLICK denenir; yalnız bu düğüm başarısızsa aynı düğüm sınırına gesture gönderilir, yorum kartı atasına çıkılmaz.
+- Retweetçi görevinde sonraki hedefin profil üst kullanıcı adı geçici olarak erişilemez olduğunda motor bekliyordu. Gönderiler yüzeyi ve hedefin kendi yazar satırı birlikte görünüyorsa hedef doğrulanır; hedef değişiminde yorum/etkileşim/gezinme sayaçları sıfırlanır. Yanlış hedefin tweeti doğrulama sayılmaz.
+- İki cihaz regresyon testi eklendi. versionCode73 / 26.25-comment-follow-click-target-handoff. CI ve fiziksel 26.25 cihaz testi henüz yapılmadı.
