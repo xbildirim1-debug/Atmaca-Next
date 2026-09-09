@@ -1,3 +1,14 @@
+## 26.27 — video ve retweetçi liste kurtarma
+
+- Temel main ff1728542d6336f20124049acf3e4b6475b7048f (26.26). 1000027075.mp4 hedef Boşuna Tıklama profilinde beklemeyi; 1000027074.mp4 ise 1 saatlik gönderi görünse de sonunda 2 saatlik gönderinin açılmasını gösteriyor. 09:04 logunda 420/480 dakikalık gönderiler açılıyor, seçili retweetçi listesi FOLLOWING_LIST olarak değişince terk ediliyor. 1 saatlik gönderiye takip uygulandığı bu kanıtla doğrulanmadı.
+- 26.26 yorum başlığı, kişiselleştirilmiş takip etiketi, hedef profil ve hesap sıfırlama düzeltmeleri korundu. Takip düğmesi olmayan doğrulanmış yorumcu 1,5 saniyelik yerleşmeden sonra atlanır. Profil takip alanı sayaçların altındaki düğmeyi de Gönderiler sekmesine kadar kabul eder; gönderilerin içindeki düğmeler hariçtir.
+- Seçili yeniden gönderenler sekmesi ilişki listesi sınıflamasından önce gelir. Başlık kaybolursa en fazla iki yukarı kaydırmayla yeniden doğrulanır. Hedefe dönüş görünür Geri düğmesiyle sınırlıdır; iki deneme/6 saniye sonrası aramaya dönülür. Çift Atmaca dönüş isteği kaldırıldı, görev kuyruğu dönüşü yönetir.
+- Ortak görev döngüsü yalnız görünür Geri ve yükleme etiketlerinden oluşan boş ekranı 1,8 saniye sonra kapatır; en fazla iki deneme. Normal gönderi, profil, izin ve yazma ekranları bu kurala girmez. Doğrulanmamış işlem sonucu korunur, yeniden işlem gönderilmez. Yüklenmeyen yorum/gönderi atlanır; ilerleme korunur.
+- Gönderi dokunuşundan önce aynı aday ikinci taze okumada doğrulanır. Çelişkili aynı satır yaşında genç olan kullanılır. Açılan ayrıntının okunabilir tam tarihi de 120 dakika sınırına göre denetlenir.
+- Değişenler: AutomationRuntime, XUiActions, ScreenDetector, EngagementListEvidence, FeedRowEvidence; yeni NavigationSurfaceEvidence, TweetAgeEvidence, DiscoveryVideo27Test; sürüm/paket adları ve notlar. versionCode75 / 26.27-video-recovery.
+- CI test/lint/assemble sonucu bekleniyor. Fiziksel X testi YAPILMADI; ekran videosu erişilebilirlik düğüm ağacının yerine geçmez. Kesin cihaz başarısı iddia edilmez. Kaynak/testler main'e kaydedilecek.
+- Eski yerel 26.23 çalışması korunmuştur; son ana dalın üstüne yazılmamıştır. Güncel çalışma dalı fix/video-review-26-27. Debug imza farklı olabilir; uygulamayı kaldırmak yerel verileri siler. Önceden reddedilmiş Releases workflow'u etkinleştirilmedi.
+
 ## 26.26 — doğrulanmış derleme ve teslim sonucu
 
 - Kaynak main commit: 1c79622383b371426ee6ebe7c4b857afc9af4696. Başarılı GitHub Actions: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34334622307 . 245 test; 0 başarısız, hata veya atlanan. Yeni DiscoveryHandoff26_26Test sınıfındaki 11 testin tamamı geçti. Test XML toplamları indirilen raporlardan doğrulandı. Test/lint/assemble, imza ve manifest kontrolleri başarılı.

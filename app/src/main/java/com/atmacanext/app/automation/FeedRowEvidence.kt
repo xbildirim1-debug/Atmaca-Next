@@ -21,7 +21,9 @@ internal object FeedRowEvidence {
                 .flatMap(::labels).mapNotNull { XTweetInspector.parseAgeMinutes(it.trim().trimStart('·', '•', ',').trim()) }.distinct()
             if (times.size != 1) null else Triple(i, handle, times.single())
         }.sortedBy { nodes[it.first].bounds.top }.fold(mutableListOf<Triple<Int, String, Long>>()) { out, item ->
-            if (out.none { it.second == item.second && sameLine(nodes[it.first], nodes[item.first]) }) out.add(item)
+            val duplicate = out.indexOfFirst { it.second == item.second && sameLine(nodes[it.first], nodes[item.first]) }
+            if (duplicate < 0) out.add(item)
+            else if (item.third < out[duplicate].third) out[duplicate] = item
             out
         }
         return headers.mapIndexedNotNull { position, (index, author, age) ->

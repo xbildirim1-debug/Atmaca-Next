@@ -1,4 +1,8 @@
-# Atmaca Next — 26.26
+# Atmaca Next — 26.27
+
+26.27: seçili retweetçi listesini koruma, boş yükleme ekranından sınırlı dönüş,
+takip düğmesi olmayan yorumcuyu atlama ve ayrıntıdaki tam saatle 120 dakika kontrolü.
+26.26 hedef/yorum başlığı düzeltmeleri korunmuştur. Cihaz doğrulaması beklenir.
 
 26.26: görünür ekran/yorum başlığı doğrulaması, hesap başına temiz arama ve açılmayan arama sonucuna sınırlı tekrar. Cihaz doğrulaması beklenir.
 

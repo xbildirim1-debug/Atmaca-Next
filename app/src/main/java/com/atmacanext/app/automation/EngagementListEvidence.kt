@@ -11,7 +11,10 @@ internal object EngagementListEvidence {
     fun selected(root: android.view.accessibility.AccessibilityNodeInfo?): Boolean = AccessibilityTree.nodes(root).any { node ->
         node.isVisibleToUser && (node.isSelected || node.isChecked || node.contentDescription?.toString().orEmpty().let {
             it.contains("selected", true) || it.contains("seçili", true) }) &&
-            AccessibilityTree.snapshots(node, 12).any { child -> listOfNotNull(child.text, child.contentDescription).any(::isReposts) }
+            AccessibilityTree.snapshots(node, 12).filter { it.visible }.let { children ->
+                val labels = children.flatMap { listOfNotNull(it.text, it.contentDescription) }
+                labels.any(::isReposts) && labels.none { XUiVocabulary.normalize(it) in setOf("alıntılar", "quotes", "beğeniler", "likes") }
+            }
     }
     fun selected(nodes: List<NodeSnapshot>): Boolean = nodes.any { n ->
         n.visible && (n.selected || n.checked || n.contentDescription.orEmpty().let {

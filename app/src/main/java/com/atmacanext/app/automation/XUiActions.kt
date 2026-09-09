@@ -174,7 +174,7 @@ object XUiActions {
         val nodes = AccessibilityTree.nodes(root)
         val snapshots = nodes.map { it.toSnapshot() }
         val profile = ProfileSurfaceEvidence.read(snapshots) ?: return false
-        val statY = snapshots[profile.followersIndex].bounds.top
+        val statY = NavigationSurfaceEvidence.profileActionEnd(snapshots, snapshots[profile.followersIndex].bounds.top)
         val node = nodes.firstOrNull { n -> val snap = n.toSnapshot()
             snap.visible && snap.enabled && snap.bounds.bottom <= statY &&
                 VerifiedFollowPolicy.isPlainFollow(listOfNotNull(snap.text, snap.contentDescription))
@@ -277,9 +277,16 @@ object XUiActions {
     private fun directFollowState(root: AccessibilityNodeInfo?, accepted: Set<String>): Boolean {
         val nodes = AccessibilityTree.snapshots(root)
         val profile = ProfileSurfaceEvidence.read(nodes) ?: return false
-        val statY = nodes[profile.followersIndex].bounds.top
+        val statY = NavigationSurfaceEvidence.profileActionEnd(nodes, nodes[profile.followersIndex].bounds.top)
         return nodes.any { n -> n.visible && n.bounds.bottom <= statY &&
             listOfNotNull(n.text, n.contentDescription).any { VerifiedFollowPolicy.matchesAction(it, accepted) } }
+    }
+
+    fun clickVisibleBack(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        val nodes = AccessibilityTree.nodes(root)
+        val index = NavigationSurfaceEvidence.backIndex(nodes.map { it.toSnapshot() }) ?: return false
+        val node = nodes[index]
+        return (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) || GestureClick.gestureTap(service, node)
     }
 
     private fun clickByIdOrLabel(

@@ -7,6 +7,7 @@ object ScreenDetector {
     fun detect(root: AccessibilityNodeInfo?): XScreen = detect(root, AccessibilityTree.snapshots(root))
 
     fun detect(root: AccessibilityNodeInfo?, nodes: List<NodeSnapshot>): XScreen {
+        if (PopupClassifier.classify(nodes) == PopupType.NONE && EngagementListEvidence.selected(root)) return XScreen.ENGAGEMENT_LIST
         val selectedTab = if (PopupClassifier.classify(nodes) == PopupType.NONE)
             RelationshipTabInspector.selectedTab(root) else RelationshipTabInspector.NONE
         return detect(nodes, selectedTab)
@@ -28,7 +29,7 @@ object ScreenDetector {
 
         // X may leave the tweet's inline reply nodes behind the engagement surface.
         // Its explicit foreground title must win over the 26.21 inline heuristic.
-        if (EngagementListEvidence.title(nodes)) return XScreen.ENGAGEMENT_LIST
+        if (EngagementListEvidence.title(nodes) || EngagementListEvidence.selected(nodes)) return XScreen.ENGAGEMENT_LIST
 
         val hasEditable = nodes.any { node ->
             node.editable || node.className?.contains("EditText", ignoreCase = true) == true
