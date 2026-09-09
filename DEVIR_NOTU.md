@@ -434,6 +434,9 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 - 26.15 hızlı ayarları korunur. GitHub Releases yetkisi ve kalıcı imza durumu değiştirilmedi.
 ## 26.20 — tweet ayrıntısındaki satır içi yanıt alanı
 
+- Kaynak main commit: 2606b92cefd2005a9c325537149b02f003481397; CI 34309944401 başarıyla tamamlandı. 211 test; 0 hata, başarısız, atlanan. Lint, assemble, imza, manifest ve paketleme geçti.
+- APK: AtmacaNext-26.20.apk, code68 / 26.20-inline-reply-engagement. SHA256 a38bfb35388bb1ac99b386f7990ff0973007c52275f508d8af74fd648b573cd4. TAM-PAKET SHA256 8062dbae87207dc370570ac60e8e183ded902357fb97e811acffda6621209e4b. ZIP CRC ve sürüm manifesti doğrulandı.
+- APK/tam paket artifact 10088057069; rapor artifact 10088057552. Fiziksel X cihazında 26.20 henüz denenmedi.
 - 1000026996.mp4 ve 8 Eylül 23:53 cihaz logu incelendi. Hedef profil ve iki saatlik gönderi doğru açılıyor; gerçek tweet ayrıntısında Mavi Deniz ve altındaki yorumlar görünür durumda kalıyor. Log `screen=COMPOSER` bildirdiği için yorum işleme aşaması hiç başlamıyor.
 - Kök neden: X, tweet ayrıntısının altındaki `Yanıtını gönder / Post your reply` alanını editable `tweet_box` olarak yayımlıyor. 26.19 bunu tam ekran oluşturucu sanıyordu. Geri düğmesi + gönderi başlığı/aksiyon araç çubuğu/Alıntıları görüntüle kanıtı bulunan satır içi alan artık TWEET_DETAIL sayılır; gerçek tam ekran yanıt oluşturucu COMPOSER kalır.
 - Yorumcu adı sabit değildir. Ayrıntıdaki hedef gönderi yazarı ve görev hesabı dışlandıktan sonra ekranda yukarıdan aşağı ilk gerçek yorum yazarı seçilir, profili açılır; zaten Takip ediliyor/Beklemede ise yeni işlem yapılmadan geri dönülür. Yeni Beklemede sonucu bir işlem sayılır. Ardından aynı tweetin sıradaki yorumuna devam edilir.
