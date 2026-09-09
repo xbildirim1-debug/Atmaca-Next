@@ -1,3 +1,14 @@
+## 26.22 — doğrulanmış APK ve teslim sonucu
+
+- Nihai APK kaynak main commit: ee92236b46712409db247d57b4677276c9ffe5fc. Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34316308189 . Bu sonuç kaydı [skip ci] belge güncellemesidir; APK tekrar derlenmedi.
+- 227 test; 0 başarısız, hata veya atlanan. Test/lint/assemble, apksigner, manifest ve paketleme başarılı. İndirilen test XML toplamları, ZIP CRC, manifest code70 / 26.22-comment-detail-return ve paket içi/dışı APK eşitliği ayrıca doğrulandı.
+- AtmacaNext-26.22.apk: 20.590.304 bayt; SHA256 14b2caa756a8d793913044510e40a2f19332633ea54d95b518296592d4e76061. TAM-PAKET SHA256 93679ed455d5b075efe88ce6d1d4ab9e9cc73ec6395dd955530621568792d605.
+- APK/tam paket artifact 10090265481; test/lint rapor artifact 10090266053. Önceki 26.22 ara derlemeleri teslim sürümü değildir; yalnız bu commit/run APK'sı teslim edildi.
+- Son inceleme: alıntı girişini arama ve yeniden gönderenler sekmesi deneme bütçeleri ayrıldı; takip düğmesi yokken performStep döngüsüne girip hesap kurtarmasını tetikleme engellendi.
+- Kod/test/notlar main'de. Yeni çalışma dalı oluşturulmadı. Yerel kaynak ağacı ve yayınlanan kaynak ağacı 57bf9cc8a949ef081e2448a1d32311b7e774d225 ile eşleşti (sonuç belgesi öncesi).
+- Fiziksel X cihaz testi YAPILMADI. 26.20 retweetçi çalışması kullanıcı bildirimi; yeni 26.22 için gerçek cihaz doğrulaması beklenir. Birim testler ekran uyumluluğunun garantisi değildir.
+- Kalıcı debug imza çözülmedi; eski sürüme güncelleme reddedilebilir, kaldırma yerel verileri siler. Önceden reddedilen contents:write Releases otomasyonu etkinleştirilmedi; kalıcı Releases yayını yapılmadı. Mevcut Actions dosyaları 8 Aralık 2026'da sona erer.
+
 ## 26.22 — yorum gönderisinden takip ve doğrulanmış geri dönüş
 
 - Temel main: 0701d87f1bf591c111434025b3e6930298e038e5 (26.21); 26.20 eab9b0e ile fark incelendi. Kullanıcı 26.20 retweetçi akışını başarılı, 26.21'i başarısız bildirdi.
