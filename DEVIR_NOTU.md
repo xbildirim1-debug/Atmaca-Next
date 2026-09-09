@@ -1,3 +1,12 @@
+## 26.27 — doğrulanmış derleme sonucu
+
+- Kaynak main commit e491fdaca0dd394a630826588a552d63128c4e59. Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34343654939 . 253 test; 0 başarısız, hata veya atlanan. Yeni 8 video regresyon testi dahil test XML toplamları paket içinden doğrulandı. Test/lint/assemble ve imza/manifest kontrolleri geçti.
+- AtmacaNext-26.27.apk: 20.606.684 bayt; versionCode75 / 26.27-video-recovery; SHA256 44a549466dd2a66e31ae4ea33d20a3e8bc4c16c6b0707b738a7f3a0d9c7fae97.
+- AtmacaNext-26.27-TAM-PAKET.zip: 20.375.884 bayt; SHA256 a83b089aeef063d1fad914a67d03eca1e1b9f7b9eb559d4005f81c8ad8c27ff9. ZIP CRC, paket içi/dışı APK eşitliği ve CI hash kaydı doğrulandı. Paket kaynak, test raporları, manifest ve notları içerir.
+- APK/tam paket artifact10100871276; rapor artifact10100871898. Actions son kullanımı 8 Aralık 2026. Kaynak/testler main'de; yerel fix/video-review-26-27 aynı kaynak ağacına sahiptir (96fd8b155a674dc24c9e7f78cef4067f620c2c42). Bu sonuç kaydı yalnız [skip ci] belgedir; APK yeniden derlenmedi.
+- Fiziksel X cihaz testi YAPILMADI. 26.26 başlık/kimlik düzeltmeleri korunmuştur; yeni testler sentetik erişilebilirlik düzenleri ve tarih sınırlarını doğrular. Cihazda kesin çözüm iddia edilmez.
+- Debug imza kalıcı değildir; eski APK üzerine kurulum reddedilebilir, kaldırma yerel verileri siler. AGENTS.md'deki önceden reddedilmiş contents:write Releases otomasyonu etkinleştirilmedi; kalıcı GitHub Releases teslimi tamamlanmadı. APK ve tam paket sohbet dosyaları olarak ayrıca teslim edilir.
+
 ## 26.27 — video ve retweetçi liste kurtarma
 
 - Temel main ff1728542d6336f20124049acf3e4b6475b7048f (26.26). 1000027075.mp4 hedef Boşuna Tıklama profilinde beklemeyi; 1000027074.mp4 ise 1 saatlik gönderi görünse de sonunda 2 saatlik gönderinin açılmasını gösteriyor. 09:04 logunda 420/480 dakikalık gönderiler açılıyor, seçili retweetçi listesi FOLLOWING_LIST olarak değişince terk ediliyor. 1 saatlik gönderiye takip uygulandığı bu kanıtla doğrulanmadı.
