@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 71
-        versionName = "26.23-device-follow-stability"
+        versionCode = 72
+        versionName = "26.24-commenter-detail-media-skip"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
