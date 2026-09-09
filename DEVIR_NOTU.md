@@ -1,3 +1,11 @@
+## 26.29 — yorumcu takip ve ikinci hesap retweetçi gönderi açma düzeltmesi
+
+- 9 Eylül 2026 20:43 logu ile 26.28 cihaz geri bildirimi incelendi. Hesap senkronizasyonu dört hesabı tamamlıyor; yorumcu görevinde hedef araması başlıyor. Kullanıcı, açılan yorumcu gönderisinde görünür Takip et düğmesine basılmadığını ve retweetçi akışının ilk hesapta çalışıp ikinci hesapta hedef profilde kaldığını bildirdi. Paylaşılan kayıt DISCOVERY_CLICK/COMMENT_CLICK satırlarından önce kesildiği için cihazdaki dokunma sonucu doğrudan kanıtlanmış sayılmaz.
+- Yorumcu başlığında exact kişi ve düz Takip et doğrulaması korunur. Compose düğmeyi satır genişliğinde semantik alan olarak yayımlarsa ACTION_CLICK sonrası fallback artık alanın ortasına değil sağdaki gerçek ilişki aksiyonu bölgesine dokunur. Kart/üst ata tıklanmaz; Takip ediliyor/Beklemede hâlâ aday değildir ve sonuç aynı kullanıcı başlığında doğrulanmadan başarı sayılmaz.
+- Retweetçi keşfinde ilk dokunuş metni yalnız genişletip hedef profilde bırakırsa aynı yazar, en az 120 dakika ve aynı anahtar/uzun metin başlangıcı doğrulaması korunur. İki tekrar artık aynı üst noktaya değil, genişlemiş metnin merkez ve alt-sol gövde noktalarına gider. Toplam üç dokunuş sınırı, farklı/genç/belirsiz gönderi reddi ve açılmayan gönderide geri basmadan sonraki gönderiye geçiş korunur.
+- Yeni regresyon testi iki tekrarın farklı gövde noktaları kullandığını doğrular. Önceki gerçek runtime iki hesap sıfırlama testi korunur. versionCode77 / 26.29-engagement-click-recovery. Yerel test/lint/APK sonucu henüz aşağıda güncellenecek; fiziksel X cihaz testi YAPILMADI.
+- Kalıcı debug imza ve GitHub Releases contents:write sınırlaması değişmedi. Kaynak/test/notlar main'e kaydedilecek; başarılı CI sonrası APK ve tam paket sonucu ayrıca yazılacak.
+
 ## 26.28 — doğrulanmış teslim sonucu
 
 - Kaynak main commit b6c4d8dae6f76868bc92878fe42cbc06dc2677b2; başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34376974840 . 261 test; 0 başarısız, hata veya atlanan. Sekiz yeni gönderi açma regresyon testi dahil XML toplamları indirilen paketten doğrulandı. Test/lint/assemble, imza ve manifest kontrolleri geçti.

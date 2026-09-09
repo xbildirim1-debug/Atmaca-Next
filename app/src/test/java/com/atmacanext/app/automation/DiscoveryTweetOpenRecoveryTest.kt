@@ -43,4 +43,8 @@ class DiscoveryTweetOpenRecoveryTest {
         assertEquals(DiscoveryTweetOpenRecovery.Decision.WAIT,DiscoveryTweetOpenRecovery.decide(attempt,false,3999L))
         assertEquals(DiscoveryTweetOpenRecovery.Decision.RESCAN,DiscoveryTweetOpenRecovery.decide(attempt,false,4000L))
     }
+    @Test fun expandedTweetRetriesUseDistinctBodyPoints() {
+        assertEquals(0.50f to 0.50f, DiscoveryTweetOpenRecovery.tapPosition(1))
+        assertEquals(0.30f to 0.65f, DiscoveryTweetOpenRecovery.tapPosition(2))
+    }
 }

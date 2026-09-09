@@ -1,4 +1,9 @@
-# Atmaca Next — 26.28
+# Atmaca Next — 26.29
+
+26.29: yorumcu başlığındaki satır-genişliğinde Takip et semantiğini gerçek sağ
+aksiyon bölgesinden tıklar. Retweetçi akışında gönderi metni profilde genişleyip
+detay açılmadığında aynı doğrulanmış gönderiyi farklı güvenli gövde noktalarından
+sınırlı olarak yeniden dener. 26.28'in aynı gönderi doğrulaması korunur.
 
 26.28: gönderi metni profilde genişleyip detay açılmadığında aynı gönderiyi
 taze metinle yeniden açma; en fazla üç dokunuş, ardından geri basmadan taramaya devam.

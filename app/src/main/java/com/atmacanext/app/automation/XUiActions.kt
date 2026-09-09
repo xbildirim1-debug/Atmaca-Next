@@ -195,7 +195,11 @@ object XUiActions {
         if (CommentDetailEvidence.has(snapshots, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)) return false
         val n = snapshots[index]
         if (!VerifiedFollowPolicy.isPlainFollow(listOfNotNull(n.text, n.contentDescription))) return false
-        val result = GestureClick.clickNodeOnly(service, nodes[index])
+        val node = nodes[index]
+        val native = node.isEnabled && node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        // X Compose can expose the label as a row-wide semantic node. Its centre is
+        // the author/header, while the actual relationship control is on the right.
+        val result = native || GestureClick.gestureTapTrailing(service, node)
         OperationLog.i("COMMENT_CLICK", "@$handle bounds=${n.bounds} clickable=${n.clickable} accepted=$result; sonuç ayrıca doğrulanacak")
         return result
     }

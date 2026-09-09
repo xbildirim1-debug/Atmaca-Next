@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 76
-        versionName = "26.28-tweet-open-recovery"
+        versionCode = 77
+        versionName = "26.29-engagement-click-recovery"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

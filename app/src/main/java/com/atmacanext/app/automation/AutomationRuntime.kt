@@ -1239,7 +1239,7 @@ object AutomationController {
                         DiscoveryTweetOpenRecovery.Decision.WAIT -> service.requestAutomationTick(400L)
                         DiscoveryTweetOpenRecovery.Decision.RETRY -> {
                             val row = same ?: return
-                            val accepted = XTweetInspector.click(service, row, retry = true)
+                            val accepted = XTweetInspector.click(service, row, retryAttempt = attempt.count)
                             discoveryTweetKey = row.key
                             discoveryOpenAttempt = attempt.copy(count = attempt.count + 1, at = now)
                             OperationLog.i("DISCOVERY_OPEN_RETRY", "key=${attempt.key} freshKey=${row.key} attempt=${attempt.count + 1} accepted=$accepted; aynı gönderi profilde kaldı")

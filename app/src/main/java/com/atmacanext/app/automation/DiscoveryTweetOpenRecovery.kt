@@ -27,4 +27,10 @@ internal object DiscoveryTweetOpenRecovery {
         if (attempt.count >= 3 || (!sameCandidateVisible && now - attempt.at >= 3_000L)) return Decision.RESCAN
         return if (sameCandidateVisible) Decision.RETRY else Decision.WAIT
     }
+
+    /** Distinct text-only retry points handle different Compose layouts on later accounts. */
+    fun tapPosition(attempt: Int): Pair<Float, Float> = when (attempt) {
+        1 -> 0.50f to 0.50f
+        else -> 0.30f to 0.65f
+    }
 }

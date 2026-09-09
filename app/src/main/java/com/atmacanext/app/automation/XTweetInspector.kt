@@ -126,12 +126,13 @@ object XTweetInspector {
 
     fun text(row: TweetRow): String = row.textTarget?.let { it.text ?: it.contentDescription }?.toString().orEmpty()
 
-    fun click(service: AtmacaAccessibilityService, row: TweetRow, retry: Boolean = false): Boolean {
+    fun click(service: AtmacaAccessibilityService, row: TweetRow, retryAttempt: Int = 0): Boolean {
         val node = row.textTarget ?: return false
         if (!node.isVisibleToUser || !node.isEnabled) return false
-        val native = !retry && node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        val accepted = native || GestureClick.gestureTapText(service, node)
-        OperationLog.i("DISCOVERY_CLICK", "key=${row.key} author=@${row.author} bounds=${Rect().also(node::getBoundsInScreen)} native=$native retry=$retry accepted=$accepted; detay doğrulaması bekleniyor")
+        val native = retryAttempt == 0 && node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        val accepted = native || if (retryAttempt == 0) GestureClick.gestureTapText(service, node)
+            else GestureClick.gestureTapTextRetry(service, node, retryAttempt)
+        OperationLog.i("DISCOVERY_CLICK", "key=${row.key} author=@${row.author} bounds=${Rect().also(node::getBoundsInScreen)} native=$native retry=$retryAttempt accepted=$accepted; detay doğrulaması bekleniyor")
         return accepted
     }
 
