@@ -1,3 +1,12 @@
+## 26.32 — doğrulanmış teslim sonucu
+
+- Kaynak main commit `f273facc153586cf411dc09c416c414db24e870f`; başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34400761367 . 269 test; 0 başarısız, hata veya atlanan. Test/lint/assemble, APK imzası, manifest ve paketleme adımları geçti.
+- `AtmacaNext-26.32.apk`: 20.623.076 bayt; versionCode80 / 26.32-progressive-discovery-scroll; SHA256 `4795b56b2b62c4a2f93d23ab4806d44247d3dab1df715613eb1310a341ff7deb`.
+- `AtmacaNext-26.32-TAM-PAKET.zip`: 20.408.750 bayt; SHA256 `8df46797c6f795140bfa63faf8b98e29c2e2646114989221787d19537025f7e0`. ZIP CRC ve paket içi/dışı APK eşitliği doğrulandı. APK artifact `10123472499`; rapor artifact `10123473367`; son kullanma 8 Aralık 2026.
+- Fiziksel X cihaz testi bu yeni APK ile YAPILMADI. 26.31 cihaz geri bildirimi önceki sürümde kalan profil/yorum kaydırma sorunlarının kanıtıdır. 26.32 için beklenen yeni kanıtlar `COMMENT_SCROLL` kaydı, değişen `DISCOVERY_SCAN` yaşları ve Ayarlar'daki hız değerine göre kısalan adım süreleridir.
+- Kalıcı debug imza ve Releases `contents:write` sınırlaması değişmedi. APK ile tam paket sohbet teslimindedir.
+
+
 ## 26.32 — profil kaydırma tekrarı ve yorum sonrası zorunlu ilerleme
 
 - Kullanıcının 26.31 fiziksel geri bildirimi: yorumcu takip düğmesi artık çalışıyor; ancak `@bosunatiklama` gibi büyük medya taşıyan hedef profilde tarama yine ilerlemeyebiliyor. Ayrıca bir üst yorumcu işlendiğinde yorum listesinin aşağı kaydırılması bazı denemelerde gerçekleşmiyor. Yeni cihaz logu verilmediği için bu iki belirti kullanıcı gözlemi olarak kaydedildi.
