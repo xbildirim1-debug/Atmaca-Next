@@ -1,4 +1,8 @@
-# Atmaca Next — 26.27
+# Atmaca Next — 26.28
+
+26.28: gönderi metni profilde genişleyip detay açılmadığında aynı gönderiyi
+taze metinle yeniden açma; en fazla üç dokunuş, ardından geri basmadan taramaya devam.
+Gönderiye dokunulması başarı sayılmaz. Fiziksel cihaz doğrulaması beklenir.
 
 26.27: seçili retweetçi listesini koruma, boş yükleme ekranından sınırlı dönüş,
 takip düğmesi olmayan yorumcuyu atlama ve ayrıntıdaki tam saatle 120 dakika kontrolü.

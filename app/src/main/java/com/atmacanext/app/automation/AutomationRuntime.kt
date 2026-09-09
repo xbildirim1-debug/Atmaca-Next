@@ -129,6 +129,7 @@ object AutomationController {
     private var lastLoadingBackAt = 0L
     private var discoveryCandidateKey: String? = null
     private var discoveryCandidateSince = 0L
+    private var discoveryOpenAttempt: DiscoveryTweetOpenRecovery.Attempt? = null
     private var discoveryTargets: List<String> = emptyList()
     private var activeSessionToken: String? = null
     private var pendingAction: PendingAction? = null
@@ -1205,10 +1206,11 @@ object AutomationController {
                         return
                     }
                     if (performStep(service, root, screen, "open_discovery_tweet", eligible.key) { XTweetInspector.click(service, eligible) }) {
+                        discoveryOpenAttempt = DiscoveryTweetOpenRecovery.Attempt(eligible.key, target, XTweetInspector.text(eligible), 1, now)
                         lastListSignature = ""
                         engagementOpenAttempts = 0
                         engagementRestoreAttempts = 0
-                        moveStage(XFlowStage.OPEN_ENGAGEMENT, "Gönderi metni açıldı; detay ekranı doğrulanıyor")
+                        moveStage(XFlowStage.OPEN_ENGAGEMENT, "Gönderi metnine dokunuldu; detay ekranı doğrulanıyor")
                         service.requestAutomationTick(500L)
                     }
                     return
@@ -1221,6 +1223,42 @@ object AutomationController {
                 service.requestAutomationTick(550L)
             }
             XFlowStage.OPEN_ENGAGEMENT -> {
+                if (screen == XScreen.PROFILE && DiscoveryProfileEvidence.matches(
+                        AccessibilityTree.snapshots(root), XIdentityDetector.detectProfileHandle(root), target)) {
+                    val attempt = discoveryOpenAttempt
+                    if (attempt == null) {
+                        moveStage(XFlowStage.SCAN_LATEST_TWEETS, "Hedef profilde gönderi taraması sürüyor")
+                        service.requestAutomationTick(400L)
+                        return
+                    }
+                    val same = XTweetInspector.visibleTweets(root).filter { row ->
+                        DiscoveryTweetOpenRecovery.matches(attempt, DiscoveryTweetOpenRecovery.Candidate(
+                            row.key, row.author, XTweetInspector.text(row), row.ageMinutes))
+                    }.singleOrNull()
+                    when (DiscoveryTweetOpenRecovery.decide(attempt, same != null, now)) {
+                        DiscoveryTweetOpenRecovery.Decision.WAIT -> service.requestAutomationTick(400L)
+                        DiscoveryTweetOpenRecovery.Decision.RETRY -> {
+                            val row = same ?: return
+                            val accepted = XTweetInspector.click(service, row, retry = true)
+                            discoveryTweetKey = row.key
+                            discoveryOpenAttempt = attempt.copy(count = attempt.count + 1, at = now)
+                            OperationLog.i("DISCOVERY_OPEN_RETRY", "key=${attempt.key} freshKey=${row.key} attempt=${attempt.count + 1} accepted=$accepted; aynı gönderi profilde kaldı")
+                            nextActionNotBefore = now + 1_500L
+                            service.requestAutomationTick(1_500L)
+                        }
+                        DiscoveryTweetOpenRecovery.Decision.RESCAN -> {
+                            // No navigation occurred: Back here would leave the target.
+                            discoveryProcessedTweets += attempt.key
+                            same?.let { discoveryProcessedTweets += it.key }
+                            discoveryOpenAttempt = null
+                            discoveryCandidateKey = null
+                            moveStage(XFlowStage.SCAN_LATEST_TWEETS, "Gönderinin açılması doğrulanamadı; profilde sıradaki gönderi aranıyor")
+                            OperationLog.w("DISCOVERY_OPEN_SKIP", "key=${attempt.key} attempts=${attempt.count}; geri basılmadı, başarı sayılmadı")
+                            service.requestAutomationTick(400L)
+                        }
+                    }
+                    return
+                }
                 if (current.taskType == TaskType.RETWEETER_FOLLOW && screen == XScreen.ENGAGEMENT_LIST) {
                     if (EngagementListEvidence.selected(root)) {
                         moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Yeniden gönderenler sekmesi doğrulandı")
@@ -1234,6 +1272,8 @@ object AutomationController {
                     return
                 }
                 discoveryTweetKey?.let(discoveryProcessedTweets::add)
+                discoveryOpenAttempt?.key?.let(discoveryProcessedTweets::add)
+                discoveryOpenAttempt = null
                 val detailAge = TweetAgeEvidence.detailMinutes(AccessibilityTree.snapshots(root), now)
                 if (detailAge != null && !XTweetInspector.eligibleAge(detailAge)) {
                     OperationLog.w("DISCOVERY_AGE", "Gönderinin tam zamanı $detailAge dk; 120 dk sınırı nedeniyle atlandı")
@@ -1794,6 +1834,7 @@ object AutomationController {
     }
 
     private fun nextDiscoveryTweet(service: AtmacaAccessibilityService, reason: String) {
+        discoveryOpenAttempt = null
         discoveryTweetKey = null
         engagerHandle = null
         engagerParentSignature = ""
@@ -1808,6 +1849,8 @@ object AutomationController {
     }
 
     private fun nextDiscoveryTarget(service: AtmacaAccessibilityService, reason: String) {
+        discoveryOpenAttempt = null
+        discoveryCandidateKey = null
         discoveryTargetIndex++
         discoveryTweetKey = null
         engagementOpenAttempts = 0
@@ -2003,6 +2046,7 @@ object AutomationController {
         lastLoadingBackAt = 0L
         discoveryCandidateKey = null
         discoveryCandidateSince = 0L
+        discoveryOpenAttempt = null
         engagerHandle = null
         engagerParentSignature = ""
         engagerParentKeys = emptyList()

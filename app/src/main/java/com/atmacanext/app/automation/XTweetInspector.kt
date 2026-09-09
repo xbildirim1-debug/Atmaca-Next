@@ -124,8 +124,16 @@ object XTweetInspector {
             .toList()
     }
 
-    fun click(service: AtmacaAccessibilityService, row: TweetRow): Boolean =
-        row.textTarget?.let { GestureClick.gestureTap(service, it) } ?: false
+    fun text(row: TweetRow): String = row.textTarget?.let { it.text ?: it.contentDescription }?.toString().orEmpty()
+
+    fun click(service: AtmacaAccessibilityService, row: TweetRow, retry: Boolean = false): Boolean {
+        val node = row.textTarget ?: return false
+        if (!node.isVisibleToUser || !node.isEnabled) return false
+        val native = !retry && node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        val accepted = native || GestureClick.gestureTapText(service, node)
+        OperationLog.i("DISCOVERY_CLICK", "key=${row.key} author=@${row.author} bounds=${Rect().also(node::getBoundsInScreen)} native=$native retry=$retry accepted=$accepted; detay doğrulaması bekleniyor")
+        return accepted
+    }
 
     internal fun parseAgeMinutes(raw: String?, nowMillis: Long = System.currentTimeMillis()): Long? {
         val text = raw.orEmpty().trim().lowercase(Locale("tr", "TR"))

@@ -1,3 +1,13 @@
+## 26.28 — 14:34 gönderi açılmama incelemesi
+
+- Temel main f35924e7cccd5a6117caf75a44c5c2bff15e6619 (26.27). 1000027080.mp4 ve 1000027081.mp4 incelendi. Pusholder akışındaki 2 saatlik Bakan Akın Gürlek gönderisinin metni profilde genişliyor; detay ekranı açılmıyor. 14:34:44 OPEN_ENGAGEMENT sonrasında PROFILE kalıyor. Bu kayıt yorumcuya ulaşmadan önceki arızayı gösterir; yorum takip başarısı kanıtı değildir.
+- XTweetInspector yalnız metnin merkezine gesture gönderiyordu. Artık tam metin düğümünün ACTION_CLICK eylemi denenir; gesture metnin üst bölümüne gider, altındaki Daha fazlasını göster alanından uzak tutulur. Kart atası veya medya açılmaz.
+- DiscoveryTweetOpenRecovery: ilk dokunuştan sonra hedef PROFILE olarak kaldıysa 1,5 saniye yerleşme; aynı yazar/yaş ve metin anahtarı ya da uzun değişmemiş başlangıçla genişleyen gönderiyi yeniden bulma. Başka yazarlı/genç gönderi, kısa ortak başlangıç ve farklı alıntı reddedilir; birden fazla eşleşmede dokunulmaz. Toplam en fazla üç dokunuş, ardından geri basmadan taramaya devam. Eski/yeni metin anahtarları sonuçta birlikte saklanır. Açılma doğrulanmadan başarı/takip sayılmaz.
+- DISCOVERY_CLICK / DISCOVERY_OPEN_RETRY / DISCOVERY_OPEN_SKIP kayıtları gerçek düğme sınırlarını, dokunuş sonucunu ve tekrar sayısını verir. Kullanıcı metni ham olarak yeni kayıtlara eklenmez. Diğer takip, saat ve hesap geçiş düzeltmeleri korunmuştur.
+- 8 yeni regresyon testi: videodaki metin genişlemesi, aynı yazarlı farklı alıntı, yanlış yazar/119 dk, eksik/kısa metin, satır sonları, yerleşme süresi, üç deneme sınırı, kaybolan/belirsiz aday. CI sonucu bekleniyor; fiziksel X testi YAPILMADI. Önceki 253 test başarısı bu cihaz vakasının çözüldüğünü kanıtlamamıştır.
+- Sürüm code76 / 26.28-tweet-open-recovery. Değişenler AutomationRuntime, XTweetInspector, GestureClick; yeni DiscoveryTweetOpenRecovery ve testi; sürüm/paket adları, README ve notlar. Çalışma dalı fix/26-28-tweet-open; kaynak/testler main'e kaydedilecek.
+- Kalıcı debug imza sorunu sürer; kaldırma yerel kayıtları siler. AGENTS.md'deki önceden reddedilmiş Releases yayın otomasyonu etkinleştirilmedi. Kalıcı GitHub Releases teslimi henüz yapılamadı.
+
 ## 26.27 — doğrulanmış derleme sonucu
 
 - Kaynak main commit e491fdaca0dd394a630826588a552d63128c4e59. Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34343654939 . 253 test; 0 başarısız, hata veya atlanan. Yeni 8 video regresyon testi dahil test XML toplamları paket içinden doğrulandı. Test/lint/assemble ve imza/manifest kontrolleri geçti.

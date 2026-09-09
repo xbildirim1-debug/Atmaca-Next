@@ -42,6 +42,13 @@ object GestureClick {
         return gestureTapAt(service, bounds.left + bounds.width() * 0.22f, bounds.exactCenterY())
     }
 
+    /** Stay in the upper text, away from a trailing inline Show more span. */
+    fun gestureTapText(service: AccessibilityService, node: AccessibilityNodeInfo): Boolean {
+        val bounds = Rect().also(node::getBoundsInScreen)
+        if (!node.isVisibleToUser || !node.isEnabled || bounds.width() <= 0 || bounds.height() <= 0) return false
+        return gestureTapAt(service, bounds.left + bounds.width() * 0.55f, bounds.top + bounds.height() * 0.15f)
+    }
+
     fun tapAtRatio(
         service: AccessibilityService,
         root: AccessibilityNodeInfo?,
