@@ -1,3 +1,11 @@
+## 26.29 — doğrulanmış teslim sonucu
+
+- Kaynak main commit cee20e7d3e23ce06c473bedbf4032c11e473b563; başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34387120893 . 262 test; 0 başarısız, hata veya atlanan. Test/lint/assemble, APK imzası, manifest ve paketleme adımları geçti.
+- AtmacaNext-26.29.apk: 20.623.080 bayt; versionCode77 / 26.29-engagement-click-recovery; SHA256 c97ef28090542a9a688ba617598f9caff74c749b2a2e8e63721acdaf210b9052.
+- AtmacaNext-26.29-TAM-PAKET.zip: 20.391.088 bayt; SHA256 b830d8ec2a78ad84d7b483ff7eb6812330389ebf07d77448eacae35d911137a9. ZIP CRC ve paket içi/dışı APK eşitliği doğrulandı. APK/tam paket artifact10118231520; rapor artifact10118232084; son kullanma 8 Aralık 2026.
+- Fiziksel X cihaz testi YAPILMADI. 262 test sentetik/birim doğrulamasıdır; yorumcu Takip et ve ikinci hesap retweetçi gönderi açma sonucu telefonda ayrıca denenmelidir. Yeni kanıtlar COMMENT_CLICK ile sağ aksiyon dokunuşu ve DISCOVERY_CLICK retry=1/2 kayıtlarıdır.
+- Debug imza kalıcı olmayabilir; eski APK üzerine kurulum reddedilebilir ve kaldırmak yerel verileri siler. Releases contents:write iş akışı etkinleştirilmedi; APK ve tam paket Actions ile sohbet teslimindedir.
+
 ## 26.29 — yorumcu takip ve ikinci hesap retweetçi gönderi açma düzeltmesi
 
 - 9 Eylül 2026 20:43 logu ile 26.28 cihaz geri bildirimi incelendi. Hesap senkronizasyonu dört hesabı tamamlıyor; yorumcu görevinde hedef araması başlıyor. Kullanıcı, açılan yorumcu gönderisinde görünür Takip et düğmesine basılmadığını ve retweetçi akışının ilk hesapta çalışıp ikinci hesapta hedef profilde kaldığını bildirdi. Paylaşılan kayıt DISCOVERY_CLICK/COMMENT_CLICK satırlarından önce kesildiği için cihazdaki dokunma sonucu doğrudan kanıtlanmış sayılmaz.
