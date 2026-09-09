@@ -122,6 +122,7 @@ object AutomationController {
     private var engagerHandle: String? = null
     private var engagerParentSignature = ""
     private var engagerParentKeys = emptyList<String>()
+    private var engagementOpenAttempts = 0
     private var discoveryTargets: List<String> = emptyList()
     private var activeSessionToken: String? = null
     private var pendingAction: PendingAction? = null
@@ -1132,6 +1133,7 @@ object AutomationController {
                     }
                     if (performStep(service, root, screen, "open_discovery_tweet", eligible.key) { XTweetInspector.click(service, eligible) }) {
                         lastListSignature = ""
+                        engagementOpenAttempts = 0
                         moveStage(XFlowStage.OPEN_ENGAGEMENT, "Gönderi metni açıldı; detay ekranı doğrulanıyor")
                         service.requestAutomationTick(500L)
                     }
@@ -1166,7 +1168,11 @@ object AutomationController {
                         val quotes = current.taskType == TaskType.QUOTER_FOLLOW
                         if (XUiActions.clickEngagementList(service, root, quotes)) {
                             // Count accepted taps too: dispatch success is not proof of navigation.
-                            if (++stageAttempts >= 12) return pause("Alıntıları görüntüle dokunuşu listeyi açmadı")
+                            if (++engagementOpenAttempts >= 12) return pause("Alıntıları görüntüle dokunuşu listeyi açmadı")
+                            // Searching below media must not consume the next screen's tab retries.
+                            stageAttempts = 0
+                            listEndStable = 0
+                            lastListSignature = ""
                             nextActionNotBefore = now + 700L
                             service.requestAutomationTick(500L)
                         } else if (DiscoveryViewportEvidence.quotesExhausted(stageAttempts++, listEndStable)) nextDiscoveryTweet(service, "Bu gönderide Alıntıları görüntüle/etkileşim listesi yok")
@@ -1874,6 +1880,7 @@ object AutomationController {
 
     private fun resetOperationNavigation() {
         pendingAction = null
+        engagementOpenAttempts = 0
         engagerHandle = null
         engagerParentSignature = ""
         engagerParentKeys = emptyList()
