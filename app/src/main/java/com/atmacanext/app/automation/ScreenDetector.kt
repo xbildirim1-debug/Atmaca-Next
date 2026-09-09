@@ -55,12 +55,13 @@ object ScreenDetector {
         } >= 2
         val visibleTweetRows = FeedRowEvidence.rows(nodes)
         val visibleTimedAuthors = labels.mapNotNull(TweetContentEvidence::header).map { it.handle }.distinct().size
+        val openedDetailAuthor = if (detailTitleAtTop) CommentDetailEvidence.header(nodes)?.handle else null
         val inlineTweetDetail = inlineReplyEntry && (
             (detailBack && (detailTitleAtTop || detailToolbar || labels.any(EngagementListEvidence::openLabel))) ||
                 // While the detail settles or scrolls, Compose may temporarily omit
                 // the toolbar/back semantics. Real post/reply rows still separate
                 // this inline field from the full-screen composer.
-                visibleTweetRows.isNotEmpty() || visibleTimedAuthors >= 2
+                visibleTweetRows.isNotEmpty() || visibleTimedAuthors >= 2 || openedDetailAuthor != null
             )
         if (inlineTweetDetail) return XScreen.TWEET_DETAIL
         if ((hasEditable && (hasComposerId || hasSubmitId || composerByText)) || (hasComposerId && composerByText)) {
@@ -119,11 +120,6 @@ object ScreenDetector {
         if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followingHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWING_LIST
         if (nodes.any { isSelectedRelationshipTab(it, XUiVocabulary.followersHeaders) } && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWERS_LIST
 
-
-        // X aynı üst sekme şeridinde Followers, Following, Subscribers ve
-        // Subscriptions etiketlerini birlikte tutuyor. Ekran türünü yalnızca etiketin
-        // varlığıyla seçmek yanlış sekmeyi başarı sayar. Önce Android'in seçili/checked
-        // sekme kanıtını veya erişilebilirlik açıklamasındaki selected/seçili durumunu oku.
         val followingHeader = labels.any { label ->
             XUiVocabulary.followingHeaders.any { token -> containsToken(label, token) }
         }
@@ -139,13 +135,8 @@ object ScreenDetector {
         if (selectedFollowingTab && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWING_LIST
         if (selectedFollowersTab && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWERS_LIST
 
-        // Profile must win over list heuristics: profile pages can themselves be scrollable and contain
-        // "Following" / "Followers" stats, which CP9 could mistake for a list.
         val ownProfile = labels.any { it in XUiVocabulary.ownProfileSignals }
         val hasHandle = handleCount >= 1
-        // Following/Followers listelerindeki düz sekme başlıklarını profil sayacı
-        // sanma. Profil kanıtı için aynı erişilebilirlik düğümünde sayı + başlık veya
-        // açık bir count view-id gerekir.
         val hasFollowersStat = hasNumberedProfileStat(nodes, XUiVocabulary.followersHeaders, followers = true)
         val hasFollowingStat = hasNumberedProfileStat(nodes, XUiVocabulary.followingHeaders, followers = false)
         val hasJoined = XUiVocabulary.joinedSignals.any(corpus::contains)
@@ -153,17 +144,12 @@ object ScreenDetector {
             return XScreen.PROFILE
         }
 
-        // Eski X varyantlarında sekme şeridi yalnızca açık sekmenin etiketini
-        // yayınlayabilir. İki başlık birden görünüyorsa seçili durum kanıtı olmadan
-        // Following/Followers tahmini yapma.
         if (followingHeader && !followersHeader && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWING_LIST
         if (followersHeader && !followingHeader && listEvidence(labels, handleCount, scrollable)) return XScreen.FOLLOWERS_LIST
 
         val engagementHeader = labels.any { label -> XUiVocabulary.engagementSignals.any { token -> label == token || label.contains(token) } }
         if (engagementHeader && listEvidence(labels, handleCount, scrollable)) return XScreen.ENGAGEMENT_LIST
 
-        // Home timelines contain many reply/like/repost/bookmark controls. Those controls must
-        // never be sufficient to classify a feed as a single tweet detail screen.
         val homeSignalCount = XUiVocabulary.homeSignals.count { token -> labels.any { it == token } }
         val hasHomeNavigation = labels.any { it == "anasayfa" || it == "home" } &&
             labels.any { it == "ara" || it == "search" } &&
@@ -204,7 +190,7 @@ object ScreenDetector {
                 listOf("yanıt", "replies", "beğeni", "likes", "yeniden gönder", "reposts").any(label::contains)
         }
         val scrolledDetail = detailReplyEntry && labels.any(EngagementListEvidence::openLabel)
-        if (explicitDetailId || scrolledDetail || (hasBack && hasDetailTitle &&
+        if (explicitDetailId || scrolledDetail || (hasDetailTitle && openedDetailAuthor != null && detailReplyEntry) || (hasBack && hasDetailTitle &&
                 ((tweetActionCount >= 2 && tweetIds >= 1) || detailReplyEntry || numberedActions >= 2))) {
             return XScreen.TWEET_DETAIL
         }
