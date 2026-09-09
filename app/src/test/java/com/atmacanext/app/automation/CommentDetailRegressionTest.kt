@@ -43,6 +43,23 @@ class CommentDetailRegressionTest {
             n("@body_mention", 100, 250), n("Takip et", 500, 250))
         assertNull(CommentDetailEvidence.header(nodes))
     }
+    @Test fun composeCombinedHeaderAndOffsetFollowRemainBoundToTopAuthor() {
+        val nodes = listOf(
+            n("Gönderi", 100, 75),
+            n("Arya, @arya_krmzgl", 100, 185, 330, 70),
+            n("Takip et", 510, 270, 140, 44),
+            n("Gönderinin metni", 20, 340, 620, 150),
+            n("Bom Report @BomReport · 7 sa", 100, 760, 460),
+            n("Takip et", 500, 835, 140),
+        )
+        assertEquals("arya_krmzgl", CommentDetailEvidence.header(nodes)?.handle)
+        assertEquals(2, CommentDetailEvidence.actionIndex(nodes, "arya_krmzgl", VerifiedFollowPolicy.plainFollowLabels))
+    }
+    @Test fun newlineComposeHeaderIsRecognized() {
+        val nodes = listOf(n("Gönderi", 100, 75), n("Arya\n@arya_krmzgl", 100, 180, 300, 70), n("Follow", 500, 235, 140, 45))
+        assertEquals("arya_krmzgl", CommentDetailEvidence.header(nodes)?.handle)
+        assertEquals(2, CommentDetailEvidence.actionIndex(nodes, "arya_krmzgl", VerifiedFollowPolicy.plainFollowLabels))
+    }
     @Test fun sameChildScreenCannotBeAcceptedAsReturn() {
         assertFalse(DiscoveryViewportEvidence.returnedToParent("a", "b", listOf("reply"), listOf("reply"), "arya", "arya"))
         assertFalse(DiscoveryViewportEvidence.returnedToParent("a", "b", listOf("parent", "reply"), listOf("reply", "nested"), null, "arya"))
