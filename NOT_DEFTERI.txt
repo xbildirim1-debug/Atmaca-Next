@@ -1,3 +1,11 @@
+## 26.30 — doğrulanmış teslim sonucu
+
+- Kaynak main commit 18b96d0643795e0d4fe6caf403b91ad722f49f7e; başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34389850082 . 264 test; 0 başarısız, hata veya atlanan. Test/lint/assemble, imza, manifest ve paketleme başarılı.
+- AtmacaNext-26.30.apk: 20.623.072 bayt; versionCode78 / 26.30-comment-header-follow; SHA256 284bd2634f7391cb52af9183de72e25c2e9946465924b15017c0d21835371b52.
+- AtmacaNext-26.30-TAM-PAKET.zip: 20.395.722 bayt; SHA256 1e67333ff4237ebafca81b7f7a278dce7465371e0476bca7cb1ea73ea88c17a8. ZIP CRC ve paket içi/dışı APK eşitliği doğrulandı. APK/tam paket artifact10119288714; rapor artifact10119289638; son kullanma 8 Aralık 2026.
+- Fiziksel X cihaz testi bu yeni APK ile YAPILMADI. 21:22 cihaz kaydı önceki 26.29 hatasının kanıtıdır. 26.30'da beklenen kanıt `COMMENT_FOLLOW ... author=@null ... available=true` ardından `COMMENT_CLICK ... mode=top-right`; düğme yoksa sıradaki yoruma dönüş.
+- Kalıcı debug imza ve Releases contents:write sınırlaması değişmedi. APK ile tam paket sohbet teslimindedir.
+
 ## 26.30 — görünür üst-sağ yorumcu Takip et düğmesi
 
 - 9 Eylül 2026 21:22–21:25 fiziksel cihaz logu ve 1000027144.jpg/1000027142.mp4 incelendi. Hedef gönderi ve yorumcular açılıyor. Her açılan yorumda üst-sağ `Takip et` erişilebilirlik ağacında `Rect(813,334–959,380)` olarak görünmesine rağmen `detailAuthor=@null`; `COMMENT_CLICK` hiç oluşmuyor ve runtime 5–6 saniye sonra başka yoruma dönüyor. Kesin neden tıklama değil, X'in açılan yorum sahibinin ad/@handle düğümlerini bu ekranda yayımlamaması nedeniyle kimlik önkoşulunun geçilememesidir.
