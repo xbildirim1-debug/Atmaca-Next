@@ -1,3 +1,10 @@
+## 26.33 — Boşuna Tıklama profilinde yanlış bildirim penceresi
+
+- 1000027181.mp4 (35. saniye) normal profil gösteriyor; açık pencere yok. 23:41:42 PROFILE / NOTIFICATION_PROMPT ardından 23:41:43 PAUSED kaydı, taramadan önce durulduğunu kanıtlıyor. Bio içindeki “bildirimleri açın” eski contains("bildirimleri aç") koşulunu tetikliyordu. 26.31/26.32 için ileri sürülen medya kaydırması bu durmanın nedeni değildi; önceki kesin teşhis geri çekildi.
+- PopupClassifier bildirim/rehber/izin/promosyon metnine ek olarak gerçek dialog veya görünür, etkin kapatma kontrolü arar. Profil ve gönderi metni tek başına görev durdurmaz. Gerçek pencerelerin güvenli işlenmesi korunur; hesaba özel istisna eklenmedi.
+- Beş regresyon testi: cihazdaki bio, TR/EN metinler, gerçek Compose bildirim istemi, kapatma düğmesiz native dialog, gizli/tıklanmaz kapatma metni. Hız ve kaydırma davranışlarına bu sürümde dokunulmadı.
+- versionCode81 / 26.33-popup-surface-evidence. Yeni APK için CI sonucu bekleniyor; fiziksel cihaz testi yapılmadı. Releases yetkisi ve imza ayarları değiştirilmedi.
+
 ## 26.32 — doğrulanmış teslim sonucu
 
 - Kaynak main commit `f273facc153586cf411dc09c416c414db24e870f`; başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34400761367 . 269 test; 0 başarısız, hata veya atlanan. Test/lint/assemble, APK imzası, manifest ve paketleme adımları geçti.

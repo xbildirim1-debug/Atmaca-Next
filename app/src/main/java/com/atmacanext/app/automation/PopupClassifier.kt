@@ -39,19 +39,28 @@ object PopupClassifier {
         if (error && retry) return PopupType.RETRYABLE_ERROR
         if (error) return PopupType.GENERIC_ERROR
 
-        if (any("bildirimleri aç", "bildirimleri etkinleştir", "turn on notifications", "enable notifications")) {
+        // Profile bios and posts can contain every prompt phrase below. Text alone
+        // is not an interruption: require a dialog container or an actual dismiss
+        // control. This also retains Compose sheets without a native Dialog class.
+        val dialog = ScreenDetector.detect(nodes) == XScreen.DIALOG
+        val dismissControl = nodes.any { node ->
+            node.visible && node.enabled && (node.clickable || node.className.orEmpty().contains("button", true)) &&
+                listOfNotNull(node.text, node.contentDescription).any { XUiVocabulary.normalize(it) in XUiVocabulary.safeDismissLabels }
+        }
+        val promptSurface = dialog || dismissControl
+        if (promptSurface && any("bildirimleri aç", "bildirimleri etkinleştir", "turn on notifications", "enable notifications")) {
             return PopupType.NOTIFICATION_PROMPT
         }
-        if (any("kişilerini senkronize et", "rehberi senkronize et", "sync contacts", "connect contacts")) {
+        if (promptSurface && any("kişilerini senkronize et", "rehberi senkronize et", "sync contacts", "connect contacts")) {
             return PopupType.CONTACT_SYNC
         }
-        if (any("x'in kameraya erişmesine izin ver", "x’in kameraya erişmesine izin ver", "allow x to access", "izin ver") &&
+        if (promptSurface && any("x'in kameraya erişmesine izin ver", "x’in kameraya erişmesine izin ver", "allow x to access", "izin ver") &&
             any("şimdi değil", "not now", "iptal", "cancel")) {
             return PopupType.PERMISSION_PROMPT
         }
-        if (any("premium'u dene", "try premium", "grok'u dene", "try grok", "yeni özelliği dene", "try the new")) {
+        if (promptSurface && any("premium'u dene", "try premium", "grok'u dene", "try grok", "yeni özelliği dene", "try the new")) {
             return PopupType.PROMOTION
         }
-        return if (ScreenDetector.detect(nodes) == XScreen.DIALOG) PopupType.UNKNOWN_DIALOG else PopupType.NONE
+        return if (dialog) PopupType.UNKNOWN_DIALOG else PopupType.NONE
     }
 }

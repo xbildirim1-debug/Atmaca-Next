@@ -5,6 +5,38 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class PopupClassifierTest {
+    @Test fun bosunatiklamaBioIsNotNotificationDialog() {
+        assertEquals(PopupType.NONE, PopupClassifier.classify(listOf(
+            node("Boşuna Tıklama"), node("@bosunatiklama"),
+            node("Dijital Medya ve Haber | Gündemi bir tıkla takip etmek için bildirimleri açın. info@bosunatiklama.com"),
+            node("Takip et", true), node("Mesaj gönder", true), node("Gönderiler", true),
+        )))
+    }
+
+    @Test fun postAndBioPromptPhrasesWithoutDialogAreIgnored() {
+        for (phrase in listOf("Turn on notifications", "Bildirimleri etkinleştir", "Sync contacts", "Try premium", "Try Grok")) {
+            assertEquals(phrase, PopupType.NONE, PopupClassifier.classify(listOf(node(phrase), node("Takip et", true))))
+        }
+    }
+
+    @Test fun realNotificationSheetWithDismissControlIsStillDetected() {
+        assertEquals(PopupType.NOTIFICATION_PROMPT, PopupClassifier.classify(listOf(
+            node("Bildirimleri aç"), node("Şimdi değil", true),
+        )))
+    }
+
+    @Test fun nativeNotificationDialogWithoutDismissRemainsBlocking() {
+        assertEquals(PopupType.NOTIFICATION_PROMPT, PopupClassifier.classify(listOf(
+            node("Turn on notifications").copy(className = "android.app.Dialog"),
+        )))
+    }
+
+    @Test fun hiddenOrPlainTextDismissLabelDoesNotTurnBioIntoPrompt() {
+        for (dismiss in listOf(node("Şimdi değil"), node("Şimdi değil", true).copy(visible = false))) {
+            assertEquals(PopupType.NONE, PopupClassifier.classify(listOf(node("Bildirimleri açın"), dismiss)))
+        }
+    }
+
     private fun node(text: String, clickable: Boolean = false) = NodeSnapshot(
         text = text,
         contentDescription = null,

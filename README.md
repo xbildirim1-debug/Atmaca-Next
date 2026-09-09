@@ -1,4 +1,7 @@
-# Atmaca Next — 26.32
+# Atmaca Next — 26.33
+
+26.33: profil açıklamasındaki “bildirimleri açın” artık bildirim penceresi
+sayılmaz. Pencere sınıflandırması gerçek dialog/kapatma kontrolü gerektirir.
 
 26.32: hedef profilde medya kaydırmayı yutarsa iki ayrı sol güvenli şeritte daha
 uzun kaydırmayı tekrarlar ve iki başarısız okumada hedefi terk etmez. Yorumcu
