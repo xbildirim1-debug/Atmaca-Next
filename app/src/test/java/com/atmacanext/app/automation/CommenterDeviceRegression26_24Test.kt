@@ -24,7 +24,12 @@ class CommenterDeviceRegression26_24Test {
         className = clazz,
         clickable = false,
         enabled = true,
-        bounds = Rect(left, top, left + width, top + height),
+        bounds = Rect().apply {
+            this.left = left
+            this.top = top
+            right = left + width
+            bottom = top + height
+        },
         editable = editable,
         visible = true,
     )
