@@ -35,6 +35,22 @@ object ScreenDetector {
             id.contains("tweet_button") || id.contains("post_button") || id.contains("reply_button")
         }
         val composerByText = labels.any { label -> XUiVocabulary.composerSignals.any { token -> label.contains(token) } }
+        // A tweet detail keeps an inline editable "Yanıtını gönder" field on screen.
+        // That field is not the full-screen composer: the detail title/back button and
+        // the post action toolbar remain visible. 26.19 classified this real device
+        // layout as COMPOSER and therefore waited forever instead of reading replies.
+        val inlineReplyEntry = labels.any { it == "yanıtını gönder" || it == "post your reply" || it == "yanıt gönder" }
+        val detailTitleAtTop = labels.any { it in XUiVocabulary.tweetDetailSignals }
+        val detailBack = labels.any { it in XUiVocabulary.backSignals } || nodes.any { node ->
+            val id = node.viewId.orEmpty().lowercase()
+            id.endsWith("/back") || id.contains("toolbar_back") || id.contains("navigate_up")
+        }
+        val detailToolbar = nodes.count { node ->
+            val id = node.viewId.orEmpty().lowercase()
+            id.contains("toolbar_reply") || id.contains("toolbar_like") || id.contains("toolbar_retweet") || id.contains("bookmark")
+        } >= 2
+        val inlineTweetDetail = inlineReplyEntry && detailBack && (detailTitleAtTop || detailToolbar || labels.any(EngagementListEvidence::openLabel))
+        if (inlineTweetDetail) return XScreen.TWEET_DETAIL
         if ((hasEditable && (hasComposerId || hasSubmitId || composerByText)) || (hasComposerId && composerByText)) {
             return XScreen.COMPOSER
         }

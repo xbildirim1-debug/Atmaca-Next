@@ -1,5 +1,6 @@
-# Atmaca Next — 26.19
+# Atmaca Next — 26.20
 
+26.20: tweet ayrıntısındaki satır içi yanıt alanını oluşturucu sanmadan yorumları işleme;
 26.19: ayrı Compose yazar/saat/metin alanlarından gönderi okuma, öneri kartı/profil ayrımı,
 yorumcu profilinden kontrollü dönüş, retweetçi sonuç çelişkisi kontrolü ve eksik limitte duraklama.
 26.18 cihazda başarısızdır. 26.19 cihaz doğrulaması beklenir; birim testler cihaz testi değildir.

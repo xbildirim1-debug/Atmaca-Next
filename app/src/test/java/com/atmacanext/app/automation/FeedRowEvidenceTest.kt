@@ -53,6 +53,14 @@ class FeedRowEvidenceTest {
         val nodes = listOf(n("Yanıtını gönder",800),n("Alıntıları görüntüle",100),n("@one",200),n("@two",300),n("Takip ediliyor",250))
         assertEquals(XScreen.TWEET_DETAIL,ScreenDetector.detect(nodes))
     }
+    @Test fun firstVisibleRandomReplyAuthorIsReadInScreenOrder() {
+        val rows = FeedRowEvidence.rows(listOf(
+            n("Pusholder @pusholder · 2 sa",100),n("Ana gönderi metni",140),
+            n("Mavi Deniz @1nicol_ · 1 sa",300),n("İlk gerçek yorum",340),
+            n("Gökhan @fnrbhce28 · 45 dk",450),n("İkinci gerçek yorum",490),
+        ))
+        assertEquals(listOf("pusholder", "1nicol_", "fnrbhce28"), rows.map { it.author })
+    }
     @Test fun pinnedCardSkipped() {
         assertTrue(FeedRowEvidence.rows(listOf(n("Sabitlendi",70),n("@first · 4 sa",100),n("Haber açıklama metni",140))).isEmpty())
     }

@@ -93,4 +93,22 @@ class XScreenDetectorTest {
         )
         assertEquals(XScreen.TWEET_DETAIL, ScreenDetector.detect(nodes))
     }
+
+    @Test fun inlineEditableReplyFieldRemainsTweetDetail() {
+        val nodes = listOf(
+            n("Back", true, id = "toolbar_back"), n("Post"),
+            n("Reply", true, id = "toolbar_reply"), n("Like", true, id = "toolbar_like"),
+            n("View quotes", true), n("Post your reply", editable = true, id = "tweet_box"),
+            n("Mavi Deniz @1nicol_ · 1 h"), n("Her haber çıkıyorsa bu da aynı yerden yanlış haber olarak çıkmıştır."),
+        )
+        assertEquals(XScreen.TWEET_DETAIL, ScreenDetector.detect(nodes))
+    }
+
+    @Test fun fullScreenReplyComposerIsStillComposer() {
+        val nodes = listOf(
+            n("Reply"), n("Post your reply", editable = true, id = "tweet_box"),
+            n("Reply", true, id = "reply_button"),
+        )
+        assertEquals(XScreen.COMPOSER, ScreenDetector.detect(nodes))
+    }
 }

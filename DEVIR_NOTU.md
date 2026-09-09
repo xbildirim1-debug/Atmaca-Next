@@ -432,3 +432,10 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 
 - code64 / 26.16-native-profile-route. Yeni rota testi eklendi; CI ve cihaz testi bekleniyor.
 - 26.15 hızlı ayarları korunur. GitHub Releases yetkisi ve kalıcı imza durumu değiştirilmedi.
+## 26.20 — tweet ayrıntısındaki satır içi yanıt alanı
+
+- 1000026996.mp4 ve 8 Eylül 23:53 cihaz logu incelendi. Hedef profil ve iki saatlik gönderi doğru açılıyor; gerçek tweet ayrıntısında Mavi Deniz ve altındaki yorumlar görünür durumda kalıyor. Log `screen=COMPOSER` bildirdiği için yorum işleme aşaması hiç başlamıyor.
+- Kök neden: X, tweet ayrıntısının altındaki `Yanıtını gönder / Post your reply` alanını editable `tweet_box` olarak yayımlıyor. 26.19 bunu tam ekran oluşturucu sanıyordu. Geri düğmesi + gönderi başlığı/aksiyon araç çubuğu/Alıntıları görüntüle kanıtı bulunan satır içi alan artık TWEET_DETAIL sayılır; gerçek tam ekran yanıt oluşturucu COMPOSER kalır.
+- Yorumcu adı sabit değildir. Ayrıntıdaki hedef gönderi yazarı ve görev hesabı dışlandıktan sonra ekranda yukarıdan aşağı ilk gerçek yorum yazarı seçilir, profili açılır; zaten Takip ediliyor/Beklemede ise yeni işlem yapılmadan geri dönülür. Yeni Beklemede sonucu bir işlem sayılır. Ardından aynı tweetin sıradaki yorumuna devam edilir.
+- Retweetçi yolu değişmedi fakat bu ekran düzeltmesiyle artık tweet ayrıntısında çalışabilir: `Alıntıları görüntüle` açılır, sonra sayısı değişken `... tarafından yeniden gönderildi` sekmesi seçilip doğrulanır.
+- İki ekran regresyon testi ve dinamik yorum sırası testi eklendi. versionCode68 / 26.20-inline-reply-engagement. Birim test/CI ve fiziksel cihaz testi henüz yapılmadı; sonuçlar tamamlanınca bu kayıt güncellenecek.
