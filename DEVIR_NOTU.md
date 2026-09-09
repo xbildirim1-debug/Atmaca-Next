@@ -1,3 +1,10 @@
+## 26.31 — medya içeren hedef profilde ve toplu görevde ilerleme
+
+- 9 Eylül 2026 22:17 Boşuna Tıklama ekran görüntüsü incelendi. Profil doğru açılıyor; ilk görünür gönderi 6 dakikalık ve büyük inline video içeriyor. Yorumcu/retweetçi için en az 120 dakikalık gönderiye ulaşmak üzere kaydırma gerekir. Mevcut ListGesture ekranın merkezinde başladığı için video oynatıcı dikey hareketi tüketebiliyor; Android gesture tamamlandı cevabı gerçek liste hareketini kanıtlamıyor. Bu aynı hedefte tek ve toplu görevlerin profil üzerinde kalmasını açıklayan kod boşluğudur; yeni görev state sıfırlaması mevcut testlerle zaten doğrulanmıştır.
+- Discovery takip kaydırması artık ekran merkezini kullanmaz: x=%6 sol güvenli kenar, y=%82'den %28'e dikey yol. Böylece inline video/GIF/fotoğraf ve sağ-alt oluştur düğmesi dışında kalır. Geri kaydırma aynı yolun tersidir. Profilin yatay Gönderiler/Yanıtlar/Medya pager'ına ACTION_SCROLL_FORWARD gönderilmez.
+- Bu hareket yalnız COMMENTER_FOLLOW/RETWEETER_FOLLOW/QUOTER_FOLLOW taramasına uygulanır. Takipten çıkma, onaylı takip ve diğer görevlerin kaydırması değiştirilmedi. İki yeni politika testi sol şerit ve tam ters yönü doğrular; önceki ardışık iki hesap/görev sıfırlama regresyonu korunur.
+- versionCode79 / 26.31-discovery-media-scroll. CI ve yeni fiziksel cihaz testi henüz yapılmadı.
+
 ## 26.30 — doğrulanmış teslim sonucu
 
 - Kaynak main commit 18b96d0643795e0d4fe6caf403b91ad722f49f7e; başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34389850082 . 264 test; 0 başarısız, hata veya atlanan. Test/lint/assemble, imza, manifest ve paketleme başarılı.

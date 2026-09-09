@@ -1,4 +1,8 @@
-# Atmaca Next — 26.30
+# Atmaca Next — 26.31
+
+26.31: yorumcu/retweetçi hedef profilindeki video, GIF veya fotoğraf orta ekran
+kaydırmasını yutsa bile gönderi akışını sol güvenli kenar şeridinden dikey
+kaydırır. Toplu görevde yeni görev aynı temiz tarama durumuyla başlar.
 
 26.30: X açılan yorumun kullanıcı adını erişilebilirlik ağacından gizlese bile,
 Gönderi ekranının üst-sağ başlık bölgesindeki tek Takip et düğmesine basar.

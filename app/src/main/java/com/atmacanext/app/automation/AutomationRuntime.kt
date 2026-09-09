@@ -1991,8 +1991,10 @@ object AutomationController {
     ): Boolean {
         if (_state.value.taskType?.isDiscoveryFollow == true) {
             // ACTION_SCROLL_FORWARD on X's profile pager changes Posts to Replies
-            // and Videos. Discovery must use an explicitly vertical gesture only.
-            return if (forward) ListGesture.forward(service, root) else ListGesture.backward(service, root)
+            // and Videos. Centre swipes are also swallowed by inline media, so use
+            // the profile's left gutter for an explicitly vertical gesture.
+            return if (forward) ListGesture.discoveryForward(service, root)
+            else ListGesture.discoveryBackward(service, root)
         }
         if (_state.value.taskType in setOf(TaskType.UNFOLLOW, TaskType.VERIFIED_FOLLOW)) {
             val rowContainerResult = if (forward) {

@@ -21,11 +21,43 @@ object ListGesture {
     fun backward(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         swipe(service, root, forward = false)
 
+    fun discoveryForward(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
+        discoverySwipe(service, root, forward = true)
+
+    fun discoveryBackward(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
+        discoverySwipe(service, root, forward = false)
+
     fun left(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         swipe(service, root, forward = true, horizontal = true)
 
     fun right(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         swipe(service, root, forward = false, horizontal = true)
+
+    /**
+     * Profile media consumes centre-screen swipes on X. Use the narrow left gutter,
+     * which stays outside inline players and the lower-right compose button.
+     */
+    private fun discoverySwipe(
+        service: AccessibilityService,
+        root: AccessibilityNodeInfo?,
+        forward: Boolean,
+    ): Boolean {
+        if (root == null) return false
+        val bounds = Rect().also(root::getBoundsInScreen)
+        if (bounds.width() <= 0 || bounds.height() <= 0) return false
+        val x = bounds.left + bounds.width() * DiscoveryScrollGesturePolicy.X_RATIO
+        val startRatio = if (forward) DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO
+            else DiscoveryScrollGesturePolicy.BACKWARD_START_Y_RATIO
+        val endRatio = if (forward) DiscoveryScrollGesturePolicy.FORWARD_END_Y_RATIO
+            else DiscoveryScrollGesturePolicy.BACKWARD_END_Y_RATIO
+        return dispatchSwipe(
+            service,
+            x,
+            bounds.top + bounds.height() * startRatio,
+            x,
+            bounds.top + bounds.height() * endRatio,
+        )
+    }
 
     private fun swipe(
         service: AccessibilityService,
@@ -63,6 +95,15 @@ object ListGesture {
                 lineTo(x, endY)
             }
         }
+        return dispatch(service, path)
+    }
+
+    private fun dispatchSwipe(service: AccessibilityService, startX: Float, startY: Float, endX: Float, endY: Float): Boolean {
+        val path = Path().apply { moveTo(startX, startY); lineTo(endX, endY) }
+        return dispatch(service, path)
+    }
+
+    private fun dispatch(service: AccessibilityService, path: Path): Boolean {
         val stroke = GestureDescription.StrokeDescription(path, 0L, 420L)
         return try {
             val completed = AtomicBoolean(false)
