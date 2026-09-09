@@ -188,11 +188,12 @@ object XUiActions {
     fun clickCommentDetailFollow(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, handle: String): Boolean {
         val nodes = AccessibilityTree.nodes(root)
         val snapshots = nodes.map { it.toSnapshot() }
-        val index = CommentDetailEvidence.actionIndex(snapshots, handle, VerifiedFollowPolicy.plainFollowLabels) ?: run {
+        val exactIndex = CommentDetailEvidence.actionIndex(snapshots, handle, VerifiedFollowPolicy.plainFollowLabels)
+        val index = exactIndex ?: CommentDetailEvidence.headerActionIndex(snapshots, VerifiedFollowPolicy.plainFollowLabels) ?: run {
             OperationLog.w("COMMENT_CLICK", "@$handle için güncel başlık/düğme eşleşmedi; tıklama yapılmadı")
             return false
         }
-        if (CommentDetailEvidence.has(snapshots, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)) return false
+        if (CommentDetailEvidence.hasHeaderAction(snapshots, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)) return false
         val n = snapshots[index]
         if (!VerifiedFollowPolicy.isPlainFollow(listOfNotNull(n.text, n.contentDescription))) return false
         val node = nodes[index]
@@ -200,7 +201,7 @@ object XUiActions {
         // X Compose can expose the label as a row-wide semantic node. Its centre is
         // the author/header, while the actual relationship control is on the right.
         val result = native || GestureClick.gestureTapTrailing(service, node)
-        OperationLog.i("COMMENT_CLICK", "@$handle bounds=${n.bounds} clickable=${n.clickable} accepted=$result; sonuç ayrıca doğrulanacak")
+        OperationLog.i("COMMENT_CLICK", "@$handle mode=${if (exactIndex != null) "exact" else "top-right"} bounds=${n.bounds} clickable=${n.clickable} accepted=$result; sonuç ayrıca doğrulanacak")
         return result
     }
 

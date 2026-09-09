@@ -69,6 +69,32 @@ internal object CommentDetailEvidence {
     fun has(nodes: List<NodeSnapshot>, expected: String, accepted: Set<String>) =
         actionIndex(nodes, expected, accepted) != null
 
+    /**
+     * X sometimes omits the opened reply author's name/handle while still exposing
+     * the single relationship button in the detail header. Bind that button to the
+     * top-right header area, never to follow controls in lower replies.
+     */
+    fun headerActionIndex(nodes: List<NodeSnapshot>, accepted: Set<String>): Int? {
+        val title = nodes.filter { it.visible && !it.editable && labels(it).any(::isTitle) }
+            .minByOrNull { (it.bounds.bottom - it.bounds.top).toLong() * (it.bounds.right - it.bounds.left) }
+            ?: return null
+        val screenRight = nodes.filter { it.visible }.maxOfOrNull { it.bounds.right } ?: return null
+        val titleHeight = (title.bounds.bottom - title.bounds.top).coerceAtLeast(1)
+        val bandBottom = title.bounds.bottom + maxOf(360, titleHeight * 8)
+        return nodes.indices.asSequence().filter { i ->
+            val n = nodes[i]
+            val b = n.bounds
+            n.visible && n.enabled && !n.editable && b.right > b.left && b.bottom > b.top &&
+                b.top >= title.bounds.bottom && b.bottom <= bandBottom &&
+                b.left >= screenRight * 3 / 5 && b.right >= screenRight * 4 / 5 &&
+                b.bottom - b.top <= titleHeight * 3 &&
+                labels(n).any { VerifiedFollowPolicy.matchesAction(it, accepted) }
+        }.minByOrNull { nodes[it].bounds.top }
+    }
+
+    fun hasHeaderAction(nodes: List<NodeSnapshot>, accepted: Set<String>) =
+        headerActionIndex(nodes, accepted) != null
+
     private fun headerHandle(raw: String): String? {
         AccountSwitcherInspector.dedicatedHandle(raw)?.let { return it }
         val text = raw.trim()

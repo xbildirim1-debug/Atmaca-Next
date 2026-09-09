@@ -3,6 +3,7 @@ package com.atmacanext.app.automation
 import android.graphics.Rect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -61,6 +62,30 @@ class CommenterDeviceRegression26_24Test {
         )
         assertTrue(VerifiedFollowPolicy.isPlainFollow(listOf("Fth adlı kullanıcıyı takip et")))
         assertEquals(3, CommentDetailEvidence.actionIndex(nodes, "Fthwooy", VerifiedFollowPolicy.plainFollowLabels))
+    }
+
+    @Test
+    fun topRightFollowWorksWhenXOmitsOpenedAuthorsIdentity() {
+        val nodes = listOf(
+            n("Gönderi", 153, left = 165, width = 717, height = 56),
+            n(top = 291, left = 959, width = 121, height = 132, desc = "Profil fotoğrafı"),
+            n("Takip et", 334, left = 813, width = 146, height = 46),
+            n("Yorum metni", 578, left = 33, width = 686, height = 49),
+            n(top = 677, left = 39, width = 66, height = 66, desc = "Yanıtla"),
+        )
+        assertNull(CommentDetailEvidence.header(nodes))
+        assertEquals(2, CommentDetailEvidence.headerActionIndex(nodes, VerifiedFollowPolicy.plainFollowLabels))
+        assertNull(CommentDetailEvidence.headerActionIndex(nodes, XUiVocabulary.followingActions))
+    }
+
+    @Test
+    fun noTopRightFollowMeansSkipInsteadOfClickingLowerReply() {
+        val nodes = listOf(
+            n("Gönderi", 153, left = 165, width = 717, height = 56),
+            n("Yorum metni", 578, left = 33, width = 686, height = 49),
+            n("Takip et", 900, left = 813, width = 146, height = 46),
+        )
+        assertNull(CommentDetailEvidence.headerActionIndex(nodes, VerifiedFollowPolicy.plainFollowLabels))
     }
 
     @Test

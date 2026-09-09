@@ -1370,9 +1370,15 @@ object AutomationController {
                 val handle = engagerHandle ?: return nextDiscoveryTweet(service, "Yorumcu kimliği bulunamadı")
                 val detailNodes = AccessibilityTree.snapshots(root)
                 val detailAuthor = if (screen in setOf(XScreen.TWEET_DETAIL, XScreen.UNKNOWN)) CommentDetailEvidence.header(detailNodes)?.handle else null
-                if (detailAuthor == handle) {
-                    val following = CommentDetailEvidence.has(detailNodes, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)
-                    val available = CommentDetailEvidence.has(detailNodes, handle, VerifiedFollowPolicy.plainFollowLabels)
+                val topFollowing = screen == XScreen.TWEET_DETAIL && CommentDetailEvidence.hasHeaderAction(
+                    detailNodes, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)
+                val topAvailable = screen == XScreen.TWEET_DETAIL && CommentDetailEvidence.hasHeaderAction(
+                    detailNodes, VerifiedFollowPolicy.plainFollowLabels)
+                if (detailAuthor == handle || topFollowing || topAvailable) {
+                    val following = topFollowing || (detailAuthor == handle && CommentDetailEvidence.has(
+                        detailNodes, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions))
+                    val available = topAvailable || (detailAuthor == handle && CommentDetailEvidence.has(
+                        detailNodes, handle, VerifiedFollowPolicy.plainFollowLabels))
                     OperationLog.i("COMMENT_FOLLOW", "expected=@$handle author=@$detailAuthor screen=$screen available=$available following=$following")
                     if (following && !available) {
                         skippedHandles += handle
@@ -1520,8 +1526,11 @@ object AutomationController {
                 val nodes = AccessibilityTree.snapshots(root)
                 val handle = pending.target.orEmpty()
                 val detailConfirmed = screen in setOf(XScreen.TWEET_DETAIL, XScreen.UNKNOWN) &&
-                    CommentDetailEvidence.has(nodes, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions) &&
-                    !CommentDetailEvidence.has(nodes, handle, VerifiedFollowPolicy.plainFollowLabels)
+                    ((CommentDetailEvidence.has(nodes, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions) &&
+                        !CommentDetailEvidence.has(nodes, handle, VerifiedFollowPolicy.plainFollowLabels)) ||
+                        (screen == XScreen.TWEET_DETAIL &&
+                            CommentDetailEvidence.hasHeaderAction(nodes, XUiVocabulary.followingActions + XUiVocabulary.requestedActions) &&
+                            !CommentDetailEvidence.hasHeaderAction(nodes, VerifiedFollowPolicy.plainFollowLabels)))
                 val profileConfirmed = screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == pending.target &&
                     (XUiActions.isDirectFollowing(root) || XUiActions.directRequested(root)) && !XUiActions.directFollowAvailable(root)
                 if (detailConfirmed || profileConfirmed) {

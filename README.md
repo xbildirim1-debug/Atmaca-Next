@@ -1,4 +1,9 @@
-# Atmaca Next — 26.29
+# Atmaca Next — 26.30
+
+26.30: X açılan yorumun kullanıcı adını erişilebilirlik ağacından gizlese bile,
+Gönderi ekranının üst-sağ başlık bölgesindeki tek Takip et düğmesine basar.
+Düğme yoksa alt yorumların düğmelerine dokunmadan sıradaki yoruma döner; sonucu
+aynı üst-sağ alanda Takip ediliyor/Beklemede olarak doğrular.
 
 26.29: yorumcu başlığındaki satır-genişliğinde Takip et semantiğini gerçek sağ
 aksiyon bölgesinden tıklar. Retweetçi akışında gönderi metni profilde genişleyip

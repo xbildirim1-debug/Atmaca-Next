@@ -1,3 +1,10 @@
+## 26.30 — görünür üst-sağ yorumcu Takip et düğmesi
+
+- 9 Eylül 2026 21:22–21:25 fiziksel cihaz logu ve 1000027144.jpg/1000027142.mp4 incelendi. Hedef gönderi ve yorumcular açılıyor. Her açılan yorumda üst-sağ `Takip et` erişilebilirlik ağacında `Rect(813,334–959,380)` olarak görünmesine rağmen `detailAuthor=@null`; `COMMENT_CLICK` hiç oluşmuyor ve runtime 5–6 saniye sonra başka yoruma dönüyor. Kesin neden tıklama değil, X'in açılan yorum sahibinin ad/@handle düğümlerini bu ekranda yayımlamaması nedeniyle kimlik önkoşulunun geçilememesidir.
+- OPEN_ENGAGER_PROFILE artık açılmış Gönderi ekranında üst başlığın hemen altındaki, ekranın sağ %40'ında kalan tek düz `Takip et` eylemini kimlik düğümü olmasa da kabul eder ve doğrudan bu düğüm sınırına basar. `Takip et` yoksa 1,5 saniyelik yerleşmeden sonra sıradaki yoruma döner. Alt yorumlardaki takip düğmeleri üst başlık bandı dışında bırakılır.
+- Takip sonucu aynı üst-sağ bölgede `Takip ediliyor` veya `Beklemede` görülerek doğrulanır; düz `Takip et` hâlâ görünüyorsa başarı sayılmaz. Exact kullanıcı adı bulunan eski güvenli yol öncelikli olarak korunur.
+- İki yeni fiziksel-ekran regresyonu: kimliksiz üst-sağ takip düğmesini seçme ve aşağıdaki yorum takip düğmesini reddetme. versionCode78 / 26.30-comment-header-follow. CI ve yeni fiziksel cihaz testi henüz yapılmadı.
+
 ## 26.29 — doğrulanmış teslim sonucu
 
 - Kaynak main commit cee20e7d3e23ce06c473bedbf4032c11e473b563; başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34387120893 . 262 test; 0 başarısız, hata veya atlanan. Test/lint/assemble, APK imzası, manifest ve paketleme adımları geçti.
