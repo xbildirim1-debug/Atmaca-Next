@@ -1248,7 +1248,7 @@ object AutomationController {
                     if (following && !available) {
                         skippedHandles += handle
                         returnFromEngager(service)
-                    } else if (performStep(service, root, screen, "follow_comment_detail_author", handle) {
+                    } else if (available && !following && performStep(service, root, screen, "follow_comment_detail_author", handle) {
                             XUiActions.clickCommentDetailFollow(service, root, handle)
                         }) {
                         pendingAction = PendingAction(PendingKind.ENGAGER_FOLLOW, handle)
@@ -1274,7 +1274,7 @@ object AutomationController {
                 } else if (XUiActions.isDirectFollowing(root) || XUiActions.directRequested(root)) {
                     skippedHandles += handle
                     returnFromEngager(service)
-                } else if (performStep(service, root, screen, "follow_comment_author", handle) { XUiActions.clickDirectFollow(service, root) }) {
+                } else if (XUiActions.directFollowAvailable(root) && performStep(service, root, screen, "follow_comment_author", handle) { XUiActions.clickDirectFollow(service, root) }) {
                     pendingAction = PendingAction(PendingKind.ENGAGER_FOLLOW, handle)
                     service.requestAutomationTick(450L)
                 } else if (stageTimedOut(now)) { skippedHandles += handle; returnFromEngager(service) }
