@@ -1,4 +1,12 @@
-# Atmaca Next — 26.31
+# Atmaca Next — 26.32
+
+26.32: hedef profilde medya kaydırmayı yutarsa iki ayrı sol güvenli şeritte daha
+uzun kaydırmayı tekrarlar ve iki başarısız okumada hedefi terk etmez. Yorumcu
+takibinden/atlamasından sonra sıradaki görünür üst yoruma takılmak yerine alt
+yorumlara bir zorunlu kaydırma yapar ve `COMMENT_SCROLL` kanıtını kaydeder.
+Ayarlar'daki `Tüm işlemlerin hızı` 100–15000 ms aralığında takipten çıkma,
+onaylı takip, yorumcu ve retweetçi dahil tüm tıklama/kaydırma/doğrulama
+adımlarını ölçekler; hesap ve toplu görev geçişleri ayrıca ayarlanır.
 
 26.31: yorumcu/retweetçi hedef profilindeki video, GIF veya fotoğraf orta ekran
 kaydırmasını yutsa bile gönderi akışını sol güvenli kenar şeridinden dikey

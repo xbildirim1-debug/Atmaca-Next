@@ -21,11 +21,11 @@ object ListGesture {
     fun backward(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         swipe(service, root, forward = false)
 
-    fun discoveryForward(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
-        discoverySwipe(service, root, forward = true)
+    fun discoveryForward(service: AccessibilityService, root: AccessibilityNodeInfo?, recoveryAttempt: Int = 0): Boolean =
+        discoverySwipe(service, root, forward = true, recoveryAttempt = recoveryAttempt)
 
-    fun discoveryBackward(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
-        discoverySwipe(service, root, forward = false)
+    fun discoveryBackward(service: AccessibilityService, root: AccessibilityNodeInfo?, recoveryAttempt: Int = 0): Boolean =
+        discoverySwipe(service, root, forward = false, recoveryAttempt = recoveryAttempt)
 
     fun left(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         swipe(service, root, forward = true, horizontal = true)
@@ -41,11 +41,12 @@ object ListGesture {
         service: AccessibilityService,
         root: AccessibilityNodeInfo?,
         forward: Boolean,
+        recoveryAttempt: Int,
     ): Boolean {
         if (root == null) return false
         val bounds = Rect().also(root::getBoundsInScreen)
         if (bounds.width() <= 0 || bounds.height() <= 0) return false
-        val x = bounds.left + bounds.width() * DiscoveryScrollGesturePolicy.X_RATIO
+        val x = bounds.left + bounds.width() * DiscoveryScrollGesturePolicy.xRatio(recoveryAttempt)
         val startRatio = if (forward) DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO
             else DiscoveryScrollGesturePolicy.BACKWARD_START_Y_RATIO
         val endRatio = if (forward) DiscoveryScrollGesturePolicy.FORWARD_END_Y_RATIO
@@ -56,6 +57,7 @@ object ListGesture {
             bounds.top + bounds.height() * startRatio,
             x,
             bounds.top + bounds.height() * endRatio,
+            durationMs = 620L,
         )
     }
 
@@ -98,13 +100,20 @@ object ListGesture {
         return dispatch(service, path)
     }
 
-    private fun dispatchSwipe(service: AccessibilityService, startX: Float, startY: Float, endX: Float, endY: Float): Boolean {
+    private fun dispatchSwipe(
+        service: AccessibilityService,
+        startX: Float,
+        startY: Float,
+        endX: Float,
+        endY: Float,
+        durationMs: Long = 420L,
+    ): Boolean {
         val path = Path().apply { moveTo(startX, startY); lineTo(endX, endY) }
-        return dispatch(service, path)
+        return dispatch(service, path, durationMs)
     }
 
-    private fun dispatch(service: AccessibilityService, path: Path): Boolean {
-        val stroke = GestureDescription.StrokeDescription(path, 0L, 420L)
+    private fun dispatch(service: AccessibilityService, path: Path, durationMs: Long = 420L): Boolean {
+        val stroke = GestureDescription.StrokeDescription(path, 0L, durationMs)
         return try {
             val completed = AtomicBoolean(false)
             val latch = CountDownLatch(1)

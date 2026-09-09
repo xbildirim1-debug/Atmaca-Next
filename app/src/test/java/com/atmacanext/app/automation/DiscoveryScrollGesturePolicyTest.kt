@@ -5,9 +5,15 @@ import org.junit.Test
 
 class DiscoveryScrollGesturePolicyTest {
     @Test fun discoverySwipeStaysInLeftGutterAwayFromMediaAndCompose() {
-        assertTrue(DiscoveryScrollGesturePolicy.X_RATIO < 0.10f)
-        assertTrue(DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO > 0.75f)
-        assertTrue(DiscoveryScrollGesturePolicy.FORWARD_END_Y_RATIO < 0.35f)
+        assertTrue(DiscoveryScrollGesturePolicy.xRatio(0) < 0.10f)
+        assertTrue(DiscoveryScrollGesturePolicy.xRatio(1) < 0.15f)
+        assertTrue(DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO > 0.85f)
+        assertTrue(DiscoveryScrollGesturePolicy.FORWARD_END_Y_RATIO < 0.25f)
+    }
+
+    @Test fun swallowedSwipeAlternatesBetweenTwoSafeGutters() {
+        assertTrue(DiscoveryScrollGesturePolicy.xRatio(0) != DiscoveryScrollGesturePolicy.xRatio(1))
+        assertTrue(DiscoveryScrollGesturePolicy.xRatio(0) == DiscoveryScrollGesturePolicy.xRatio(2))
     }
 
     @Test fun backwardPathExactlyReversesForwardPath() {

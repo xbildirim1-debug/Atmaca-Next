@@ -1,5 +1,10 @@
-Warning: truncated output (original token count: 26371)
-Total output lines: 598
+## 26.32 — profil kaydırma tekrarı ve yorum sonrası zorunlu ilerleme
+
+- Kullanıcının 26.31 fiziksel geri bildirimi: yorumcu takip düğmesi artık çalışıyor; ancak `@bosunatiklama` gibi büyük medya taşıyan hedef profilde tarama yine ilerlemeyebiliyor. Ayrıca bir üst yorumcu işlendiğinde yorum listesinin aşağı kaydırılması bazı denemelerde gerçekleşmiyor. Yeni cihaz logu verilmediği için bu iki belirti kullanıcı gözlemi olarak kaydedildi.
+- Hedef profil kaydırması güçlendirildi: hareket %88'den %20'ye uzatıldı, süre 620 ms yapıldı ve X hareketi kabul edip listeyi değiştirmezse medya alanının dışında kalan %6/%12 sol şeritler arasında dönüşümlü tekrarlandı. Profil sonu kararı iki değişmeyen okumadan altıya çıkarıldı; gerçek erişilebilirlik imzası değişince sayaç yine sıfırlanır.
+- Yorumcu gönderisine girilip takip edildikten veya takip düğmesi olmadığı için atlandıktan sonra ana yorumlara dönüldüğünde, yeni aday seçilmeden önce bir zorunlu dikey kaydırma yapılır. `COMMENT_SCROLL accepted=... scroll=...` kaydı cihazdaki hareket isteğini açıkça gösterir. İlk görünür yorumun işlenmesi korunur; sonraki işlem alt yorumlardan sürer.
+- Kullanıcının ek isteğiyle Ayarlar > Çalışma/Görev Güvenliği içindeki işlem aralığı gerçek küresel hız kontrolüne çevrildi. `Tüm işlemlerin hızı` 100–15000 ms: 500 normal, 250 yaklaşık 2 kat, 100 yaklaşık 5 kat hızlıdır. Runtime'ın sabit tıklama, kaydırma, bekleme ve doğrulama yoklamaları aynı oranda ölçeklenir; 60 ms erişilebilirlik tabanı korunur. Takipten çıkma sonuç sabitlemesi ve kaydırması, onaylı takip, yorumcu, retweetçi ve diğer görevler kapsamdadır. Hesap geçişi 500–15000 ms, toplu görevler arası 250–60000 ms ayrıca kullanıcı denetimindedir.
+- Yeni kaydırma şeridi dönüşüm testi eklendi. versionCode80 / 26.32-progressive-discovery-scroll. CI ve bu APK ile fiziksel cihaz testi henüz yapılmadı.
 
 ## 26.31 — doğrulanmış teslim sonucu
 
@@ -202,7 +207,142 @@ Total output lines: 598
 - 177 test; 0 başarısız/hata/atlanan. Lint, assemble, apksigner, manifest ve paketleme başarılı. APK code63 / 26.15-discovery-target-start, 20.557.536 bayt, SHA256 `3ab983c9ab97d253e7a1e851f3202ec395d7e3933f021c1a018eaa2c76b9338d`.
 - Actions tam ZIP SHA256 `f361fb551b2d2f497468ae9eb5e6cdc95a38bcb3f8b3f0e975fcbd7c4e9e57b9`; ZIP CRC ve paket içi APK eşitliği doğrulandı. Manifestte INTERNET/Startup provider yok.
 - Fiziksel cihaz testi yapılmadı. Kullanıcının videosu eski 26.14 başlangıç hatasının kanıtıdır; 26.15 hedef yönlendirme tekrarı telefonda ayrıca doğrulanmalıdır. Başarılı başlangıçta logda `DISCOVERY_TARGET ... target=@... attempt=...` ve ardından hedef profil görünmelidir.
-- Actions dosyaları 7 Aralık 2026'da sona erer. Releases workflow'u onay engeli nedeniyle açılmadı; kalıcı imza sorunu sürer ve kaldırarak kurulum yerel verileri s…6371 tokens truncated…eslim APK'sı bu kaynak commit'ten üretilmiştir.
+- Actions dosyaları 7 Aralık 2026'da sona erer. Releases workflow'u onay engeli nedeniyle açılmadı; kalıcı imza sorunu sürer ve kaldırarak kurulum yerel verileri silebilir.
+
+## 26.15 — yorumcu/retweetçi hedef başlangıcı ve hız
+
+1000026864.mp4 cihaz videosu 26.14'ün retweetçi görevinde doğru görev hesabını doğruladığını, fakat kayıtlı hedefe gitmeden görev hesabının kendi profilinde kaldığını kanıtladı. Neden: `beginOperation`, hedef ACTION_VIEW isteğini kendi profil doğrulama callback'i içinde hemen gönderiyordu; X bu geçişi yuttuğunda OPEN_DISCOVERY_TARGET yalnız altı saniyelik zaman aşımını bekliyordu.
+
+- 26.15 hedef yönlendirmesini ayrı aşamaya aldı: 450 ms sonra tek kayıtlı hedef açılır, tam hedef `@handle` görünene kadar en fazla üç kontrollü deneme yapılır. Denemeler farklı anahtarla gerçekten gönderilir ve `DISCOVERY_TARGET target/attempt/screen` olarak loglanır. Tam hedef kanıtı olmadan tweet veya kullanıcı üzerinde işlem yoktur.
+- Varsayılan hızlar: işlemler arası 500 ms, hesap geçişi 1800 ms, görevler arası 1500 ms; runtime tick 250 ms. Kullanıcı ayarındaki işlem alt sınırı 500 ms. Kimlik/sonuç doğrulamaları korunmuştur.
+- Yeni `DiscoveryTargetLaunchPolicy` ve üç regresyon testi eklendi. Sürüm code63 / 26.15-discovery-target-start. CI ve cihaz testi henüz yapılmadı; sonuç kaydı sonradan eklenecek.
+- 26.14 fiziksel cihazda onaylı kullanıcı takibi çalıştı; yorumcu/retweetçi hedef başlangıcı çalışmadı. Bu yeni düzeltme fiziksel cihazda henüz kanıtlanmadı.
+- GitHub Releases `contents:write` workflow'u önceki otomatik onay engeli nedeniyle etkinleştirilmedi. Kaynak main'e ve APK/tam ZIP başarılı Actions çıktısına eklenecek. Kalıcı imza hâlâ açık sorundur.
+
+## 26.14 — doğrulanmış derleme ve teslim sonucu
+
+- APK kaynak commit: cf753f84eb60567cf5ee4e06f94b0848f03023cb. Son üç düzeltme Compose gönderi ayrıntısı tanıma, erişilebilirlik açıklaması dönüşümü ve gövde tarihlerinin gönderi yaşı sayılmamasıdır.
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34210727302 . APK/tam paket artifact 10049890216; rapor artifact 10049891213. 174 test geçti; 0 başarısız, hata veya atlanan. Test, lint, assemble, apksigner ve manifest kontrolleri başarılı.
+- AtmacaNext-26.14.apk: versionCode62 / 26.14-engagement-follow, 20557532 bayt. SHA256 4fbba8da1c25feb43b96e44f990cd9a3e6ea85642b27ed3d50aad1c91e14e0da.
+- Tam ZIP SHA256 42404ac7286798f5a89533c9fa206361d3d55c1f72c7003b886e031ce68f9c5a. ZIP CRC, paket içi/dışı APK eşitliği, sürüm manifesti, INTERNET izni yokluğu ve test XML toplamları ayrıca doğrulandı.
+- Sertifika SHA256 b6786a2083b288229609c1185a5f5532f4499d7f6b72b9441a7102aac9ee32f9; 26.13 imzasından farklı. Üzerine kurulum reddedilebilir; kaldırmak kayıtlı hesap/görev/ayar/bildirimleri siler. Kalıcı imza sorunu sürüyor.
+- 26.13 onaylı kullanıcı takibi kullanıcı tarafından fiziksel telefonda başarılı doğrulandı. 26.14'ün Beklemede sayımı, boş kaynak geçişi ve yorumcu/retweetçi akışları fiziksel telefonda henüz doğrulanmadı. 174 test sentetik erişilebilirlik/birim testidir; gerçek X cihaz uyumluluğunu tek başına kanıtlamaz.
+- Hesap başına tek hedef nihai kullanıcı talimatıdır. Hedefin yalnız kendi gönderileri arasından yaşı en az 120 dakika olanlar işlenir; yeni, belirsiz yaşlı, sabitlenmiş ve reklam gönderileri atlanır. Değişken yeniden gönderim sayısı yalnız seçili etkileşim sekmesi kanıtı olarak okunur.
+- Yeni takip sonrası Beklemede/Requested görülürse işlem bir kez sayılır; önceden Beklemede olan kullanıcı tekrar hedeflenmez. Onaylı kaynakta aday yoksa ilerleme korunarak önceki listeye dönülür ve ziyaret edilmemiş başka kullanıcı açılır.
+- Kod/test/notlar main'dedir. APK ve tam ZIP Actions çıktısında ve sohbet teslimindedir. Actions artifact 7 Aralık 2026'da sona erer. Kalıcı Releases yayını önceki contents:write otomatik onay engeli nedeniyle yapılmadı; workflow yetkisi değiştirilmedi.
+
+## 26.14 — Beklemede, boş kaynak, tek hedefli yorumcu/retweetçi takip
+
+Kullanıcı 26.13 onaylı takibin fiziksel telefonda başarılı çalıştığını doğruladı. Bu cihaz doğrulaması önceki test edilmedi kayıtlarından daha günceldir; 26.13 taze erişilebilirlik okuma yolu korunur. Yeni istek: yeni takip sonrası Beklemede/Requested işlem sayılacak, boş onaylı kaynakta başka kullanıcı aranacak; hesap başına tek hedef ve en az 120 dakikalık gönderilerden eskiye ilerleyen yorumcu/retweetçi takip.
+
+- VerifiedFollowPolicy istek gönderildi sonucunu başarı sayar; aynı anda Follow varsa çelişkili sonuç sayılmaz. Önceden Beklemede olan düğme takip adayı olmaz. Başarı processedHandles'a girer, sayaç bir kere artar; sonraki tick tekrar saymaz. İstek gönderme, karşı tarafın onayladığı anlamına gelmez. FOLLOW_REQUEST kaydı bunu belirtir.
+- Onaylı kaynak aday havuzu boşsa RETURN_VERIFIED_SOURCE ile önceki profile/listelere geri gidilir. Görünür ziyaret edilmemiş kullanıcı kaynak seçilir; sayaç/işlenmiş kullanıcılar korunur. Onaylı sekmesi olmayan kaynak da atlanır. Ziyaret edilmiş kaynak yeniden seçilmez; 30 saniye içinde erişilebilir aday bulunamazsa kısmi ilerleme korunarak duraklar.
+- Tek hedef: yeni hedef politikası en fazla 1. Hedef düzenleme tek alan; Kaydet eski çoklu kaydı bu hedefle değiştirir. Eski çoklu kayıtlar kullanıcı kaydedene kadar silinmez, runtime ilk aktif hedefi kullanır.
+- Son beş gönderi sınırı kaldırıldı. Hedef yazar kimliği eşleşen, yaşı en az 120 dakika olan gönderiler işlenir; yaşı bilinmeyen/yeni/sabitlenmiş/reklam gönderileri atlanır. Kaynak biterse Geri ile aynı hedefin daha eski gönderilerine devam edilir, ilerleme sıfırlanmaz. Tarih-only kayıtlar saat bilinmediğinden gün sonuna göre muhafazakâr hesaplanır.
+- Retweetçi akışı videodaki Alıntıları görüntüle → Gönderi Etkileşimleri → sayısı değişken '... tarafından yeniden gönderildi' seçili sekmesi. Retweet/Repost eylem düğmesi seçici değildir; seçili sekme doğrulanmadan takip yok. Türkçe/İngilizce adlar ve değişken sayılar için EngagementListEvidence.
+- Yorumcu profil geçişi gerçek satırdaki tam kullanıcı adına dokunur; biyografi bahsetmesi kullanılmaz. Gönderinin yazarı ve kendi hesap dışlanır. Profilde header üstündeki düz Follow seçilir; öneri kullanıcılarının düğmesi seçilmez. Following/Beklemede sonucu aynı kimlikte doğrulanır, yorumlara Geri ile dönülür. Yorum ekranında genel Follow düğmelerine doğrudan basılmaz.
+- Keşif başlangıcı hedef profile ACTION_VIEW/NEW_TASK ile yönlenir; eski REORDER_TO_FRONT bayrağı kullanılmaz. Sonraki dönüşler profil URL tekrarı yerine Geri kullanır. 26.13 fresh-root okuma yorumcu/retweetçi görevlerinde de etkin; import ve unfollow yolu korunur.
+- 9 ek regresyon: değişken yeniden gönderim sayısı, yanlış sekme/eylem reddi, seçili sekme zorunluluğu, Requested sonucu/çelişki/seri sıfırlama, 119-120 dk sınırı ve belirsiz yaş, değişen zaman/etkileşim sayısıyla gönderi anahtarı, etkileşim giriş etiketi. Tek hedef testi yeni kurala güncellendi. CI sonucu bekleniyor.
+- Sürüm 26.14-engagement-follow / code62. Bu yeni akışlar fiziksel cihazda çalıştırılmadı; birim testler X'in tüm cihaz varyantlarında uyumluluğu kanıtlamaz. Kalıcı imza ve Releases contents:write önceki otomatik onay engeli devam ediyor.
+
+## 26.13 — doğrulanmış derleme ve teslim
+
+- APK kaynak commit: 79ee50f3be170db16e497ee5193255d9e732a049. Main kaynak kodu korunarak bu sonuç kaydı yalnız belgelere eklenir; APK tekrar derlenmez.
+- Başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34189529216 ; APK/tam ZIP artifact 10041766953, rapor artifact 10041767453. 163 test; 0 başarısız, hata, atlanan. Lint/assemble/apksigner/manifest kontrolleri geçti.
+- AtmacaNext-26.13.apk versionCode61 / 26.13-fresh-accessibility-tree, 20557536 bayt, SHA256 0c4635e8a33453229ca70dd97e46925eb5a58c87f953636cc5684f60ff40a888.
+- Tam ZIP SHA256 e8a9207d312f7e8ce8d3f912ed358f96aa82067f6f3348f2ddd03c42835920fb. ZIP CRC, paket içi APK eşitliği, gerçek manifest sürümü, INTERNET/Startup provider yokluğu ve test XML toplamları ayrıca doğrulandı.
+- Sertifika SHA256 c0549c123cf09a09180b1f9e0939154ecc8f5916a3ec6ece7efc21da82bc079a; 26.12'den farklı. Üzerine kurulum reddedilebilir. Kaldırmak kayıtlı hesap, görev, ayar ve bildirimleri siler. Kalıcı imza açık sorundur.
+- Cihazda yeni sürüm test edilmedi. 26.12 cihazda takip başlatamamıştır. Yeni sürümün Android cache temizlemesi bu cihazda kanıtlanmadı; UI_FRESH ve VERIFIED_TAB kayıtları kontrol edilmelidir. Ham X ağacı tazelendikten sonra da yanlış sekme veriyorsa başka erişilebilirlik/katman sorunu vardır; seçili sekme doğrulamasını kaldırarak geçilmemeli.
+- Taze root yoksa eski paket olayıyla X yeniden açılmaz; 15 saniye sınırla beklenir, sonra duraklar. Ekran yenileme hareketi yok. Başlangıç ve takip sonuçları aynı taze okuma yolunu kullanır.
+- Kaynak/test/notlar main'de; APK ve tam ZIP Actions çıktılarında ve sohbet tesliminde. Tam ZIP kaynak, APK, test raporları ve CI sonuçlu not defterini içerir. Actions dosyaları sürelidir. Önceki otomatik onay reddi nedeniyle kalıcı Releases yayını yapılmadı, contents:write yetkisi etkinleştirilmedi.
+
+## 26.13 — ekranda onaylı sekme açıkken eski Followers ağacının okunması
+
+8 Eylül 08:03 logu ve 1000026808.mp4 incelendi. 26.12 kaynak profiline giriyor; yenileme tekrarı azalıyor. Ancak videoda Onaylanmış takipçiler açıkken VERIFIED_TAB logu selected=2/FOLLOWERS_LIST, eski Tanıdığın takipçiler/Takipçiler/Takip ediliyor başlıkları ve arkadaki profil sayacını içeriyor. Onaylı başlık logda yok. Bu nedenle önceki yalnız sözlük düzeltmesi cihaz sorununu çözmedi; 159 test cihaz doğrulaması değildi.
+
+Kodda service XML ve onAccessibilityEvent filtresi TYPE_WINDOW_CONTENT_CHANGED ile TYPE_VIEW_SELECTED olaylarını dinlemiyordu. Her yeni rootInActiveWindow çağrısının taze alt düğüm getireceği varsayılmıştı; Android cache invalidasyonu yapılmıyordu. Kesin cihaz cache içeriği elimizde yok; video/log uyuşmazlığına ve bu kod boşluğuna yönelik düzeltme yapıldı. UI erişilebilirliği hâlâ uygulamanın yayımladığı bilgiye bağlıdır.
+
+- XML ve servis filtresine içerik/sekme seçimi olayları eklendi; mevcut erken tick ve tek worker düzeni korundu.
+- Onaylı takip görevinin her okumadan önce Android 13/API33+ clearCache çağrılır, ardından yeni root alınır ve refresh doğrulanır. Eski root önce alınarak tekrar kullanılmaz. Android 8–12 yalnız root.refresh ve içerik olaylarından yararlanır; clearCache API bu sürümlerde yoktur. Bu X pull-to-refresh değildir, ekrana dokunmaz/ağ isteği yapmaz.
+- FreshRootReader bu sırayı ortak uygular. Ayrılmış veya bulunamayan root işlem için kullanılmaz. UI_FRESH logu aşama, Android sürümü, cacheCleared, rootRefreshed ve pencere kimliğini kaydeder.
+- VERIFIED_TAB teşhisi genel Takip et düğmeleriyle dolmaz; sekme başlıklarını, durumlarını ve sınırlarını kaydeder.
+- Hesap importunun cache okuma yolu ve takipten çıkma akışı değiştirilmedi. Yalnız Takip et/geri takip et ayrımı, limit ilerlemesi, son onaylı listeden rastgele yeni kaynak ve üç geri dönüş kuralları korundu. Ekranda seçili onaylı sekme kanıtı olmadan takip başlatılmadı.
+- Dört test cache temizlemenin root okumadan önce yapılması, refresh başarısızlığının reddi, eksik rootta önceki okumanın kullanılmaması ve değişen ilişki durumunun yeni okumadan alınmasını kapsar. Bunlar Android/X cache davranışının fiziksel testi değildir.
+- versionCode61 / 26.13-fresh-accessibility-tree. CI bekleniyor; sonuç sonraki kayıtta. Yeni APK fiziksel telefonda test edilmedi. Kaynak 26.12 main üzerinden alındı; eski yerel 26.9 dosyaları kullanılmadı.
+- Android resmi API33 clearCache kaynağı: https://developer.android.com/reference/android/accessibilityservice/AccessibilityService#clearCache() . Kalıcı imza ve Releases contents:write onay engeli sürüyor; yayın yetkisi değiştirilmedi.
+
+## 26.12 — doğrulanmış APK ve teslim sonucu
+
+- Kaynak commit b8c023c2f6fa818ac9074b7182b3e479cd8d706f (main). Bu sonuç kaydı yalnız belgedir; APK aynı kaynak derlemesinden teslim edilir.
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34188597647 . APK/tam paket artifact 10041442033; test/lint raporları 10041442244. 159 test, 0 başarısız/hata/atlanan. Test, lint, assemble, apksigner ve manifest kontrolleri geçti.
+- AtmacaNext-26.12.apk: code60 / 26.12-verified-tab-label, 20557532 bayt; SHA256 d62945b98d7ed758f5fa3f78bd8718f8541b0191c426f81e9f941424064d8bc5.
+- Tam ZIP SHA256 ce7de6dd45e25552cf0d44573c45c0f2447dfca31f2ad0b10de290fd15638b75. ZIP CRC, paket içi/dışı APK eşitliği, manifest sürümü/INTERNET izni yokluğu ve test XML toplamları doğrulandı. Tam paket kaynak, APK, test raporları, manifest, hash ve CI sonuçlu NOT_DEFTERI içerir.
+- APK sertifikası SHA256 257e3fe18f7f1d6984a49c7ee97a0ce8036f43319e60600595db61dd2f0f4672; 26.11 sertifikasından farklı. Üzerine kurulum reddedilebilir; eski uygulamayı kaldırmak kayıtlı hesap/görev/ayar/bildirim verilerini siler. Kalıcı imza hâlâ açık sorundur.
+- Fiziksel X/telefon testi yapılmadı. Verilen 26.11 videosu Türkçe Onaylanmış takipçiler etiketinin eksikliğini ve liste başındaki yenilemeleri gösterdi; yeni davranış cihazda doğrulanmalıdır. Takılma sürerse yeni VERIFIED_TAB kaydı incelenmeli; seçili durum kanıtı olmadan takip başlatılmamalı.
+- Kod/test/notlar main'de. APK ve tam ZIP Actions üzerinde ve sohbetten teslim edilir. Kalıcı GitHub Releases yayını önceki otomatik onay reddi nedeniyle tamamlanmadı; contents:write workflow etkinleştirilmedi. Actions artifact süreli saklamadır, kalıcı Releases teslimi değildir. Eski sürümler silinmedi.
+
+## 26.12 — cihazdaki Onaylanmış takipçiler etiketi ve yenileme düzeltmesi
+
+8 Eylül 2026, 07:39–07:40 cihaz logu ve 1000026806.mp4 incelendi. Kullanıcının 26.11 cihazında dört hesap taranmış ve Atmaca dönüşü doğrulanmış. Dinamik kaynak profili artık PROFILE olarak okunuyor. Video açık/seçili sekmenin tam Türkçe adının "Onaylanmış takipçiler" olduğunu gösteriyor; önceki sözlük yalnız "Onaylı" ve "Doğrulanmış" biçimlerini içerdiğinden ekran UNKNOWN kalıyor. Bu, ham ağacın seçili alanının paylaşıldığını tek başına kanıtlamaz; düzeltme sonrası cihaz doğrulaması gerekir.
+
+- XUiVocabulary.fullVerifiedFollowersHeaders ortak tam başlık sözlüğü eklendi. XUiActions sekme tıklaması ve RelationshipTabInspector/ScreenDetector aynı yeni Türkçe varyantı tanır. Sadece görünür başlık yeterli değildir: gerçekten seçili sekme kanıtı korunur.
+- Kendi Followers listesinin başında geri kaydırma reddedildiğinde ListGesture.backward ile pull-to-refresh üretilmez. Yerel dikey liste eylemi kullanılır; kullanıcı adı ve konumları sabitlenince yeni bir kaydırma göndermeden kaynak seçilir. Kapsayıcı okunamıyorsa tahmini hareket yerine duraklar.
+- Verified liste kaydırmaları da kullanıcı satırının dikey kapsayıcısından yapılır; genel yatay pager seçimi engellenir.
+- Onaylı sekme doğrulanamazsa kendi profile gidip gezinmeyi tekrar başlatmak yerine VERIFIED_TAB teşhisiyle duraklar. Ekran, seçili sekme ve görünür takip başlıkları loglanır.
+- Limit eksikse yalnız en son onaylı listeden toplanan adaylar arasından rastgele, ziyaret edilmemiş kullanıcı seçme ve gerçek satırına dokunma korunur. Doğrulanmış ilerleme ve işlenmiş hedefler sıfırlanmaz. Son listede aday kalmazsa kendi Followers listesinden başka kaynak üretmez; eksik sayıyı açıkça göstererek duraklar.
+- Yalnız Takip et; Geri takip et/Takip ediliyor atlama, üç farklı ardışık geri dönüş ve bildirim davranışları korunur. Hesap importu ve takipten çıkma değişmedi.
+- Beş regresyon testi: gerçek Türkçe başlık/ortak sözlük, yüklenmekte olan seçili sekme, komşu sekme yanlış pozitif reddi, ilişki düğmesi ayrımı, son listeden rastgele kaynak/ziyaret edilmiş hesap reddi.
+- versionCode 60 / 26.12-verified-tab-label. CI henüz çalıştırılmadı; sonuçlar aşağıdaki sonraki kayıtta belirtilecek. Yeni APK fiziksel telefonda test edilmedi. Main'e kod/test/notlar kaydedilecek; yerel eski 26.9 çalışma dosyaları kullanılmadı ve ezilmedi.
+- Kalıcı debug imzası ve Releases contents:write onay engeli sürüyor; yayın yetkisi değiştirilmedi. Mevcut Actions APK/tam ZIP üretimi korunur.
+
+# Atmaca Next — sohbetler arası devir notu
+
+Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
+
+## 26.11 — doğrulanmış derleme sonucu
+
+- Kaynak commit: 3ab25eab6570e268fd7a5e07802475f2ea45f154 (main). Bu sonuç kaydı belgedir; APK bu kaynak commit'ten üretildi.
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34187259126 . APK/tam paket artifact 10040984103; raporlar 10040984479. 154 test geçti; 0 başarısız, hata, atlanan. Test/lint/assemble ve APK imza/manifest kontrolleri başarılı.
+- AtmacaNext-26.11.apk, code59 / 26.11-public-profile-evidence, 20557532 bayt. SHA256 92f8ae4418f4c52b65f4b98768a9cfbc5e8bcb85565286c0a6b11ff6a8b9c7df.
+- Tam ZIP SHA256 9067a2f8e959b9c4e680f4b4dcff2e2fdbddc777f07c856caff78382f14223ff. ZIP CRC, test XML toplamları, gerçek manifest ve paket içi APK eşitliği doğrulandı. Paket kaynak ZIP, test XML ZIP, APK, manifest, hash ve gerçek CI sonuçları ekli NOT_DEFTERI içerir.
+- Sertifika SHA256 83e98b0b3cf9298107d1a449539e5702bc943e1b99fa73a8891554a7b100f474. Önceki 26.10 sertifikasından farklı. Üzerine kurulum uyumsuz olabilir; kaldırmak hesap/görev/bildirim verilerini siler. Kalıcı imza sorunu açık.
+- Fiziksel telefonda/X üzerinde yeni sürüm test edilmedi. Kullanıcının 26.10 cihaz kanıtı kaynak profiline dokunmanın çalıştığı; profil UNKNOWN kaldığıdır. 26.11'in split-counter düzeltmesi sentetik ağaç testleriyle doğrulandı, cihazdaki kesin node ayrımı henüz paylaşılmadı. Başarısızlıkta PROFILE_EVIDENCE satırını ve erişilebilirlik teşhisini incele; süre artırarak veya rastgele kimlik kabul ederek geçme.
+- Kod/test/notlar main'dedir, APK/ZIP ayrıca sohbet teslimidir. Actions artifact 7 Aralık 2026'da sona erer. Kalıcı Releases yayını önceki contents:write otomatik onay reddi nedeniyle tamamlanmadı; kullanıcı bu kapsamı onaylamadı. Yayın workflow yetkisi değiştirilmedi; eski APK'lar silinmedi.
+
+## 26.11 — başka profil UNKNOWN / ortak profil kanıtı
+
+8 Eylül 07:25 cihaz logu: 26.10 artık doğru dinamik kullanıcının profiline giriyor; sonra UNKNOWN olarak kalıyor ve 15 saniyede duraklıyor. Kullanıcı profilin açıldığını doğruladı. Ham erişilebilirlik ağacı paylaşılmadığı için alanların cihazdaki kesin ayrımı henüz bilinmiyor. Kod incelemesi: kendi profil Edit profile ile tanınırken başka profil için iki sayacın sayı+etiketinin aynı düğümde olması şarttı; split/stacked sayaçlar desteklenmiyordu. Önceki 147 test bu varyantı kapsamıyordu.
+
+ProfileSurfaceEvidence, görünür başlık kullanıcı adı + aynı satırdaki iki gerçek sayacı okur. Sayı/etiket ayrı veya dikey bölünmüş olabilir; yakınlık ekranın gerçek metin boyutuna göredir. Biyografi bahsetmesi/tweet yazarı başlık kimliğini değiştirmez. Seçili ilişki sekmesi profil kanıtı değildir; uzak sayılar, gizli alanlar ve yalın Follow düğmesi sayaç değildir. ScreenDetector, XIdentityDetector ve XNavigator artık bu kanıtı ortak kullanır; sayaç tıklaması doğrulanan etiketin sınırına yapılır, geniş üst kapsayıcıya çıkılmaz. Eski tanıma yolları uyumluluk için korunur.
+
+OPEN_SOURCE_PROFILE sayaç tıklaması reddedildiğinde yeniden tick planlamaması da düzeltildi; bu dal artık sessizce asılı kalmaz. Zaman aşımında PROFILE_EVIDENCE satırı ekran/okunan başlık/ikili sayaç/seçili sekme durumunu loglar; sonraki teşhis yalnız UNKNOWN'a dayanmaz.
+
+7 regresyon: public split sayılar, Türkçe birleşik sayılar, dikey sayılar/farklı ölçekler, liste-profil ayrımı, gizli/uzak sayı reddi, yanlış biyografi kimliği, gerçek üretim okuyucularıyla Followers→dinamik profil→Verified→düz Follow→sonraki kaynak→3 geri dönüş sözleşmesi. Bunlar sentetik erişilebilirlik testleridir; Android/X fiziksel uçtan uca testi değildir. Fiziksel test yapılmadı. Yalnız Follow, ilerleme koruma, üç geri dönüş/bildirim kuralları korunur. Sürüm 26.11-public-profile-evidence / code59. CI bekleniyor; main/teslim sonuçları sonraki kayıtta. İmza ve kalıcı Releases yetki engeli sürer.
+
+## 26.10 — başarılı APK / devir sonucu
+
+- Kaynak commit: abf9a9df1816774f373063b458a73480cfb604e7 (main). Bu sonuç kaydı yalnız dokümandır; teslim APK bu kaynaktan derlendi.
+- CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34186206047 . APK/tam ZIP artifact 10040636855; raporlar 10040637307. 147 test geçti, 0 başarısız/hata/atlanan. Test, lint, assemble, APK imza/manifest kontrolü başarılı.
+- APK: AtmacaNext-26.10.apk; versionCode 58 / 26.10-source-row-navigation; 20557528 bayt; SHA256 2a3ef649832f03d6fcffc3d8a42e665b0f51d7bbc891719cbf5484c5c0cd4609.
+- Tam ZIP SHA256: 65dde36a78f1acfc5757b979d5417a33a784ce822955b80aeec4ca271718359b. ZIP CRC, manifest sürümü, dış/iç APK eşitliği, test XML toplamları doğrulandı. Tam paket APK, hash, manifest, kaynak, test raporları ve CI sonuçları ekli not defteridir.
+- Sertifika SHA256: b9a851ec7ed412309493b46667cf7140195fd75c334ec1ce8c11b4857e69856c. 26.9 teslim sertifikasından farklı; üzerine kurulum uyumsuz olabilir, kaldırma yerel hesap/görev/bildirim verilerini siler. Kalıcı imza sorunu açık.
+- Fiziksel telefon/X testi yapılmadı. Kullanıcının videosundaki ilk kaynakta kalma hatasını doğrulamak için: gerçek Followers listesindeki değişken ilk kullanıcıya dokunma → aynı kimlikte PROFILE → kaynak takipçileri → Verified followers. Rastgele sonraki kaynakta aynı listedeki satır bulunmalı; düz Follow/geri dönüş/bildirim kuralları korunur.
+- Kod/test/notlar main'de. APK/ZIP sohbetten teslim edilir. Actions dosyaları 7 Aralık 2026'ya kadar süreli; kalıcı Releases yayını önceki contents:write otomatik onay reddi nedeniyle hâlâ engelli. Kullanıcı bu kapsamı onaylamadı; workflow yetkisi değiştirilmedi. Eski derlemeler silinmedi.
+
+## 26.10 — 26.9 cihaz hatası: kaynak profile gerçek satır dokunuşu
+
+8 Eylül 2026. Kullanıcının 7 Eylül 23:04 logları ve 1000026774.mp4 videosu incelendi. Kendi hesap ve gerçek Followers sekmesi doğru; dinamik ilk takipçi doğru okunuyor. 23:04:54 profile/temmytiwa92 komutundan sonra ekran hiç PROFILE olmuyor, FOLLOWERS_LIST kalıyor. Aynı URL yöntemiyle kendi profile dönüş de sonuçsuz. Bu isim örnek olup kodda sabitlenmedi. Önceki birim testler sekme/kullanıcı seçimini doğruluyordu, gerçek Android URL yönlendirmesini değil.
+
+- Onaylı takip akışında kaynak için launchXProfile kaldırıldı. SourceProfileTarget görünür, etkin, ayrı ve tam @kullanıcı alanını seçer; biyografi bahsetmesi, düğme açıklaması, gizli/sıfır boyutlu alan reddedilir. XUiActions yalnız bu alanın güncel ekran sınırına erişilebilirlik dokunuşu gönderir; bütün satır/üst kapsayıcı/takip düğmesine yükselmez. Sabit koordinat yok.
+- OPEN_SOURCE_PROFILE gerçek PROFILE + tam kaynak kimliği bekler. Ekran listede kaldıysa 2 saniye sonra aynı kullanıcı alanına yalnız bir kez tekrar dokunur. 15 saniyede doğrulanmazsa kullanıcı atlayıp yanlış profilde ilerlemek yerine duraklar. Gönderilen dokunuş başarı kanıtı sayılmaz.
+- Rastgele kaynak mevcut onaylı listeden görülmüş havuzdan seçilir; LOCATE_SOURCE_ROW o kullanıcı görünmüyorsa aynı listede geriye kaydırıp gerçek satırı bulur ve dokunur. Profil doğrulanınca ziyaret edilmiş sayılır; doğrulanmış takip sayısı korunur. 30 saniyede bulunmazsa sahte başarı/URL atlaması yok, duraklama var.
+- Onaylı görevin başlangıcında zaten doğrulanmış kendi profil tekrar URL ile başlatılmaz. Kendi profile dönüş gerektiğinde X içinde Geri, Anasayfa hesap menüsü ve Profil satırı kullanılır, tam kimlik doğrulanır. 30 saniye/10 gezinme sınırı var.
+- Düz Takip et kuralı, üç farklı ardışık geri dönüşte hesap atlama, bildirimler ve Anasayfa korunur. Hesap importu ve takipten çıkma kod yolu değiştirilmedi.
+- Sürüm 26.10-source-row-navigation / versionCode 58. 5 hedef seçimi regresyon testi eklendi. CI sonucu bekleniyor; fiziksel X cihaz testi yapılmadı. Kalıcı imza ve Releases yetki engeli devam ediyor.
+
+## 26.9 — doğrulanmış derleme ve teslim (7 Eylül 2026)
+
+- Kaynak commit: 980614e2bc8296fdac40893eec3d856d85d23cf4, main. Bu sonuç kaydı yalnız belge güncellemesidir; teslim APK'sı bu kaynak commit'ten üretilmiştir.
 - Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34156844490 . APK/tam paket artifact: 10031315464; test/lint raporları: 10031315734.
 - 142 test geçti: 0 başarısız, 0 hata, 0 atlanan. testDebugUnitTest, lintDebug, assembleDebug, APK imza ve manifest kontrolleri başarılı. ZIP CRC, APK SHA256, tam paket içindeki APK eşitliği ve test XML toplamları ayrıca doğrulandı.
 - APK: AtmacaNext-26.9.apk, 20.557.528 bayt, versionCode 57 / 26.9-followers-tab-source, package com.atmacanext.v258. SHA256: 25b38540fffa988f180fe487cf20b52046e6e99bf91c3f092d691e3720579287.

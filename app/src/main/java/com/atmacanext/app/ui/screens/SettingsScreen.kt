@@ -283,11 +283,13 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                         OutlinedTextField(unfollowLimit, { unfollowLimit = it.filter(Char::isDigit).take(3) }, label = { Text("Çıkma limiti") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.weight(1f))
                     }
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(actionMs, { actionMs = it.filter(Char::isDigit).take(5) }, label = { Text("İşlemler arası ms") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
+                    Text("Bu değer takipten çıkma, onaylı takip, yorumcu ve retweetçi dahil bütün tıklama/kaydırma/doğrulama adımlarını değiştirir. 500 normal, 250 yaklaşık 2 kat hızlıdır.", color = TextSecondary, fontSize = 9.sp)
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(switchMs, { switchMs = it.filter(Char::isDigit).take(5) }, label = { Text("Hesap geçişi doğrulama ms") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(actionMs, { actionMs = it.filter(Char::isDigit).take(5) }, label = { Text("Tüm işlemlerin hızı (100–15000 ms)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(taskGapMs, { taskGapMs = it.filter(Char::isDigit).take(5) }, label = { Text("Görevler arası tolerans ms") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(switchMs, { switchMs = it.filter(Char::isDigit).take(5) }, label = { Text("Hesap geçişi (500–15000 ms)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(taskGapMs, { taskGapMs = it.filter(Char::isDigit).take(5) }, label = { Text("Görevler arası (250–60000 ms)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
                     Button(
                         onClick = {

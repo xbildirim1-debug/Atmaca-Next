@@ -58,9 +58,9 @@ class SettingsStore(private val context: Context) {
             dailyFollowLimitPerAccount = (p[Keys.dailyFollowLimitPerAccount] ?: 35).coerceIn(1, 100),
             dailyUnfollowLimitPerAccount = (p[Keys.dailyUnfollowLimitPerAccount] ?: 35).coerceIn(1, 100),
             keepLogDays = (p[Keys.keepLogDays] ?: 14).coerceIn(1, 365),
-            betweenActionsMs = (p[Keys.betweenActionsMs] ?: 500L).coerceIn(500L, 15_000L),
-            accountSwitchSettleMs = (p[Keys.accountSwitchSettleMs] ?: 1_800L).coerceIn(1_500L, 15_000L),
-            betweenTasksMs = (p[Keys.betweenTasksMs] ?: 1_500L).coerceIn(1_000L, 60_000L),
+            betweenActionsMs = (p[Keys.betweenActionsMs] ?: 500L).coerceIn(100L, 15_000L),
+            accountSwitchSettleMs = (p[Keys.accountSwitchSettleMs] ?: 1_800L).coerceIn(500L, 15_000L),
+            betweenTasksMs = (p[Keys.betweenTasksMs] ?: 1_500L).coerceIn(250L, 60_000L),
             continueAfterFailedTask = p[Keys.continueAfterFailedTask] ?: true,
             rateLimitCooldownMinutes = (p[Keys.rateLimitCooldownMinutes] ?: 30).coerceIn(5, 180),
             minimumTweetAgeMinutes = (p[Keys.minimumTweetAgeMinutes] ?: 120).coerceIn(120, 1_440),
@@ -88,9 +88,9 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setAutomationTiming(betweenActionsMs: Long, accountSwitchSettleMs: Long, cooldownMinutes: Int, betweenTasksMs: Long = 1_500L) {
         context.atmacaDataStore.edit { p ->
-            p[Keys.betweenActionsMs] = betweenActionsMs.coerceIn(500L, 15_000L)
-            p[Keys.accountSwitchSettleMs] = accountSwitchSettleMs.coerceIn(1_500L, 15_000L)
-            p[Keys.betweenTasksMs] = betweenTasksMs.coerceIn(1_000L, 60_000L)
+            p[Keys.betweenActionsMs] = betweenActionsMs.coerceIn(100L, 15_000L)
+            p[Keys.accountSwitchSettleMs] = accountSwitchSettleMs.coerceIn(500L, 15_000L)
+            p[Keys.betweenTasksMs] = betweenTasksMs.coerceIn(250L, 60_000L)
             p[Keys.rateLimitCooldownMinutes] = cooldownMinutes.coerceIn(5, 180)
         }
     }

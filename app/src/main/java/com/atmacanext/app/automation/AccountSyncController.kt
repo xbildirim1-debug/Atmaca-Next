@@ -238,7 +238,7 @@ object AccountSyncController {
                         OperationLog.i("ACCOUNT_SYNC", "Doğrulandı @${account.username} takipçi=${account.followers} takip=${account.following}")
                         save(service, AccountSwitcherInspector.ProfileStats(account.followers, account.following))
                     } else if (account.username != null && account.username != target) {
-                        if (now - selectedAt < AutomationTuning.accountSwitchSettleMs.coerceIn(1500L, 15_000L)) {
+                        if (now - selectedAt < AutomationTuning.accountSwitchSettleMs.coerceIn(500L, 15_000L)) {
                             tick(service, 250L); return
                         }
                         OperationLog.w("ACCOUNT_SYNC", "Hedef @$target; menüde @${account.username}. Yeniden seçiliyor.")

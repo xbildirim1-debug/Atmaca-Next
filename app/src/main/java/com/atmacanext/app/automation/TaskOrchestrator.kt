@@ -51,7 +51,7 @@ class TaskOrchestrator(
         dailyFollowLimitPerAccount: Int,
         dailyUnfollowLimitPerAccount: Int,
     ) {
-        this.betweenTasksMs = betweenTasksMs.coerceIn(1_000L, 60_000L)
+        this.betweenTasksMs = betweenTasksMs.coerceIn(250L, 60_000L)
         this.continueAfterFailedTask = continueAfterFailedTask
         this.dailyFollowLimitPerAccount = dailyFollowLimitPerAccount.coerceIn(1, 100)
         this.dailyUnfollowLimitPerAccount = dailyUnfollowLimitPerAccount.coerceIn(1, 100)

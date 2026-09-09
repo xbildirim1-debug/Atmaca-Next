@@ -75,6 +75,15 @@ class AtmacaAccessibilityService : AccessibilityService() {
     }
 
     fun requestAutomationTick(delayMillis: Long) {
+        scheduleAutomationTick(AutomationTuning.scaleDelay(delayMillis))
+    }
+
+    /** Persisted task/account gaps are already absolute user values. */
+    fun requestAutomationTickExact(delayMillis: Long) {
+        scheduleAutomationTick(delayMillis)
+    }
+
+    private fun scheduleAutomationTick(delayMillis: Long) {
         synchronized(scheduleLock) {
             val due = SystemClock.uptimeMillis() + delayMillis.coerceAtLeast(0L)
             if (!AccountScanPolicy.replaceTick(scheduledDue, due)) return
