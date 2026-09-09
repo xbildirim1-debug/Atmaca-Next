@@ -61,16 +61,21 @@ object XUiActions {
             if (accepted == VerifiedFollowPolicy.plainFollowLabels && !VerifiedFollowPolicy.isPlainFollow(labels(node))) return@mapNotNull null
             val label = normalizedLabel(node) ?: return@mapNotNull null
             if (!matchesActionLabel(label, accepted)) return@mapNotNull null
-            val button = clickableAncestor(node) ?: node.takeIf { it.isEnabled } ?: return@mapNotNull null
+
+            // The clickable ancestor is used only to discover the owning user row.
+            // Never store it as the action target: on X/Compose that ancestor may be
+            // the whole row, and ACTION_CLICK on it can open the profile/list instead
+            // of pressing the visible Follow button.
+            val rowAnchor = clickableAncestor(node) ?: node.takeIf { it.isEnabled } ?: return@mapNotNull null
             if (accepted == VerifiedFollowPolicy.plainFollowLabels &&
-                !VerifiedFollowPolicy.isPlainFollow(labels(node) + labels(button))) return@mapNotNull null
-            val row = userRow(button) ?: return@mapNotNull null
+                !VerifiedFollowPolicy.isPlainFollow(labels(node) + labels(rowAnchor))) return@mapNotNull null
+            val row = userRow(rowAnchor) ?: return@mapNotNull null
             val handles = rowHandles(row)
             if (handles.size != 1) return@mapNotNull null
             val handle = handles.single()
             if (handle in excludedHandles) return@mapNotNull null
             val bounds = android.graphics.Rect().also(row::getBoundsInScreen)
-            Triple(bounds.top, handle, RelationshipTarget(handle, button, label))
+            Triple(bounds.top, handle, RelationshipTarget(handle, node, label))
         }.distinctBy { it.second }
         val relaxedMatches = relaxedRelationshipTargets(root, accepted, excludedHandles)
             .map { target ->
@@ -82,7 +87,10 @@ object XUiActions {
     }
 
     fun clickRelationship(service: AtmacaAccessibilityService, target: RelationshipTarget): Boolean =
-        GestureClick.click(service, target.button)
+        // Tap the real action node bounds. GestureClick.click() is intentionally not
+        // used here because its parent climb is useful for generic controls but is
+        // unsafe for Compose relationship rows where the parent itself opens a profile.
+        GestureClick.gestureTap(service, target.button)
 
     fun rowHasAny(root: AccessibilityNodeInfo?, handle: String, vocabulary: Set<String>): Boolean {
         val wanted = XIdentityDetector.normalizeUsername(handle)
@@ -357,21 +365,21 @@ object XUiActions {
             val label = normalizedLabel(node) ?: return@mapNotNull null
             if (!isRelationshipActionNode(node) || !matchesActionLabel(label, accepted)) return@mapNotNull null
             if (accepted == VerifiedFollowPolicy.plainFollowLabels && !VerifiedFollowPolicy.isPlainFollow(labels(node))) return@mapNotNull null
-            val button = clickableAncestor(node) ?: node
+            val rowAnchor = clickableAncestor(node) ?: node
             if (accepted == VerifiedFollowPolicy.plainFollowLabels &&
-                !VerifiedFollowPolicy.isPlainFollow(labels(node) + labels(button))) return@mapNotNull null
-            val buttonBounds = android.graphics.Rect().also(button::getBoundsInScreen)
-            if (buttonBounds.isEmpty) return@mapNotNull null
-            val directHandle = (labels(node) + labels(button)).asSequence()
+                !VerifiedFollowPolicy.isPlainFollow(labels(node) + labels(rowAnchor))) return@mapNotNull null
+            val actionBounds = android.graphics.Rect().also(node::getBoundsInScreen)
+            if (actionBounds.isEmpty) return@mapNotNull null
+            val directHandle = (labels(node) + labels(rowAnchor)).asSequence()
                 .mapNotNull(XIdentityDetector::extractHandle)
                 .firstOrNull()
             val handle = directHandle ?: handleNodes.asSequence()
-                .filter { (_, _, bounds) -> sameVisualRow(bounds, buttonBounds) }
-                .minByOrNull { (_, _, bounds) -> kotlin.math.abs(bounds.centerY() - buttonBounds.centerY()) }
+                .filter { (_, _, bounds) -> sameVisualRow(bounds, actionBounds) }
+                .minByOrNull { (_, _, bounds) -> kotlin.math.abs(bounds.centerY() - actionBounds.centerY()) }
                 ?.first
                 ?: return@mapNotNull null
             if (handle in excludedHandles) return@mapNotNull null
-            RelationshipTarget(handle, button, label)
+            RelationshipTarget(handle, node, label)
         }.distinctBy { it.handle }.toList()
     }
 

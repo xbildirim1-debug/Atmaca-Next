@@ -97,10 +97,16 @@ object XTweetInspector {
         rows: Collection<TweetRow>,
         processedKeys: Set<String>,
         minimumAgeMinutes: Long = 120L,
-    ): List<TweetRow> = rows.asSequence()
-        .filter { it.key !in processedKeys }
-        .filter { (it.ageMinutes ?: -1L) >= minimumAgeMinutes }
-        .toList()
+    ): List<TweetRow> {
+        // Discovery is never allowed to weaken the product rule below two hours.
+        // Older runtime callers used 90 minutes; clamp that legacy value here so a
+        // 1h30–1h59 post can never be selected even if a stale caller passes 90.
+        val effectiveMinimum = minimumAgeMinutes.coerceAtLeast(120L)
+        return rows.asSequence()
+            .filter { it.key !in processedKeys }
+            .filter { (it.ageMinutes ?: -1L) >= effectiveMinimum }
+            .toList()
+    }
 
     fun click(service: AtmacaAccessibilityService, row: TweetRow): Boolean =
         row.textTarget?.let { GestureClick.gestureTap(service, it) } ?: false
