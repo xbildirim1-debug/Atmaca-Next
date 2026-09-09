@@ -33,15 +33,15 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$APK"
           apkanalyzer manifest print "$APK" > dist/manifest.xml
           if rg -q 'android.permission.INTERNET|androidx.startup.InitializationProvider' dist/manifest.xml; then exit 1; fi
-          cp "$APK" dist/AtmacaNext-26.21.apk
-          sha256sum dist/AtmacaNext-26.21.apk > dist/AtmacaNext-26.21.apk.sha256
+          cp "$APK" dist/AtmacaNext-26.22.apk
+          sha256sum dist/AtmacaNext-26.22.apk > dist/AtmacaNext-26.22.apk.sha256
           cp NOT_DEFTERI.txt dist/NOT_DEFTERI.txt
           python3 scripts/package_build_notes.py
-          git archive --format=zip --output=dist/AtmacaNext-26.21-Kaynak.zip HEAD
-          (cd dist && zip AtmacaNext-26.21-TAM-PAKET.zip *.apk *.sha256 *.xml *.txt *-Kaynak.zip *-Testler.zip)
+          git archive --format=zip --output=dist/AtmacaNext-26.22-Kaynak.zip HEAD
+          (cd dist && zip AtmacaNext-26.22-TAM-PAKET.zip *.apk *.sha256 *.xml *.txt *-Kaynak.zip *-Testler.zip)
       - uses: actions/upload-artifact@v4
         with:
-          name: AtmacaNext-26.21-APK
+          name: AtmacaNext-26.22-APK
           path: dist/
           if-no-files-found: error
       - name: Test reports

@@ -1,3 +1,14 @@
+## 26.22 — yorum gönderisinden takip ve doğrulanmış geri dönüş
+
+- Temel main: 0701d87f1bf591c111434025b3e6930298e038e5 (26.21); 26.20 eab9b0e ile fark incelendi. Kullanıcı 26.20 retweetçi akışını başarılı, 26.21'i başarısız bildirdi.
+- 1000027022.mp4 (56,53 sn) ve 1000027023.jpg incelendi. Yorum dokunuşu profil değil yorumun ayrı Gönderi ekranını açıyor; Erol Emin/Arya başlığındaki Takip et kullanılmadan bekleniyor, ardından Bom Report alt yorumuna giriliyor. Runtime yalnız PROFILE kabul ediyor, timeout sonrası herhangi TWEET_DETAIL'i ana liste sanıyordu.
+- CommentDetailEvidence yeni saf seçici: açılmış gönderinin başlığındaki tam yorumcu kullanıcı adı ve aynı başlık bandındaki sağ takip düğmesi; yanlış kullanıcı, alt yorum düğmesi, gizli/devre dışı düğme reddi. Başlıktaki yeni Takip ediliyor/Beklemede sonucu doğrulanır; önceden takip edilen/beklemedeki kişi sayılmadan atlanır. Profil yolu korunur.
+- Runtime ana yorum görünümünün imzasını/gönderi anahtarlarını saklar. Geri sonrası aynı parent doğrulanmadan başka yorum işlenmez; alt yorum zinciri engellenir. Belirsiz takip sonucu duraklar ve yerine başka kişiye takip yapılmaz. Tek hedef, en az 120 dk, toplam/döngü limitleri korunur.
+- Retweetçi: 26.21'in 8 tarama/2 kararlı okuma eşiği yerine 26.20'nin 12 tarama payı ve 3 kararlı okuma; görünür medya geometrisi ilerleme kanıtına dahil, gizli eski sayfalar hariç. Açık Gönderi Etkileşimleri başlığı arkada kalan inline reply kanıtından önce gelir. Seçili yeniden gönderenler sekmesi kontrolü korunur. Yeni retweetçi cihaz videosu yok; bu bölüm kaynak incelemesine dayalıdır, kesin cihaz nedeni iddia edilmez.
+- Değişenler: AutomationRuntime, XUiActions, ScreenDetector, yeni CommentDetailEvidence/DiscoveryViewportEvidence ve 15 regresyon testi; versionCode70 / 26.22-comment-detail-return; mevcut contents:read CI paket adları. Hesap ekleme/onaylı takip/takipten çıkma akışları yeniden tasarlanmadı.
+- Yerelde Gradle/Android SDK yok; derleme ve test CI'da yapılacak, sonuç henüz bekleniyor. Fiziksel yeni APK/X testi YAPILMADI. Kaynak/testler/notlar main'e kaydedilecek.
+- Kalıcı imza ve önceden reddedilmiş Releases workflow yetkisi değiştirilmedi. Debug imza farklı olabilir; uygulamayı kaldırmak yerel verileri siler. Kalıcı Releases teslimi mevcut yetki engeli nedeniyle tamamlanmış sayılmaz.
+
 ## 26.19 — doğrulanmış derleme ve doğrudan APK teslimi
 
 - Kaynak main commit: 17c54a5e4100b36ac6be11776e6d883123279894; CI 34276417091 başarıyla tamamlandı. 208 test; 0 hata, başarısız, atlanan. Lint, assemble, imza ve manifest kontrolü geçti.

@@ -177,6 +177,16 @@ object XUiActions {
     fun isDirectFollowing(root: AccessibilityNodeInfo?): Boolean = directFollowState(root, XUiVocabulary.followingActions)
     fun directFollowAvailable(root: AccessibilityNodeInfo?): Boolean = directFollowState(root, VerifiedFollowPolicy.plainFollowLabels)
 
+    fun clickCommentDetailFollow(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, handle: String): Boolean {
+        val nodes = AccessibilityTree.nodes(root)
+        val snapshots = nodes.map { it.toSnapshot() }
+        val index = CommentDetailEvidence.actionIndex(snapshots, handle, VerifiedFollowPolicy.plainFollowLabels) ?: return false
+        if (CommentDetailEvidence.has(snapshots, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)) return false
+        val n = snapshots[index]
+        if (!VerifiedFollowPolicy.isPlainFollow(listOfNotNull(n.text, n.contentDescription))) return false
+        return GestureClick.gestureTap(service, nodes[index])
+    }
+
     fun setComposerText(root: AccessibilityNodeInfo?, value: String): Boolean {
         if (root == null || value.isBlank()) return false
         val editable = AccessibilityTree.nodes(root, maxNodes = 800).firstOrNull { node ->

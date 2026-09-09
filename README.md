@@ -1,4 +1,10 @@
-# Atmaca Next — 26.21
+# Atmaca Next — 26.22
+
+26.22: açılan yorum gönderisinin kendi üst başlığındaki Takip et düğmesi, tam yorumcu
+kimliğiyle işlenir; profil açılması da desteklenir. Geri dönüş ana yorum listesiyle
+eşleştirilir, alt yorumlara zincirleme girilmez. Etkileşim başlığı satır içi yanıt
+alanından önce tanınır; alıntı girişi yoksa 26.20 tarama payıyla sonraki gönderiye geçilir.
+Derleme/test sonucu DEVIR_NOTU.md içinde; fiziksel X cihaz doğrulaması ayrıca gerekir.
 
 26.21: yorum kartı yerine yorumcu adının profil alanını açma; kaydırılmış yorum ekranını
 oluşturucu sanmama; Alıntıları görüntüle bulunmayan gönderiden sıradaki gönderiye geçme.

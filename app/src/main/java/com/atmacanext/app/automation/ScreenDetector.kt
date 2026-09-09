@@ -23,6 +23,10 @@ object ScreenDetector {
 
         if (looksLikeDialog(nodes, corpus)) return XScreen.DIALOG
 
+        // X may leave the tweet's inline reply nodes behind the engagement surface.
+        // Its explicit foreground title must win over the 26.21 inline heuristic.
+        if (EngagementListEvidence.title(nodes)) return XScreen.ENGAGEMENT_LIST
+
         val hasEditable = nodes.any { node ->
             node.editable || node.className?.contains("EditText", ignoreCase = true) == true
         }

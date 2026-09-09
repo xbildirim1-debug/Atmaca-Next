@@ -120,6 +120,8 @@ object AutomationController {
     private var activeTask: ScheduledTask? = null
     private var preparedContents: List<String> = emptyList()
     private var engagerHandle: String? = null
+    private var engagerParentSignature = ""
+    private var engagerParentKeys = emptyList<String>()
     private var discoveryTargets: List<String> = emptyList()
     private var activeSessionToken: String? = null
     private var pendingAction: PendingAction? = null
@@ -1129,6 +1131,7 @@ object AutomationController {
                         return
                     }
                     if (performStep(service, root, screen, "open_discovery_tweet", eligible.key) { XTweetInspector.click(service, eligible) }) {
+                        lastListSignature = ""
                         moveStage(XFlowStage.OPEN_ENGAGEMENT, "Gönderi metni açıldı; detay ekranı doğrulanıyor")
                         service.requestAutomationTick(500L)
                     }
@@ -1162,9 +1165,11 @@ object AutomationController {
                     TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW -> {
                         val quotes = current.taskType == TaskType.QUOTER_FOLLOW
                         if (XUiActions.clickEngagementList(service, root, quotes)) {
+                            // Count accepted taps too: dispatch success is not proof of navigation.
+                            if (++stageAttempts >= 12) return pause("Alıntıları görüntüle dokunuşu listeyi açmadı")
                             nextActionNotBefore = now + 700L
                             service.requestAutomationTick(500L)
-                        } else if (stageAttempts++ >= 8 || listEndStable >= 2) nextDiscoveryTweet(service, "Bu gönderide Alıntıları görüntüle/etkileşim listesi yok")
+                        } else if (DiscoveryViewportEvidence.quotesExhausted(stageAttempts++, listEndStable)) nextDiscoveryTweet(service, "Bu gönderide Alıntıları görüntüle/etkileşim listesi yok")
                         else {
                             // Quotes entry sits below the post's media, not always in the first viewport.
                             if (!scrollForwardAndTrack(service, root)) listEndStable++
@@ -1207,12 +1212,17 @@ object AutomationController {
                     val author = XTweetInspector.visibleReplyAuthors(root).firstOrNull { it !in excluded }
                     if (author != null) {
                         engagerHandle = author
-                        moveStage(XFlowStage.OPEN_ENGAGER_PROFILE, "Yorumcu @$author profili doğrulanıyor")
+                        engagerParentSignature = DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root))
+                        engagerParentKeys = XTweetInspector.visibleTweets(root).map { it.key }
+                        moveStage(XFlowStage.OPEN_ENGAGER_PROFILE, "Yorumcu @$author gönderisi veya profili doğrulanıyor")
                         if (!XTweetInspector.clickReplyAuthor(service, root, author)) {
                             skippedHandles += author
                             moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Yorumcu profili açılmadı; yorumlarda sıradaki kullanıcı aranıyor")
                             service.requestAutomationTick(350L)
-                        } else service.requestAutomationTick(500L)
+                        } else {
+                            nextActionNotBefore = now + 700L
+                            service.requestAutomationTick(700L)
+                        }
                         return
                     }
                 }
@@ -1224,14 +1234,35 @@ object AutomationController {
             }
             XFlowStage.OPEN_ENGAGER_PROFILE -> {
                 val handle = engagerHandle ?: return nextDiscoveryTweet(service, "Yorumcu kimliği bulunamadı")
+                val detailNodes = AccessibilityTree.snapshots(root)
+                val detailAuthor = if (screen == XScreen.TWEET_DETAIL) CommentDetailEvidence.header(detailNodes)?.handle else null
+                if (detailAuthor == handle) {
+                    val following = CommentDetailEvidence.has(detailNodes, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)
+                    val available = CommentDetailEvidence.has(detailNodes, handle, VerifiedFollowPolicy.plainFollowLabels)
+                    if (following && !available) {
+                        skippedHandles += handle
+                        returnFromEngager(service)
+                    } else if (performStep(service, root, screen, "follow_comment_detail_author", handle) {
+                            XUiActions.clickCommentDetailFollow(service, root, handle)
+                        }) {
+                        pendingAction = PendingAction(PendingKind.ENGAGER_FOLLOW, handle)
+                        _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now,
+                            message = "@$handle gönderi başlığındaki takip sonucu doğrulanıyor")
+                        service.requestAutomationTick(450L)
+                    } else if (stageTimedOut(now)) {
+                        skippedHandles += handle
+                        returnFromEngager(service)
+                    } else service.requestAutomationTick(350L)
+                    return
+                }
                 if (screen != XScreen.PROFILE || XIdentityDetector.detectProfileHandle(root) != handle) {
                     if (stageTimedOut(now)) {
                         skippedHandles += handle
-                        if (screen == XScreen.TWEET_DETAIL) {
+                        if (screen == XScreen.TWEET_DETAIL && isEngagerParent(root)) {
                             engagerHandle = null
                             moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Profil açılmadı; sıradaki yorumcu aranıyor")
                             service.requestAutomationTick(350L)
-                        } else pause("Yorumcu profili doğrulanamadı; yanlış ekranda takip yapılmadı")
+                        } else pause("Yorumcu gönderisi/profili doğrulanamadı; alt yorumlara girilmedi")
                     }
                     else service.requestAutomationTick(350L)
                 } else if (XUiActions.isDirectFollowing(root) || XUiActions.directRequested(root)) {
@@ -1244,10 +1275,20 @@ object AutomationController {
                 else service.requestAutomationTick(350L)
             }
             XFlowStage.RETURN_ENGAGEMENT -> {
-                if (screen == XScreen.TWEET_DETAIL) {
+                if (screen == XScreen.TWEET_DETAIL && isEngagerParent(root)) {
+                    engagerHandle = null
+                    lastListSignature = ""
                     moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Sıradaki yorumcu aranıyor")
                     service.requestAutomationTick(250L)
-                } else if (stageTimedOut(now)) nextDiscoveryTweet(service, "Yorumlara dönüş doğrulanamadı")
+                } else if (stageTimedOut(now)) pause("Ana gönderinin yorumlarına dönüş doğrulanamadı; alt yorumlar işlenmedi")
+                else if (now - stageStartedAt >= 1_500L && stageAttempts == 0 &&
+                    ((screen == XScreen.TWEET_DETAIL && CommentDetailEvidence.header(AccessibilityTree.snapshots(root))?.handle == engagerHandle) ||
+                        (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == engagerHandle))) {
+                    stageAttempts++
+                    service.pressBack()
+                    nextActionNotBefore = now + 700L
+                    service.requestAutomationTick(700L)
+                }
                 else service.requestAutomationTick(350L)
             }
             else -> recoverOperation(service, "Etkileşim takip state'i tutarsızlaştı")
@@ -1255,10 +1296,17 @@ object AutomationController {
     }
 
     private fun returnFromEngager(service: AtmacaAccessibilityService) {
-        engagerHandle = null
         moveStage(XFlowStage.RETURN_ENGAGEMENT, "Gönderinin yorumlarına dönülüyor")
         service.pressBack()
-        service.requestAutomationTick(450L)
+        nextActionNotBefore = System.currentTimeMillis() + 700L
+        service.requestAutomationTick(700L)
+    }
+
+    private fun isEngagerParent(root: AccessibilityNodeInfo?): Boolean {
+        val nodes = AccessibilityTree.snapshots(root)
+        return DiscoveryViewportEvidence.returnedToParent(engagerParentSignature,
+            DiscoveryViewportEvidence.signature(nodes), engagerParentKeys, XTweetInspector.visibleTweets(root).map { it.key },
+            CommentDetailEvidence.header(nodes)?.handle, engagerHandle)
     }
 
     private fun verifyPendingAction(
@@ -1330,8 +1378,14 @@ object AutomationController {
                 } else service.requestAutomationTick(400L)
             }
             PendingKind.ENGAGER_FOLLOW -> {
-                if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == pending.target &&
-                    (XUiActions.isDirectFollowing(root) || XUiActions.directRequested(root)) && !XUiActions.directFollowAvailable(root)) {
+                val nodes = AccessibilityTree.snapshots(root)
+                val handle = pending.target.orEmpty()
+                val detailConfirmed = screen == XScreen.TWEET_DETAIL &&
+                    CommentDetailEvidence.has(nodes, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions) &&
+                    !CommentDetailEvidence.has(nodes, handle, VerifiedFollowPolicy.plainFollowLabels)
+                val profileConfirmed = screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == pending.target &&
+                    (XUiActions.isDirectFollowing(root) || XUiActions.directRequested(root)) && !XUiActions.directFollowAvailable(root)
+                if (detailConfirmed || profileConfirmed) {
                     recordSuccess(service, pending.target)
                 } else if (elapsed >= ACTION_TIMEOUT_MS) {
                     pendingAction = null
@@ -1625,6 +1679,9 @@ object AutomationController {
 
     private fun nextDiscoveryTweet(service: AtmacaAccessibilityService, reason: String) {
         discoveryTweetKey = null
+        engagerHandle = null
+        engagerParentSignature = ""
+        engagerParentKeys = emptyList()
         listEndStable = 0
         lastListSignature = ""
         val target = discoveryTargets.getOrNull(discoveryTargetIndex)
@@ -1711,7 +1768,8 @@ object AutomationController {
     }
 
     private fun scrollForwardAndTrack(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
-        val signature = ListViewportController.signature(root)
+        val signature = if (_state.value.taskType?.isDiscoveryFollow == true)
+            DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root)) else ListViewportController.signature(root)
         val changed = lastListSignature.isBlank() || signature != lastListSignature
         lastListSignature = signature
         val dispatched = dispatchListScroll(service, root, forward = true)
@@ -1816,6 +1874,9 @@ object AutomationController {
 
     private fun resetOperationNavigation() {
         pendingAction = null
+        engagerHandle = null
+        engagerParentSignature = ""
+        engagerParentKeys = emptyList()
         stageStartedAt = System.currentTimeMillis()
         stageAttempts = 0
         listEndStable = 0
