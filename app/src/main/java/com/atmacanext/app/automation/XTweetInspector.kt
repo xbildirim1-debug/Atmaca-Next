@@ -78,11 +78,27 @@ object XTweetInspector {
     fun visibleReplyAuthors(root: AccessibilityNodeInfo?): List<String> = visibleTweets(root).mapNotNull { it.author }.distinct()
 
     fun clickReplyAuthor(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, handle: String): Boolean {
-        val row = visibleTweets(root).firstOrNull { it.author == handle } ?: return false
+        if (root == null) return false
+        val rows = visibleTweets(root)
+        val rowIndex = rows.indexOfFirst { it.author == handle }
+        if (rowIndex < 0) return false
+        val row = rows[rowIndex]
+
+        // Product rule: commenter-follow never opens image/video/GIF replies. Bound
+        // media detection to this reply's visible vertical slice so media in another
+        // reply cannot cause the wrong author to be skipped.
+        val allNodes = AccessibilityTree.snapshots(root)
+        val nextTop = rows.drop(rowIndex + 1).map { it.bounds.top }.filter { it > row.bounds.top }.minOrNull()
+        val rowBottom = nextTop ?: row.bounds.bottom.coerceAtLeast(row.bounds.top + 320)
+        if (ReplyMediaEvidence.hasMedia(allNodes, row.bounds.top, rowBottom)) {
+            OperationLog.i("COMMENT_SKIP", "@$handle resimli/medyalı yorum; açılmadan atlandı")
+            return false
+        }
+
         row.authorTarget?.let { target ->
             // Compose can expose "Name @handle · age" as one wide header. Its
             // centre belongs to the reply card and opens the reply as a tweet;
-            // the leading name/handle area opens the user's profile.
+            // the leading name/handle area opens the user's profile/reply target.
             return GestureClick.gestureTapLeading(service, target)
         }
         val node = AccessibilityTree.nodes(row.row, 180).firstOrNull { child ->
