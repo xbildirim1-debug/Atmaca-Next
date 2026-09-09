@@ -1,5 +1,7 @@
-# Atmaca Next — 26.20
+# Atmaca Next — 26.21
 
+26.21: yorum kartı yerine yorumcu adının profil alanını açma; kaydırılmış yorum ekranını
+oluşturucu sanmama; Alıntıları görüntüle bulunmayan gönderiden sıradaki gönderiye geçme.
 26.20: tweet ayrıntısındaki satır içi yanıt alanını oluşturucu sanmadan yorumları işleme;
 26.19: ayrı Compose yazar/saat/metin alanlarından gönderi okuma, öneri kartı/profil ayrımı,
 yorumcu profilinden kontrollü dönüş, retweetçi sonuç çelişkisi kontrolü ve eksik limitte duraklama.

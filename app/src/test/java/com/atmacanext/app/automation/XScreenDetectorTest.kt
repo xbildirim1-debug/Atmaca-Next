@@ -111,4 +111,13 @@ class XScreenDetectorTest {
         )
         assertEquals(XScreen.COMPOSER, ScreenDetector.detect(nodes))
     }
+
+    @Test fun scrolledInlineReplyWithRowsDoesNotBecomeComposerWhenToolbarSemanticsDisappear() {
+        val nodes = listOf(
+            n("Post your reply", editable = true, id = "tweet_box"),
+            n("Code Name Ghost @CodNameGhost · 4 h"), n("First visible reply text"),
+            n("TÜRK @DayKara81851 · 3 min"), n("Second visible reply text"),
+        )
+        assertEquals(XScreen.TWEET_DETAIL, ScreenDetector.detect(nodes))
+    }
 }

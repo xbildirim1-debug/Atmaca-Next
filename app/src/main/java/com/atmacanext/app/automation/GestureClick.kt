@@ -29,6 +29,13 @@ object GestureClick {
         return gestureTapAt(service, bounds.exactCenterX(), bounds.exactCenterY())
     }
 
+    /** Tap the leading part of a wide author header instead of its card-like centre. */
+    fun gestureTapLeading(service: AccessibilityService, node: AccessibilityNodeInfo): Boolean {
+        val bounds = Rect().also(node::getBoundsInScreen)
+        if (bounds.width() <= 0 || bounds.height() <= 0) return false
+        return gestureTapAt(service, bounds.left + bounds.width() * 0.22f, bounds.exactCenterY())
+    }
+
     fun tapAtRatio(
         service: AccessibilityService,
         root: AccessibilityNodeInfo?,

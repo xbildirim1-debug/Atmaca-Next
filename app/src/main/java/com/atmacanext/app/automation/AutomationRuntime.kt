@@ -1164,10 +1164,10 @@ object AutomationController {
                         if (XUiActions.clickEngagementList(service, root, quotes)) {
                             nextActionNotBefore = now + 700L
                             service.requestAutomationTick(500L)
-                        } else if (stageAttempts++ >= 12) nextDiscoveryTweet(service, "Bu gönderide ilgili etkileşim listesi yok")
+                        } else if (stageAttempts++ >= 8 || listEndStable >= 2) nextDiscoveryTweet(service, "Bu gönderide Alıntıları görüntüle/etkileşim listesi yok")
                         else {
                             // Quotes entry sits below the post's media, not always in the first viewport.
-                            scrollForwardAndTrack(service, root)
+                            if (!scrollForwardAndTrack(service, root)) listEndStable++
                             service.requestAutomationTick(800L)
                         }
                     }

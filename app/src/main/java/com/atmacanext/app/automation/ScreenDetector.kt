@@ -49,7 +49,14 @@ object ScreenDetector {
             val id = node.viewId.orEmpty().lowercase()
             id.contains("toolbar_reply") || id.contains("toolbar_like") || id.contains("toolbar_retweet") || id.contains("bookmark")
         } >= 2
-        val inlineTweetDetail = inlineReplyEntry && detailBack && (detailTitleAtTop || detailToolbar || labels.any(EngagementListEvidence::openLabel))
+        val visibleTweetRows = FeedRowEvidence.rows(nodes)
+        val inlineTweetDetail = inlineReplyEntry && (
+            (detailBack && (detailTitleAtTop || detailToolbar || labels.any(EngagementListEvidence::openLabel))) ||
+                // While the detail settles or scrolls, Compose may temporarily omit
+                // the toolbar/back semantics. Real post/reply rows still separate
+                // this inline field from the full-screen composer.
+                visibleTweetRows.isNotEmpty()
+            )
         if (inlineTweetDetail) return XScreen.TWEET_DETAIL
         if ((hasEditable && (hasComposerId || hasSubmitId || composerByText)) || (hasComposerId && composerByText)) {
             return XScreen.COMPOSER

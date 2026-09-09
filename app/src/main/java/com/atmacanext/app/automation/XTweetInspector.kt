@@ -79,13 +79,18 @@ object XTweetInspector {
 
     fun clickReplyAuthor(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, handle: String): Boolean {
         val row = visibleTweets(root).firstOrNull { it.author == handle } ?: return false
-        row.authorTarget?.let { return GestureClick.gestureTap(service, it) }
+        row.authorTarget?.let { target ->
+            // Compose can expose "Name @handle · age" as one wide header. Its
+            // centre belongs to the reply card and opens the reply as a tweet;
+            // the leading name/handle area opens the user's profile.
+            return GestureClick.gestureTapLeading(service, target)
+        }
         val node = AccessibilityTree.nodes(row.row, 180).firstOrNull { child ->
             child.isVisibleToUser && listOfNotNull(child.text?.toString(), child.contentDescription?.toString()).any {
                 TweetContentEvidence.header(it)?.handle == handle || AccountSwitcherInspector.dedicatedHandle(it) == handle
             }
         } ?: return false
-        return GestureClick.gestureTap(service, node)
+        return GestureClick.gestureTapLeading(service, node)
     }
 
     fun eligibleLatestFive(
