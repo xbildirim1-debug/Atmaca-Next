@@ -1,3 +1,13 @@
+## 26.25 — yorum takip düğmesi ve hedef geçişi; doğrulanmış teslim
+
+- 1000027063.mp4 incelendi. Yorumcu akışı yorum sahibinin ayrı Gönderi ekranını açıyor ve sağ üstte görünür `Takip et` bulunmasına rağmen işlem yapmadan bekliyordu. Kaynak neden: ilişki seçicisi yalnız tam `Takip et`/`Follow` etiketini kabul ediyor, X'in kişi adını içeren erişilebilirlik etiketini reddediyordu; düğüm tıklaması da yalnız koordinat hareketine dayanıyordu.
+- Güvenli eşleştirme `Fth adlı kullanıcıyı takip et` ve `Follow Fth` gibi kişiselleştirilmiş düz takip etiketlerini kapsıyor; `Takip ediliyor`, `Beklemede` ve geri-takip biçimleri hâlâ reddediliyor. Yorum detayındaki tam sağ üst düğmede önce doğrudan ACTION_CLICK, gerekirse aynı düğüm sınırında gesture uygulanıyor; kart üst atasına tıklanmıyor.
+- Retweetçi hedef geçişinde X profil başlığındaki @kullanıcı adını geçici olarak yayımlamazsa ikinci hedefte bekleme oluşuyordu. Artık tam header handle öncelikli; eksikse yalnız açık Gönderiler yüzeyi ile beklenen hedefin yazdığı görünür gönderi birlikte kanıt sayılıyor. Yeni hedefe geçerken etkileşim denemeleri, yorumcu dönüş durumu, liste imzası ve kaydırma sayaçları sıfırlanıyor.
+- Kaynak main commit: 3b6b573e144a6106eb6efbc9f99b829053dce7ad. Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34327358272 . 234 test; 0 başarısız, hata veya atlanan. Test/lint/assemble, imza, manifest ve paketleme tamamlandı.
+- AtmacaNext-26.25.apk: 20.606.700 bayt; versionCode73 / 26.25-comment-follow-click-target-handoff; SHA256 cd99f0431485ad6c0eb50e2dca8fdf36e824233176af96389d56c2ef756e4e0e. TAM-PAKET SHA256 80baa715e8b94a694f237eba79a6c94726ebbc862b7609354b5a15f20bd7e89f; ZIP CRC ve kayıtlı APK hash eşitliği doğrulandı.
+- APK/tam paket artifact 10094418153; test/lint rapor artifact 10094418769. Actions çıktılarının son kullanımı 8 Aralık 2026. Fiziksel telefonda 26.25 henüz çalıştırılmadı; düzeltmenin cihaz sonucu kullanıcı testiyle doğrulanmalıdır.
+- Kalıcı debug imza sorunu çözülmedi. Önceki APK üzerine kurulum reddedilebilir; uygulamayı kaldırmak yerel verileri siler.
+
 ## 26.22 — doğrulanmış APK ve teslim sonucu
 
 - Nihai APK kaynak main commit: ee92236b46712409db247d57b4677276c9ffe5fc. Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34316308189 . Bu sonuç kaydı [skip ci] belge güncellemesidir; APK tekrar derlenmedi.
