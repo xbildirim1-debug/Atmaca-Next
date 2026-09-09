@@ -15,6 +15,9 @@ object ScreenDetector {
     internal fun detect(nodes: List<NodeSnapshot>): XScreen = detect(nodes, RelationshipTabInspector.NONE)
 
     internal fun detect(nodes: List<NodeSnapshot>, selectedRelationshipTab: Int): XScreen {
+        // Cached, hidden pages can retain an editable composer or another account's
+        // tabs. They must not override the visible foreground surface.
+        if (nodes.any { !it.visible }) return detect(nodes.filter { it.visible }, selectedRelationshipTab)
         if (nodes.isEmpty()) return XScreen.UNKNOWN
         val labels = nodes.flatMap { listOfNotNull(it.text, it.contentDescription) }
             .map(XUiVocabulary::normalize)
@@ -44,7 +47,7 @@ object ScreenDetector {
         // the post action toolbar remain visible. 26.19 classified this real device
         // layout as COMPOSER and therefore waited forever instead of reading replies.
         val inlineReplyEntry = labels.any { it == "yanıtını gönder" || it == "post your reply" || it == "yanıt gönder" }
-        val detailTitleAtTop = labels.any { it in XUiVocabulary.tweetDetailSignals }
+        val detailTitleAtTop = labels.any(CommentDetailEvidence::isTitle)
         val detailBack = labels.any { it in XUiVocabulary.backSignals } || nodes.any { node ->
             val id = node.viewId.orEmpty().lowercase()
             id.endsWith("/back") || id.contains("toolbar_back") || id.contains("navigate_up")

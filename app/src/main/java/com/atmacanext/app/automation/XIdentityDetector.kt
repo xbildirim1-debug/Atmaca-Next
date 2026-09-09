@@ -30,7 +30,7 @@ object XIdentityDetector {
         if (root == null) return null
         val nodes = AccessibilityTree.nodes(root)
         ProfileSurfaceEvidence.read(nodes.map { it.toSnapshot() })?.let { return it.handle }
-        return nodes.asSequence()
+        return nodes.asSequence().filter { it.isVisibleToUser && !it.isEditable && !it.isPassword }
             .mapNotNull { node ->
                 val id = node.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
                 val nodeLabels = labels(node)

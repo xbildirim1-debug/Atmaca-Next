@@ -161,6 +161,9 @@ object AutomationController {
 
     private var discoverySearchStep = 0
     private var discoverySearchSubmitted = false
+    private var discoveryResultAttempts = 0
+    private var discoveryResultTappedAt = 0L
+    private var lastDiscoveryDiagnosticAt = 0L
     private var discoveryTargetIndex = 0
     private var discoveryTweetKey: String? = null
     private val discoverySeenTweets = LinkedHashMap<String, LinkedHashMap<String, Long?>>()
@@ -1059,12 +1062,26 @@ object AutomationController {
         val current = _state.value
         val target = discoveryTargets.getOrNull(discoveryTargetIndex)
             ?: return finishCycleOrTask(service, "Hedefin erişilebilir uygun gönderileri tarandı; bulunan kadar kullanıcı takip edildi")
+        if (now - lastDiscoveryDiagnosticAt >= 2_000L) {
+            lastDiscoveryDiagnosticAt = now
+            val nodes = AccessibilityTree.snapshots(root)
+            OperationLog.i("DISCOVERY_STATE", "account=@${current.username} target=@$target stage=${current.flowStage} screen=$screen " +
+                "elapsed=${now - stageStartedAt} searchStep=$discoverySearchStep resultAttempts=$discoveryResultAttempts " +
+                "comment=@$engagerHandle detailAuthor=@${CommentDetailEvidence.header(nodes)?.handle} " +
+                "nodes=${nodes.size} progress=${current.verifiedCount}/${current.limit}")
+            if (current.flowStage == XFlowStage.OPEN_ENGAGER_PROFILE) {
+                val evidence = nodes.filter { it.visible && !it.editable && (it.text != null || it.contentDescription != null) }
+                    .sortedBy { it.bounds.top }.take(20).joinToString(" | ") {
+                        "${XDiagnosticSanitizer.sanitizeLabel(it.text)}/${XDiagnosticSanitizer.sanitizeLabel(it.contentDescription)}" +
+                            " bounds=${it.bounds} click=${it.clickable} enabled=${it.enabled}"
+                    }
+                OperationLog.i("COMMENT_EVIDENCE", evidence)
+            }
+        }
         when (current.flowStage) {
             XFlowStage.RETURN_DISCOVERY_TARGET -> {
-                if ((screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == target) ||
-                    (FeedRowEvidence.profileFeed(AccessibilityTree.snapshots(root)) &&
-                        XIdentityDetector.detectProfileHandle(root).let { it == null || it == target } &&
-                        XTweetInspector.visibleTweets(root).any { it.author == target })) {
+                if (screen in setOf(XScreen.PROFILE, XScreen.UNKNOWN) && DiscoveryProfileEvidence.matches(
+                        AccessibilityTree.snapshots(root), XIdentityDetector.detectProfileHandle(root), target)) {
                     moveStage(XFlowStage.SCAN_LATEST_TWEETS, "Hedefte sıradaki en az iki saatlik gönderi aranıyor")
                 } else if (now - stageStartedAt >= 15_000L) return pause("Hedefin gönderi listesine dönüş doğrulanamadı")
                 else if (screen != XScreen.UNKNOWN) service.pressBack()
@@ -1072,7 +1089,7 @@ object AutomationController {
                 service.requestAutomationTick(650L)
             }
             XFlowStage.OPEN_DISCOVERY_TARGET -> {
-                if (screen == XScreen.PROFILE && DiscoveryProfileEvidence.matches(
+                if (screen in setOf(XScreen.PROFILE, XScreen.UNKNOWN) && DiscoveryProfileEvidence.matches(
                         AccessibilityTree.snapshots(root), XIdentityDetector.detectProfileHandle(root), target)) {
                     moveStage(XFlowStage.SCAN_LATEST_TWEETS, "@$target profilindeki en az 2 saatlik gönderiler taranıyor")
                     service.requestAutomationTick(150L)
@@ -1242,10 +1259,11 @@ object AutomationController {
             XFlowStage.OPEN_ENGAGER_PROFILE -> {
                 val handle = engagerHandle ?: return nextDiscoveryTweet(service, "Yorumcu kimliği bulunamadı")
                 val detailNodes = AccessibilityTree.snapshots(root)
-                val detailAuthor = if (screen == XScreen.TWEET_DETAIL) CommentDetailEvidence.header(detailNodes)?.handle else null
+                val detailAuthor = if (screen in setOf(XScreen.TWEET_DETAIL, XScreen.UNKNOWN)) CommentDetailEvidence.header(detailNodes)?.handle else null
                 if (detailAuthor == handle) {
                     val following = CommentDetailEvidence.has(detailNodes, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)
                     val available = CommentDetailEvidence.has(detailNodes, handle, VerifiedFollowPolicy.plainFollowLabels)
+                    OperationLog.i("COMMENT_FOLLOW", "expected=@$handle author=@$detailAuthor screen=$screen available=$available following=$following")
                     if (following && !available) {
                         skippedHandles += handle
                         returnFromEngager(service)
@@ -1277,6 +1295,8 @@ object AutomationController {
                     returnFromEngager(service)
                 } else if (XUiActions.directFollowAvailable(root) && performStep(service, root, screen, "follow_comment_author", handle) { XUiActions.clickDirectFollow(service, root) }) {
                     pendingAction = PendingAction(PendingKind.ENGAGER_FOLLOW, handle)
+                    _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now,
+                        message = "@$handle profilindeki takip sonucu doğrulanıyor")
                     service.requestAutomationTick(450L)
                 } else if (stageTimedOut(now)) { skippedHandles += handle; returnFromEngager(service) }
                 else service.requestAutomationTick(350L)
@@ -1387,7 +1407,7 @@ object AutomationController {
             PendingKind.ENGAGER_FOLLOW -> {
                 val nodes = AccessibilityTree.snapshots(root)
                 val handle = pending.target.orEmpty()
-                val detailConfirmed = screen == XScreen.TWEET_DETAIL &&
+                val detailConfirmed = screen in setOf(XScreen.TWEET_DETAIL, XScreen.UNKNOWN) &&
                     CommentDetailEvidence.has(nodes, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions) &&
                     !CommentDetailEvidence.has(nodes, handle, VerifiedFollowPolicy.plainFollowLabels)
                 val profileConfirmed = screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == pending.target &&
@@ -1592,13 +1612,15 @@ object AutomationController {
     private fun beginDiscoverySearch(service: AtmacaAccessibilityService, target: String) {
         discoverySearchStep = 0
         discoverySearchSubmitted = false
+        discoveryResultAttempts = 0
+        discoveryResultTappedAt = 0L
         moveStage(XFlowStage.SEARCH_DISCOVERY_TARGET, "@$target X içi aramayla açılıyor")
-        OperationLog.i("DISCOVERY_SEARCH", "Bağlantı hedefi açmadı; X içi arama target=@$target")
+        OperationLog.i("DISCOVERY_SEARCH", "X içi arama account=@${_state.value.username} target=@$target")
         service.requestAutomationTick(250L)
     }
 
     private fun handleDiscoverySearch(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long, target: String) {
-        if (screen == XScreen.PROFILE && DiscoveryProfileEvidence.matches(
+        if (screen in setOf(XScreen.PROFILE, XScreen.UNKNOWN) && DiscoveryProfileEvidence.matches(
                 AccessibilityTree.snapshots(root), XIdentityDetector.detectProfileHandle(root), target)) {
             OperationLog.i("DISCOVERY_SEARCH", "Hedef profil doğrulandı target=@$target")
             moveStage(XFlowStage.SCAN_LATEST_TWEETS, "@$target profilindeki en az 2 saatlik gönderiler taranıyor")
@@ -1659,7 +1681,11 @@ object AutomationController {
                     if (result != null) {
                         accepted = GestureClick.gestureTap(service, nodes[result])
                         action = "open-exact-result"
-                        if (accepted) discoverySearchStep = 3
+                        if (accepted) {
+                            discoverySearchStep = 3
+                            discoveryResultAttempts++
+                            discoveryResultTappedAt = now
+                        }
                     } else if (!discoverySearchSubmitted && now - stageStartedAt > 18_000L && android.os.Build.VERSION.SDK_INT >= 30) {
                         accepted = nodes[field].performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id)
                         discoverySearchSubmitted = true
@@ -1667,8 +1693,18 @@ object AutomationController {
                     }
                 }
             }
-            // Wait for the profile, without tapping any other result or button.
-            3 -> Unit
+            3 -> {
+                val field = DiscoverySearchSelector.searchField(snapshots)
+                val queryStillVisible = field != null && snapshots[field].text?.trim().equals("@$target", ignoreCase = true)
+                when (DiscoverySearchRecovery.decide(now - discoveryResultTappedAt, discoveryResultAttempts, queryStillVisible)) {
+                    SearchRecovery.RETRY_RESULT -> {
+                        discoverySearchStep = 2
+                        action = "retry-unopened-exact-result"
+                    }
+                    SearchRecovery.PAUSE -> return pause("@$target arama sonucu üç dokunuşta açılmadı; başka hesaba dokunulmadı")
+                    SearchRecovery.WAIT -> Unit
+                }
+            }
         }
         if (action != "wait") OperationLog.i("DISCOVERY_SEARCH", "target=@$target step=$discoverySearchStep action=$action accepted=$accepted screen=$screen")
         nextActionNotBefore = now + 1_000L
@@ -1778,6 +1814,7 @@ object AutomationController {
         stageAttempts = 0
         listEndStable = 0
         _state.value = _state.value.copy(flowStage = stage, status = RuntimeStatus.NAVIGATING, message = message, listScrolls = listScrolls)
+        OperationLog.i("FLOW", "account=@${_state.value.username} task=${_state.value.taskType} stage=$stage | $message")
     }
 
     private fun scrollForwardAndTrack(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
@@ -1915,6 +1952,13 @@ object AutomationController {
         discoveryTweetKey = null
         discoverySeenTweets.clear()
         discoveryProcessedTweets.clear()
+        discoverySearchStep = 0
+        discoverySearchSubmitted = false
+        discoveryResultAttempts = 0
+        discoveryResultTappedAt = 0L
+        lastDiscoveryDiagnosticAt = 0L
+        listScrolls = 0
+        nextActionNotBefore = 0L
         accountSelectionMade = false
         accountSettleUntil = 0L
         navRecoveries = 0

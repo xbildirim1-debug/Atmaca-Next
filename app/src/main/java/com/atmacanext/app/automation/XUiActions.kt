@@ -188,11 +188,16 @@ object XUiActions {
     fun clickCommentDetailFollow(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, handle: String): Boolean {
         val nodes = AccessibilityTree.nodes(root)
         val snapshots = nodes.map { it.toSnapshot() }
-        val index = CommentDetailEvidence.actionIndex(snapshots, handle, VerifiedFollowPolicy.plainFollowLabels) ?: return false
+        val index = CommentDetailEvidence.actionIndex(snapshots, handle, VerifiedFollowPolicy.plainFollowLabels) ?: run {
+            OperationLog.w("COMMENT_CLICK", "@$handle için güncel başlık/düğme eşleşmedi; tıklama yapılmadı")
+            return false
+        }
         if (CommentDetailEvidence.has(snapshots, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)) return false
         val n = snapshots[index]
         if (!VerifiedFollowPolicy.isPlainFollow(listOfNotNull(n.text, n.contentDescription))) return false
-        return GestureClick.clickNodeOnly(service, nodes[index])
+        val result = GestureClick.clickNodeOnly(service, nodes[index])
+        OperationLog.i("COMMENT_CLICK", "@$handle bounds=${n.bounds} clickable=${n.clickable} accepted=$result; sonuç ayrıca doğrulanacak")
+        return result
     }
 
     fun setComposerText(root: AccessibilityNodeInfo?, value: String): Boolean {

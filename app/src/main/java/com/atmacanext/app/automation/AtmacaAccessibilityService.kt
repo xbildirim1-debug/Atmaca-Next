@@ -98,6 +98,13 @@ class AtmacaAccessibilityService : AccessibilityService() {
         if (handler == null || !handler.post {
                 try {
                     processSnapshot(pendingPackageName)
+                } catch (error: RuntimeException) {
+                    // A stale accessibility node must not kill the HandlerThread,
+                    // leaving all later accounts with no snapshot consumer.
+                    val state = AutomationController.state.value
+                    OperationLog.e("SNAPSHOT_ERROR", "stage=${state.flowStage} screen=${state.activeScreen} error=${error.javaClass.simpleName}")
+                    AutomationController.pause("Ekran okunurken hata oluştu; belirsiz işlem tekrarlanmadı. SNAPSHOT_ERROR kaydını kontrol et.")
+                    if (AccountSyncController.isActive) requestAutomationTick(500L)
                 } finally {
                     processing.set(false)
                     if (refreshPending.getAndSet(false)) requestAutomationTick(POST_PROCESS_DELAY_MS)
@@ -313,7 +320,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
         val popup=PopupClassifier.classify(snapshots)
         XUiDiagnostics.record(this,snapshots.take(260),screen,popup)
         AccessibilityServiceState.onEvent(resolvedPackage,screen,popup)
-        val nodeCount=snapshots.take(50).size
+        val nodeCount=snapshots.size
         val key="$screen|$popup|$nodeCount"
         if (key!=lastUiLogKey) { lastUiLogKey=key; OperationLog.i("UI","screen=$screen popup=$popup nodes~$nodeCount") }
         if (AccountSyncController.isActive) AccountSyncController.onSnapshot(this,root,screen,popup)

@@ -52,6 +52,7 @@ internal object FeedRowEvidence {
         val labels = nodes.filter { it.visible }.flatMap(::labels).map(XUiVocabulary::normalize)
         val posts = labels.any { it == "gönderiler" || it == "posts" || it.startsWith("gönderiler,") || it.startsWith("posts,") }
         val count = labels.any { Regex("[0-9.,bk m]+ (?:gönderileri|gönderi|posts)").matches(it) }
-        return posts && (count || rows(nodes).isNotEmpty())
+        val siblingTab = labels.any { it in setOf("yanıtlar", "replies", "medya", "media") }
+        return posts && (count || siblingTab || rows(nodes).isNotEmpty())
     }
 }

@@ -6,9 +6,19 @@ import kotlin.math.abs
 internal object CommentDetailEvidence {
     data class Header(val handle: String, val index: Int)
 
+    fun isTitle(raw: String): Boolean {
+        val label = XUiVocabulary.normalize(raw)
+        return label in setOf("gönderi", "post", "tweet") ||
+            Regex("^(gönderi|post|tweet),? (başlık|heading)$").matches(label)
+    }
+
     fun header(nodes: List<NodeSnapshot>): Header? {
-        val title = nodes.filter { it.visible && labels(it).any { s -> XUiVocabulary.normalize(s) in XUiVocabulary.tweetDetailSignals } }
-            .minByOrNull { it.bounds.top } ?: return null
+        // A parent can repeat the title with bounds covering the whole page.
+        // Prefer its actual text/toolbar node, otherwise every author lies inside
+        // the title and the old top >= title.bottom check rejects the whole page.
+        val title = nodes.filter { it.visible && !it.editable && labels(it).any(::isTitle) }
+            .minByOrNull { (it.bounds.bottom - it.bounds.top).toLong() * (it.bounds.right - it.bounds.left) }
+            ?: return null
         val candidates = nodes.indices.filter { i ->
             val n = nodes[i]
             n.visible && !n.editable && n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
@@ -38,12 +48,17 @@ internal object CommentDetailEvidence {
         // band around the actual header instead of requiring its top edge to end on
         // the exact @handle line. This still excludes Follow buttons on replies below.
         val bandTop = h.top - (lineHeight * 2)
-        val bandBottom = h.bottom + (lineHeight * 3)
+        val nextReplyTop = nodes.filter { it.visible && it.bounds.top > h.top &&
+            labels(it).any { label -> TweetContentEvidence.header(label) != null } }
+            .minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE
+        val bandBottom = minOf(h.bottom + (lineHeight * 3), nextReplyTop)
         return nodes.indices.asSequence().filter { i ->
             val n = nodes[i]
             val b = n.bounds
             n.visible && n.enabled && !n.editable && b.right > b.left && b.bottom > b.top &&
-                b.bottom >= bandTop && b.top <= bandBottom &&
+                b.bottom >= bandTop && b.bottom <= bandBottom &&
+                b.left >= h.left && b.right > (h.left + h.right) / 2 &&
+                b.bottom - b.top <= lineHeight * 3 &&
                 labels(n).any { VerifiedFollowPolicy.matchesAction(it, accepted) }
         }.minByOrNull { i ->
             val b = nodes[i].bounds

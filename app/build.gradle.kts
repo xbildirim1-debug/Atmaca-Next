@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 73
-        versionName = "26.25-comment-follow-click-target-handoff"
+        versionCode = 74
+        versionName = "26.26-discovery-screen-handoff"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

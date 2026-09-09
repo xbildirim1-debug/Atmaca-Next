@@ -1,4 +1,6 @@
-# Atmaca Next — 26.25
+# Atmaca Next — 26.26
+
+26.26: görünür ekran/yorum başlığı doğrulaması, hesap başına temiz arama ve açılmayan arama sonucuna sınırlı tekrar. Cihaz doğrulaması beklenir.
 
 26.25: yorumcu gönderisinin sağ üstündeki kişiye özel Takip et açıklamasını kabul eder,
 önce gerçek erişilebilirlik tıklamasını dener ve sonraki retweet hedefini gönderi yüzeyiyle doğrular.
