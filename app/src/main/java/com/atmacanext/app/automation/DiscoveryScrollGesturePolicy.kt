@@ -30,12 +30,16 @@ internal object DiscoveryScrollGesturePolicy {
      * accessibility tree and stop above any editable/reply-composer surface.
      *
      * No account, screen resolution or fixed pixel coordinate is encoded here.
+     * Direct rectangle fields are used instead of Android Rect helpers so this
+     * policy remains deterministic in local JVM regression tests as well.
      */
     fun verticalPath(bounds: Rect, nodes: List<NodeSnapshot>, forward: Boolean): VerticalPath? {
-        if (bounds.width() <= 0 || bounds.height() <= 0) return null
+        val width = bounds.right - bounds.left
+        val height = bounds.bottom - bounds.top
+        if (width <= 0 || height <= 0) return null
 
-        val upper = bounds.top + bounds.height() * FORWARD_END_Y_RATIO
-        val defaultLower = bounds.top + bounds.height() * FORWARD_START_Y_RATIO
+        val upper = bounds.top + height * FORWARD_END_Y_RATIO
+        val defaultLower = bounds.top + height * FORWARD_START_Y_RATIO
         val composerTop = nodes.asSequence()
             .filter { it.visible && it.bounds.right > it.bounds.left && it.bounds.bottom > it.bounds.top }
             .mapNotNull { node ->
@@ -54,17 +58,18 @@ internal object DiscoveryScrollGesturePolicy {
                 // If only the text label is exposed, its bounds sit inside the
                 // rounded composer. Use one label-height as a semantic clearance.
                 // Editable/container nodes already describe the surface itself.
+                val nodeHeight = (node.bounds.bottom - node.bounds.top).coerceAtLeast(1)
                 val clearance = if (node.editable || idEvidence) {
-                    (node.bounds.height() / 4).coerceAtLeast(1)
+                    (nodeHeight / 4).coerceAtLeast(1)
                 } else {
-                    node.bounds.height().coerceAtLeast(1)
+                    nodeHeight
                 }
                 (node.bounds.top - clearance).toFloat()
             }
             .minOrNull()
 
         val lower = minOf(defaultLower, composerTop ?: defaultLower)
-        val minimumTravel = bounds.height() * 0.16f
+        val minimumTravel = height * 0.16f
         if (lower - upper < minimumTravel) return null
 
         return if (forward) VerticalPath(lower, upper) else VerticalPath(upper, lower)
