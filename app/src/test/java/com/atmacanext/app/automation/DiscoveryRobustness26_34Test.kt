@@ -39,24 +39,24 @@ class DiscoveryRobustness26_34Test {
     )
 
     @Test
-    fun bosunaTiklamaEllipsizedFeedHeaderStillMatchesVerifiedTarget() {
-        DiscoveryTargetIdentityCache.remember("bosunatiklama")
+    fun anyEllipsizedFeedHeaderCanResolveToPreviouslyVerifiedTarget() {
+        DiscoveryTargetIdentityCache.remember("uzunhedef_12345")
         val nodes = listOf(
-            n("Boşuna Tıklama @bosunat... · 3 sa", top = 300),
+            n("Örnek Hesap @uzunhed... · 3 sa", top = 300),
             n("Hedef gönderinin normal metni", top = 380),
         )
         val row = FeedRowEvidence.rows(nodes).single()
-        assertEquals("bosunatiklama", row.author)
+        assertEquals("uzunhedef_12345", row.author)
         assertFalse(row.authorTruncated)
         assertTrue(row.age >= 120L)
     }
 
     @Test
     fun truncatedPrefixCannotResolveToUnverifiedDifferentTarget() {
-        DiscoveryTargetIdentityCache.remember("pusholder")
-        val header = TweetContentEvidence.header("Boşuna Tıklama @bosunat... · 3 sa")!!
+        DiscoveryTargetIdentityCache.remember("digerhedef_123")
+        val header = TweetContentEvidence.header("Örnek Hesap @uzunhed... · 3 sa")!!
         assertTrue(header.truncated)
-        assertFalse(TweetContentEvidence.matchesExpected(header, "pusholder"))
+        assertFalse(TweetContentEvidence.matchesExpected(header, "digerhedef_123"))
     }
 
     @Test
