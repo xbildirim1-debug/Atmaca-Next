@@ -26,11 +26,14 @@ internal object DiscoveryProfileEvidence {
         if (header != null) return if (header == target) accept() else false
         if (!detectedHandle.isNullOrBlank() && XIdentityDetector.normalizeUsername(detectedHandle) != target) return false
 
-        val ownRowVisible = FeedRowEvidence.rows(nodes).any { row ->
-            if (row.authorTruncated) {
-                row.author.length >= 4 && target.startsWith(row.author)
-            } else row.author == target
-        }
-        return if (ownRowVisible) accept() else false
+        // Do not consult the session cache to prove a new profile: a previous task
+        // can have a different target sharing the same visible prefix. Match the raw
+        // feed header directly against the expected target, then refresh the cache.
+        val rawOwnRowVisible = nodes.asSequence()
+            .filter { it.visible && !it.editable }
+            .flatMap { sequenceOf(it.text, it.contentDescription).filterNotNull() }
+            .mapNotNull(TweetContentEvidence::header)
+            .any { TweetContentEvidence.matchesExpected(it, target) }
+        return if (rawOwnRowVisible) accept() else false
     }
 }
