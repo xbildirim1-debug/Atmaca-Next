@@ -72,19 +72,22 @@ object TaskQueuePlanner {
 
     fun nextRunnableIndex(items: List<QueueTaskItem>, afterIndex: Int): Int =
         ((afterIndex + 1) until items.size).firstOrNull { index ->
-            items[index].status == QueueItemStatus.PENDING
+            items[index].status in setOf(QueueItemStatus.PENDING, QueueItemStatus.PAUSED)
         } ?: -1
 }
 
-/** A queue is never reported as fully successful when work failed or was skipped. */
+/** A queue is never reported as fully successful while selected rows remain unfinished. */
 object QueueResultPolicy {
     fun finalStatus(items: List<QueueTaskItem>): QueueStatus {
         val completed = items.count { it.status == QueueItemStatus.COMPLETED }
         val failed = items.count { it.status == QueueItemStatus.FAILED }
         val skipped = items.count { it.status == QueueItemStatus.SKIPPED }
+        val unfinished = items.count {
+            it.status in setOf(QueueItemStatus.PENDING, QueueItemStatus.PAUSED, QueueItemStatus.RUNNING)
+        }
         return when {
             failed > 0 && completed == 0 -> QueueStatus.FAILED
-            failed > 0 || skipped > 0 -> QueueStatus.PARTIAL
+            failed > 0 || skipped > 0 || unfinished > 0 -> QueueStatus.PARTIAL
             else -> QueueStatus.COMPLETED
         }
     }
