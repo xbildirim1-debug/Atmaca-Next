@@ -5,6 +5,7 @@ import com.atmacanext.app.ai.GeminiContentService
 import com.atmacanext.app.automation.AutomationController
 import com.atmacanext.app.automation.AutomationRuntimeState
 import com.atmacanext.app.automation.AutomationTuning
+import com.atmacanext.app.automation.BatchQueueContinuityGuard
 import com.atmacanext.app.automation.RuntimeStatus
 import com.atmacanext.app.automation.TaskOrchestrator
 import com.atmacanext.app.data.local.AtmacaDatabase
@@ -39,6 +40,7 @@ object AppServices {
         private set
     lateinit var reportExporter: ErrorReportExporter
         private set
+    private var queueContinuityGuard: BatchQueueContinuityGuard? = null
 
     @Volatile
     var ready: Boolean = false
@@ -56,6 +58,7 @@ object AppServices {
         notifications = com.atmacanext.app.data.notifications.NotificationStore(appContext)
         orchestrator = TaskOrchestrator(repository, contentService, settings.settings, scope, notifications)
         reportExporter = ErrorReportExporter(appContext, repository, settings)
+        queueContinuityGuard = BatchQueueContinuityGuard(repository, orchestrator, scope).also { it.start() }
 
         scope.launch {
             // Eski process/session hiçbir koşulda otomatik sürdürülmez.
