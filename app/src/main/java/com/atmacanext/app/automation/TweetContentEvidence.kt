@@ -13,11 +13,11 @@ internal object TweetContentEvidence {
             return Header(exact.groupValues[1].lowercase(), age, truncated = false)
         }
 
-        // X can visually/semantically shorten a long handle in a feed header, e.g.
-        // "Boşuna Tıklama @bosunat... · 7 dk". Keep that as prefix evidence instead
-        // of losing the whole post row. A truncated handle is never used as a user
-        // identity for following; it is only matched against an already verified
-        // discovery target.
+        // X can visually/semantically shorten any long handle in a feed header,
+        // for example "Örnek Hesap @longuse... · 7 dk". Keep that prefix as
+        // evidence instead of losing the whole post row. A truncated handle is
+        // never used as a user identity for following; it is only matched against
+        // an already verified discovery target.
         val shortened = Regex(
             "^(?:[^@\\n]{1,70}\\s)?@([A-Za-z0-9_]{3,14})(?:…|\\.{2,3})\\s*[·•,]\\s*(.+)$"
         ).matchEntire(text) ?: return null
