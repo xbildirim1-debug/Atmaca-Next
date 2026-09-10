@@ -1,9 +1,37 @@
 package com.atmacanext.app.automation
 
+import android.graphics.Rect
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DiscoveryScrollGesturePolicyTest {
+    private fun rect(left: Int, top: Int, right: Int, bottom: Int) = Rect().apply {
+        this.left = left
+        this.top = top
+        this.right = right
+        this.bottom = bottom
+    }
+
+    private fun node(
+        text: String? = null,
+        top: Int,
+        bottom: Int,
+        editable: Boolean = false,
+        id: String? = null,
+    ) = NodeSnapshot(
+        text = text,
+        contentDescription = null,
+        viewId = id,
+        className = "TextView",
+        clickable = true,
+        enabled = true,
+        bounds = rect(20, top, 680, bottom),
+        editable = editable,
+        visible = true,
+    )
+
     @Test fun discoverySwipeStaysInLeftGutterAwayFromMediaAndCompose() {
         assertTrue(DiscoveryScrollGesturePolicy.xRatio(0) < 0.10f)
         assertTrue(DiscoveryScrollGesturePolicy.xRatio(1) < 0.15f)
@@ -16,8 +44,31 @@ class DiscoveryScrollGesturePolicyTest {
         assertTrue(DiscoveryScrollGesturePolicy.xRatio(0) == DiscoveryScrollGesturePolicy.xRatio(2))
     }
 
-    @Test fun backwardPathExactlyReversesForwardPath() {
-        assertTrue(DiscoveryScrollGesturePolicy.BACKWARD_START_Y_RATIO == DiscoveryScrollGesturePolicy.FORWARD_END_Y_RATIO)
-        assertTrue(DiscoveryScrollGesturePolicy.BACKWARD_END_Y_RATIO == DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO)
+    @Test fun noComposerKeepsExistingForwardAndBackwardPath() {
+        val root = rect(0, 0, 720, 1536)
+        val forward = DiscoveryScrollGesturePolicy.verticalPath(root, emptyList(), true)!!
+        val backward = DiscoveryScrollGesturePolicy.verticalPath(root, emptyList(), false)!!
+        assertEquals(root.height() * DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO, forward.startY, 0.5f)
+        assertEquals(root.height() * DiscoveryScrollGesturePolicy.FORWARD_END_Y_RATIO, forward.endY, 0.5f)
+        assertEquals(forward.endY, backward.startY, 0.5f)
+        assertEquals(forward.startY, backward.endY, 0.5f)
+    }
+
+    @Test fun inlineReplyLabelMovesGestureStartAboveComposer() {
+        val root = rect(0, 0, 720, 1536)
+        val composer = node(text = "Yanıtını gönder", top = 1370, bottom = 1425)
+        val path = DiscoveryScrollGesturePolicy.verticalPath(root, listOf(composer), true)
+        assertNotNull(path)
+        assertTrue(path!!.startY < composer.bounds.top)
+        assertTrue(path.startY < root.height() * DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO)
+        assertTrue(path.endY < path.startY)
+    }
+
+    @Test fun editableReplyContainerAlsoCannotBeGestureOrigin() {
+        val root = rect(0, 0, 1080, 2400)
+        val composer = node(top = 2040, bottom = 2220, editable = true, id = "reply_composer_input")
+        val path = DiscoveryScrollGesturePolicy.verticalPath(root, listOf(composer), true)
+        assertNotNull(path)
+        assertTrue(path!!.startY < composer.bounds.top)
     }
 }
