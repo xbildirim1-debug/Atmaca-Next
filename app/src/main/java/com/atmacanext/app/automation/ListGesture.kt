@@ -34,8 +34,10 @@ object ListGesture {
         swipe(service, root, forward = false, horizontal = true)
 
     /**
-     * Profile media consumes centre-screen swipes on X. Use the narrow left gutter,
-     * which stays outside inline players and the lower-right compose button.
+     * Profile/tweet media can consume centre-screen swipes on X. Use a narrow left
+     * gutter outside inline players. On a tweet detail, once X exposes its semantic
+     * end-of-replies marker, never scroll into recommendation content; the runtime
+     * will observe the stable viewport and return to the target post/profile.
      */
     private fun discoverySwipe(
         service: AccessibilityService,
@@ -44,6 +46,10 @@ object ListGesture {
         recoveryAttempt: Int,
     ): Boolean {
         if (root == null) return false
+        if (forward && ReplyThreadEndEvidence.visible(root) && ScreenDetector.detect(root) == XScreen.TWEET_DETAIL) {
+            OperationLog.i("COMMENT_END", "Yorum sonu işareti görüldü; Daha fazla keşfet alanına kaydırılmadı")
+            return false
+        }
         val bounds = Rect().also(root::getBoundsInScreen)
         if (bounds.width() <= 0 || bounds.height() <= 0) return false
         val x = bounds.left + bounds.width() * DiscoveryScrollGesturePolicy.xRatio(recoveryAttempt)
