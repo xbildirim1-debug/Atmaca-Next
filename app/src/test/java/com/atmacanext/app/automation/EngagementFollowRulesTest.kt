@@ -14,12 +14,36 @@ class EngagementFollowRulesTest {
         assertNotEquals(XScreen.TWEET_DETAIL, ScreenDetector.detect(listOf(tab("24 yanıt", false), tab("378 beğeni", false))))
     }
     @Test fun dynamicRepostCountsAreNotHardcoded() {
-        for (label in listOf("30 tarafından yeniden gönderildi", "1.234 kişi tarafından yeniden gönderildi", "0 tarafından yeniden gönderildi", "45 reposts", "Reposts 900"))
-            assertTrue(label, EngagementListEvidence.isReposts(label))
+        for (label in listOf(
+            "30 tarafından yeniden gönderildi",
+            "1.234 kişi tarafından yeniden gönderildi",
+            "0 tarafından yeniden gönderildi",
+            "19 tarafından yeniden gönderildi, sekme",
+            "19 tarafından yeniden gönderildi, sekme 2/2",
+            "19 tarafından yeniden gönderildi, tab 2/2, selected",
+            "45 reposts",
+            "Reposts 900",
+        )) assertTrue(label, EngagementListEvidence.isReposts(label))
     }
     @Test fun quoteTabAndRepostActionAreNotThePeopleList() {
-        for (label in listOf("Alıntılar 5", "Retweet", "Repost", "Yeniden gönder", "35 beğeni"))
+        for (label in listOf("Alıntılar 5", "Alıntılar 10, sekme, seçili", "Quotes 12, tab 1/2", "Retweet", "Repost", "Yeniden gönder", "35 beğeni"))
             assertFalse(label, EngagementListEvidence.isReposts(label))
+    }
+    @Test fun countedQuotesSelectedCannotMasqueradeAsRepostSelection() {
+        val nodes = listOf(
+            tab("Gönderi Etkileşimleri", false),
+            tab("Alıntılar 10", true),
+            tab("19 tarafından yeniden gönderildi", false),
+        )
+        assertFalse(EngagementListEvidence.selected(nodes))
+    }
+    @Test fun countedRepostTabCanBeSelectedWithComposeDecoration() {
+        val nodes = listOf(
+            tab("Gönderi Etkileşimleri", false),
+            tab("Alıntılar 10", false),
+            tab("19 tarafından yeniden gönderildi, sekme 2/2", true),
+        )
+        assertTrue(EngagementListEvidence.selected(nodes))
     }
     @Test fun visibleRepostsAreInsufficientUntilSelected() {
         assertFalse(EngagementListEvidence.selected(listOf(tab("30 tarafından yeniden gönderildi", false))))

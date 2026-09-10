@@ -1329,16 +1329,24 @@ object AutomationController {
                 }
                 if (current.taskType == TaskType.COMMENTER_FOLLOW && commenterAdvanceRequired) {
                     commenterAdvanceRequired = false
-                    val accepted = dispatchListScroll(service, root, forward = true)
-                    if (accepted) {
-                        listScrolls++
-                        _state.value = _state.value.copy(listScrolls = listScrolls)
+                    val afterReturnExcluded = processedHandles + skippedHandles + setOf(
+                        XIdentityDetector.normalizeUsername(current.username.orEmpty()),
+                        target,
+                    )
+                    val visibleAfterReturn = XTweetInspector.visibleReplyAuthors(root)
+                    if (CommenterViewportPolicy.shouldScroll(visibleAfterReturn, afterReturnExcluded)) {
+                        val accepted = dispatchListScroll(service, root, forward = true)
+                        if (accepted) {
+                            listScrolls++
+                            _state.value = _state.value.copy(listScrolls = listScrolls)
+                        }
+                        lastListSignature = DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root))
+                        nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
+                        OperationLog.i("COMMENT_SCROLL", "Görünür işlenmemiş yorumcu kalmadı; alt yorumlara kaydırma accepted=$accepted scroll=$listScrolls")
+                        service.requestAutomationTick(900L)
+                        return
                     }
-                    lastListSignature = DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root))
-                    nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
-                    OperationLog.i("COMMENT_SCROLL", "Takip/atlama sonrası alt yorumlara zorunlu kaydırma accepted=$accepted scroll=$listScrolls")
-                    service.requestAutomationTick(900L)
-                    return
+                    OperationLog.i("COMMENT_DRAIN", "Aynı görünümde işlenmemiş yorumcu var; kaydırmadan sıradaki kullanıcı işlenecek")
                 }
                 val excluded = processedHandles + skippedHandles + setOf(
                     XIdentityDetector.normalizeUsername(current.username.orEmpty()),
