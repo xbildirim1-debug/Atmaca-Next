@@ -13,7 +13,10 @@ class DiscoveryReturnGuard26_41Test {
         className = "android.widget.ImageButton",
         clickable = true,
         enabled = true,
-        bounds = Rect(20, 30, 100, 110),
+        // Android local-unit-test stubs can return the default object for the
+        // four-argument Rect constructor when returnDefaultValues=true. Set the
+        // fields explicitly so the selector sees a real non-empty control.
+        bounds = Rect().apply { left = 20; top = 30; right = 100; bottom = 110 },
         visible = true,
     )
 
