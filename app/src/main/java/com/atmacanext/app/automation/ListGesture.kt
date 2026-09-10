@@ -46,9 +46,27 @@ object ListGesture {
         recoveryAttempt: Int,
     ): Boolean {
         if (root == null) return false
-        if (forward && ReplyThreadEndEvidence.visible(root) && ScreenDetector.detect(root) == XScreen.TWEET_DETAIL) {
-            OperationLog.i("COMMENT_END", "Yorum sonu işareti görüldü; Daha fazla keşfet alanına kaydırılmadı")
-            return false
+        val screen = ScreenDetector.detect(root)
+        if (screen != XScreen.TWEET_DETAIL) {
+            // A guard belongs only to the reply viewport that armed it. Never let
+            // it leak into profile discovery or an engagement-list task.
+            CommenterViewportPolicy.clearScrollGuard()
+        }
+        if (forward && screen == XScreen.TWEET_DETAIL) {
+            if (ReplyThreadEndEvidence.visible(root)) {
+                OperationLog.i("COMMENT_END", "Yorum sonu işareti görüldü; Daha fazla keşfet alanına kaydırılmadı")
+                return false
+            }
+            val snapshots = AccessibilityTree.snapshots(root)
+            val visibleAuthors = XTweetInspector.visibleReplyAuthors(root)
+            val signature = DiscoveryViewportEvidence.signature(snapshots)
+            if (!CommenterViewportPolicy.allowScrollAfterStableEmpty(visibleAuthors, signature)) {
+                OperationLog.i(
+                    "COMMENT_DRAIN_WAIT",
+                    "Yorum görünümü Back sonrası henüz kesin boş değil; görünür adaylar tekrar okunmadan kaydırılmadı",
+                )
+                return false
+            }
         }
         val bounds = Rect().also(root::getBoundsInScreen)
         if (bounds.width() <= 0 || bounds.height() <= 0) return false
