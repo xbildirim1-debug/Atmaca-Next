@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 88
-        versionName = "26.40-third-account-search-handoff"
+        versionCode = 89
+        versionName = "26.41-retweeter-return-stall-recovery"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
