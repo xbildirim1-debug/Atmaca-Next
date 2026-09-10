@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 89
-        versionName = "26.41-retweeter-return-stall-recovery"
+        versionCode = 90
+        versionName = "26.42-batch-queue-ui-handoff"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
