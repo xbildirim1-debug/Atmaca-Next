@@ -1,0 +1,74 @@
+name: Patch 26.36 commenter runtime
+
+on:
+  push:
+    branches:
+      - 26.36-engagement-drain
+
+permissions:
+  contents: write
+
+jobs:
+  patch-runtime:
+    if: ${{ !contains(github.event.head_commit.message, '[26.36-runtime-patched]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 26.36-engagement-drain
+          fetch-depth: 0
+      - name: Patch commenter viewport advance
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('app/src/main/java/com/atmacanext/app/automation/AutomationRuntime.kt')
+          text = path.read_text(encoding='utf-8')
+          old = '''                if (current.taskType == TaskType.COMMENTER_FOLLOW && commenterAdvanceRequired) {
+                    commenterAdvanceRequired = false
+                    val accepted = dispatchListScroll(service, root, forward = true)
+                    if (accepted) {
+                        listScrolls++
+                        _state.value = _state.value.copy(listScrolls = listScrolls)
+                    }
+                    lastListSignature = DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root))
+                    nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
+                    OperationLog.i("COMMENT_SCROLL", "Takip/atlama sonrası alt yorumlara zorunlu kaydırma accepted=$accepted scroll=$listScrolls")
+                    service.requestAutomationTick(900L)
+                    return
+                }
+'''
+          new = '''                if (current.taskType == TaskType.COMMENTER_FOLLOW && commenterAdvanceRequired) {
+                    commenterAdvanceRequired = false
+                    val afterReturnExcluded = processedHandles + skippedHandles + setOf(
+                        XIdentityDetector.normalizeUsername(current.username.orEmpty()),
+                        target,
+                    )
+                    val visibleAfterReturn = XTweetInspector.visibleReplyAuthors(root)
+                    if (CommenterViewportPolicy.shouldScroll(visibleAfterReturn, afterReturnExcluded)) {
+                        val accepted = dispatchListScroll(service, root, forward = true)
+                        if (accepted) {
+                            listScrolls++
+                            _state.value = _state.value.copy(listScrolls = listScrolls)
+                        }
+                        lastListSignature = DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root))
+                        nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
+                        OperationLog.i("COMMENT_SCROLL", "Görünür işlenmemiş yorumcu kalmadı; alt yorumlara kaydırma accepted=$accepted scroll=$listScrolls")
+                        service.requestAutomationTick(900L)
+                        return
+                    }
+                    OperationLog.i("COMMENT_DRAIN", "Aynı görünümde işlenmemiş yorumcu var; kaydırmadan sıradaki kullanıcı işlenecek")
+                }
+'''
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one commenter forced-scroll block, found {count}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+      - name: Commit runtime patch
+        run: |
+          git config user.name "Atmaca Next CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/src/main/java/com/atmacanext/app/automation/AutomationRuntime.kt
+          git diff --cached --quiet && exit 0
+          git commit -m "26.36: drain visible commenters before scroll [26.36-runtime-patched]"
+          git push origin HEAD:26.36-engagement-drain
