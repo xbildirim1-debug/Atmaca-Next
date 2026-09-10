@@ -20,6 +20,8 @@ object XTweetInspector {
         val textTarget: AccessibilityNodeInfo? = null,
         val authorTarget: AccessibilityNodeInfo? = null,
         val authorTruncated: Boolean = false,
+        /** True when a card-only post must be opened through the age side of its combined header. */
+        val openViaHeaderTrailing: Boolean = false,
     )
 
     fun visibleTweets(root: AccessibilityNodeInfo?, nowMillis: Long = System.currentTimeMillis()): List<TweetRow> {
@@ -27,15 +29,21 @@ object XTweetInspector {
         val flatNodes = AccessibilityTree.nodes(root, maxNodes = 1_200)
         val flatRows = FeedRowEvidence.rows(flatNodes.map { it.toSnapshot() }).map { r ->
             val header = flatNodes[r.headerIndex]
+            val body = r.bodyIndex?.let(flatNodes::get)
+            val rowNode = tweetRowAncestor(header) ?: header
+            val ageNode = if (body == null) explicitAgeNode(flatNodes, header, nowMillis) else null
+            val combinedHeader = labels(header).any { TweetContentEvidence.header(it) != null }
+            val detailTarget = body ?: ageNode ?: header.takeIf { combinedHeader }
             TweetRow(
                 r.key,
                 r.age,
-                header,
-                Rect().also(header::getBoundsInScreen),
+                rowNode,
+                Rect().also(rowNode::getBoundsInScreen),
                 r.author,
-                r.bodyIndex?.let(flatNodes::get),
+                detailTarget,
                 header,
                 r.authorTruncated,
+                openViaHeaderTrailing = body == null && ageNode == null && combinedHeader,
             )
         }
 
@@ -90,12 +98,17 @@ object XTweetInspector {
                     }
                 }
 
-                val timestampAge = rowNodes.asSequence().filter { it.isVisibleToUser }.mapNotNull { child ->
-                    val t = child.text?.toString().orEmpty()
-                    val d = child.contentDescription?.toString().orEmpty()
-                    listOf(t, d).filter { it.length < 100 && !it.contains("@") }
-                        .firstNotNullOfOrNull { parseAgeMinutes(it, nowMillis) }
-                }.firstOrNull()
+                val timestampNode = rowNodes.asSequence().filter { it.isVisibleToUser }.firstOrNull { child ->
+                    labels(child).any { value ->
+                        value.length < 100 && !value.contains("@") &&
+                            parseAgeMinutes(value.trim().trimStart('·', '•', ',').trim(), nowMillis) != null
+                    }
+                }
+                val timestampAge = timestampNode?.let { child ->
+                    labels(child).firstNotNullOfOrNull { value ->
+                        parseAgeMinutes(value.trim().trimStart('·', '•', ',').trim(), nowMillis)
+                    }
+                }
                 val headerNode = rowNodes.firstOrNull { child ->
                     listOfNotNull(child.text?.toString(), child.contentDescription?.toString()).any {
                         TweetContentEvidence.header(it) != null ||
@@ -104,15 +117,19 @@ object XTweetInspector {
                 }
                 val headerBottom = headerNode?.let { Rect().also(it::getBoundsInScreen).bottom } ?: bounds.top
                 val textIndex = TweetContentEvidence.bodyIndex(rowNodes.map { it.toSnapshot() }, headerBottom)
+                val bodyTarget = textIndex?.let(rowNodes::get)
+                val combinedHeader = headerNode?.let(::labels)?.any { TweetContentEvidence.header(it) != null } == true
+                val detailTarget = bodyTarget ?: timestampNode ?: headerNode?.takeIf { combinedHeader }
                 TweetRow(
                     key,
                     timestampAge ?: age,
                     row,
                     bounds,
                     author,
-                    textIndex?.let(rowNodes::get),
+                    detailTarget,
                     headerNode,
                     authorTruncated,
+                    openViaHeaderTrailing = bodyTarget == null && timestampNode == null && combinedHeader,
                 )
             }
             .distinctBy(TweetRow::key)
@@ -190,15 +207,54 @@ object XTweetInspector {
     fun click(service: AtmacaAccessibilityService, row: TweetRow, retryAttempt: Int = 0): Boolean {
         val node = row.textTarget ?: return false
         if (!node.isVisibleToUser || !node.isEnabled) return false
+
+        // A video/photo/card-only tweet can have no separate body Text node. 26.38
+        // treated that as a fatal condition and stopped on the target profile. When
+        // the timestamp is a separate node it is the click target directly. When X
+        // combines author + age into one header, tap only the trailing age side; the
+        // leading side is the profile. All points come from live node rectangles.
+        if (row.openViaHeaderTrailing) {
+            val accepted = GestureClick.gestureTapTrailing(service, node)
+            OperationLog.i(
+                "DISCOVERY_CLICK",
+                "key=${row.key} author=@${row.author}${if (row.authorTruncated) "…" else ""} mode=header-age bounds=${Rect().also(node::getBoundsInScreen)} retry=$retryAttempt accepted=$accepted; detay doğrulaması bekleniyor",
+            )
+            return accepted
+        }
+
         val native = retryAttempt == 0 && node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
         val accepted = native || if (retryAttempt == 0) GestureClick.gestureTapText(service, node)
             else GestureClick.gestureTapTextRetry(service, node, retryAttempt)
         OperationLog.i(
             "DISCOVERY_CLICK",
-            "key=${row.key} author=@${row.author}${if (row.authorTruncated) "…" else ""} bounds=${Rect().also(node::getBoundsInScreen)} native=$native retry=$retryAttempt accepted=$accepted; detay doğrulaması bekleniyor",
+            "key=${row.key} author=@${row.author}${if (row.authorTruncated) "…" else ""} mode=body-or-age bounds=${Rect().also(node::getBoundsInScreen)} native=$native retry=$retryAttempt accepted=$accepted; detay doğrulaması bekleniyor",
         )
         return accepted
     }
+
+    private fun explicitAgeNode(
+        nodes: List<AccessibilityNodeInfo>,
+        header: AccessibilityNodeInfo,
+        nowMillis: Long,
+    ): AccessibilityNodeInfo? {
+        val headerBounds = Rect().also(header::getBoundsInScreen)
+        return nodes.asSequence()
+            .filter { it !== header && it.isVisibleToUser && it.isEnabled }
+            .filter { child ->
+                val bounds = Rect().also(child::getBoundsInScreen)
+                maxOf(headerBounds.top, bounds.top) < minOf(headerBounds.bottom, bounds.bottom) &&
+                    bounds.left >= headerBounds.left
+            }
+            .firstOrNull { child ->
+                labels(child).any { value ->
+                    value.length < 100 && !value.contains("@") &&
+                        parseAgeMinutes(value.trim().trimStart('·', '•', ',').trim(), nowMillis) != null
+                }
+            }
+    }
+
+    private fun labels(node: AccessibilityNodeInfo): List<String> =
+        listOfNotNull(node.text?.toString(), node.contentDescription?.toString())
 
     private fun mergeVisibleRows(primary: List<TweetRow>, fallback: List<TweetRow>): List<TweetRow> {
         val merged = mutableListOf<TweetRow>()

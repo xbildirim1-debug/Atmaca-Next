@@ -271,7 +271,34 @@ class AtmacaAccessibilityService : AccessibilityService() {
 
     fun launchAtmacaOnAutomationThread(): Boolean = launchAtmaca()
 
-    fun pressBack():Boolean=performGlobalAction(GLOBAL_ACTION_BACK)
+    /**
+     * Automation Back must never be allowed to fall through from X's root surfaces
+     * to the Android launcher. The account sheet is transient and can publish one
+     * stale ACCOUNT_SWITCHER snapshot after the selected row has already started
+     * dismissing. A global Back at that instant exits X, exactly as seen on device.
+     *
+     * Prefer X's real visible Back control. On the account switcher, route to X home
+     * instead of dispatching GLOBAL_ACTION_BACK; the runtime then re-opens the drawer
+     * and proves the selected @handle before any task action. HOME itself is a hard
+     * boundary: only the explicit Atmaca return path may leave X.
+     */
+    fun pressBack(): Boolean {
+        val root = rootInActiveWindow
+        if (root?.packageName?.toString() == X_PACKAGE) {
+            val snapshots = AccessibilityTree.snapshots(root)
+            val screen = ScreenDetector.detect(root, snapshots)
+            if (screen == XScreen.HOME) {
+                OperationLog.w("NAV", "X HOME üzerinde GLOBAL_ACTION_BACK engellendi; launcher'a çıkılmadı")
+                return false
+            }
+            if (screen == XScreen.ACCOUNT_SWITCHER) {
+                OperationLog.i("NAV", "ACCOUNT_SWITCHER için global Back yerine X home rotası kullanılıyor")
+                return launchXHome()
+            }
+            if (XUiActions.clickVisibleBack(this, root)) return true
+        }
+        return performGlobalAction(GLOBAL_ACTION_BACK)
+    }
     fun isOutsideSuppressed(now:Long=System.currentTimeMillis()):Boolean=now<suppressOutsideUntil
 
     private fun startSafely(intent:Intent,why:String):Boolean {

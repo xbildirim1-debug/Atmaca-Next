@@ -2,7 +2,7 @@ package com.atmacanext.app.automation
 
 /** Counts are presentation data, not selectors. Never match the repost action button. */
 internal object EngagementListEvidence {
-    private val competingTabPattern = Regex("(?:alıntılar|quotes|beğeniler|likes)(?:\\s+[0-9][0-9.,\\s]*[kmb]?)?")
+    private val competingTabPattern = Regex("(?:alıntı|alıntılar|quotes|beğeniler|likes)(?:\\s+[0-9][0-9.,\\s]*[kmb]?)?")
     private val stateSuffix = Regex("\\s*,?\\s*(?:selected|seçili|active|aktif)(?:\\s.*)?$")
     private val tabSuffix = Regex("\\s*,?\\s*(?:sekme|tab)(?:\\s+\\d+\\s*(?:/|of)\\s*\\d+)?$")
 
@@ -24,8 +24,17 @@ internal object EngagementListEvidence {
 
     fun isReposts(raw: String): Boolean {
         val s = canonical(raw)
-        return s in setOf("yeniden gönderenler", "yeniden gönderiler", "retweetler", "reposts", "reposted by") ||
+        return s in setOf(
+            "yeniden gönderildi",
+            "yeniden gönderenler",
+            "yeniden gönderiler",
+            "retweetler",
+            "reposts",
+            "reposted",
+            "reposted by",
+        ) ||
             Regex("[0-9][0-9.,\\s]*[kmb]?\\s+(?:kişi\\s+)?tarafından yeniden gönderildi").matches(s) ||
+            Regex("(?:yeniden gönderildi\\s+[0-9][0-9.,\\s]*[kmb]?|[0-9][0-9.,\\s]*[kmb]?\\s+yeniden gönderildi)").matches(s) ||
             Regex("(?:reposts\\s+[0-9][0-9.,\\s]*[kmb]?|[0-9][0-9.,\\s]*[kmb]?\\s+reposts|reposted by\\s+[0-9][0-9.,\\s]*[kmb]?)").matches(s)
     }
 
@@ -58,21 +67,32 @@ internal object EngagementListEvidence {
         }
     }
 
+    /**
+     * On the tweet detail X may expose the entry as “Alıntı”, “Alıntılar”,
+     * “Alıntıları görüntüle”, or a count-decorated version. This is only used before
+     * the engagement title exists; once the sheet/list is open, the runtime must
+     * explicitly select and verify the “Yeniden gönderildi” repost tab.
+     */
     fun openLabel(raw: String): Boolean {
         val s = XUiVocabulary.normalize(raw)
             .substringBefore(", selected")
             .substringBefore(", seçili")
             .trim()
         val tokens = setOf(
+            "alıntı",
+            "alıntılar",
             "alıntıları görüntüle",
             "view quotes",
             "view post engagements",
             "gönderi etkileşimlerini görüntüle",
             "post engagements",
         )
-        return tokens.any { token ->
-            s == token || s.startsWith("$token ") || s.startsWith("$token,") || s.startsWith("$token (")
-        }
+        if (tokens.any { token ->
+                s == token || s.startsWith("$token ") || s.startsWith("$token,") || s.startsWith("$token (")
+            }) return true
+        return Regex("[0-9][0-9.,\\s]*[kmb]?\\s+alıntı(?:lar)?").matches(s) ||
+            Regex("(?:alıntı|alıntılar)\\s+[0-9][0-9.,\\s]*[kmb]?").matches(s) ||
+            Regex("(?:quotes\\s+[0-9][0-9.,\\s]*[kmb]?|[0-9][0-9.,\\s]*[kmb]?\\s+quotes)").matches(s)
     }
 
     /**

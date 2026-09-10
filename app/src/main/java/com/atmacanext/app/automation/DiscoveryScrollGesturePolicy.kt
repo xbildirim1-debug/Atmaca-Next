@@ -24,14 +24,16 @@ internal object DiscoveryScrollGesturePolicy {
         X_RATIOS[recoveryAttempt.coerceAtLeast(0) % X_RATIOS.size]
 
     /**
-     * The default 88%-to-20% gesture can start inside X's bottom inline reply
-     * composer. On some X builds that focuses/clicks the composer instead of
-     * scrolling the thread. Derive the lower gesture edge from the live
-     * accessibility tree and stop above any editable/reply-composer surface.
+     * The default profile gesture may be long, but a reply thread needs overlap:
+     * short text replies, tall images and video cards can all coexist in one view.
+     * When the inline reply composer is visible we therefore cap the swipe travel
+     * to a fraction of the live screen height and leave most of the old viewport
+     * on screen. Every newly exposed row is then parsed before another gesture.
      *
-     * No account, screen resolution or fixed pixel coordinate is encoded here.
-     * Direct rectangle fields are used instead of Android Rect helpers so this
-     * policy remains deterministic in local JVM regression tests as well.
+     * The lower edge is derived from the actual composer label/editable rectangle.
+     * A generous semantic clearance is used because X often exposes only the text
+     * inside the rounded composer; its container can begin well above that label.
+     * No device pixels, account-specific coordinates or media dimensions are fixed.
      */
     fun verticalPath(bounds: Rect, nodes: List<NodeSnapshot>, forward: Boolean): VerticalPath? {
         val width = bounds.right - bounds.left
@@ -55,14 +57,14 @@ internal object DiscoveryScrollGesturePolicy {
                         id.contains("input") || id.contains("editor") || id.contains("entry"))
                 if (!node.editable && !labelEvidence && !idEvidence) return@mapNotNull null
 
-                // If only the text label is exposed, its bounds sit inside the
-                // rounded composer. Use one label-height as a semantic clearance.
-                // Editable/container nodes already describe the surface itself.
                 val nodeHeight = (node.bounds.bottom - node.bounds.top).coerceAtLeast(1)
+                // Text-only semantics describe the inner label, not the rounded
+                // composer. Clear at least three label heights; for an editable or
+                // identified composer node the live rectangle is already stronger.
                 val clearance = if (node.editable || idEvidence) {
-                    (nodeHeight / 4).coerceAtLeast(1)
+                    maxOf(nodeHeight / 3, (height * 0.025f).toInt()).coerceAtLeast(1)
                 } else {
-                    nodeHeight
+                    maxOf(nodeHeight * 3, (height * 0.055f).toInt()).coerceAtLeast(1)
                 }
                 (node.bounds.top - clearance).toFloat()
             }
@@ -72,6 +74,15 @@ internal object DiscoveryScrollGesturePolicy {
         val minimumTravel = height * 0.16f
         if (lower - upper < minimumTravel) return null
 
-        return if (forward) VerticalPath(lower, upper) else VerticalPath(upper, lower)
+        // Composer evidence is a strong signal that this is the tweet-detail reply
+        // viewport. Preserve overlap there so a single long swipe cannot jump over
+        // several short commenters after returning from one profile.
+        val conservative = composerTop != null
+        val maxReplyTravel = height * 0.42f
+        val conservativeUpper = if (conservative) maxOf(upper, lower - maxReplyTravel) else upper
+        if (lower - conservativeUpper < minimumTravel) return null
+
+        return if (forward) VerticalPath(lower, conservativeUpper)
+        else VerticalPath(conservativeUpper, lower)
     }
 }
