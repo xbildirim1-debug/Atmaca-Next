@@ -3,10 +3,30 @@ package com.atmacanext.app.automation
 internal object NavigationSurfaceEvidence {
     private fun labels(n: NodeSnapshot) = listOfNotNull(n.text, n.contentDescription).map(XUiVocabulary::normalize)
 
-    fun backIndex(nodes: List<NodeSnapshot>): Int? = nodes.indices.firstOrNull { i -> val n = nodes[i]
-        n.visible && n.enabled && !n.editable && n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
-            (labels(n).any { it in XUiVocabulary.backSignals } ||
-                n.viewId.orEmpty().let { it.endsWith("/back") || it.contains("toolbar_back") || it.contains("navigate_up") })
+    fun backIndex(nodes: List<NodeSnapshot>): Int? = backIndex(
+        nodes = nodes,
+        flowStage = AutomationController.state.value.flowStage,
+        screen = AutomationController.state.value.activeScreen,
+    )
+
+    internal fun backIndex(nodes: List<NodeSnapshot>, flowStage: XFlowStage, screen: XScreen): Int? {
+        // Discovery flows return ENGAGEMENT_LIST -> TWEET_DETAIL -> target PROFILE.
+        // Once the target profile surface is reached, never emit another Back merely
+        // because its identity/header takes a moment to settle. The runtime can wait
+        // and fall back to X search instead of escaping the target profile entirely.
+        val returningToTargetProfile = flowStage == XFlowStage.RETURN_DISCOVERY_TARGET &&
+            (screen == XScreen.PROFILE ||
+                (screen == XScreen.UNKNOWN &&
+                    (ProfileSurfaceEvidence.read(nodes) != null || FeedRowEvidence.profileFeed(nodes))))
+        if (returningToTargetProfile) return null
+
+        return nodes.indices.firstOrNull { i ->
+            val n = nodes[i]
+            n.visible && n.enabled && !n.editable &&
+                n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
+                (labels(n).any { it in XUiVocabulary.backSignals } ||
+                    n.viewId.orEmpty().let { it.endsWith("/back") || it.contains("toolbar_back") || it.contains("navigate_up") })
+        }
     }
 
     fun profileActionEnd(nodes: List<NodeSnapshot>, statTop: Int): Int = nodes.filter { n ->
