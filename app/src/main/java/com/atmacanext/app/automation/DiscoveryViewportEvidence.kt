@@ -2,53 +2,25 @@ package com.atmacanext.app.automation
 
 internal object DiscoveryViewportEvidence {
     /**
-     * Track real content movement, not video/player animation. Prefer semantic post
-     * rows and their vertical positions; fall back to stable text only when X has
-     * not exposed rows yet. This keeps image/video/quote layouts from faking a
-     * successful scroll or an endless changing viewport.
+     * A discovery scroll is accepted only when the visible accessibility geometry
+     * changes. Keep media geometry in the signature: on X, image/video/quote cards
+     * can be the only visible evidence that the viewport actually moved. Hidden
+     * pages and inline editable reply controls are excluded.
      */
-    fun signature(nodes: List<NodeSnapshot>): String {
-        val visible = nodes.filter { it.visible && !it.editable &&
-            it.bounds.right > it.bounds.left && it.bounds.bottom > it.bounds.top }
-        val rows = FeedRowEvidence.rows(visible)
-        if (rows.isNotEmpty()) {
-            val material = buildString {
-                rows.take(16).forEach { row ->
-                    val h = visible[row.headerIndex]
-                    append(row.author)
-                    append('|')
-                    append(row.key)
-                    append('@')
-                    append(h.bounds.top)
-                    append(':')
-                    append(h.bounds.bottom)
-                    append('\n')
-                }
-                if (ReplyThreadEndEvidence.visible(visible)) append("<THREAD_END>")
-            }
-            return material.hashCode().toString(16)
+    fun signature(nodes: List<NodeSnapshot>): String = nodes.asSequence()
+        .filter {
+            it.visible && !it.editable &&
+                it.bounds.right > it.bounds.left && it.bounds.bottom > it.bounds.top
         }
+        .map {
+            "${it.text.orEmpty()}|${it.contentDescription.orEmpty()}|${it.viewId.orEmpty()}@" +
+                "${it.bounds.left}:${it.bounds.top}:${it.bounds.right}:${it.bounds.bottom}"
+        }
+        .joinToString("\n")
+        .hashCode()
+        .toString(16)
 
-        val material = visible.asSequence()
-            .filterNot { node ->
-                val id = node.viewId.orEmpty().lowercase()
-                val clazz = node.className.orEmpty().lowercase()
-                listOf(
-                    "video", "player", "media", "image", "photo", "gif", "progress",
-                    "toolbar_like", "toolbar_retweet", "toolbar_reply", "bookmark",
-                ).any { token -> id.contains(token) || clazz.contains(token) }
-            }
-            .mapNotNull { node ->
-                val label = listOfNotNull(node.text, node.contentDescription)
-                    .joinToString(" ").trim().takeIf { it.isNotBlank() } ?: return@mapNotNull null
-                "$label@${node.bounds.top}:${node.bounds.bottom}"
-            }
-            .take(80)
-            .joinToString("\n")
-        return material.hashCode().toString(16)
-    }
-
-    // Keep the working 26.20 scan allowance. A transient unchanged read is not list end.
+    // Keep the working scan allowance. A transient unchanged read is not list end.
     fun quotesExhausted(scans: Int, stableReads: Int): Boolean = scans >= 12 || stableReads >= 3
 
     fun returnedToParent(
