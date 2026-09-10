@@ -28,10 +28,23 @@ internal object FeedRowEvidence {
         val headers = nodes.indices.mapNotNull { i ->
             val n = nodes[i]
             if (!usable(n)) return@mapNotNull null
-            val combined = labels(n).firstNotNullOfOrNull(TweetContentEvidence::header)
+
+            // Prefer a complete accessibility description over the visually
+            // ellipsized Text node when X exposes both for the same header.
+            val headerEvidence = labels(n).mapNotNull(TweetContentEvidence::header)
+            val combined = headerEvidence.firstOrNull { !it.truncated } ?: headerEvidence.firstOrNull()
             if (combined != null) {
-                return@mapNotNull HeaderCandidate(i, combined.handle, combined.ageMinutes, combined.truncated)
+                val resolved = if (combined.truncated) {
+                    DiscoveryTargetIdentityCache.resolveTruncated(combined.handle)
+                } else null
+                return@mapNotNull HeaderCandidate(
+                    index = i,
+                    author = resolved ?: combined.handle,
+                    age = combined.ageMinutes,
+                    truncated = combined.truncated && resolved == null,
+                )
             }
+
             val handle = labels(n).firstNotNullOfOrNull(AccountSwitcherInspector::dedicatedHandle)
                 ?: return@mapNotNull null
             // Time must be a separate, short label on the author's actual visual line.
