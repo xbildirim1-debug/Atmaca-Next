@@ -2,40 +2,87 @@ package com.atmacanext.app.automation
 
 /** Compose may expose author, time and body as siblings, without a tweet container. */
 internal object FeedRowEvidence {
-    data class Row(val author: String, val age: Long, val headerIndex: Int, val bodyIndex: Int?, val key: String)
+    data class Row(
+        val author: String,
+        val age: Long,
+        val headerIndex: Int,
+        val bodyIndex: Int?,
+        val key: String,
+        val authorTruncated: Boolean = false,
+    )
+
+    private data class HeaderCandidate(
+        val index: Int,
+        val author: String,
+        val age: Long,
+        val truncated: Boolean,
+    )
+
     private fun labels(n: NodeSnapshot) = listOfNotNull(n.text, n.contentDescription)
     private fun usable(n: NodeSnapshot) = n.visible && !n.editable &&
         n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top
     private fun sameLine(a: NodeSnapshot, b: NodeSnapshot) =
         maxOf(a.bounds.top, b.bounds.top) < minOf(a.bounds.bottom, b.bounds.bottom)
+
     fun rows(nodes: List<NodeSnapshot>): List<Row> {
         val headers = nodes.indices.mapNotNull { i ->
             val n = nodes[i]
             if (!usable(n)) return@mapNotNull null
-            val combined = labels(n).firstNotNullOfOrNull(TweetContentEvidence::header)
-            if (combined != null) return@mapNotNull Triple(i, combined.handle, combined.ageMinutes)
+
+            // Prefer a complete accessibility description over the visually
+            // ellipsized Text node when X exposes both for the same header.
+            val headerEvidence = labels(n).mapNotNull(TweetContentEvidence::header)
+            val combined = headerEvidence.firstOrNull { !it.truncated } ?: headerEvidence.firstOrNull()
+            if (combined != null) {
+                val resolved = if (combined.truncated) {
+                    DiscoveryTargetIdentityCache.resolveTruncated(combined.handle)
+                } else null
+                return@mapNotNull HeaderCandidate(
+                    index = i,
+                    author = resolved ?: combined.handle,
+                    age = combined.ageMinutes,
+                    truncated = combined.truncated && resolved == null,
+                )
+            }
+
             val handle = labels(n).firstNotNullOfOrNull(AccountSwitcherInspector::dedicatedHandle)
                 ?: return@mapNotNull null
             // Time must be a separate, short label on the author's actual visual line.
             val times = nodes.filter { usable(it) && sameLine(n, it) && it.bounds.left >= n.bounds.left }
-                .flatMap(::labels).mapNotNull { XTweetInspector.parseAgeMinutes(it.trim().trimStart('·', '•', ',').trim()) }.distinct()
-            if (times.size != 1) null else Triple(i, handle, times.single())
-        }.sortedBy { nodes[it.first].bounds.top }.fold(mutableListOf<Triple<Int, String, Long>>()) { out, item ->
-            val duplicate = out.indexOfFirst { it.second == item.second && sameLine(nodes[it.first], nodes[item.first]) }
-            if (duplicate < 0) out.add(item)
-            else if (item.third < out[duplicate].third) out[duplicate] = item
-            out
-        }
-        return headers.mapIndexedNotNull { position, (index, author, age) ->
+                .flatMap(::labels)
+                .mapNotNull { XTweetInspector.parseAgeMinutes(it.trim().trimStart('·', '•', ',').trim()) }
+                .distinct()
+            if (times.size != 1) null else HeaderCandidate(i, handle, times.single(), truncated = false)
+        }.sortedBy { nodes[it.index].bounds.top }
+            .fold(mutableListOf<HeaderCandidate>()) { out, item ->
+                val duplicate = out.indexOfFirst {
+                    it.author == item.author && it.truncated == item.truncated &&
+                        sameLine(nodes[it.index], nodes[item.index])
+                }
+                if (duplicate < 0) out.add(item)
+                else if (item.age < out[duplicate].age) out[duplicate] = item
+                out
+            }
+
+        return headers.mapIndexedNotNull { position, item ->
+            val index = item.index
+            val author = item.author
+            val age = item.age
             val header = nodes[index]
-            val nextTop = headers.getOrNull(position + 1)?.let { nodes[it.first].bounds.top } ?: Int.MAX_VALUE
+            val nextTop = headers.getOrNull(position + 1)?.let { nodes[it.index].bounds.top } ?: Int.MAX_VALUE
             val barriers = nodes.filter { usable(it) && it.bounds.top >= header.bounds.bottom &&
-                labels(it).any { s -> XUiVocabulary.normalize(s) in setOf("kimi takip etmeli", "who to follow", "daha fazla keşfet", "discover more") } }
+                labels(it).any { s -> ReplyThreadEndEvidence.isEndLabel(s) ||
+                    XUiVocabulary.normalize(s) in setOf("kimi takip etmeli", "who to follow") } }
             val mediaOrActions = nodes.filter { usable(it) && it.bounds.top >= header.bounds.bottom &&
                 listOf("video", "media", "toolbar", "tweet_image", "tweet_photo").any { token -> it.viewId.orEmpty().contains(token, true) } }
-            val end = minOf(nextTop, barriers.minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE,
-                mediaOrActions.minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE)
-            val band = nodes.indices.filter { usable(nodes[it]) && nodes[it].bounds.top >= header.bounds.top && nodes[it].bounds.bottom <= end }
+            val end = minOf(
+                nextTop,
+                barriers.minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE,
+                mediaOrActions.minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE,
+            )
+            val band = nodes.indices.filter {
+                usable(nodes[it]) && nodes[it].bounds.top >= header.bounds.top && nodes[it].bounds.bottom <= end
+            }
             // Markers immediately above a header belong to that card, not the next card.
             val marked = nodes.any { n -> usable(n) && n.bounds.bottom <= header.bounds.bottom &&
                 n.bounds.top >= header.bounds.top - (header.bounds.bottom - header.bounds.top) * 2 &&
@@ -45,8 +92,9 @@ internal object FeedRowEvidence {
             val text = body?.let { nodes[it].text ?: nodes[it].contentDescription }.orEmpty().trim()
             // Counts, relative age, scroll position and toolbar state are not post identity.
             val key = java.security.MessageDigest.getInstance("SHA-256")
-                .digest("$author|$text".toByteArray()).joinToString("") { "%02x".format(it) }
-            Row(author, age, index, body, key)
+                .digest("$author|${item.truncated}|$text".toByteArray())
+                .joinToString("") { "%02x".format(it) }
+            Row(author, age, index, body, key, authorTruncated = item.truncated)
         }
     }
 

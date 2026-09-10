@@ -2,13 +2,35 @@ package com.atmacanext.app.automation
 
 /** Feed header and body selectors, separate from media and relationship controls. */
 internal object TweetContentEvidence {
-    data class Header(val handle: String, val ageMinutes: Long)
+    data class Header(val handle: String, val ageMinutes: Long, val truncated: Boolean = false)
+
     fun header(raw: String): Header? {
         if (raw.length > 140 || raw.contains('\n')) return null
-        val match = Regex("^(?:[^@\\n]{1,70}\\s)?@([A-Za-z0-9_]{1,15})\\s*[·•,]\\s*(.+)$").matchEntire(raw.trim()) ?: return null
-        val age = XTweetInspector.parseAgeMinutes(match.groupValues[2]) ?: return null
-        return Header(match.groupValues[1].lowercase(), age)
+        val text = raw.trim()
+        val exact = Regex("^(?:[^@\\n]{1,70}\\s)?@([A-Za-z0-9_]{1,15})\\s*[·•,]\\s*(.+)$").matchEntire(text)
+        if (exact != null) {
+            val age = XTweetInspector.parseAgeMinutes(exact.groupValues[2]) ?: return null
+            return Header(exact.groupValues[1].lowercase(), age, truncated = false)
+        }
+
+        // X can visually/semantically shorten any long handle in a feed header,
+        // for example "Örnek Hesap @longuse... · 7 dk". Keep that prefix as
+        // evidence instead of losing the whole post row. A truncated handle is
+        // never used as a user identity for following; it is only matched against
+        // an already verified discovery target.
+        val shortened = Regex(
+            "^(?:[^@\\n]{1,70}\\s)?@([A-Za-z0-9_]{3,14})(?:…|\\.{2,3})\\s*[·•,]\\s*(.+)$"
+        ).matchEntire(text) ?: return null
+        val age = XTweetInspector.parseAgeMinutes(shortened.groupValues[2]) ?: return null
+        return Header(shortened.groupValues[1].lowercase(), age, truncated = true)
     }
+
+    fun matchesExpected(header: Header, expected: String): Boolean {
+        val target = XIdentityDetector.normalizeUsername(expected)
+        return if (header.truncated) header.handle.length >= 4 && target.startsWith(header.handle)
+        else header.handle == target
+    }
+
     fun bodyIndex(nodes: List<NodeSnapshot>, headerBottom: Int): Int? {
         val candidates = nodes.indices.filter { i ->
             val n = nodes[i]
