@@ -25,19 +25,26 @@ fun AtmacaNextApp() {
     Scaffold(containerColor = AppBackground, bottomBar = {
         NavigationBar(containerColor = AppBackground) {
             AppTab.entries.forEach { item ->
-                NavigationBarItem(selected = tab == item, onClick = { selected = item.name },
-                    icon = { Icon(item.icon, null) }, label = { Text(item.title) },
-                    colors = NavigationBarItemDefaults.colors(indicatorColor = AtmacaSky,
-                        selectedIconColor = AtmacaBlue, selectedTextColor = AtmacaBlue))
+                NavigationBarItem(
+                    selected = tab == item,
+                    onClick = { selected = item.name },
+                    icon = { Icon(item.icon, null) },
+                    label = { Text(item.title) },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = AtmacaSky,
+                        selectedIconColor = AtmacaBlue,
+                        selectedTextColor = AtmacaBlue,
+                    ),
+                )
             }
         }
     }) { padding ->
         val modifier = Modifier.padding(padding).fillMaxSize()
         when (tab) {
-            AppTab.HOME -> DashboardScreen(modifier, onAccounts = { selected = AppTab.ACCOUNTS.name }, onTasks = { selected = AppTab.TASKS.name })
+            AppTab.HOME -> DashboardScreen26_42(modifier)
             AppTab.ACCOUNTS -> AccountsScreen(modifier)
-            AppTab.TASKS -> TasksScreen(modifier)
-            AppTab.SETTINGS -> AccountSettingsScreen(modifier)
+            AppTab.TASKS -> TasksScreen26_42(modifier)
+            AppTab.SETTINGS -> AccountSettingsScreen26_42(modifier)
         }
     }
 }
