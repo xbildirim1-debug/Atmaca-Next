@@ -38,9 +38,13 @@ object XTweetInspector {
                 r.authorTruncated,
             )
         }
-        // Do not require offscreen reply/like controls, legacy IDs, or a common parent.
-        if (flatRows.isNotEmpty()) return flatRows
-        return AccessibilityTree.nodes(root, maxNodes = 1_200).asSequence()
+
+        // X/Compose can expose mixed row shapes in the very same viewport: the
+        // parent post or one reply can be a flat sibling row while other replies
+        // are only recoverable from their semantic ancestor. Never let the
+        // presence of one flat row suppress the fallback parser for every other
+        // visible reply. Merge both sources and de-duplicate the same visual row.
+        val fallbackRows = flatNodes.asSequence()
             .mapNotNull { node ->
                 val id = node.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
                 val raw = listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(" ")
@@ -112,8 +116,9 @@ object XTweetInspector {
                 )
             }
             .distinctBy(TweetRow::key)
-            .sortedBy { it.bounds.top }
             .toList()
+
+        return mergeVisibleRows(flatRows, fallbackRows)
     }
 
     /** Only complete author identities of actual reply rows are actionable. */
@@ -194,6 +199,35 @@ object XTweetInspector {
         )
         return accepted
     }
+
+    private fun mergeVisibleRows(primary: List<TweetRow>, fallback: List<TweetRow>): List<TweetRow> {
+        val merged = mutableListOf<TweetRow>()
+        (primary + fallback).sortedBy { it.bounds.top }.forEach { candidate ->
+            val duplicate = merged.indexOfFirst { existing -> sameVisibleRow(existing, candidate) }
+            if (duplicate < 0) {
+                merged += candidate
+            } else if (rowEvidenceScore(candidate) > rowEvidenceScore(merged[duplicate])) {
+                merged[duplicate] = candidate
+            }
+        }
+        return merged.sortedBy { it.bounds.top }
+    }
+
+    private fun sameVisibleRow(a: TweetRow, b: TweetRow): Boolean {
+        if (a.key == b.key) return true
+        val aAuthor = a.author ?: return false
+        val bAuthor = b.author ?: return false
+        if (aAuthor != bAuthor) return false
+        // One parser may expose only the header rectangle while the other exposes
+        // the whole reply card. Geometric overlap is used only for de-duplication,
+        // never to discover or click a user.
+        return maxOf(a.bounds.top, b.bounds.top) < minOf(a.bounds.bottom, b.bounds.bottom)
+    }
+
+    private fun rowEvidenceScore(row: TweetRow): Int =
+        (if (!row.authorTruncated) 4 else 0) +
+            (if (row.textTarget != null) 2 else 0) +
+            (if (row.authorTarget != null) 1 else 0)
 
     internal fun parseAgeMinutes(raw: String?, nowMillis: Long = System.currentTimeMillis()): Long? {
         val text = raw.orEmpty().trim().lowercase(Locale("tr", "TR"))
