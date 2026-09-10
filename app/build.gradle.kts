@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 87
-        versionName = "26.39-device-route-media-scroll"
+        versionCode = 88
+        versionName = "26.40-third-account-search-handoff"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
