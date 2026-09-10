@@ -14,6 +14,8 @@ class DiscoveryScrollGesturePolicyTest {
         this.bottom = bottom
     }
 
+    private fun height(rect: Rect): Int = rect.bottom - rect.top
+
     private fun node(
         text: String? = null,
         top: Int,
@@ -46,27 +48,28 @@ class DiscoveryScrollGesturePolicyTest {
 
     @Test fun noComposerKeepsExistingForwardAndBackwardPath() {
         val root = rect(0, 0, 720, 1536)
+        val rootHeight = height(root)
         val forward = DiscoveryScrollGesturePolicy.verticalPath(root, emptyList(), true)!!
         val backward = DiscoveryScrollGesturePolicy.verticalPath(root, emptyList(), false)!!
-        assertEquals(root.height() * DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO, forward.startY, 0.5f)
-        assertEquals(root.height() * DiscoveryScrollGesturePolicy.FORWARD_END_Y_RATIO, forward.endY, 0.5f)
+        assertEquals(rootHeight * DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO, forward.startY, 0.5f)
+        assertEquals(rootHeight * DiscoveryScrollGesturePolicy.FORWARD_END_Y_RATIO, forward.endY, 0.5f)
         assertEquals(forward.endY, backward.startY, 0.5f)
         assertEquals(forward.startY, backward.endY, 0.5f)
     }
 
     @Test fun inlineReplyLabelMovesGestureStartAboveComposer() {
         val root = rect(0, 0, 720, 1536)
-        val composer = node(text = "Yanıtını gönder", top = 1370, bottom = 1425)
+        val composer = node(text = "Yanıtını gönder", top = 1300, bottom = 1360)
         val path = DiscoveryScrollGesturePolicy.verticalPath(root, listOf(composer), true)
         assertNotNull(path)
         assertTrue(path!!.startY < composer.bounds.top)
-        assertTrue(path.startY < root.height() * DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO)
+        assertTrue(path.startY < height(root) * DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO)
         assertTrue(path.endY < path.startY)
     }
 
     @Test fun editableReplyContainerAlsoCannotBeGestureOrigin() {
         val root = rect(0, 0, 1080, 2400)
-        val composer = node(top = 2040, bottom = 2220, editable = true, id = "reply_composer_input")
+        val composer = node(top = 1900, bottom = 2100, editable = true, id = "reply_composer_input")
         val path = DiscoveryScrollGesturePolicy.verticalPath(root, listOf(composer), true)
         assertNotNull(path)
         assertTrue(path!!.startY < composer.bounds.top)
