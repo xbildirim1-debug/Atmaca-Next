@@ -3,6 +3,7 @@ package com.atmacanext.app.automation
 import android.graphics.Rect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -27,7 +28,12 @@ class DiscoveryRobustness26_34Test {
         enabled = true,
         selected = selected,
         checked = checked,
-        bounds = Rect(left, top, left + width, top + height),
+        bounds = Rect().apply {
+            this.left = left
+            this.top = top
+            right = left + width
+            bottom = top + height
+        },
         editable = false,
         visible = true,
     )
@@ -63,7 +69,7 @@ class DiscoveryRobustness26_34Test {
     }
 
     @Test
-    fun discoverySignatureIgnoresVideoGeometryAnimation() {
+    fun discoverySignatureTracksMediaMovementAsScrollEvidence() {
         val base = listOf(
             n("Kullanıcı @deneme · 4 sa", top = 200),
             n("Yorum metni", top = 280),
@@ -74,7 +80,7 @@ class DiscoveryRobustness26_34Test {
             n("Yorum metni", top = 280),
             n(desc = "Video", top = 370, height = 290, id = "tweet_video", clazz = "android.widget.ImageView"),
         )
-        assertEquals(DiscoveryViewportEvidence.signature(base), DiscoveryViewportEvidence.signature(movedMedia))
+        assertNotEquals(DiscoveryViewportEvidence.signature(base), DiscoveryViewportEvidence.signature(movedMedia))
     }
 
     @Test
