@@ -22,7 +22,7 @@ internal object DiscoverySearchSelector {
      *
      * Resolution order is deliberately conservative:
      *  1) explicit Search/Explore label,
-     *  2) a search/explore resource id in the bottom navigation band,
+     *  2) a search/explore resource id,
      *  3) only when a labeled HOME tab proves the bottom-nav geometry, the first
      *     aligned navigation item immediately to its right.
      *
@@ -31,10 +31,10 @@ internal object DiscoverySearchSelector {
     fun searchTab(nodes: List<NodeSnapshot>): Int? {
         val visible = nodes.filter { it.visible && it.bounds.right > it.bounds.left && it.bounds.bottom > it.bounds.top }
         if (visible.isEmpty()) return null
-        val screenTop = visible.minOf { it.bounds.top }
         val screenBottom = visible.maxOf { it.bounds.bottom }
         val screenLeft = visible.minOf { it.bounds.left }
         val screenRight = visible.maxOf { it.bounds.right }
+        val screenTop = minOf(0, visible.minOf { it.bounds.top })
         val screenHeight = (screenBottom - screenTop).coerceAtLeast(1)
         val screenWidth = (screenRight - screenLeft).coerceAtLeast(1)
         val lowerBandTop = screenTop + screenHeight * 0.65f
@@ -45,8 +45,10 @@ internal object DiscoverySearchSelector {
 
         bottomCandidates.firstOrNull { labeled(nodes[it], searchLabels) }?.let { return it }
 
-        bottomCandidates.firstOrNull { i ->
-            val id = nodes[i].viewId.orEmpty().substringAfterLast('/').lowercase()
+        nodes.indices.firstOrNull { i ->
+            val n = nodes[i]
+            if (!usable(n) || n.editable) return@firstOrNull false
+            val id = n.viewId.orEmpty().substringAfterLast('/').lowercase()
             searchIdTokens.any(id::contains) &&
                 listOf("query", "edit", "input", "field", "src_text").none(id::contains)
         }?.let { return it }
