@@ -53,16 +53,17 @@ object ListGesture {
         val bounds = Rect().also(root::getBoundsInScreen)
         if (bounds.width() <= 0 || bounds.height() <= 0) return false
         val x = bounds.left + bounds.width() * DiscoveryScrollGesturePolicy.xRatio(recoveryAttempt)
-        val startRatio = if (forward) DiscoveryScrollGesturePolicy.FORWARD_START_Y_RATIO
-            else DiscoveryScrollGesturePolicy.BACKWARD_START_Y_RATIO
-        val endRatio = if (forward) DiscoveryScrollGesturePolicy.FORWARD_END_Y_RATIO
-            else DiscoveryScrollGesturePolicy.BACKWARD_END_Y_RATIO
+        val path = DiscoveryScrollGesturePolicy.verticalPath(
+            bounds,
+            AccessibilityTree.snapshots(root),
+            forward,
+        ) ?: return false
         return dispatchSwipe(
             service,
             x,
-            bounds.top + bounds.height() * startRatio,
+            path.startY,
             x,
-            bounds.top + bounds.height() * endRatio,
+            path.endY,
             durationMs = 620L,
         )
     }
