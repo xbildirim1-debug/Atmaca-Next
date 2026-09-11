@@ -161,7 +161,7 @@ fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun StatusLabel(text: String, positive: Boolean) {
+fun StatusLabel(text: String, positive: Boolean) {
     Text(
         text = text,
         color = if (positive) Teal else TextSecondary,
