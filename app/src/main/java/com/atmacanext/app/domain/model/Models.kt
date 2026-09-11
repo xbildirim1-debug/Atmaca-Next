@@ -29,14 +29,12 @@ enum class TaskType(val title: String) {
     BOOKMARK("Kaydet"),
     COMMENT("Yorum"),
     QUOTE("Alıntı"),
+    COMMENT_QUOTE_TARGETS("Yorum Alıntısı"),
     UNFOLLOW("Takipten çık"),
     VERIFIED_FOLLOW("Onaylı kullanıcı takibi"),
     COMMENTER_FOLLOW("Yorumcu takip etme"),
     RETWEETER_FOLLOW("Retweetçi takip etme"),
     QUOTER_FOLLOW("Alıntıcı takip etme"),
-
-    // V23 ve daha eski veritabanlarındaki görev adlarını okuyabilmek için tutulur.
-    // Yeni görev ekranında gösterilmezler.
     PUBLISH("Eski içerik paylaşımı"),
     TREND("Trend paylaşımı"),
     COMMUNITY("Topluluk etkileşimi"),
@@ -46,7 +44,7 @@ enum class TaskType(val title: String) {
         get() = this in setOf(FOLLOW, LIKE, RETWEET, BOOKMARK, COMMENT, QUOTE)
 
     val supportsGemini: Boolean
-        get() = this in setOf(TEXT_TWEET, IMAGE_TWEET, COMMENT, QUOTE)
+        get() = this in setOf(TEXT_TWEET, IMAGE_TWEET, COMMENT, QUOTE, COMMENT_QUOTE_TARGETS)
 
     val isDiscoveryFollow: Boolean
         get() = this in setOf(COMMENTER_FOLLOW, RETWEETER_FOLLOW, QUOTER_FOLLOW)
@@ -61,7 +59,6 @@ data class ScheduledTask(
     val id: String,
     val accountId: String,
     val username: String,
-    /** Kept only so a V23 database can be migrated without losing rows. */
     val time: String = "",
     val type: TaskType,
     val status: TaskStatus = TaskStatus.QUEUED,
@@ -79,11 +76,14 @@ data class ScheduledTask(
         get() = limit.coerceAtLeast(1) * repeatCount.coerceAtLeast(1)
 }
 
+enum class TargetKind { STANDARD, QUOTE }
+
 data class TargetAccount(
     val id: String,
     val ownerAccountId: String,
     val handle: String,
     val active: Boolean = true,
+    val kind: TargetKind = TargetKind.STANDARD,
 )
 
 data class DashboardMetric(

@@ -196,7 +196,7 @@ object AutomationController {
         if (current.taskId != null && current.status !in terminalStatuses()) return false
         val action = task.type.toAction() ?: return false
         if (task.type.requiresLink && !validXUrl(task.targetUrl)) return false
-        if (task.type.isDiscoveryFollow && targets.isEmpty()) return false
+        if ((task.type.isDiscoveryFollow || task.type == TaskType.COMMENT_QUOTE_TARGETS) && targets.isEmpty()) return false
         if (task.type in CONTENT_TYPES && contents.none(String::isNotBlank)) return false
         if (task.type == TaskType.IMAGE_TWEET && task.mediaUri.isNullOrBlank()) return false
 
@@ -205,7 +205,8 @@ object AutomationController {
         activeSessionToken = session
         activeTask = task
         preparedContents = contents.filter(String::isNotBlank).ifEmpty { listOfNotNull(task.contentText) }
-        discoveryTargets = targets.map(XIdentityDetector::normalizeUsername).filter(String::isNotBlank).distinct().take(1)
+        discoveryTargets = targets.map(XIdentityDetector::normalizeUsername).filter(String::isNotBlank).distinct()
+            .let { normalized -> if (task.type == TaskType.COMMENT_QUOTE_TARGETS) normalized.take(5) else normalized.take(1) }
         val perCycle = task.limit.coerceIn(1, 100)
         val repeats = task.repeatCount.coerceIn(1, 100)
         val total = perCycle * repeats
@@ -417,7 +418,7 @@ object AutomationController {
         when (current.taskType) {
             TaskType.UNFOLLOW -> handleUnfollow(service, root, screen, now)
             TaskType.VERIFIED_FOLLOW -> handleVerifiedFollow(service, root, screen, now)
-            TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW -> handleDiscoveryFollow(service, root, screen, now)
+            TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW, TaskType.COMMENT_QUOTE_TARGETS -> handleDiscoveryFollow(service, root, screen, now)
             TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET -> handlePost(service, root, screen, now)
             TaskType.FOLLOW, TaskType.LIKE, TaskType.RETWEET, TaskType.BOOKMARK, TaskType.COMMENT, TaskType.QUOTE -> handleLinkedAction(service, root, screen, now)
             else -> fail("Bu eski görev türü V24 motorunda çalıştırılmaz")
@@ -577,7 +578,7 @@ object AutomationController {
                 moveStage(XFlowStage.OPEN_VERIFIED_OWN_PROFILE, "En yeni takipçi için kendi profilin açılıyor")
                 service.requestAutomationTick(300L)
             }
-            TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW -> openDiscoveryTarget(service)
+            TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW, TaskType.COMMENT_QUOTE_TARGETS -> openDiscoveryTarget(service)
             TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET -> {
                 val content = currentCycleContent()
                 moveStage(XFlowStage.OPEN_COMPOSER, "X gönderi oluşturucu açılıyor")
@@ -1190,7 +1191,8 @@ object AutomationController {
                 rows.forEach { row -> seen.putIfAbsent(row.key, row.ageMinutes) }
                 OperationLog.i("DISCOVERY_SCAN", "target=@$target screen=$screen rows=${rows.size} ages=${rows.map { it.ageMinutes }} scroll=$listScrolls")
                 val eligible = rows.firstOrNull { row ->
-                    row.key !in discoveryProcessedTweets && XTweetInspector.eligibleAge(row.ageMinutes)
+                    row.key !in discoveryProcessedTweets &&
+                        (current.taskType == TaskType.COMMENT_QUOTE_TARGETS || XTweetInspector.eligibleAge(row.ageMinutes))
                 }
                 if (eligible != null) {
                     if (discoveryCandidateKey != eligible.key) {
@@ -1278,7 +1280,7 @@ object AutomationController {
                 discoveryOpenAttempt?.key?.let(discoveryProcessedTweets::add)
                 discoveryOpenAttempt = null
                 val detailAge = TweetAgeEvidence.detailMinutes(AccessibilityTree.snapshots(root), now)
-                if (detailAge != null && !XTweetInspector.eligibleAge(detailAge)) {
+                if (current.taskType != TaskType.COMMENT_QUOTE_TARGETS && detailAge != null && !XTweetInspector.eligibleAge(detailAge)) {
                     OperationLog.w("DISCOVERY_AGE", "Gönderinin tam zamanı $detailAge dk; 120 dk sınırı nedeniyle atlandı")
                     nextDiscoveryTweet(service, "Gönderinin tam zamanı iki saatten yeni")
                     return
@@ -1287,6 +1289,16 @@ object AutomationController {
                     TaskType.COMMENTER_FOLLOW -> {
                         moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Yorum yapan kullanıcılar taranıyor")
                         service.requestAutomationTick(150L)
+                    }
+                    TaskType.COMMENT_QUOTE_TARGETS -> {
+                        if (performStep(service, root, screen, "quote_target_reply", discoveryTweetKey) { XUiActions.clickReply(service, root) }) {
+                            moveStage(XFlowStage.OPEN_COMPOSER, "Hedef gönderi doğrulandı; yorum oluşturucu açılıyor")
+                            service.requestAutomationTick(450L)
+                        } else if (stageTimedOut(now)) {
+                            nextDiscoveryTweet(service, "Hedef gönderide Yanıtla düğmesi açılamadı")
+                        } else {
+                            service.requestAutomationTick(350L)
+                        }
                     }
                     TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW -> {
                         val quotes = current.taskType == TaskType.QUOTER_FOLLOW
@@ -1309,6 +1321,26 @@ object AutomationController {
                     else -> Unit
                 }
             }
+            XFlowStage.OPEN_COMPOSER -> {
+                if (screen == XScreen.COMPOSER) {
+                    moveStage(XFlowStage.FILL_COMPOSER, "Yorum metni oluşturucuya aktarılıyor")
+                    service.requestAutomationTick(120L)
+                } else if (stageTimedOut(now)) {
+                    nextDiscoveryTweet(service, "Yorum oluşturucu açılmadı")
+                } else service.requestAutomationTick(TICK_MS)
+            }
+            XFlowStage.FILL_COMPOSER -> {
+                val content = currentCycleContent()
+                if (screen != XScreen.COMPOSER) {
+                    if (stageTimedOut(now)) nextDiscoveryTweet(service, "Yorum yazılırken oluşturucu kayboldu")
+                    else service.requestAutomationTick(TICK_MS)
+                } else if (XUiActions.composerContains(root, content) || XUiActions.setComposerText(root, content)) {
+                    moveStage(XFlowStage.SUBMIT_COMPOSER, "Yorum metni doğrulandı; gönderiliyor")
+                    service.requestAutomationTick(300L)
+                } else if (stageTimedOut(now)) nextDiscoveryTweet(service, "Yorum metni yazılamadı")
+                else service.requestAutomationTick(TICK_MS)
+            }
+            XFlowStage.SUBMIT_COMPOSER -> submitComposer(service, root, screen, now)
             XFlowStage.PROCESS_ENGAGEMENT -> {
                 val expected = if (current.taskType == TaskType.COMMENTER_FOLLOW) XScreen.TWEET_DETAIL else XScreen.ENGAGEMENT_LIST
                 if (screen != expected || (current.taskType == TaskType.RETWEETER_FOLLOW &&
@@ -1648,6 +1680,11 @@ object AutomationController {
         )
         if (cycleTargetReached(next)) finishCycleOrTask(service, "Döngüde ${current.perCycleLimit} doğrulanmış işlem tamamlandı")
         else {
+            if (current.taskType == TaskType.COMMENT_QUOTE_TARGETS) {
+                discoveryTweetKey?.let(discoveryProcessedTweets::add)
+                nextDiscoveryTweet(service, "Yorum gönderildi")
+                return
+            }
             if (current.flowStage == XFlowStage.OPEN_ENGAGER_PROFILE) returnFromEngager(service)
             nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.betweenActionsMs
             service.requestAutomationTickExact(AutomationTuning.betweenActionsMs)
@@ -1969,7 +2006,7 @@ object AutomationController {
     }
 
     private fun scrollForwardAndTrack(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
-        val signature = if (_state.value.taskType?.isDiscoveryFollow == true)
+        val signature = if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS)
             DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root)) else ListViewportController.signature(root)
         val changed = lastListSignature.isBlank() || signature != lastListSignature
         lastListSignature = signature
@@ -1977,7 +2014,7 @@ object AutomationController {
         if (dispatched) {
             listScrolls++
             _state.value = _state.value.copy(listScrolls = listScrolls)
-            if (_state.value.taskType?.isDiscoveryFollow == true) nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.scaleDelay(850L)
+            if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.scaleDelay(850L)
             if (_state.value.taskType == TaskType.UNFOLLOW) {
                 nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(UNFOLLOW_SCROLL_SETTLE_MS))
             }
@@ -1996,7 +2033,7 @@ object AutomationController {
         if (dispatched) {
             listScrolls++
             _state.value = _state.value.copy(listScrolls = listScrolls)
-            if (_state.value.taskType?.isDiscoveryFollow == true) nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.scaleDelay(850L)
+            if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.scaleDelay(850L)
             if (_state.value.taskType == TaskType.UNFOLLOW) {
                 nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(UNFOLLOW_SCROLL_SETTLE_MS))
             }
@@ -2016,7 +2053,7 @@ object AutomationController {
         root: AccessibilityNodeInfo?,
         forward: Boolean,
     ): Boolean {
-        if (_state.value.taskType?.isDiscoveryFollow == true) {
+        if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) {
             // ACTION_SCROLL_FORWARD on X's profile pager changes Posts to Replies
             // and Videos. Centre swipes are also swallowed by inline media, so use
             // the profile's left gutter for an explicitly vertical gesture.
@@ -2177,6 +2214,7 @@ object AutomationController {
         TaskType.BOOKMARK -> AutomationAction.BOOKMARK
         TaskType.COMMENT -> AutomationAction.COMMENT
         TaskType.QUOTE -> AutomationAction.QUOTE
+        TaskType.COMMENT_QUOTE_TARGETS -> AutomationAction.COMMENT
         TaskType.UNFOLLOW -> AutomationAction.UNFOLLOW
         TaskType.VERIFIED_FOLLOW -> AutomationAction.FOLLOW_VERIFIED
         TaskType.COMMENTER_FOLLOW -> AutomationAction.FOLLOW_COMMENTER
@@ -2185,5 +2223,5 @@ object AutomationController {
         else -> null
     }
 
-    private val CONTENT_TYPES = setOf(TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET, TaskType.COMMENT, TaskType.QUOTE)
+    private val CONTENT_TYPES = setOf(TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET, TaskType.COMMENT, TaskType.QUOTE, TaskType.COMMENT_QUOTE_TARGETS)
 }

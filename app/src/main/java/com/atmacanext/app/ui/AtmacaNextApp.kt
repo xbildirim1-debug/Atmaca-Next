@@ -30,11 +30,7 @@ fun AtmacaNextApp() {
                     onClick = { selected = item.name },
                     icon = { Icon(item.icon, null) },
                     label = { Text(item.title) },
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = AtmacaSky,
-                        selectedIconColor = AtmacaBlue,
-                        selectedTextColor = AtmacaBlue,
-                    ),
+                    colors = NavigationBarItemDefaults.colors(indicatorColor = AtmacaSky, selectedIconColor = AtmacaBlue, selectedTextColor = AtmacaBlue),
                 )
             }
         }
@@ -43,7 +39,7 @@ fun AtmacaNextApp() {
         when (tab) {
             AppTab.HOME -> DashboardScreen26_42(modifier)
             AppTab.ACCOUNTS -> AccountsScreen(modifier)
-            AppTab.TASKS -> TasksScreen26_42(modifier)
+            AppTab.TASKS -> TasksScreen26_43(modifier)
             AppTab.SETTINGS -> AccountSettingsScreen26_42(modifier)
         }
     }

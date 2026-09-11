@@ -50,31 +50,18 @@ data class TaskEntity(
 @Entity(tableName = "runtime_checkpoint")
 data class RuntimeCheckpointEntity(
     @PrimaryKey val id: Int = 1,
-    val taskId: String?,
-    val username: String?,
-    val taskType: String?,
-    val action: String?,
-    val status: String,
-    val verifiedCount: Int,
-    val taskLimit: Int,
-    val message: String,
-    val lastTarget: String?,
-    val lastActionAt: Long?,
-    val detectedAccount: String?,
-    val accountVerified: Boolean,
-    val cooldownUntil: Long?,
-    val rateLimitRetries: Int,
+    val taskId: String?, val username: String?, val taskType: String?, val action: String?,
+    val status: String, val verifiedCount: Int, val taskLimit: Int, val message: String,
+    val lastTarget: String?, val lastActionAt: Long?, val detectedAccount: String?, val accountVerified: Boolean,
+    val cooldownUntil: Long?, val rateLimitRetries: Int,
     @ColumnInfo(defaultValue = "1") val repeatCount: Int = 1,
     @ColumnInfo(defaultValue = "1") val perCycleLimit: Int = 1,
     @ColumnInfo(defaultValue = "1") val intervalMinutes: Int = 1,
     @ColumnInfo(defaultValue = "0") val cycleIndex: Int = 0,
     val cycleWaitUntil: Long? = null,
     @ColumnInfo(defaultValue = "0") val unfollowRevertCount: Int = 0,
-    val savedAt: Long,
-    val safeResumeRequired: Boolean,
-) {
-    companion object { const val SINGLETON_ID = 1 }
-}
+    val savedAt: Long, val safeResumeRequired: Boolean,
+) { companion object { const val SINGLETON_ID = 1 } }
 
 @Entity(tableName = "target_accounts")
 data class TargetAccountEntity(
@@ -82,12 +69,12 @@ data class TargetAccountEntity(
     val ownerAccountId: String,
     val handle: String,
     val active: Boolean = true,
+    @ColumnInfo(defaultValue = "STANDARD") val kind: String = "STANDARD",
     val updatedAt: Long = System.currentTimeMillis(),
 )
 
 @Entity(tableName = "automation_logs")
 data class AutomationLogEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0L,
     val timestamp: Long,
     val level: String,
     val category: String,
@@ -95,40 +82,22 @@ data class AutomationLogEntity(
     val username: String?,
     val message: String,
     val details: String? = null,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0L,
 )
-
 
 @Entity(tableName = "queue_checkpoint")
 data class QueueCheckpointEntity(
-    @PrimaryKey val id: Int = 1,
-    val sessionId: String?,
-    val status: String,
-    val currentIndex: Int,
-    val message: String,
-    val startedAt: Long?,
-    val updatedAt: Long,
-) {
-    companion object { const val SINGLETON_ID = 1 }
-}
+    @PrimaryKey val id: Int = 1, val sessionId: String?, val status: String, val currentIndex: Int,
+    val message: String, val startedAt: Long?, val updatedAt: Long,
+) { companion object { const val SINGLETON_ID = 1 } }
 
 @Entity(tableName = "queue_items")
 data class QueueItemEntity(
-    @PrimaryKey val taskId: String,
-    val ordinal: Int,
-    val accountId: String,
-    val username: String,
-    val taskType: String,
-    val status: String,
-    val note: String?,
-    val updatedAt: Long,
+    @PrimaryKey val taskId: String, val ordinal: Int, val accountId: String, val username: String,
+    val taskType: String, val status: String, val note: String?, val updatedAt: Long,
 )
-
 
 @Entity(tableName = "daily_account_usage", primaryKeys = ["dateKey", "accountId", "actionType"])
 data class DailyAccountUsageEntity(
-    val dateKey: String,
-    val accountId: String,
-    val actionType: String,
-    val verifiedCount: Int,
-    val updatedAt: Long,
+    val dateKey: String, val accountId: String, val actionType: String, val verifiedCount: Int, val updatedAt: Long,
 )

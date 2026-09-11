@@ -221,7 +221,14 @@ class TaskOrchestrator(
             if (used >= dailyLimit) return skipAndAdvance("Hesabın günlük ${task.type.title} limiti dolu: $used/$dailyLimit")
         }
 
-        val targets = if (task.type.isDiscoveryFollow) repository.getActiveTargets(task.accountId).map { it.handle } else emptyList()
+        val targets = when {
+            task.type == TaskType.COMMENT_QUOTE_TARGETS -> repository.getActiveQuoteTargets(task.accountId).map { it.handle }
+            task.type.isDiscoveryFollow -> repository.getActiveTargets(task.accountId).map { it.handle }
+            else -> emptyList()
+        }
+        if (task.type == TaskType.COMMENT_QUOTE_TARGETS && targets.isEmpty()) {
+            return skipAndAdvance("Bu hesap için Hesaplar > Alıntı Hedefleri listesinde aktif hedef yok")
+        }
         if (task.type.isDiscoveryFollow && targets.isEmpty()) return skipAndAdvance("Bu hesap için Ayarlar'da hedef kullanıcı tanımlanmamış")
 
         if (task.useGemini) return failAndAdvance("Bu sürüm API kullanmaz. Görevi düzenleyip metni elle gir.")

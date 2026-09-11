@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 90
-        versionName = "26.42-batch-queue-ui-handoff"
+        versionCode = 98
+        versionName = "26.50-quote-targets"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -21,8 +21,6 @@ android {
 
     buildTypes {
         debug {
-            // Keep the diagnostic/install build free of R8 shrinking so
-            // manifest-instantiated AndroidX components remain inspectable.
             isMinifyEnabled = false
             isShrinkResources = false
         }
