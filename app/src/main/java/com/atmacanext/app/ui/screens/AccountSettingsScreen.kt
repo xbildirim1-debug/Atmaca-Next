@@ -67,6 +67,16 @@ import kotlinx.coroutines.launch
 }
 
 @Composable
+private fun StatusLabel(text: String, positive: Boolean) {
+    Text(
+        text = text,
+        color = if (positive) Teal else TextSecondary,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+    )
+}
+
+@Composable
 private fun AutomationPreferences(enabled: Boolean) {
     val settings by AppServices.settings.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
     val queue by AppServices.orchestrator.state.collectAsStateWithLifecycle()
