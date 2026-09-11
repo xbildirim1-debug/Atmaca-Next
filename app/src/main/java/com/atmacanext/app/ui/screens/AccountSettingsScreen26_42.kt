@@ -48,6 +48,7 @@ import com.atmacanext.app.automation.AccountSyncController
 import com.atmacanext.app.core.AppServices
 import com.atmacanext.app.data.settings.AppSettings
 import com.atmacanext.app.ui.theme.AtmacaBlue
+import com.atmacanext.app.ui.theme.Teal
 import com.atmacanext.app.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
 
@@ -136,7 +137,6 @@ fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
 
         Text("Atmaca Next · 26.42", color = TextSecondary, fontSize = 12.sp)
 
-        // Ekran okuma bölümü küçük ve en altta.
         Card {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -158,6 +158,16 @@ fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
             }
         }
     }
+}
+
+@Composable
+private fun StatusLabel(text: String, positive: Boolean) {
+    Text(
+        text = text,
+        color = if (positive) Teal else TextSecondary,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+    )
 }
 
 @Composable
