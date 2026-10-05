@@ -2,7 +2,7 @@
 
 26.52: yorumcu takipte yalnız o yorum satırına bağlı resim/GIF/video medya olarak atlanır. Görünür metin yorumları sırayla işlenir; belirsiz kimlik/tıklama sessiz atlama yerine ilerleme korunarak duraklar. Yorumcu ve retweetçi takip, hedef profile geri dönünce yeniden Geri/arama yapmadan aynı konumdan taramaya devam eder.
 
-26.52 derleme ve cihaz doğrulama durumu [DEVIR_NOTU.md](DEVIR_NOTU.md) içinde tutulur. Yeni APK henüz fiziksel cihazda doğrulanmadı.
+26.52 için [CI 37293523368](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37293523368) başarılı: 352 test (18 yeni regresyon), lint, APK imzası ve paketleme geçti. Test edilen APK kaynağı `7e5b34890d78b7d8dd272014543ba74beb5b1660`. Ayrıntılar [DEVIR_NOTU.md](DEVIR_NOTU.md), [BUILD_STATUS.md](BUILD_STATUS.md) ve paket içindeki NOT_DEFTERI.txt içinde tutulur. Yeni APK henüz fiziksel X cihazında doğrulanmadı; Releases yayını için depoda belirtilen workflow onayı bekleniyor.
 
 26.51'den korunan davranış: Yorum Alıntısı, hedef gönderiyi doğruladıktan sonra X'in ayrı yorum ekranını veya gönderi içindeki yorum alanını kullanır. Metin yeni okumada doğrulanır, gönderim bir kez yapılır ve sonuç belirsizse aynı yorum tekrar gönderilmez.
 
@@ -89,7 +89,7 @@ Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap
 
 ## Geliştirme / APK
 
-JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.51-APK** çıktısını indirin.
+JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.52-APK** çıktısını indirin.
 
 ```sh
 gradle testDebugUnitTest lintDebug :app:assembleDebug
