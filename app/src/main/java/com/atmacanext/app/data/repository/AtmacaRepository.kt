@@ -99,7 +99,8 @@ class AtmacaRepository(private val db: AtmacaDatabase) {
         }
         val existing = db.taskDao().getById(taskId) ?: return@withTransaction
         val boundedProgress = state.verifiedCount.coerceIn(0, state.limit.coerceAtLeast(0))
-        if (boundedProgress < existing.progress) return@withTransaction
+        if (!TaskProgressWritePolicy.accepts(existing.progress, existing.status == TaskStatus.COMPLETED.name,
+                boundedProgress, state.status == com.atmacanext.app.automation.RuntimeStatus.COMPLETED)) return@withTransaction
         db.runtimeCheckpointDao().upsert(state.toCheckpoint())
         val verifiedDelta = (boundedProgress - existing.progress).coerceAtLeast(0)
         db.taskDao().updateRuntime(taskId, boundedProgress, state.status.toTaskStatus().name, state.lastTarget, state.lastActionAt, System.currentTimeMillis())

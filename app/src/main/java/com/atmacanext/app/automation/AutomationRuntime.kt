@@ -2510,8 +2510,8 @@ object AutomationController {
 
     private fun terminalStatuses(): Set<RuntimeStatus> = setOf(RuntimeStatus.IDLE, RuntimeStatus.COMPLETED, RuntimeStatus.FAILED)
 
-    private fun validXUrl(value: String?): Boolean = try {
-        val uri = android.net.Uri.parse(value?.trim())
+    internal fun validXUrl(value: String?): Boolean = try {
+        val uri = java.net.URI(value?.trim().orEmpty())
         uri.scheme in setOf("https", "http") && uri.host?.lowercase() in setOf("x.com", "www.x.com", "twitter.com", "www.twitter.com")
     } catch (_: Throwable) {
         false

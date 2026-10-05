@@ -4,6 +4,7 @@ import android.graphics.Rect
 import com.atmacanext.app.domain.engine.QueueResultPolicy
 import com.atmacanext.app.domain.engine.TaskQueuePlanner
 import com.atmacanext.app.domain.model.*
+import com.atmacanext.app.data.repository.TaskProgressWritePolicy
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -178,5 +179,37 @@ class BatchCommentReturn26_53Test {
                 assertNull(field("engagerParentAuthor").get(controller))
             }
         } finally { controller.stop() }
+    }
+    @Test fun linkedTasksAcceptValidXHostsInTheSameJvmAndAndroidCodePath() {
+        for (url in listOf("https://x.com/user", "http://twitter.com/user/status/123", "https://www.x.com/user/status/123?ref=1",
+            "https://www.twitter.com/user/status/123", " https://X.COM/user ")) assertTrue(url, AutomationController.validXUrl(url))
+    }
+    @Test fun malformedAndForeignLinksCannotStartLinkedTask() {
+        for (url in listOf(null, "", "user", "https://example.com/user", "https://x.com.example.com/user",
+            "ftp://x.com/user", "https://x.com/a b", "https://")) assertFalse(url, AutomationController.validXUrl(url))
+    }
+    @Test fun allLinkedTaskTypesStartAndRetainRequestedAccountBeforeVerification() {
+        try {
+            for (type in listOf(TaskType.FOLLOW, TaskType.LIKE, TaskType.RETWEET, TaskType.BOOKMARK, TaskType.COMMENT, TaskType.QUOTE)) {
+                AutomationController.stop()
+                assertTrue(type.toString(), AutomationController.start(ScheduledTask("link-$type", "2", "account2", type = type,
+                    targetUrl = "https://x.com/pusholder/status/123", contentText = "Metin")))
+                assertEquals("account2", AutomationController.state.value.username)
+                assertFalse(AutomationController.state.value.accountVerified)
+            }
+        } finally { AutomationController.stop() }
+    }
+    @Test fun latePausedSnapshotCannotReopenCompletedAccountTaskAtSameCounter() {
+        assertFalse(TaskProgressWritePolicy.accepts(15, true, 15, false))
+        assertTrue(TaskProgressWritePolicy.accepts(15, true, 15, true))
+    }
+    @Test fun lowerSnapshotCannotEraseVerifiedCounterInAnyTaskStatus() {
+        assertFalse(TaskProgressWritePolicy.accepts(15, false, 14, false))
+        assertFalse(TaskProgressWritePolicy.accepts(15, true, 14, true))
+        assertTrue(TaskProgressWritePolicy.accepts(14, false, 15, true))
+    }
+    @Test fun explicitTaskResetAllowsNewRunAndNormalWaitingSnapshot() {
+        assertTrue(TaskProgressWritePolicy.accepts(0, false, 0, false))
+        assertTrue(TaskProgressWritePolicy.accepts(5, false, 5, false))
     }
 }
