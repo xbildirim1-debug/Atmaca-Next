@@ -1,0 +1,42 @@
+package com.buse.app.automation
+
+internal enum class VerifiedFollowOutcome { WAIT, SUCCESS, REVERTED, NO_EFFECT, UNKNOWN }
+
+internal object VerifiedFollowPolicy {
+    val plainFollowLabels = setOf("takip et", "follow")
+    val availableFollowLabels = XUiVocabulary.followActions
+    fun isAvailableFollow(labels: List<String>): Boolean =
+        labels.any { matchesAction(it, availableFollowLabels) } &&
+            labels.none { matchesAction(it, XUiVocabulary.followingActions + XUiVocabulary.requestedActions) }
+    fun matchesAction(label: String, expected: Set<String>): Boolean {
+        val normalized = XUiVocabulary.normalize(label)
+        return expected.any {
+            normalized == it || normalized.startsWith("$it @") || normalized.startsWith("$it, @") ||
+                (it == "follow" && normalized.startsWith("follow ")) ||
+                (it == "takip et" && normalized.endsWith(" takip et"))
+        }
+    }
+    fun isPlainFollow(labels: List<String>): Boolean =
+        labels.any { matchesAction(it, plainFollowLabels) } &&
+            labels.none { matchesAction(it, XUiVocabulary.followActions - plainFollowLabels + XUiVocabulary.followingActions + XUiVocabulary.requestedActions) }
+    fun outcome(observedFollowing: Boolean, followingNow: Boolean, plainFollowNow: Boolean,
+                stableMs: Long, elapsedMs: Long, requestedNow: Boolean = false,
+                stableRequiredMs: Long = 2_000L, unchangedFollowMs: Long = 0L): VerifiedFollowOutcome = when {
+        requestedNow && !plainFollowNow && !followingNow -> VerifiedFollowOutcome.SUCCESS
+        observedFollowing && plainFollowNow && !followingNow -> VerifiedFollowOutcome.REVERTED
+        observedFollowing && followingNow && !plainFollowNow && stableMs >= stableRequiredMs.coerceAtLeast(250L) -> VerifiedFollowOutcome.SUCCESS
+        !observedFollowing && plainFollowNow && !followingNow && !requestedNow &&
+            elapsedMs >= 7_000L && unchangedFollowMs >= 1_000L -> VerifiedFollowOutcome.NO_EFFECT
+        elapsedMs >= 7_000L -> VerifiedFollowOutcome.UNKNOWN
+        else -> VerifiedFollowOutcome.WAIT
+    }
+    fun nextStreak(previous: Int, outcome: VerifiedFollowOutcome): Int = when (outcome) {
+        VerifiedFollowOutcome.REVERTED -> previous + 1
+        VerifiedFollowOutcome.SUCCESS, VerifiedFollowOutcome.NO_EFFECT, VerifiedFollowOutcome.UNKNOWN -> 0
+        VerifiedFollowOutcome.WAIT -> previous
+    }
+    fun stopAccount(streak: Int): Boolean = streak >= 3
+    fun nextSource(candidates: Collection<String>, own: String, visited: Set<String>,
+                   random: kotlin.random.Random = kotlin.random.Random.Default): String? =
+        candidates.filter { it.isNotBlank() && it != own && it !in visited }.distinct().randomOrNull(random)
+}

@@ -1,0 +1,135 @@
+package com.buse.app.core
+
+import android.content.Context
+import com.buse.app.ai.GeminiContentService
+import com.buse.app.automation.AutomationController
+import com.buse.app.automation.AutomationRuntimeState
+import com.buse.app.automation.AutomationTuning
+import com.buse.app.automation.BatchQueueContinuityGuard
+import com.buse.app.automation.RuntimeStatus
+import com.buse.app.automation.TaskOrchestrator
+import com.buse.app.data.local.BuseDatabase
+import com.buse.app.data.report.ErrorReportExporter
+import com.buse.app.data.repository.BuseRepository
+import com.buse.app.data.settings.GeminiKeyStore
+import com.buse.app.data.settings.SettingsStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+
+object AppServices {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    lateinit var database: BuseDatabase
+        private set
+    lateinit var repository: BuseRepository
+        private set
+    lateinit var settings: SettingsStore
+        private set
+    lateinit var geminiKeyStore: GeminiKeyStore
+        private set
+    lateinit var contentService: GeminiContentService
+        private set
+    lateinit var notifications: com.buse.app.data.notifications.NotificationStore
+        private set
+    lateinit var orchestrator: TaskOrchestrator
+        private set
+    lateinit var reportExporter: ErrorReportExporter
+        private set
+    private var queueContinuityGuard: BatchQueueContinuityGuard? = null
+
+    @Volatile
+    var ready: Boolean = false
+        private set
+
+    @Synchronized
+    fun initialize(context: Context) {
+        if (::database.isInitialized) return
+        val appContext = context.applicationContext
+        database = BuseDatabase.create(appContext)
+        repository = BuseRepository(database)
+        settings = SettingsStore(appContext)
+        geminiKeyStore = GeminiKeyStore(appContext)
+        contentService = GeminiContentService(geminiKeyStore)
+        notifications = com.buse.app.data.notifications.NotificationStore(appContext)
+        orchestrator = TaskOrchestrator(repository, contentService, settings.settings, scope, notifications)
+        reportExporter = ErrorReportExporter(appContext, repository, settings)
+        queueContinuityGuard = BatchQueueContinuityGuard(repository, orchestrator, scope).also { it.start() }
+
+        scope.launch {
+            // Eski process/session hiçbir koşulda otomatik sürdürülmez.
+            repository.discardInterruptedWork()
+            val appSettings = settings.settings.first()
+            applyTuning(appSettings)
+            repository.pruneLogs(appSettings.keepLogDays)
+            repository.pruneDailyUsage()
+            ready = true
+            observeRuntimePersistence()
+            observeSettings()
+        }
+    }
+
+    private fun observeRuntimePersistence() {
+        scope.launch {
+            var previous: AutomationRuntimeState? = null
+            AutomationController.state.collect { current ->
+                val prev = previous
+                if (current.taskId == null && prev?.taskId != null && prev.status !in setOf(RuntimeStatus.COMPLETED, RuntimeStatus.FAILED)) {
+                    repository.persistRuntime(prev.copy(status = RuntimeStatus.PAUSED, message = "Görev durduruldu; doğrulanmış ilerleme kaydedildi"))
+                }
+                repository.persistRuntime(current)
+                if (shouldAudit(prev, current)) {
+                    repository.log(
+                        level = when (current.status) {
+                            RuntimeStatus.FAILED -> "ERROR"
+                            RuntimeStatus.PAUSED, RuntimeStatus.RECOVERING, RuntimeStatus.COOLDOWN -> "WARN"
+                            else -> "INFO"
+                        },
+                        category = "RUNTIME",
+                        taskId = current.taskId,
+                        username = current.username,
+                        message = current.message,
+                        details = buildString {
+                            append("session=${current.sessionId}; status=${current.status}")
+                            append("; verified=${current.verifiedCount}/${current.limit}")
+                            append("; cycle=${current.cycleIndex + 1}/${current.repeatCount}")
+                            append("; screen=${current.activeScreen}; stage=${current.flowStage}")
+                            current.lastTarget?.let { append("; lastTarget=$it") }
+                        },
+                    )
+                }
+                previous = current
+            }
+        }
+    }
+
+    private fun observeSettings() {
+        scope.launch { settings.settings.distinctUntilChanged().collect(::applyTuning) }
+    }
+
+    private fun applyTuning(value: com.buse.app.data.settings.AppSettings) {
+        AutomationTuning.betweenActionsMs = value.betweenActionsMs
+        AutomationTuning.accountSwitchSettleMs = value.accountSwitchSettleMs
+        AutomationTuning.rateLimitCooldownMs = value.rateLimitCooldownMinutes * 60_000L
+        orchestrator.applySettings(
+            betweenTasksMs = value.betweenTasksMs,
+            continueAfterFailedTask = value.continueAfterFailedTask,
+            dailyFollowLimitPerAccount = value.dailyFollowLimitPerAccount,
+            dailyUnfollowLimitPerAccount = value.dailyUnfollowLimitPerAccount,
+        )
+    }
+
+    private fun shouldAudit(previous: AutomationRuntimeState?, current: AutomationRuntimeState): Boolean {
+        if (previous == null) return true
+        return previous.status != current.status ||
+            previous.message != current.message ||
+            previous.verifiedCount != current.verifiedCount ||
+            previous.lastTarget != current.lastTarget ||
+            previous.unfollowRevertCount != current.unfollowRevertCount ||
+            previous.flowStage != current.flowStage
+    }
+}

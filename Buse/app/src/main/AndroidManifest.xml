@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <queries>
+        <package android:name="com.twitter.android" />
+    </queries>
+
+    <application
+        android:name=".BuseApplication"
+        android:allowBackup="false"
+        android:icon="@drawable/ic_buse"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/ic_buse"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Buse">
+
+        <!-- Startup provider is disabled so the application initializes its own services. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            tools:node="remove"
+            tools:ignore="MissingClass" />
+
+        <activity
+            android:name=".MainActivity"
+            android:launchMode="singleTop"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".automation.BuseAccessibilityService"
+            android:exported="false"
+            android:label="Buse Otomasyon Servisi"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <service
+            android:name=".service.AutomationForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-visible host for user-started X/Twitter accessibility automation; pauses on screen-off/lock." />
+        </service>
+
+    </application>
+</manifest>

@@ -1,0 +1,30 @@
+{
+  "application": "Buse",
+  "version": "1.0",
+  "application_id": "com.buse.mobile",
+  "namespace": "com.buse.app",
+  "completed_at": "2026-10-05T23:50:39.711651+03:00",
+  "tests": {
+    "tests": 524,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "new_buse_tests": 42,
+  "junit_reports": 67,
+  "lint": {
+    "Warning": 12,
+    "Hint": 1
+  },
+  "build_successful": true,
+  "build_type": "debug-local",
+  "apk_sha256": "63d700071bb9ef519e0be1b52401d39777fc4758be4f3737756522d6eec95623",
+  "apk_bytes": 20936361,
+  "certificate_sha256": "9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5",
+  "device_x_tested": false,
+  "atmaca_head": "8b467a3baaa991abaa3202dca78ff9299ad1c2c0",
+  "atmaca_worktree_unchanged": true,
+  "source_branch": "buse/1.0",
+  "source_directory": "Buse/",
+  "source_repository": "xbildirim1-debug/Atmaca-Next"
+}
