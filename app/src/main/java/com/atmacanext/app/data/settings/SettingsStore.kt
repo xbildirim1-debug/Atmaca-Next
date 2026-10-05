@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.atmacanext.app.automation.AutomationSpeedPreset
 
 private val Context.atmacaDataStore by preferencesDataStore(name = "atmaca_settings")
 
@@ -18,9 +19,9 @@ data class AppSettings(
     val dailyFollowLimitPerAccount: Int = 35,
     val dailyUnfollowLimitPerAccount: Int = 35,
     val keepLogDays: Int = 14,
-    val betweenActionsMs: Long = 500L,
-    val accountSwitchSettleMs: Long = 1_800L,
-    val betweenTasksMs: Long = 1_500L,
+    val betweenActionsMs: Long = AutomationSpeedPreset.ACTION_MS,
+    val accountSwitchSettleMs: Long = AutomationSpeedPreset.ACCOUNT_MS,
+    val betweenTasksMs: Long = AutomationSpeedPreset.TASK_MS,
     val continueAfterFailedTask: Boolean = true,
     val rateLimitCooldownMinutes: Int = 30,
     val minimumTweetAgeMinutes: Int = 120,
@@ -41,6 +42,7 @@ class SettingsStore(private val context: Context) {
         val betweenActionsMs = longPreferencesKey("between_actions_ms")
         val accountSwitchSettleMs = longPreferencesKey("account_switch_settle_ms")
         val betweenTasksMs = longPreferencesKey("between_tasks_ms")
+        val timingUpdated = booleanPreferencesKey("timing_2654_saved")
         val continueAfterFailedTask = booleanPreferencesKey("continue_after_failed_task")
         val rateLimitCooldownMinutes = intPreferencesKey("rate_limit_cooldown_minutes")
         val minimumTweetAgeMinutes = intPreferencesKey("minimum_tweet_age_minutes")
@@ -52,15 +54,17 @@ class SettingsStore(private val context: Context) {
     }
 
     val settings: Flow<AppSettings> = context.atmacaDataStore.data.map { p ->
+        val timing = AutomationSpeedPreset.resolve(p[Keys.timingUpdated] == true,
+            p[Keys.betweenActionsMs], p[Keys.accountSwitchSettleMs], p[Keys.betweenTasksMs])
         AppSettings(
             defaultFollowLimit = (p[Keys.defaultFollowLimit] ?: 35).coerceIn(1, 100),
             defaultUnfollowLimit = (p[Keys.defaultUnfollowLimit] ?: 35).coerceIn(1, 100),
             dailyFollowLimitPerAccount = (p[Keys.dailyFollowLimitPerAccount] ?: 35).coerceIn(1, 100),
             dailyUnfollowLimitPerAccount = (p[Keys.dailyUnfollowLimitPerAccount] ?: 35).coerceIn(1, 100),
             keepLogDays = (p[Keys.keepLogDays] ?: 14).coerceIn(1, 365),
-            betweenActionsMs = (p[Keys.betweenActionsMs] ?: 500L).coerceIn(100L, 15_000L),
-            accountSwitchSettleMs = (p[Keys.accountSwitchSettleMs] ?: 1_800L).coerceIn(500L, 15_000L),
-            betweenTasksMs = (p[Keys.betweenTasksMs] ?: 1_500L).coerceIn(250L, 60_000L),
+            betweenActionsMs = timing.action,
+            accountSwitchSettleMs = timing.account,
+            betweenTasksMs = timing.task,
             continueAfterFailedTask = p[Keys.continueAfterFailedTask] ?: true,
             rateLimitCooldownMinutes = (p[Keys.rateLimitCooldownMinutes] ?: 30).coerceIn(5, 180),
             minimumTweetAgeMinutes = (p[Keys.minimumTweetAgeMinutes] ?: 120).coerceIn(120, 1_440),
@@ -86,11 +90,12 @@ class SettingsStore(private val context: Context) {
         }
     }
 
-    suspend fun setAutomationTiming(betweenActionsMs: Long, accountSwitchSettleMs: Long, cooldownMinutes: Int, betweenTasksMs: Long = 1_500L) {
+    suspend fun setAutomationTiming(betweenActionsMs: Long, accountSwitchSettleMs: Long, cooldownMinutes: Int, betweenTasksMs: Long = AutomationSpeedPreset.TASK_MS) {
         context.atmacaDataStore.edit { p ->
-            p[Keys.betweenActionsMs] = betweenActionsMs.coerceIn(100L, 15_000L)
-            p[Keys.accountSwitchSettleMs] = accountSwitchSettleMs.coerceIn(500L, 15_000L)
-            p[Keys.betweenTasksMs] = betweenTasksMs.coerceIn(250L, 60_000L)
+            p[Keys.betweenActionsMs] = betweenActionsMs.coerceIn(AutomationSpeedPreset.ACTION_MS, 15_000L)
+            p[Keys.accountSwitchSettleMs] = accountSwitchSettleMs.coerceIn(100L, 15_000L)
+            p[Keys.betweenTasksMs] = betweenTasksMs.coerceIn(100L, 60_000L)
+            p[Keys.timingUpdated] = true
             p[Keys.rateLimitCooldownMinutes] = cooldownMinutes.coerceIn(5, 180)
         }
     }

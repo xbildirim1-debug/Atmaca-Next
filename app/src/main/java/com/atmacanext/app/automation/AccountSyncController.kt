@@ -25,6 +25,7 @@ object AccountSyncController {
     private val _state = MutableStateFlow(State())
     val state = _state.asStateFlow()
     val isActive get() = _state.value.active
+    @Synchronized internal fun recoveryKey(): String = "sync:$generation"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var saveJob: Job? = null
     private var serviceRef: WeakReference<AtmacaAccessibilityService>? = null
@@ -50,6 +51,7 @@ object AccountSyncController {
     private var searchForward = false
     private var searchSignature: String? = null
     private var harvestDone = false
+    private val navigationGate = AccountNavigationGate()
 
     @Synchronized fun attach(service: AtmacaAccessibilityService) { serviceRef = WeakReference(service) }
     @Synchronized fun detach(service: AtmacaAccessibilityService) {
@@ -80,6 +82,7 @@ object AccountSyncController {
         if (mode == Mode.SWITCH && target?.matches(Regex("[A-Za-z0-9_]{1,15}")) != true) return false
         timedTarget = null; targetStartedAt = 0L
         recoveries = 0; harvestDone = false; harvestSignature = null; stableHarvests = 0
+        navigationGate.clear()
         startedAt = SystemClock.elapsedRealtime()
         _state.value = State(active = true, mode = mode)
         move(Stage.HOME, "X açılıyor")
@@ -143,8 +146,9 @@ object AccountSyncController {
             OperationLog.i("ACCOUNT_SYNC", "stage=$stage screen=$screen popup=$popup target=${target.orEmpty()} saved=${processed.size} skipped=${skipped.size}")
             lastObserved = observed; lastObservedAt = now
         }
-        if (now < nextActionAt) { service.requestAutomationTick(nextActionAt - now); return }
+        if (now < nextActionAt) { service.requestAutomationTickExact(nextActionAt - now); return }
         if (stage == Stage.SAVING) { tick(service); return }
+        if (navigationGate.wait(screen, now)) { tick(service, 300L); return }
         if (popup != PopupType.NONE) {
             if (popupSince == 0L) {
                 popupSince = now
@@ -185,7 +189,8 @@ object AccountSyncController {
             Stage.SWITCHER -> when (screen) {
                 XScreen.ACCOUNT_SWITCHER -> enterSwitcher()
                 XScreen.ACCOUNT_DRAWER -> {
-                    XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_SWITCHER, target.orEmpty(), null)
+                    if (XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_SWITCHER, target.orEmpty(), null))
+                        navigationGate.issued(screen, now)
                     tick(service, 1_200L); return
                 }
                 XScreen.HOME -> move(Stage.DRAWER, "Hesap menüsü yeniden açılıyor")
@@ -226,19 +231,25 @@ object AccountSyncController {
                 }
             }
             Stage.SETTLE -> {
-                move(Stage.VERIFY_DRAWER, "@${target} hesap menüsünden doğrulanıyor")
-                // Never depend on a profile deep link: the supplied video remains on HOME after switching.
+                when (AccountSelectionReturnPolicy.decide(screen, now - selectedAt, AutomationTuning.accountSwitchSettleMs)) {
+                    AccountSelectionReturnPolicy.Decision.WAIT -> { tick(service, 300L); return }
+                    AccountSelectionReturnPolicy.Decision.CLOSE_SWITCHER -> {
+                        service.closeAccountSwitcher()
+                        tick(service, 650L); return
+                    }
+                    else -> move(Stage.VERIFY_DRAWER, "@${target} hesap menüsünden doğrulanıyor")
+                }
             }
             Stage.VERIFY_DRAWER -> when (screen) {
                 XScreen.HOME -> { openDrawer(service, root); return }
-                XScreen.ACCOUNT_SWITCHER -> service.pressBack()
+                XScreen.ACCOUNT_SWITCHER -> { service.closeAccountSwitcher(); tick(service, 650L); return }
                 XScreen.ACCOUNT_DRAWER -> {
                     val account = AccountSwitcherInspector.readActiveDrawerAccount(root)
                     if (AccountScanPolicy.canRecord(target, account.username, account.followers, account.following)) {
                         OperationLog.i("ACCOUNT_SYNC", "Doğrulandı @${account.username} takipçi=${account.followers} takip=${account.following}")
                         save(service, AccountSwitcherInspector.ProfileStats(account.followers, account.following))
                     } else if (account.username != null && account.username != target) {
-                        if (now - selectedAt < AutomationTuning.accountSwitchSettleMs.coerceIn(500L, 15_000L)) {
+                        if (now - selectedAt < AutomationTuning.accountSwitchSettleMs.coerceIn(100L, 15_000L)) {
                             tick(service, 250L); return
                         }
                         OperationLog.w("ACCOUNT_SYNC", "Hedef @$target; menüde @${account.username}. Yeniden seçiliyor.")
@@ -255,6 +266,7 @@ object AccountSyncController {
 
     private fun openDrawer(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?) {
         val clicked = XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_DRAWER, "", null)
+        if (clicked) navigationGate.issued(XScreen.HOME, SystemClock.elapsedRealtime())
         OperationLog.i("ACCOUNT_SYNC", "Hesap menüsü açma sonucu=$clicked stage=$stage")
         // Wait for the drawer animation before another click can close it again.
         tick(service, 1_200L)
@@ -352,8 +364,9 @@ object AccountSyncController {
             processed = processed.size, skipped = skipped.size, target = target?.let { "@$it" })
     }
     private fun tick(service: AtmacaAccessibilityService, delay: Long = 450L) {
-        nextActionAt = SystemClock.elapsedRealtime() + delay
-        service.requestAutomationTick(delay)
+        val wait = AutomationTuning.scaleDelay(delay)
+        nextActionAt = SystemClock.elapsedRealtime() + wait
+        service.requestAutomationTickExact(wait)
     }
     private fun finish(success: Boolean, message: String, returnToApp: Boolean = true) {
         generation++; saveJob?.cancel(); saveJob = null; stage = Stage.IDLE

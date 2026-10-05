@@ -80,9 +80,10 @@ object GestureClick {
     }
 
     private fun gestureTapAt(service: AccessibilityService, x: Float, y: Float): Boolean {
+        if (!x.isFinite() || !y.isFinite() || x < 0f || y < 0f) return false
         val path = Path().apply { moveTo(x, y) }
-        val stroke = GestureDescription.StrokeDescription(path, 0L, 60L)
         return try {
+            val stroke = GestureDescription.StrokeDescription(path, 0L, 60L)
             val result = AtomicBoolean(false)
             val latch = CountDownLatch(1)
             val accepted = service.dispatchGesture(

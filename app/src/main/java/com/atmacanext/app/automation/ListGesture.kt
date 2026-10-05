@@ -60,8 +60,7 @@ object ListGesture {
             // The runtime waits for the post-return tree before trying a gesture.
             // A settling wait must not be counted as an unchanged/end-of-list swipe.
         }
-        val bounds = Rect().also(root::getBoundsInScreen)
-        if (bounds.width() <= 0 || bounds.height() <= 0) return false
+        val bounds = visibleViewport(service, root) ?: return false
         val x = bounds.left + bounds.width() * DiscoveryScrollGesturePolicy.xRatio(recoveryAttempt)
         val path = DiscoveryScrollGesturePolicy.verticalPath(
             bounds,
@@ -85,36 +84,16 @@ object ListGesture {
         horizontal: Boolean = false,
     ): Boolean {
         if (root == null) return false
-        val rootBounds = Rect().also(root::getBoundsInScreen)
-        if (rootBounds.width() <= 0 || rootBounds.height() <= 0) return false
+        val bounds = visibleViewport(service, root) ?: return false
+        val stroke = ListGestureGeometry.swipe(bounds,
+            XListInspector.visibleHandleRows(root).map { it.bounds }, forward, horizontal) ?: return false
+        return dispatchSwipe(service, stroke.startX, stroke.startY, stroke.endX, stroke.endY)
+    }
 
-        val rows = XListInspector.visibleHandleRows(root)
-            .map { it.bounds }
-            .filterNot(Rect::isEmpty)
-            .sortedBy { it.top }
-        val top = rows.firstOrNull()?.centerY()
-            ?: (rootBounds.top + rootBounds.height() * 0.30f).toInt()
-        val bottom = rows.lastOrNull()?.centerY()
-            ?: (rootBounds.top + rootBounds.height() * 0.78f).toInt()
-        val minimumTravel = (rootBounds.height() * 0.24f).toInt().coerceAtLeast(1)
-        val adaptiveTop = if (bottom - top >= minimumTravel) top else rootBounds.top + (rootBounds.height() * 0.30f).toInt()
-        val adaptiveBottom = if (bottom - top >= minimumTravel) bottom else rootBounds.top + (rootBounds.height() * 0.78f).toInt()
-        if (adaptiveBottom <= adaptiveTop) return false
-
-        val x = rootBounds.exactCenterX()
-        val startY = if (forward) adaptiveBottom.toFloat() else adaptiveTop.toFloat()
-        val endY = if (forward) adaptiveTop.toFloat() else adaptiveBottom.toFloat()
-        val path = Path().apply {
-            if (horizontal) {
-                val y = rootBounds.top + rootBounds.height() * 0.55f
-                moveTo(rootBounds.left + rootBounds.width() * (if (forward) 0.82f else 0.18f), y)
-                lineTo(rootBounds.left + rootBounds.width() * (if (forward) 0.18f else 0.82f), y)
-            } else {
-                moveTo(x, startY)
-                lineTo(x, endY)
-            }
-        }
-        return dispatch(service, path)
+    private fun visibleViewport(service: AccessibilityService, root: AccessibilityNodeInfo): Rect? {
+        val bounds = Rect().also(root::getBoundsInScreen)
+        val display = service.resources.displayMetrics
+        return ListGestureGeometry.viewport(bounds, display.widthPixels, display.heightPixels)
     }
 
     private fun dispatchSwipe(
@@ -125,13 +104,14 @@ object ListGesture {
         endY: Float,
         durationMs: Long = 420L,
     ): Boolean {
+        if (!ListGestureGeometry.Stroke(startX, startY, endX, endY).valid()) return false
         val path = Path().apply { moveTo(startX, startY); lineTo(endX, endY) }
         return dispatch(service, path, durationMs)
     }
 
     private fun dispatch(service: AccessibilityService, path: Path, durationMs: Long = 420L): Boolean {
-        val stroke = GestureDescription.StrokeDescription(path, 0L, durationMs)
         return try {
+            val stroke = GestureDescription.StrokeDescription(path, 0L, durationMs)
             val completed = AtomicBoolean(false)
             val latch = CountDownLatch(1)
             val accepted = service.dispatchGesture(
@@ -151,7 +131,11 @@ object ListGesture {
             if (!accepted) return false
             if (Looper.myLooper() == Looper.getMainLooper()) return true
             latch.await(1_800L, TimeUnit.MILLISECONDS) && completed.get()
-        } catch (_: Throwable) {
+        } catch (error: RuntimeException) {
+            OperationLog.w("GESTURE_RETRY", "Kaydırma oluşturulamadı/gönderilemedi: ${error.javaClass.simpleName}; yeni ekran okunacak")
+            false
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
             false
         }
     }

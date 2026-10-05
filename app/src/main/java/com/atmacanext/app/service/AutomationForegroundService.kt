@@ -119,8 +119,8 @@ class AutomationForegroundService : Service() {
 
     /**
      * Unattended self-healing watchdog. It watches semantic progress, not event volume.
-     * A task that sits on the exact same meaningful state for 20 seconds is paused,
-     * checkpointed, brought back to Atmaca, stopped, then relaunched from its saved progress.
+     * A task that sits on the same meaningful progress for 20 seconds requests a fresh
+     * read on the accessibility actor, preserving its queue item, account and pending action.
      * User-configured cycle waits and rate-limit cooldowns are intentionally excluded.
      */
     private fun startStallWatchdog() {
@@ -156,47 +156,17 @@ class AutomationForegroundService : Service() {
         val queue = AppServices.orchestrator.state.value
         val item = queue.currentItem ?: return
         if (queue.status != QueueStatus.RUNNING || item.taskId != runtime.taskId) return
-
         stallRecoveryInProgress = true
-        val ageMs = stallWatchdog.ageMillis()
-        val reason = "20 saniye gerçek ilerleme yok; görev otomatik yeniden başlatılıyor"
         try {
-            // Persist the latest verified counter before invalidating the runtime session.
-            AppServices.repository.persistRuntime(runtime.copy(status = RuntimeStatus.PAUSED, message = reason))
-            AppServices.repository.log(
-                "WARN",
-                "STALL_RECOVERY",
-                item.taskId,
-                item.username,
-                reason,
-                "ageMs=$ageMs; stage=${runtime.flowStage}; screen=${runtime.activeScreen}; verified=${runtime.verifiedCount}/${runtime.limit}",
-            )
+            val reason = "20 saniye gerçek ilerleme yok; aynı görev aşaması yerinde kontrol ediliyor"
+            AppServices.repository.log("WARN", "STALL_RECOVERY", item.taskId, item.username, reason,
+                "ageMs=${stallWatchdog.ageMillis()}; stage=${runtime.flowStage}; screen=${runtime.activeScreen}; verified=${runtime.verifiedCount}/${runtime.limit}")
             updateNotification(reason)
-
-            // Pause the queue first so resume() is guaranteed to relaunch the same queue item.
-            AppServices.orchestrator.pauseForSafety(reason)
-            var pauseChecks = 0
-            while (AppServices.orchestrator.state.value.status != QueueStatus.PAUSED && pauseChecks < 20) {
-                delay(100L)
-                pauseChecks++
+            // The accessibility actor validates the same session and preserves pending actions.
+            // No stop/resume, app return or account switch is part of this read recovery.
+            if (!AutomationController.requestStallRecovery(runtime.taskId, runtime.sessionId)) {
+                AppServices.orchestrator.pauseForSafety("Ekran okuma bağlantısı olmadan kurtarma yapılamadı; ilerleme korundu")
             }
-            if (AppServices.orchestrator.state.value.status != QueueStatus.PAUSED) {
-                AppServices.repository.log(
-                    "ERROR",
-                    "STALL_RECOVERY",
-                    item.taskId,
-                    item.username,
-                    "Watchdog kuyruğu güvenli PAUSED durumuna alamadı; runtime durdurulmadı",
-                )
-                return
-            }
-
-            AutomationController.returnToAtmaca()
-            delay(700L)
-            AutomationController.stop()
-            delay(500L)
-            updateNotification("Takılan görev aynı ilerlemeden yeniden başlatılıyor")
-            AppServices.orchestrator.resume()
         } finally {
             resetStallTracking()
             stallRecoveryInProgress = false

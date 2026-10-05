@@ -197,9 +197,9 @@ private fun WorkSettingsDialog26_42(
     val taskGap = taskMs.toLongOrNull()
     val keepDays = days.toIntOrNull()
     val cooldownMinutes = cooldown.toIntOrNull()
-    val valid = action in 100L..15_000L &&
-        accountSwitch in 500L..15_000L &&
-        taskGap in 250L..60_000L &&
+    val valid = action in 71L..15_000L &&
+        accountSwitch in 100L..15_000L &&
+        taskGap in 100L..60_000L &&
         keepDays in 1..365 &&
         cooldownMinutes in 5..180
 
@@ -212,9 +212,15 @@ private fun WorkSettingsDialog26_42(
                 modifier = Modifier.fillMaxWidth().height(500.dp),
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                item { PreferenceNumber26_42("Tüm işlemlerin hızı (100–15000 ms)", actionMs, enabled) { actionMs = it } }
-                item { PreferenceNumber26_42("Hesap geçişi (500–15000 ms)", switchMs, enabled) { switchMs = it } }
-                item { PreferenceNumber26_42("Görevler arası (250–60000 ms)", taskMs, enabled) { taskMs = it } }
+                item {
+                    OutlinedButton(enabled = enabled, onClick = { actionMs = "71"; switchMs = "257"; taskMs = "214" }) {
+                        Text("En hızlı · 7×")
+                    }
+                    Text("Hesap ekleme ve tüm görevlerde 7× işlem temposu. X yüklenirken ekran ve işlem sonucu doğrulanır.", color = TextSecondary, fontSize = 10.sp)
+                }
+                item { PreferenceNumber26_42("Tüm işlemlerin hızı (71–15000 ms)", actionMs, enabled) { actionMs = it } }
+                item { PreferenceNumber26_42("Hesap geçişi (100–15000 ms)", switchMs, enabled) { switchMs = it } }
+                item { PreferenceNumber26_42("Görevler arası (100–60000 ms)", taskMs, enabled) { taskMs = it } }
                 item { PreferenceNumber26_42("Rate-limit bekleme (5–180 dk)", cooldown, enabled) { cooldown = it } }
                 item { PreferenceNumber26_42("Kayıt saklama (1–365 gün)", days, enabled) { days = it } }
                 item {

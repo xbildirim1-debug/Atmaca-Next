@@ -23,7 +23,6 @@ internal object AutomationStallPolicy {
         state.taskId.orEmpty(),
         state.sessionId.orEmpty(),
         state.flowStage.name,
-        state.activeScreen.name,
         state.verifiedCount.toString(),
         state.cycleIndex.toString(),
         state.detectedAccount.orEmpty(),

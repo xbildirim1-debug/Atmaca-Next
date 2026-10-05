@@ -1,0 +1,13 @@
+package com.atmacanext.app.automation
+
+/** Fast polling may observe an unchanged drawer/sheet while the first tap animates. */
+internal class AccountNavigationGate {
+    private var issuedScreen: XScreen? = null
+    private var issuedAt = 0L
+    fun issued(screen: XScreen, now: Long) { issuedScreen = screen; issuedAt = now }
+    fun wait(screen: XScreen, now: Long): Boolean {
+        if (screen != issuedScreen) { clear(); return false }
+        return issuedAt > 0L && now - issuedAt < 1_500L
+    }
+    fun clear() { issuedScreen = null; issuedAt = 0L }
+}

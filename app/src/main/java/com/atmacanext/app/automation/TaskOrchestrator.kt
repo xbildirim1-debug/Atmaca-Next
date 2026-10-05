@@ -37,7 +37,7 @@ class TaskOrchestrator(
     private val _state = MutableStateFlow(AutomationQueueState())
     val state = _state.asStateFlow()
     private var transitionJob: Job? = null
-    private var betweenTasksMs: Long = 3_000L
+    private var betweenTasksMs: Long = AutomationSpeedPreset.TASK_MS
     private var continueAfterFailedTask: Boolean = true
     private var dailyFollowLimitPerAccount: Int = 35
     private var dailyUnfollowLimitPerAccount: Int = 35
@@ -53,7 +53,7 @@ class TaskOrchestrator(
         dailyFollowLimitPerAccount: Int,
         dailyUnfollowLimitPerAccount: Int,
     ) {
-        this.betweenTasksMs = betweenTasksMs.coerceIn(250L, 60_000L)
+        this.betweenTasksMs = betweenTasksMs.coerceIn(100L, 60_000L)
         this.continueAfterFailedTask = continueAfterFailedTask
         this.dailyFollowLimitPerAccount = dailyFollowLimitPerAccount.coerceIn(1, 100)
         this.dailyUnfollowLimitPerAccount = dailyUnfollowLimitPerAccount.coerceIn(1, 100)

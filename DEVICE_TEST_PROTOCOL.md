@@ -1,3 +1,13 @@
+## 26.54 kabul senaryoları
+
+1. X ilk açık hesabını değiştirmeden hesap taraması: seçici kendiliğinden kapanmalı, beş hesap ve sayaçları alınmalı, Atmaca dönüşü doğrulanmalı. Manuel müdahale gerekirse log ve Hata Raporu alınmalı.
+2. Beş hesap / Onaylı takip / Limit15: ikinci kaynakta yalnız10 yeni kişi varsa 10/15 sonrası aynı listeden başka kullanıcı adına gitmeli; onun takipçileri/Onaylı sekmesinde kalan5 tamamlanmalı; sonraki hesap kimliği doğrulanmalı. Beklemede yeni sonuç sayılmalı; önceden takipli/no-button kişi yalnız kaynak olarak kullanılabilmeli.
+3. Liste sonundaki sanal/off-screen satırlar: IllegalArgumentException motoru kalıcı PAUSED yapmamalı. Yeni SCROLL_RETRY/GESTURE_RETRY/SNAPSHOT_ERROR frame bilgileri ile toparlanma doğrulanmalı. Kesintisiz dört okuma hatasında ilerleme korunarak duraklama beklenir.
+4. Tüm görev türlerinde ikinci hesap, 20 saniye hareketsizlik ve aralıklı UNKNOWN/SystemUI: kısa kökte hesap baştan seçilmemeli; yerinde yeni okuma yapılmalı. Pending takip/yorum/gönderi yeniden tıklanmamalı. Kullanıcı duraklatma ve ekran kilidinde otomatik devam olmamalı.
+5. Ayarlar En hızlı · 7× → Kaydet:71/257/214 görünmeli; uygulama yeniden açıldığında kalmalı. Daha yavaş süre seçip Kaydet de sonraki açılışta korunmalı. X gerçek yüklenme süresi ayrı ölçülmeli.
+
+Bu yeni APK ile fiziksel test henüz yapılmadı.
+
 ## 26.53 toplu geçiş / alt yorum / Beklemede kabul testi
 
 1. İki hesap, Limit1/Tekrar1; sırayla Takipten çık, Onaylı takip, Yorumcu, Retweetçi ve link görevlerini ayrı çalıştır. İlk işin son X ekranında ACCOUNT_RETURN görülmeli; menü→seçici→ikinci kendi profilindeki tam @handle; sonra ikinci iş. Manuel Back/Atmaca müdahalesi gerekmeden devam etmeli. Tam kuyruk sonunda QUEUE_DONE ve başarılı QUEUE_RETURN; Atmaca öne gelmeli.

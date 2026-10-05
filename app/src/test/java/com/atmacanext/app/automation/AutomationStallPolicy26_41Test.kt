@@ -33,7 +33,8 @@ class AutomationStallPolicy26_41Test {
 
     @Test fun realNavigationAndListProgressResetSignature() {
         val base = runtime()
-        assertNotEquals(AutomationStallPolicy.signature(base), AutomationStallPolicy.signature(base.copy(activeScreen = XScreen.UNKNOWN)))
+        // Temporary UNKNOWN/known screen flips cannot keep a stalled task alive.
+        assertEquals(AutomationStallPolicy.signature(base), AutomationStallPolicy.signature(base.copy(activeScreen = XScreen.UNKNOWN)))
         assertNotEquals(AutomationStallPolicy.signature(base), AutomationStallPolicy.signature(base.copy(flowStage = XFlowStage.SCAN_LATEST_TWEETS)))
         assertNotEquals(AutomationStallPolicy.signature(base), AutomationStallPolicy.signature(base.copy(verifiedCount = 1)))
         assertNotEquals(AutomationStallPolicy.signature(base), AutomationStallPolicy.signature(base.copy(listScrolls = 1)))

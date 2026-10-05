@@ -163,6 +163,7 @@ object AutomationController {
     private var accountReturnStartedAt = 0L
     private var accountReturnLastBackAt = 0L
     private var accountReturnAttempts = 0
+    private val accountNavigationGate = AccountNavigationGate()
     private val verifiedSourceCandidates = LinkedHashSet<String>()
     private var verifiedFollowingObservedAt = 0L
     private var verifiedFollowingStableAt = 0L
@@ -174,6 +175,8 @@ object AutomationController {
     private var listScrolls = 0
     private var listEndStable = 0
     private var lastListSignature = ""
+    private var stallRecoverySignature = ""
+    private var stallRecoveryAttempts = 0
     private val loopGuard = LoopGuard()
 
     // Use concrete constructors here. This source is also compiled by the
@@ -357,6 +360,41 @@ object AutomationController {
         if (!service.launchXHome()) fail("X tekrar açılamadı") else service.requestAutomationTick(TICK_MS)
     }
 
+    fun onSnapshotReadFailure(service: AtmacaAccessibilityService) {
+        val current = _state.value
+        if (!isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
+        // Preserve pendingAction and every navigation checkpoint. Only its result is re-read.
+        _state.value = current.copy(status = if (pendingAction == null) RuntimeStatus.RECOVERING else RuntimeStatus.VERIFYING,
+            message = "Geçici ekran okuma hatası; aynı aşama taze ekrandan yeniden okunuyor")
+        service.requestAutomationTick(500L)
+    }
+
+    fun requestStallRecovery(taskId: String?, sessionId: String?): Boolean {
+        val service = serviceRef?.get() ?: return false
+        return service.runOnAutomationThread {
+            val current = _state.value
+            if (current.taskId == taskId && current.sessionId == sessionId && AutomationStallPolicy.shouldWatch(current)) {
+                val signature = AutomationStallPolicy.signature(current)
+                if (signature != stallRecoverySignature) { stallRecoverySignature = signature; stallRecoveryAttempts = 0 }
+                stallRecoveryAttempts++
+                if (stallRecoveryAttempts > 3) {
+                    pause("Üç yerinde kurtarmadan sonra ilerleme yok; ${current.verifiedCount}/${current.limit} korundu")
+                } else {
+                    nextActionNotBefore = 0L
+                    loopGuard.clear()
+                    if (pendingAction == null && current.taskType == TaskType.VERIFIED_FOLLOW &&
+                        current.flowStage == XFlowStage.PROCESS_VERIFIED_FOLLOW) {
+                        nextVerifiedSource(service, "Bu onaylı listede ilerleme yok")
+                    } else {
+                        _state.value = current.copy(status = if (pendingAction == null) RuntimeStatus.RECOVERING else RuntimeStatus.VERIFYING,
+                            message = "Hareketsizlik kontrolü: aynı görev aşaması taze ekrandan sürdürülüyor")
+                        service.requestAutomationTick(250L)
+                    }
+                }
+            }
+        }
+    }
+
     fun onAccessibilitySnapshot(
         service: AtmacaAccessibilityService,
         root: AccessibilityNodeInfo?,
@@ -378,7 +416,7 @@ object AutomationController {
         }
         if (now < nextActionNotBefore) {
             _state.value = current.copy(status = RuntimeStatus.WAITING, message = "X ekran değişiminin oturması bekleniyor")
-            service.requestAutomationTick((nextActionNotBefore - now).coerceAtLeast(100L))
+            service.requestAutomationTickExact((nextActionNotBefore - now).coerceAtLeast(16L))
             return
         }
 
@@ -496,7 +534,7 @@ object AutomationController {
 
         if (accountSettleUntil > now) {
             _state.value = current.copy(status = RuntimeStatus.SWITCHING_ACCOUNT, message = "X hesap değişiminin tamamlanması bekleniyor")
-            service.requestAutomationTick((accountSettleUntil - now).coerceAtLeast(100L))
+            service.requestAutomationTickExact((accountSettleUntil - now).coerceAtLeast(16L))
             return
         }
         if (accountSettleUntil > 0L) {
@@ -505,8 +543,8 @@ object AutomationController {
             _state.value = current.copy(status = RuntimeStatus.SWITCHING_ACCOUNT, message = "Seçilen hesabın kendi profiliyle doğrulama yapılıyor")
             // Continue through the visible drawer/profile flow after switching.
             if (screen == XScreen.ACCOUNT_SWITCHER) {
-                service.pressBack()
-                accountSettleUntil = now + 450L
+                service.closeAccountSwitcher()
+                accountSettleUntil = now + AutomationTuning.scaleDelay(450L)
                 _state.value = current.copy(
                     status = RuntimeStatus.SWITCHING_ACCOUNT,
                     message = "X hesap seçicisi kapatılıyor; hedef profil ardından doğrulanacak",
@@ -514,6 +552,11 @@ object AutomationController {
                 service.requestAutomationTick(450L)
                 return
             }
+        }
+
+        if (accountNavigationGate.wait(screen, now)) {
+            service.requestAutomationTick(300L)
+            return
         }
 
         if (screen == XScreen.PROFILE) {
@@ -568,6 +611,7 @@ object AutomationController {
                         detectedUsername = activeDrawerAccount,
                     )
                     if (profileOpened) {
+                        accountNavigationGate.issued(screen, now)
                         stageStartedAt = now
                         _state.value = current.copy(
                             status = RuntimeStatus.SWITCHING_ACCOUNT,
@@ -630,6 +674,7 @@ object AutomationController {
     }
 
     private fun waitForAccountNavigation(service: AtmacaAccessibilityService, now: Long) {
+        accountNavigationGate.issued(_state.value.activeScreen, now)
         nextActionNotBefore = now + AutomationTuning.scaleDelay(1_200L)
         service.requestAutomationTick(1_200L)
     }
@@ -639,6 +684,7 @@ object AutomationController {
         navRecoveries = 0
         stageAttempts = 0
         accountSelectionMade = false
+        accountNavigationGate.clear()
         loopGuard.clear()
         _state.value = current.copy(
             status = RuntimeStatus.RUNNING,
@@ -935,37 +981,35 @@ object AutomationController {
                 }
             }
             XFlowStage.RETURN_VERIFIED_SOURCE -> {
-                if (now - stageStartedAt > 30_000L) return pause("Yeni kaynak bulunamadı; ${current.verifiedCount}/${current.limit} işlem korundu")
-                if (screen in setOf(XScreen.FOLLOWERS_LIST, XScreen.VERIFIED_FOLLOWERS_LIST)) {
-                    val own = XIdentityDetector.normalizeUsername(current.username.orEmpty())
-                    val handles = RecentFollowerSelector.orderedHandles(AccessibilityTree.snapshots(root), sourceHandles + own)
-                    val candidate = if (screen == XScreen.VERIFIED_FOLLOWERS_LIST) handles.randomOrNull() else handles.firstOrNull()
-                    if (candidate != null && XUiActions.clickSourceProfile(service, root, candidate)) {
-                        sourceHandle = candidate
-                        moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "@$candidate yeni kaynak profili doğrulanıyor")
-                    } else if (!scrollForwardAndTrack(service, root)) {
-                        listEndStable++
-                        if (listEndStable >= END_STABLE_COUNT) {
-                            service.pressBack()
-                            listEndStable = 0
-                        }
-                    }
-                } else if (screen != XScreen.UNKNOWN) service.pressBack()
-                nextActionNotBefore = now + AutomationTuning.scaleDelay(800L)
-                service.requestAutomationTick(800L)
+                // Older in-memory routes are redirected without leaving the source list.
+                moveStage(XFlowStage.LOCATE_SOURCE_ROW, "Açık onaylı listeden yeni kaynak aranıyor")
+                service.requestAutomationTick(150L)
             }
             XFlowStage.LOCATE_SOURCE_ROW -> {
-                val source = sourceHandle ?: return pause("Rastgele kaynak seçimi kayboldu")
-                if (screen != XScreen.VERIFIED_FOLLOWERS_LIST)
-                    return pause("Yeni kaynak için onaylı liste görünmüyor; profil bağlantısıyla atlanmadı")
-                if (XUiActions.clickSourceProfile(service, root, source)) {
+                if (screen != XScreen.VERIFIED_FOLLOWERS_LIST) {
+                    if (now - stageStartedAt >= 8_000L) return pause("Yeni kaynak için onaylı liste doğrulanamadı; ilerleme korundu")
+                    if (screen == XScreen.FOLLOWERS_LIST) XUiActions.clickVerifiedTab(service, root)
+                    service.requestAutomationTick(500L)
+                    return
+                }
+                val own = XIdentityDetector.normalizeUsername(current.username.orEmpty())
+                val nodes = AccessibilityTree.snapshots(root)
+                val viewport = root?.let { android.graphics.Rect().also(it::getBoundsInScreen) }
+                val visible = VerifiedSourcePolicy.visible(nodes, own, sourceHandles, viewport)
+                val source = VerifiedSourcePolicy.choose(visible, verifiedSourceCandidates, own, sourceHandles)
+                if (source != null && source in visible && XUiActions.clickSourceProfile(service, root, source)) {
+                    sourceHandle = source
+                    verifiedSourceCandidates.clear()
                     moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "Onaylı listedeki @$source adına dokunuldu; profil doğrulanıyor")
                     nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
                 } else {
-                    if (now - stageStartedAt >= 30_000L) return pause("@$source kaynak satırına geri kaydırmayla ulaşılamadı")
+                    if (now - stageStartedAt >= 30_000L) return pause("Açık listede ziyaret edilmemiş kaynak bulunamadı; ${current.verifiedCount}/${current.limit} korundu")
                     val moved = ListViewportController.tryScrollUserRowsBackward(root) == ScrollAttemptResult.SCROLLED ||
                         ListGesture.backward(service, root)
-                    if (!moved) return pause("Kaynak satırını bulmak için kaydırma gerçekleştirilemedi")
+                    if (!moved) {
+                        listEndStable++
+                        if (listEndStable >= 4) return pause("Onaylı listede yeni kaynak kalmadı; ${current.verifiedCount}/${current.limit} korundu")
+                    }
                     nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
                 }
                 service.requestAutomationTick(700L)
@@ -1035,8 +1079,8 @@ object AutomationController {
                     finishCycleOrTask(service, "Onaylı takip döngü limiti tamamlandı")
                     return
                 }
-                RecentFollowerSelector.orderedHandles(AccessibilityTree.snapshots(root), sourceHandles +
-                    XIdentityDetector.normalizeUsername(current.username.orEmpty())).forEach { handle ->
+                VerifiedSourcePolicy.visible(AccessibilityTree.snapshots(root),
+                    XIdentityDetector.normalizeUsername(current.username.orEmpty()), sourceHandles).forEach { handle ->
                     if (verifiedSourceCandidates.size < 200) verifiedSourceCandidates += handle
                 }
                 val target = XUiActions.findRelationshipTarget(
@@ -1876,7 +1920,8 @@ object AutomationController {
             if (verifiedFollowingStableAt == 0L) verifiedFollowingStableAt = now
         } else verifiedFollowingStableAt = 0L
         val outcome = VerifiedFollowPolicy.outcome(verifiedFollowingObservedAt > 0L, following, plainFollow,
-            if (verifiedFollowingStableAt > 0L) now - verifiedFollowingStableAt else 0L, now - pending.startedAt, requested)
+            if (verifiedFollowingStableAt > 0L) now - verifiedFollowingStableAt else 0L, now - pending.startedAt, requested,
+            AutomationTuning.scaleDelay(2_000L).coerceIn(250L, 2_000L))
         verifiedRevertStreak = VerifiedFollowPolicy.nextStreak(verifiedRevertStreak, outcome)
         when (outcome) {
             VerifiedFollowOutcome.WAIT -> service.requestAutomationTick(300L)
@@ -2012,20 +2057,11 @@ object AutomationController {
 
     private fun nextVerifiedSource(service: AtmacaAccessibilityService, reason: String) {
         sourceHandle?.let(sourceHandles::add)
-        val own = XIdentityDetector.normalizeUsername(_state.value.username.orEmpty())
-        val next = VerifiedFollowPolicy.nextSource(verifiedSourceCandidates, own, sourceHandles)
-        // Preserve verified progress across sources; candidates belong to the list
-        // just exhausted, not an unrelated earlier source.
-        verifiedSourceCandidates.clear()
         listEndStable = 0
         lastListSignature = ""
-        sourceHandle = next
-        if (next != null) {
-            moveStage(XFlowStage.LOCATE_SOURCE_ROW, "$reason; onaylı listede rastgele @$next satırı bulunup açılacak")
-        } else {
-            moveStage(XFlowStage.RETURN_VERIFIED_SOURCE, "$reason; önceki listeye dönülüp başka kaynak aranıyor")
-            service.pressBack()
-        }
+        sourceHandle = null
+        moveStage(XFlowStage.LOCATE_SOURCE_ROW, "$reason; aynı onaylı listeden rastgele başka profil açılacak")
+        OperationLog.i("VERIFIED_SOURCE_CHAIN", "progress=${_state.value.verifiedCount}/${_state.value.limit}; visited=${sourceHandles.size}; cached=${verifiedSourceCandidates.size}; back=false")
         service.requestAutomationTick(650L)
     }
 
@@ -2229,6 +2265,7 @@ object AutomationController {
     }
 
     private fun recoverAccount(service: AtmacaAccessibilityService, reason: String) {
+        accountNavigationGate.clear()
         navRecoveries++
         if (navRecoveries > MAX_NAV_RECOVERIES) {
             fail("Hesap doğrulama $MAX_NAV_RECOVERIES kurtarma denemesinden sonra başarısız: $reason")
@@ -2301,13 +2338,18 @@ object AutomationController {
 
     private fun scrollForwardAndTrack(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
         val signature = if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS)
-            DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root)) else ListViewportController.signature(root)
+            DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root))
+            else if (_state.value.taskType in setOf(TaskType.VERIFIED_FOLLOW, TaskType.UNFOLLOW)) RecentFollowerSelector.viewportSignature(AccessibilityTree.snapshots(root))
+            else ListViewportController.signature(root)
         val changed = lastListSignature.isBlank() || signature != lastListSignature
+        val moved = lastListSignature.isNotBlank() && signature != lastListSignature
         lastListSignature = signature
         val dispatched = dispatchListScroll(service, root, forward = true)
-        if (dispatched) {
+        if (moved) {
             listScrolls++
             _state.value = _state.value.copy(listScrolls = listScrolls)
+        }
+        if (dispatched) {
             if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.scaleDelay(850L)
             if (_state.value.taskType == TaskType.UNFOLLOW) {
                 nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(UNFOLLOW_SCROLL_SETTLE_MS))
@@ -2322,11 +2364,14 @@ object AutomationController {
     private fun scrollBackwardAndTrack(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
         val signature = ListViewportController.signature(root)
         val changed = lastListSignature.isBlank() || signature != lastListSignature
+        val moved = lastListSignature.isNotBlank() && signature != lastListSignature
         lastListSignature = signature
         val dispatched = dispatchListScroll(service, root, forward = false)
-        if (dispatched) {
+        if (moved) {
             listScrolls++
             _state.value = _state.value.copy(listScrolls = listScrolls)
+        }
+        if (dispatched) {
             if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.scaleDelay(850L)
             if (_state.value.taskType == TaskType.UNFOLLOW) {
                 nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(UNFOLLOW_SCROLL_SETTLE_MS))
@@ -2444,6 +2489,7 @@ object AutomationController {
     }
 
     private fun resetCycleNavigation() {
+        accountNavigationGate.clear()
         resetOperationNavigation()
         processedHandles.clear()
         skippedHandles.clear()
@@ -2476,6 +2522,8 @@ object AutomationController {
 
     private fun resetTransient(clearSession: Boolean) {
         pendingAction = null
+        stallRecoverySignature = ""
+        stallRecoveryAttempts = 0
         nextActionNotBefore = 0L
         cycleStartProgress = 0
         quotePostedKeys.clear()

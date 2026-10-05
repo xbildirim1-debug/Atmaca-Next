@@ -39,6 +39,9 @@ class AtmacaAccessibilityService : AccessibilityService() {
     private var lastUiLogKey = ""
     private var lastFreshReadLogKey = ""
     private var missingFreshRootSince = 0L
+    private var outsideReadSince = 0L
+    private var readSessionKey = ""
+    private val snapshotRetries = SnapshotRetryPolicy()
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -111,9 +114,16 @@ class AtmacaAccessibilityService : AccessibilityService() {
                     // A stale accessibility node must not kill the HandlerThread,
                     // leaving all later accounts with no snapshot consumer.
                     val state = AutomationController.state.value
-                    OperationLog.e("SNAPSHOT_ERROR", "stage=${state.flowStage} screen=${state.activeScreen} error=${error.javaClass.simpleName}")
-                    AutomationController.pause("Ekran okunurken hata oluştu; belirsiz işlem tekrarlanmadı. SNAPSHOT_ERROR kaydını kontrol et.")
-                    if (AccountSyncController.isActive) requestAutomationTick(500L)
+                    val frames = error.stackTrace.take(6).joinToString(" > ") { "${it.className}.${it.methodName}:${it.lineNumber}" }
+                    val syncing = AccountSyncController.isActive
+                    val key = if (syncing) AccountSyncController.recoveryKey() else state.sessionId.orEmpty()
+                    val retry = snapshotRetries.retry(key)
+                    OperationLog.e("SNAPSHOT_ERROR", "stage=${state.flowStage} screen=${state.activeScreen} error=${error.javaClass.simpleName} retry=$retry frames=$frames")
+                    if (retry) {
+                        if (!syncing) AutomationController.onSnapshotReadFailure(this)
+                        requestAutomationTick(500L)
+                    } else if (syncing) AccountSyncController.cancel()
+                    else AutomationController.pause("X ekranı dört taze okumada alınamadı; ilerleme korundu. SNAPSHOT_ERROR kaydını kontrol et.")
                 } finally {
                     processing.set(false)
                     if (refreshPending.getAndSet(false)) requestAutomationTick(POST_PROCESS_DELAY_MS)
@@ -271,19 +281,27 @@ class AtmacaAccessibilityService : AccessibilityService() {
 
     fun launchAtmacaOnAutomationThread(): Boolean = launchAtmaca()
 
-    /**
-     * Automation Back must never be allowed to fall through from X's root surfaces
-     * to the Android launcher. The account sheet is transient and can publish one
-     * stale ACCOUNT_SWITCHER snapshot after the selected row has already started
-     * dismissing. A global Back at that instant exits X, exactly as seen on device.
-     *
-     * Prefer X's real visible Back control. On the account switcher, route to X home
-     * instead of dispatching GLOBAL_ACTION_BACK; the runtime then re-opens the drawer
-     * and proves the selected @handle before any task action. HOME itself is a hard
-     * boundary: only the explicit Atmaca return path may leave X.
-     */
+    private fun freshNavigationRoot() = FreshRootReader.read(
+        invalidate = { if (Build.VERSION.SDK_INT >= 33) clearCache() },
+        acquire = { rootInActiveWindow }, refresh = { it.refresh() },
+    )
+
+    /** Dismiss the current sheet. A swallowed home deep link is never retried here. */
+    fun closeAccountSwitcher(): Boolean {
+        val root = freshNavigationRoot() ?: return false
+        if (!AccountSelectionReturnPolicy.mayDismiss(root.packageName?.toString(), ScreenDetector.detect(root))) return false
+        if (XUiActions.clickVisibleBack(this, root)) return true
+        // Re-check immediately before a global action; HOME after selection is a hard boundary.
+        val current = freshNavigationRoot() ?: return false
+        if (!AccountSelectionReturnPolicy.mayDismiss(current.packageName?.toString(), ScreenDetector.detect(current))) return false
+        val closed = performGlobalAction(GLOBAL_ACTION_BACK)
+        OperationLog.i("ACCOUNT_SHEET_CLOSE", "Taze X hesap seçicisi kapatma=$closed; kimlik menüden doğrulanacak")
+        return closed
+    }
+
+    /** Fresh root proof prevents a stale sheet snapshot from backing out of HOME. */
     fun pressBack(): Boolean {
-        val root = rootInActiveWindow
+        val root = freshNavigationRoot()
         if (root?.packageName?.toString() == X_PACKAGE) {
             val snapshots = AccessibilityTree.snapshots(root)
             val screen = ScreenDetector.detect(root, snapshots)
@@ -292,12 +310,12 @@ class AtmacaAccessibilityService : AccessibilityService() {
                 return false
             }
             if (screen == XScreen.ACCOUNT_SWITCHER) {
-                OperationLog.i("NAV", "ACCOUNT_SWITCHER için global Back yerine X home rotası kullanılıyor")
-                return launchXHome()
+                return closeAccountSwitcher()
             }
             if (XUiActions.clickVisibleBack(this, root)) return true
         }
-        return performGlobalAction(GLOBAL_ACTION_BACK)
+        return root?.packageName?.toString() == X_PACKAGE &&
+            ScreenDetector.detect(root) != XScreen.UNKNOWN && performGlobalAction(GLOBAL_ACTION_BACK)
     }
     fun isOutsideSuppressed(now:Long=System.currentTimeMillis()):Boolean=now<suppressOutsideUntil
 
@@ -317,8 +335,14 @@ class AtmacaAccessibilityService : AccessibilityService() {
                 RuntimeStatus.IDLE, RuntimeStatus.COMPLETED, RuntimeStatus.FAILED))) return
         // A new rootInActiveWindow call alone may still return Android-cached
         // virtual descendants after X changes the relationship pager.
-        val verifiedTask = runtime.taskType in setOf(com.atmacanext.app.domain.model.TaskType.VERIFIED_FOLLOW, com.atmacanext.app.domain.model.TaskType.COMMENTER_FOLLOW, com.atmacanext.app.domain.model.TaskType.RETWEETER_FOLLOW, com.atmacanext.app.domain.model.TaskType.COMMENT_QUOTE_TARGETS) &&
-            !AccountSyncController.isActive
+        val key = if (AccountSyncController.isActive) AccountSyncController.recoveryKey() else runtime.sessionId.orEmpty()
+        if (key != readSessionKey) {
+            readSessionKey = key
+            missingFreshRootSince = 0L
+            outsideReadSince = 0L
+            snapshotRetries.recovered()
+        }
+        val verifiedTask = AccountSyncController.isActive || runtime.taskId != null
         var cacheCleared = false
         val root = if (verifiedTask) FreshRootReader.read(
             invalidate = {
@@ -337,20 +361,29 @@ class AtmacaAccessibilityService : AccessibilityService() {
         if (verifiedTask && root == null) {
             val now = SystemClock.uptimeMillis()
             if (missingFreshRootSince == 0L) missingFreshRootSince = now
-            if (now - missingFreshRootSince >= 15_000L)
-                AutomationController.pause("Güncel X ekran ağacı 15 saniyede alınamadı; eski ekranla işlem yapılmadı")
+            if (now - missingFreshRootSince >= 15_000L) {
+                if (AccountSyncController.isActive) AccountSyncController.onOutsideX(this, null)
+                else AutomationController.pause("Güncel X ekran ağacı 15 saniyede alınamadı; eski ekranla işlem yapılmadı")
+            }
             else requestAutomationTick(500L)
             return
         }
         missingFreshRootSince = 0L
         val resolvedPackage=root?.packageName?.toString() ?: packageName
         if (resolvedPackage!=X_PACKAGE) {
+            val now = SystemClock.uptimeMillis()
+            if (outsideReadSince == 0L) outsideReadSince = now
+            if (ForegroundReadPolicy.wait(resolvedPackage, now - outsideReadSince)) {
+                requestAutomationTick(350L)
+                return
+            }
             AccessibilityServiceState.onEvent(resolvedPackage,XScreen.UNKNOWN,PopupType.NONE)
             if (isOutsideSuppressed()) { requestAutomationTick(400L); return }
             if (AccountSyncController.isActive) AccountSyncController.onOutsideX(this,resolvedPackage)
             else AutomationController.onOutsideXSnapshot(this,resolvedPackage)
             return
         }
+        outsideReadSince = 0L
         val snapshots = AccessibilityTree.snapshots(root)
         val screen=ScreenDetector.detect(root, snapshots)
         val popup=PopupClassifier.classify(snapshots)
@@ -361,6 +394,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
         if (key!=lastUiLogKey) { lastUiLogKey=key; OperationLog.i("UI","screen=$screen popup=$popup nodes~$nodeCount") }
         if (AccountSyncController.isActive) AccountSyncController.onSnapshot(this,root,screen,popup)
         else AutomationController.onAccessibilitySnapshot(this,root,screen,popup)
+        snapshotRetries.recovered()
     }
 
     override fun onInterrupt()=Unit

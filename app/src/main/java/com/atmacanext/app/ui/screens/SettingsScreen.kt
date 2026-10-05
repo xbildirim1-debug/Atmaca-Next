@@ -283,13 +283,14 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                         OutlinedTextField(unfollowLimit, { unfollowLimit = it.filter(Char::isDigit).take(3) }, label = { Text("Çıkma limiti") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.weight(1f))
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text("Bu değer takipten çıkma, onaylı takip, yorumcu ve retweetçi dahil bütün tıklama/kaydırma/doğrulama adımlarını değiştirir. 500 normal, 250 yaklaşık 2 kat hızlıdır.", color = TextSecondary, fontSize = 9.sp)
+                    Text("Bu değer takipten çıkma, onaylı takip, yorumcu ve retweetçi dahil bütün tıklama/kaydırma/doğrulama adımlarını değiştirir. 500 ms normal; 71 ms en hızlı 7× seçeneğidir.", color = TextSecondary, fontSize = 9.sp)
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(actionMs, { actionMs = it.filter(Char::isDigit).take(5) }, label = { Text("Tüm işlemlerin hızı (100–15000 ms)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedButton(onClick = { actionMs = "71"; switchMs = "257"; taskGapMs = "214" }) { Text("En hızlı · 7×") }
+                    OutlinedTextField(actionMs, { actionMs = it.filter(Char::isDigit).take(5) }, label = { Text("Tüm işlemlerin hızı (71–15000 ms)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(switchMs, { switchMs = it.filter(Char::isDigit).take(5) }, label = { Text("Hesap geçişi (500–15000 ms)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(switchMs, { switchMs = it.filter(Char::isDigit).take(5) }, label = { Text("Hesap geçişi (100–15000 ms)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(taskGapMs, { taskGapMs = it.filter(Char::isDigit).take(5) }, label = { Text("Görevler arası (250–60000 ms)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(taskGapMs, { taskGapMs = it.filter(Char::isDigit).take(5) }, label = { Text("Görevler arası (100–60000 ms)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
                     Button(
                         onClick = {
@@ -297,10 +298,10 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                                 AppServices.settings.setLimits(followLimit.toIntOrNull() ?: 35, unfollowLimit.toIntOrNull() ?: 35)
                                 AppServices.settings.setDailyAccountLimits(followLimit.toIntOrNull() ?: 35, unfollowLimit.toIntOrNull() ?: 35)
                                 AppServices.settings.setAutomationTiming(
-                                    actionMs.toLongOrNull() ?: 500L,
-                                    switchMs.toLongOrNull() ?: 1_800L,
+                                    actionMs.toLongOrNull() ?: 71L,
+                                    switchMs.toLongOrNull() ?: 257L,
                                     settings.rateLimitCooldownMinutes,
-                                    taskGapMs.toLongOrNull() ?: 1_500L,
+                                    taskGapMs.toLongOrNull() ?: 214L,
                                 )
                             }
                         },

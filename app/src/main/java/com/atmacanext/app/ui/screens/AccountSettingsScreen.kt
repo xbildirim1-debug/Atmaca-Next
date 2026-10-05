@@ -89,15 +89,16 @@ private fun AutomationPreferences(enabled: Boolean) {
     var saving by remember { mutableStateOf(false) }
     var feedback by remember { mutableStateOf("") }
     val editable = enabled && !queue.isActive && !saving
-    val valid = (actionMs.toLongOrNull() ?: -1L) in 100L..15_000L && (switchMs.toLongOrNull() ?: -1L) in 500L..15_000L &&
-        (taskMs.toLongOrNull() ?: -1L) in 250L..60_000L && (days.toIntOrNull() ?: -1) in 1..365
+    val valid = (actionMs.toLongOrNull() ?: -1L) in 71L..15_000L && (switchMs.toLongOrNull() ?: -1L) in 100L..15_000L &&
+        (taskMs.toLongOrNull() ?: -1L) in 100L..60_000L && (days.toIntOrNull() ?: -1) in 1..365
     Card {
         Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Çalışma ayarları", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text("İşlem hızı bütün görevlerin tıklama, doğrulama ve kaydırma beklemelerini yönetir. 500 ms normal; 250 ms yaklaşık 2 kat, 100 ms yaklaşık 5 kat hızlıdır.", color = TextSecondary)
-            PreferenceNumber("Tüm işlemlerin hızı (100–15000 ms)", actionMs, editable) { actionMs = it }
-            PreferenceNumber("Hesap geçişi (500–15000 ms)", switchMs, editable) { switchMs = it }
-            PreferenceNumber("Görevler arası (250–60000 ms)", taskMs, editable) { taskMs = it }
+            Text("İşlem hızı bütün görevlerin tıklama, doğrulama ve kaydırma beklemelerini yönetir. 500 ms normal; 71 ms en hızlı 7× seçeneğidir.", color = TextSecondary)
+            OutlinedButton(enabled = editable, onClick = { actionMs = "71"; switchMs = "257"; taskMs = "214" }) { Text("En hızlı · 7×") }
+            PreferenceNumber("Tüm işlemlerin hızı (71–15000 ms)", actionMs, editable) { actionMs = it }
+            PreferenceNumber("Hesap geçişi (100–15000 ms)", switchMs, editable) { switchMs = it }
+            PreferenceNumber("Görevler arası (100–60000 ms)", taskMs, editable) { taskMs = it }
             PreferenceNumber("Kayıt saklama süresi (1–365 gün)", days, editable) { days = it }
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Text("Hatalı görevden sonra sıradakine geç", Modifier.weight(1f))

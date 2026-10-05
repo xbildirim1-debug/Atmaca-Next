@@ -1,4 +1,7 @@
-# Atmaca Next — 26.53
+# Atmaca Next — 26.54
+
+26.54: hesap seçicisinde ilk hesap durması, ikinci hesapta kaydırma hatası ve onaylı liste sonu düzeltildi. Limit dolmazsa aynı listeden rastgele başka kaynak → takipçileri → Onaylı döngüsü sürer. Geçici ekran hataları aynı aşamadan yeniden okunur; ortak hareketsizlik denetimi tüm görevleri kapsar. Varsayılan 7× hız ve Ayarlar’da En hızlı · 7× seçeneği eklendi. CI/APK doğrulaması bekleniyor; ayrıntılar DEVIR_NOTU.md içinde.
+
 
 26.53: tüm görevlerde önceki X ekranından hesap menüsüne sınırlı Back ile dönülür; sonraki hesap tam kimlikle doğrulanır. Açılan yorumun alt yanıtlarına girilmez; Takip et yoksa ana yorumlara dönüp sıradaki görünür yorumla devam edilir. Yeni takip isteği Beklemede olduğunda onay beklenmeden işlem sayılır.
 
@@ -23,7 +26,7 @@ sayılmaz. Pencere sınıflandırması gerçek dialog/kapatma kontrolü gerektir
 uzun kaydırmayı tekrarlar ve iki başarısız okumada hedefi terk etmez. Yorumcu
 takibinden/atlamasından sonra sıradaki görünür üst yoruma takılmak yerine alt
 yorumlara bir zorunlu kaydırma yapar ve `COMMENT_SCROLL` kanıtını kaydeder.
-Ayarlar'daki `Tüm işlemlerin hızı` 100–15000 ms aralığında takipten çıkma,
+Ayarlar'daki `Tüm işlemlerin hızı` 71–15000 ms aralığında takipten çıkma,
 onaylı takip, yorumcu ve retweetçi dahil tüm tıklama/kaydırma/doğrulama
 adımlarını ölçekler; hesap ve toplu görev geçişleri ayrıca ayarlanır.
 
@@ -93,7 +96,7 @@ Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap
 
 ## Geliştirme / APK
 
-JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.53-APK** çıktısını indirin.
+JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.54-APK** çıktısını indirin.
 
 ```sh
 gradle testDebugUnitTest lintDebug :app:assembleDebug

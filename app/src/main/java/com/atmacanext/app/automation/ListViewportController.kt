@@ -32,10 +32,10 @@ object ListViewportController {
     }
 
     fun tryScrollForward(root: AccessibilityNodeInfo?): ScrollAttemptResult =
-        scroll(root, AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+        guardedScroll { scroll(root, AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
 
     fun tryScrollBackward(root: AccessibilityNodeInfo?): ScrollAttemptResult =
-        scroll(root, AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+        guardedScroll { scroll(root, AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) }
 
     /**
      * X'in ilişki ekranında hem yatay sekme pager'ı hem de dikey kullanıcı
@@ -44,10 +44,17 @@ object ListViewportController {
      * ekran taramasının Aboneler sekmesine kaymasını engeller.
      */
     fun tryScrollUserRowsForward(root: AccessibilityNodeInfo?): ScrollAttemptResult =
-        scrollUserRows(root, forward = true)
+        guardedScroll { scrollUserRows(root, forward = true) }
 
     fun tryScrollUserRowsBackward(root: AccessibilityNodeInfo?): ScrollAttemptResult =
-        scrollUserRows(root, forward = false)
+        guardedScroll { scrollUserRows(root, forward = false) }
+
+    internal fun guardedScroll(action: () -> ScrollAttemptResult): ScrollAttemptResult = try {
+        action()
+    } catch (error: RuntimeException) {
+        OperationLog.w("SCROLL_RETRY", "Dikey liste eylemi ${error.javaClass.simpleName}; görünür alan hareketi/yeni okuma denenecek")
+        ScrollAttemptResult.ACTION_REJECTED
+    }
 
     private fun scrollUserRows(root: AccessibilityNodeInfo?, forward: Boolean): ScrollAttemptResult {
         var current = XListInspector.visibleHandleRows(root).firstOrNull()?.row
