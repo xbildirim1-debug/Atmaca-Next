@@ -190,7 +190,7 @@ object AccountSyncController {
                 XScreen.ACCOUNT_SWITCHER -> enterSwitcher()
                 XScreen.ACCOUNT_DRAWER -> {
                     if (XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_SWITCHER, target.orEmpty(), null))
-                        navigationGate.issued(screen, now)
+                        navigationGate.issued(screen, now, XScreen.ACCOUNT_SWITCHER)
                     tick(service, 1_200L); return
                 }
                 XScreen.HOME -> move(Stage.DRAWER, "Hesap menüsü yeniden açılıyor")
@@ -266,7 +266,7 @@ object AccountSyncController {
 
     private fun openDrawer(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?) {
         val clicked = XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_DRAWER, "", null)
-        if (clicked) navigationGate.issued(XScreen.HOME, SystemClock.elapsedRealtime())
+        if (clicked) navigationGate.issued(XScreen.HOME, SystemClock.elapsedRealtime(), XScreen.ACCOUNT_DRAWER)
         OperationLog.i("ACCOUNT_SYNC", "Hesap menüsü açma sonucu=$clicked stage=$stage")
         // Wait for the drawer animation before another click can close it again.
         tick(service, 1_200L)

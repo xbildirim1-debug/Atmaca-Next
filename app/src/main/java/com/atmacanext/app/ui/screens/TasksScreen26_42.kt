@@ -178,7 +178,7 @@ fun TasksScreen26_42(modifier: Modifier = Modifier, initialGroup: String? = null
 
             item {
                 Text(
-                    "Kuyruk hesap bazlı ilerler: bir hesabın seçili görevleri bitmeden sonraki hesaba geçmez. Geçiş 20 saniye ilerlemezse kuyruk koruması yalnız kalan alt işleri yeniden kurar.",
+                    "Kuyruk hesap bazlı ilerler: bir hesabın seçili görevleri bitmeden sonraki hesaba geçmez. Geçiş 10 saniye ilerlemezse kuyruk koruması yalnız kalan alt işleri yeniden kurar.",
                     color = TextSecondary,
                     fontSize = 10.sp,
                 )

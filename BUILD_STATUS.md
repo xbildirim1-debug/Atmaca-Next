@@ -1,3 +1,7 @@
+## 26.56 — yeni CI bekleniyor
+
+20 yeni regresyon, beklenen toplam455. Güncel26.55 üzerinde yalnız ilgili akışlara yama. Yerel diff/SQLite geçti; fiziksel yeni APK testi yapılmadı.
+
 ## 26.55 — doğrulanmış teslim sonucu (5 Ekim 2026)
 
 - Test edilen kaynak main commit: efde2b84dc211c515bbbfc5c83f41f80f989b785. Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37341767741 . 435 test; 0 başarısız/hata/atlanan. AdaptiveNavigation26_55Test içindeki18 yeni regresyon geçti; önceki417 test de geçti. Test/lint/assemble/APK imzası/manifest/paketleme ve gerçek SQLite 5→6 kontrolü başarılı. Lint0 hata/fatal,21 uyarı.

@@ -1,4 +1,6 @@
-# Atmaca Next — 26.55
+# Atmaca Next — 26.56
+
+26.56: yalnız Onaylı takipte Geri Takip Et/sonuç doğrulaması, ara hesap seçici ekranı ve10 saniye hareketsizlik kurtarması güncellendi. Sayaç/aşama/bekleyen işlem korunarak motor adımı yeniden başlar; yeni derleme bekleniyor. Diğer26.55 davranışları korunur.
 
 26.55: güncel 26.54 main korunarak sol/sağ/alt gezinme çubuğu canlı semantik ve sınırlarla bulunur. Tablet kaydırması içerik panelinde kalır; hesap seçici gerçek drawer paneline bağlanır. Önceki görev düzeltmeleri ve En hızlı · 7× korunur. CI 37341767741 başarılı:435 test (18 yeni), lint ve APK/imza/paketleme geçti. APK kaynağı efde2b84dc211c515bbbfc5c83f41f80f989b785. Fiziksel cihaz testi yapılmadı.
 

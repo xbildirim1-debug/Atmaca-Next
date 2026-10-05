@@ -121,6 +121,7 @@ object AutomationController {
         val inlineReply: Boolean = false,
         val ownRepliesBefore: Set<String> = emptySet(),
         val formClearedAt: Long? = null,
+        val unchangedFollowSince: Long? = null,
     )
 
     private val _state = MutableStateFlow(AutomationRuntimeState())
@@ -377,9 +378,7 @@ object AutomationController {
                 val signature = AutomationStallPolicy.signature(current)
                 if (signature != stallRecoverySignature) { stallRecoverySignature = signature; stallRecoveryAttempts = 0 }
                 stallRecoveryAttempts++
-                if (stallRecoveryAttempts > 3) {
-                    pause("Üç yerinde kurtarmadan sonra ilerleme yok; ${current.verifiedCount}/${current.limit} korundu")
-                } else {
+                run {
                     nextActionNotBefore = 0L
                     loopGuard.clear()
                     if (pendingAction == null && current.taskType == TaskType.VERIFIED_FOLLOW &&
@@ -387,7 +386,7 @@ object AutomationController {
                         nextVerifiedSource(service, "Bu onaylı listede ilerleme yok")
                     } else {
                         _state.value = current.copy(status = if (pendingAction == null) RuntimeStatus.RECOVERING else RuntimeStatus.VERIFYING,
-                            message = "Hareketsizlik kontrolü: aynı görev aşaması taze ekrandan sürdürülüyor")
+                            message = "10 saniye hareketsizlik: motor aynı görev/ilerleme ve bekleyen işlemle yeniden başlatıldı")
                         service.requestAutomationTick(250L)
                     }
                 }
@@ -592,7 +591,7 @@ object AutomationController {
             XScreen.HOME -> {
                 if (!performStep(service, root, screen, "open_drawer", target) { XUiActions.clickDrawer(service, root) }) {
                     retryOrRecover(service, "X hesap çekmecesi açılamadı")
-                } else waitForAccountNavigation(service, now)
+                } else waitForAccountNavigation(service, now, XScreen.ACCOUNT_DRAWER)
             }
             XScreen.ACCOUNT_DRAWER -> {
                 val activeDrawerAccount = AccountSwitcherInspector.readActiveDrawerAccount(root).username
@@ -611,7 +610,7 @@ object AutomationController {
                         detectedUsername = activeDrawerAccount,
                     )
                     if (profileOpened) {
-                        accountNavigationGate.issued(screen, now)
+                        accountNavigationGate.issued(screen, now, XScreen.PROFILE)
                         stageStartedAt = now
                         _state.value = current.copy(
                             status = RuntimeStatus.SWITCHING_ACCOUNT,
@@ -624,7 +623,7 @@ object AutomationController {
                     }
                 } else if (!performStep(service, root, screen, "open_account_switcher", target) { XUiActions.clickAccountSwitcher(service, root) }) {
                     retryOrRecover(service, "X hesap seçici açılamadı")
-                } else waitForAccountNavigation(service, now)
+                } else waitForAccountNavigation(service, now, XScreen.ACCOUNT_SWITCHER)
             }
             XScreen.ACCOUNT_SWITCHER -> {
                 val visibleHandles = AccountSwitcherInspector.visibleAccountHandles(root)
@@ -673,8 +672,8 @@ object AutomationController {
         }
     }
 
-    private fun waitForAccountNavigation(service: AtmacaAccessibilityService, now: Long) {
-        accountNavigationGate.issued(_state.value.activeScreen, now)
+    private fun waitForAccountNavigation(service: AtmacaAccessibilityService, now: Long, expected: XScreen) {
+        accountNavigationGate.issued(_state.value.activeScreen, now, expected)
         nextActionNotBefore = now + AutomationTuning.scaleDelay(1_200L)
         service.requestAutomationTick(1_200L)
     }
@@ -1085,7 +1084,7 @@ object AutomationController {
                 }
                 val target = XUiActions.findRelationshipTarget(
                     root,
-                    acceptedLabels = VerifiedFollowPolicy.plainFollowLabels,
+                    acceptedLabels = VerifiedFollowPolicy.availableFollowLabels,
                     excludedHandles = processedHandles + skippedHandles,
                     fromBottom = false,
                 )
@@ -1914,14 +1913,17 @@ object AutomationController {
                                      pending: PendingAction, handle: String) {
         val requested = XUiActions.rowHasAny(root, handle, XUiVocabulary.requestedActions)
         val following = XUiActions.rowHasAny(root, handle, XUiVocabulary.followingActions)
-        val plainFollow = XUiActions.rowHasAny(root, handle, VerifiedFollowPolicy.plainFollowLabels)
+        val plainFollow = XUiActions.rowHasAny(root, handle, VerifiedFollowPolicy.availableFollowLabels)
+        val unchangedSince = if (plainFollow && !following && !requested) pending.unchangedFollowSince ?: now else null
+        pendingAction = pending.copy(unchangedFollowSince = unchangedSince)
         if (following && !plainFollow && verifiedFollowingObservedAt == 0L) verifiedFollowingObservedAt = now
         if (following && !plainFollow) {
             if (verifiedFollowingStableAt == 0L) verifiedFollowingStableAt = now
         } else verifiedFollowingStableAt = 0L
         val outcome = VerifiedFollowPolicy.outcome(verifiedFollowingObservedAt > 0L, following, plainFollow,
             if (verifiedFollowingStableAt > 0L) now - verifiedFollowingStableAt else 0L, now - pending.startedAt, requested,
-            AutomationTuning.scaleDelay(2_000L).coerceIn(250L, 2_000L))
+            AutomationTuning.scaleDelay(2_000L).coerceIn(250L, 2_000L),
+            unchangedSince?.let { now - it } ?: 0L)
         verifiedRevertStreak = VerifiedFollowPolicy.nextStreak(verifiedRevertStreak, outcome)
         when (outcome) {
             VerifiedFollowOutcome.WAIT -> service.requestAutomationTick(300L)
@@ -1942,9 +1944,20 @@ object AutomationController {
                     service.requestAutomationTickExact(AutomationTuning.betweenActionsMs)
                 }
             }
-            VerifiedFollowOutcome.UNKNOWN -> {
+            VerifiedFollowOutcome.NO_EFFECT -> {
                 pendingAction = null
-                pause("@$handle takip sonucu kesinleşmedi; geri dönüş veya başarı sayılmadı")
+                skippedHandles += handle
+                _state.value = _state.value.copy(status = RuntimeStatus.RUNNING,
+                    message = "@$handle hâlâ Takip et/Geri Takip Et; sonuç sayılmadan sıradaki kişi")
+                OperationLog.w("FOLLOW_NO_EFFECT", "@$handle görünür ilişki değişmedi; başarı/revert sayılmadı")
+                nextActionNotBefore = now + AutomationTuning.betweenActionsMs
+                service.requestAutomationTickExact(AutomationTuning.betweenActionsMs)
+            }
+            VerifiedFollowOutcome.UNKNOWN -> {
+                // A temporarily missing/contradictory row is re-read; never discard or re-tap it.
+                _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING,
+                    message = "@$handle sonucu yeniden okunuyor; 10 saniye hareketsizlikte işlem korunarak motor yeniden başlatılacak")
+                service.requestAutomationTick(350L)
             }
         }
     }

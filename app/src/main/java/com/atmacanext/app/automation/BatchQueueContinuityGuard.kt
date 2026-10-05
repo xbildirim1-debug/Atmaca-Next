@@ -78,7 +78,7 @@ class BatchQueueContinuityGuard(
                         lastSignature = signature
                         unchangedSince = now
                     } else if (unchangedSince > 0L && now - unchangedSince >= AutomationStallPolicy.TIMEOUT_MS) {
-                        recoverBatch("20 saniye kuyruk geçişi ilerlemedi", current.username, signature)
+                        recoverBatch("10 saniye kuyruk geçişi ilerlemedi", current.username, signature)
                     }
                     continue
                 }

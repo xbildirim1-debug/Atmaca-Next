@@ -158,7 +158,7 @@ class AutomationForegroundService : Service() {
         if (queue.status != QueueStatus.RUNNING || item.taskId != runtime.taskId) return
         stallRecoveryInProgress = true
         try {
-            val reason = "20 saniye gerçek ilerleme yok; aynı görev aşaması yerinde kontrol ediliyor"
+            val reason = "10 saniye gerçek ilerleme yok; motor aynı ilerlemeden yeniden başlatılıyor"
             AppServices.repository.log("WARN", "STALL_RECOVERY", item.taskId, item.username, reason,
                 "ageMs=${stallWatchdog.ageMillis()}; stage=${runtime.flowStage}; screen=${runtime.activeScreen}; verified=${runtime.verifiedCount}/${runtime.limit}")
             updateNotification(reason)

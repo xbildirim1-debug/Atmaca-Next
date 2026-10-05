@@ -58,6 +58,8 @@ object XUiActions {
         val accepted = acceptedLabels.map(XUiVocabulary::normalize).toSet()
         val strictMatches = AccessibilityTree.nodes(root, maxNodes = 1_000).mapNotNull { node ->
             if (!isRelationshipActionNode(node)) return@mapNotNull null
+            if (accepted == VerifiedFollowPolicy.availableFollowLabels &&
+                !VerifiedFollowPolicy.isAvailableFollow(labels(node))) return@mapNotNull null
             if (accepted == VerifiedFollowPolicy.plainFollowLabels && !VerifiedFollowPolicy.isPlainFollow(labels(node))) return@mapNotNull null
             val label = normalizedLabel(node) ?: return@mapNotNull null
             if (!matchesActionLabel(label, accepted)) return@mapNotNull null
@@ -67,6 +69,8 @@ object XUiActions {
             // the whole row, and ACTION_CLICK on it can open the profile/list instead
             // of pressing the visible Follow button.
             val rowAnchor = clickableAncestor(node) ?: node.takeIf { it.isEnabled } ?: return@mapNotNull null
+            if (accepted == VerifiedFollowPolicy.availableFollowLabels &&
+                !VerifiedFollowPolicy.isAvailableFollow(labels(node) + labels(clickableAncestor(node) ?: node))) return@mapNotNull null
             if (accepted == VerifiedFollowPolicy.plainFollowLabels &&
                 !VerifiedFollowPolicy.isPlainFollow(labels(node) + labels(rowAnchor))) return@mapNotNull null
             val row = userRow(rowAnchor) ?: return@mapNotNull null
@@ -110,7 +114,8 @@ object XUiActions {
                 val actions = descendants.filter { isRelationshipActionNode(it, observation = true) }
                 if (actions.isNotEmpty()) {
                     return actions.any { action ->
-                        if (normalized == VerifiedFollowPolicy.plainFollowLabels) VerifiedFollowPolicy.isPlainFollow(labels(action) + (clickableAncestor(action)?.let(::labels) ?: emptyList()))
+                        if (normalized == VerifiedFollowPolicy.availableFollowLabels) VerifiedFollowPolicy.isAvailableFollow(labels(action) + (clickableAncestor(action)?.let(::labels) ?: emptyList()))
+                        else if (normalized == VerifiedFollowPolicy.plainFollowLabels) VerifiedFollowPolicy.isPlainFollow(labels(action) + (clickableAncestor(action)?.let(::labels) ?: emptyList()))
                         else labels(action).any { matchesActionLabel(XUiVocabulary.normalize(it), normalized) }
                     }
                 }
@@ -397,8 +402,12 @@ object XUiActions {
             val label = labels(node).map(XUiVocabulary::normalize).firstOrNull { matchesActionLabel(it, accepted) }
                 ?: return@mapNotNull null
             if (!isRelationshipActionNode(node, observation)) return@mapNotNull null
+            if (accepted == VerifiedFollowPolicy.availableFollowLabels &&
+                !VerifiedFollowPolicy.isAvailableFollow(labels(node))) return@mapNotNull null
             if (accepted == VerifiedFollowPolicy.plainFollowLabels && !VerifiedFollowPolicy.isPlainFollow(labels(node))) return@mapNotNull null
             val rowAnchor = clickableAncestor(node) ?: node
+            if (accepted == VerifiedFollowPolicy.availableFollowLabels &&
+                !VerifiedFollowPolicy.isAvailableFollow(labels(node) + labels(clickableAncestor(node) ?: node))) return@mapNotNull null
             if (accepted == VerifiedFollowPolicy.plainFollowLabels &&
                 !VerifiedFollowPolicy.isPlainFollow(labels(node) + labels(rowAnchor))) return@mapNotNull null
             val actionBounds = android.graphics.Rect().also(node::getBoundsInScreen)

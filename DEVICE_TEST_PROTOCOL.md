@@ -1,3 +1,13 @@
+## 26.56 dar kapsam kabulü
+
+1. Ayarlar sürümü26.56 olmalı. Onaylı listede Geri Takip Et kişisi seçilip Following/Requested sonucu doğrulanmalı; önceden Following/Requested tekrar seçilmemeli.
+2. @NeerajC111 örneğinde eylemden sonra hâlâ Follow/FollowBack varsa7 saniye ve1 saniye sürekli görünür durumdan sonra FOLLOW_NO_EFFECT; sayaç artışı yok, sıradaki uygun kişi. Kayıp/çelişkili satır başarı/no-effect sayılmamalı ve tekrar takip tıklanmamalı.
+3. Son hesap6/10 veya7/10 iken sonuç okunamazsa10 saniye ilerlemesizlikte STALL_RECOVERY, aynı pending/sayaç korunarak okuma yeniden başlasın. Tekrarlanan kurtarma üç kezden sonra otomatik PAUSED yapmamalı. İlgili düğme daha sonra Following/Requested olunca tek kez sayılsın.
+4. Kullanıcı Durdur/Duraklat ve planlı döngü beklemesinde otomatik yeniden başlama olmamalı. Rate-limit mesajı veya üç gerçek revert koruması korunmalı.
+5. Hesap seçici açılışındaki ara PROFILE/FOLLOWERS_LIST, beklenen switcher görülmeden kapatılmamalı. Toplu kuyruk ve final Atmaca dönüşü; önceki tablet/7× ayarları tekrar kontrol edilmeli.
+
+Bu yeni APK ile fiziksel test yapılmadı.
+
 ## 26.55 telefon/tablet ve güncellik kabulü
 
 1. Ayarlar sürümü 26.55-adaptive-navigation olmalı; eski 26.54/26.53 APK ile karıştırılmamalı. X sürümü, cihaz modeli, yön ve ekran ölçeğini loga ekle.

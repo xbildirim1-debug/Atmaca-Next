@@ -5,7 +5,7 @@ package com.atmacanext.app.automation
  * Accessibility event noise and changing status messages are deliberately excluded.
  */
 internal object AutomationStallPolicy {
-    const val TIMEOUT_MS = 20_000L
+    const val TIMEOUT_MS = 10_000L
 
     fun shouldWatch(state: AutomationRuntimeState): Boolean =
         state.taskId != null &&
