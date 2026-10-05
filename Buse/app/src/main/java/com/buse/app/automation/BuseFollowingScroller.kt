@@ -10,7 +10,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Short vertical swipes retain overlapping people so a 200-person boundary cannot skip users. */
+/** Fast overlapping drags end with a stationary touch instead of launching an inertial fling. */
 object BuseFollowingScroller {
     fun scroll(service: AccessibilityService, root: AccessibilityNodeInfo?, rows: List<BuseFollowingInspector.Row>, forward: Boolean): Boolean {
         if (root == null || rows.isEmpty()) return false
@@ -32,9 +32,21 @@ object BuseFollowingScroller {
             val path = Path().apply { moveTo(x, start); lineTo(x, end) }
             val completed = AtomicBoolean(false)
             val latch = CountDownLatch(1)
-            val accepted = service.dispatchGesture(GestureDescription.Builder().addStroke(GestureDescription.StrokeDescription(path, 0, 22)).build(),
+            val drag = GestureDescription.StrokeDescription(path, 0, 22L, true)
+            val releasePath = Path().apply { moveTo(x, end) }
+            val release = drag.continueStroke(releasePath, 0L, 120L, false)
+            val releaseGesture = GestureDescription.Builder().addStroke(release).build()
+            val releaseCallback = object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) { completed.set(true); latch.countDown() }
+                override fun onCancelled(gestureDescription: GestureDescription?) { latch.countDown() }
+            }
+            val accepted = service.dispatchGesture(GestureDescription.Builder().addStroke(drag).build(),
                 object : AccessibilityService.GestureResultCallback() {
-                    override fun onCompleted(gestureDescription: GestureDescription?) { completed.set(true); latch.countDown() }
+                    override fun onCompleted(gestureDescription: GestureDescription?) {
+                        try {
+                            if (!service.dispatchGesture(releaseGesture, releaseCallback, null)) latch.countDown()
+                        } catch (_: RuntimeException) { latch.countDown() }
+                    }
                     override fun onCancelled(gestureDescription: GestureDescription?) { latch.countDown() }
                 }, null)
             accepted && (Looper.myLooper() == Looper.getMainLooper() || (latch.await(1800, TimeUnit.MILLISECONDS) && completed.get()))

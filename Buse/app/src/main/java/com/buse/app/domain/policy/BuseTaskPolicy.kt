@@ -5,7 +5,7 @@ import com.buse.app.domain.model.TaskType
 
 enum class BuseTaskMode(val title: String, val description: String) {
     UNFOLLOW("Takipten Çıkma", "Takip edilen kullanıcıları seçtiğin limite kadar çıkarır."),
-    NON_FOLLOWERS("Takip Etmeyenleri Çıkma", "İlk 200 kişi kalır. 201. kişiden aşağıya doğru, seni takip etmeyenler çıkarılır."),
+    NON_FOLLOWERS("Takip Etmeyenleri Çıkma", "İlk 100 kişi kalır. 101. kişiden aşağıya doğru, seni takip etmeyenler çıkarılır."),
 }
 
 object BuseTaskPolicy {

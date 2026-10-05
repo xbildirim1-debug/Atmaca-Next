@@ -201,6 +201,7 @@ object AutomationController {
     private var unfollowReverseMode = false
     private var unfollowFollowObservedAt = 0L
     private var buseFollowingRun = BuseFollowingRun()
+    private val buseViewportGate = BuseViewportGate()
     private var buseAtTop = false
     private var buseStableSince = 0L
     private var buseViewport = ""
@@ -764,6 +765,7 @@ object AutomationController {
                     lastListSignature = ""
                     if (com.buse.app.domain.policy.BuseTaskPolicy.isNonFollower(activeTask)) {
                         buseFollowingRun = BuseFollowingRun()
+                        buseViewportGate.reset()
                         buseAtTop = false
                         buseStableSince = 0L
                         buseViewport = ""
@@ -771,7 +773,7 @@ object AutomationController {
                         buseProbeSince = 0L
                         buseProbeSignature = ""
                         buseUnknownViewports = 0
-                        moveStage(XFlowStage.SEEK_UNFOLLOW_DEPTH, "İlk 200 yeni kişiyi korumak için listenin başı doğrulanıyor")
+                        moveStage(XFlowStage.SEEK_UNFOLLOW_DEPTH, "İlk 100 yeni kişiyi korumak için listenin başı doğrulanıyor")
                     } else moveStage(XFlowStage.PROCESS_UNFOLLOW, "Takip edilenler doğrulandı; görünür kullanıcılardan başlanıyor")
                     service.requestAutomationTick(150L)
                 } else if (selectedRelationshipTab == RelationshipTabInspector.FOLLOWING) {
@@ -940,16 +942,28 @@ object AutomationController {
             return
         }
         val rows = BuseFollowingInspector.rows(root)
+        val signature = rows.joinToString("|") { "${it.evidence.handle}:${it.bounds.top}:${it.bounds.bottom}" }
+        // Events can arrive while X is still moving or recycling its rows. Do not count,
+        // pause for an apparent gap, or issue another drag until fresh geometry is stable.
+        val settled = buseViewportGate.observe(
+            signature.takeIf { rows.isNotEmpty() && rows.all { it.evidence.treeComplete } }, now)
+        if (settled == BuseViewportGate.Decision.WAIT) {
+            service.requestAutomationTickExact(BuseViewportGate.POLL_MS)
+            return
+        }
+        if (settled == BuseViewportGate.Decision.TIMED_OUT) {
+            pause("Kaydırmadan sonra X listesi sabitlenmedi; kişi sayımı korunarak duraklatıldı")
+            return
+        }
         if (rows.any { !it.evidence.treeComplete }) {
-            pause("X ekran ağacı eksik okundu; 200 kişi sınırı tahmin edilmedi")
+            pause("X ekran ağacı eksik okundu; 100 kişi sınırı tahmin edilmedi")
             return
         }
         if (rows.isEmpty()) {
-            if (stageTimedOut(now)) pause("Kişi satırları tam okunamadı; ilk 200 kişi korunarak görev duraklatıldı")
+            if (stageTimedOut(now)) pause("Kişi satırları tam okunamadı; ilk 100 kişi korunarak görev duraklatıldı")
             else service.requestAutomationTickExact(20L)
             return
         }
-        val signature = rows.joinToString("|") { "${it.evidence.handle}:${it.bounds.top}:${it.bounds.bottom}" }
         val changed = signature != buseViewport
         if (changed) {
             buseViewport = signature
@@ -963,7 +977,7 @@ object AutomationController {
                 buseAtTop = true
                 buseStableSince = now
                 buseViewport = ""
-                moveStage(XFlowStage.SEEK_UNFOLLOW_DEPTH, "Liste başı doğrulandı; ilk 200 farklı kişi atlanıyor")
+                moveStage(XFlowStage.SEEK_UNFOLLOW_DEPTH, "Liste başı doğrulandı; ilk 100 farklı kişi atlanıyor")
                 service.requestAutomationTickExact(20L)
                 return
             }
@@ -971,18 +985,19 @@ object AutomationController {
                 pause("Liste başına kaydırma tamamlanamadı; başlangıç sırası tahmin edilmedi")
                 return
             }
-            service.requestAutomationTickExact(25L)
+            buseViewportGate.afterScroll(System.currentTimeMillis())
+            service.requestAutomationTickExact(BuseViewportGate.POLL_MS)
             return
         }
         if (!buseFollowingRun.observe(rows.map { it.evidence.handle })) {
-            pause("Kaydırmada kişi sırası kesildi; 200 kişi sınırı doğrulanamadı. Görevi yeniden başlat.")
+            pause("Kaydırmada kişi sırası kesildi; 100 kişi sınırı doğrulanamadı. Görevi yeniden başlat.")
             return
         }
         _state.value = current.copy(depthUniqueUsers = buseFollowingRun.seenCount, listScrolls = listScrolls,
-            message = if (!buseFollowingRun.ready) "İlk 200 kişi korunuyor: ${buseFollowingRun.protectedHandles.size}/200"
-                else "İlk 200 kişi korunuyor; daha eski kişiler kontrol ediliyor")
+            message = if (!buseFollowingRun.ready) "İlk 100 kişi korunuyor: ${buseFollowingRun.protectedHandles.size}/100"
+                else "İlk 100 kişi korunuyor; daha eski kişiler kontrol ediliyor")
         if (buseFollowingRun.ready && current.flowStage == XFlowStage.SEEK_UNFOLLOW_DEPTH) {
-            moveStage(XFlowStage.PROCESS_UNFOLLOW, "201. kişiden aşağıya; seni takip edenler korunuyor")
+            moveStage(XFlowStage.PROCESS_UNFOLLOW, "101. kişiden aşağıya; seni takip edenler korunuyor")
             buseStableSince = now
         }
         if (cycleTargetReached()) {
@@ -1032,7 +1047,7 @@ object AutomationController {
         val uncertain = rows.count { it.evidence.handle !in buseFollowingRun.protectedHandles &&
             it.evidence.handle !in excluded && BuseNonFollowerPolicy.relationship(it.evidence) == BuseRelationship.UNKNOWN }
         if (!changed && now - buseStableSince >= 1500L) {
-            val reason = if (!buseFollowingRun.ready) "Liste 200 kişiden önce bitti; herkes korundu"
+            val reason = if (!buseFollowingRun.ready) "Liste 100 kişiden önce bitti; herkes korundu"
                 else "Listenin eski ucuna ulaşıldı; ${current.verifiedCount} işlem doğrulandı"
             // A partial scan ends with its actual count; the requested limit is never fabricated.
             finishCycleOrTask(service, "$reason; belirsiz satırlar işlenmedi")
@@ -1045,7 +1060,8 @@ object AutomationController {
             return
         }
         // Forward only: no reverse pass can touch the protected recent users.
-        service.requestAutomationTickExact(25L)
+        buseViewportGate.afterScroll(System.currentTimeMillis())
+        service.requestAutomationTickExact(BuseViewportGate.POLL_MS)
     }
 
     private fun handleVerifiedFollow(service: BuseAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {

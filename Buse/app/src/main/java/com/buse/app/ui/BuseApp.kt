@@ -261,7 +261,7 @@ private fun BuseTasks(modifier: Modifier) {
                         Text(mode.title, fontSize = 19.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     }
                     Text(mode.description, color = TextSecondary)
-                    if (mode == BuseTaskMode.NON_FOLLOWERS) Text("“Seni takip ediyor” yazan kişiler kalır. Liste 200 kişiden kısaysa kimse çıkarılmaz.", style = MaterialTheme.typography.bodySmall, color = BusePink)
+                    if (mode == BuseTaskMode.NON_FOLLOWERS) Text("“Seni takip ediyor” yazan kişiler kalır. Liste 100 kişiden kısaysa kimse çıkarılmaz.", style = MaterialTheme.typography.bodySmall, color = BusePink)
                     Button(onClick = { createMode = mode }, enabled = !busy && activeAccounts.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(6.dp)); Text("Görev oluştur")
                     }

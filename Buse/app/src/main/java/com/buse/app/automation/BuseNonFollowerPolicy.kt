@@ -17,7 +17,7 @@ data class BuseRowEvidence(
 )
 
 object BuseNonFollowerPolicy {
-    const val PROTECTED_COUNT = 200
+    const val PROTECTED_COUNT = 100
 
     fun normalizeHandle(value: String): String = value.trim().removePrefix("@").lowercase(Locale.ROOT)
     fun validHandle(value: String): Boolean = value.matches(Regex("[a-z0-9_]{1,15}"))
@@ -44,7 +44,7 @@ object BuseBadgeAssociation {
         badgeBottom > badgeTop && badgeTop >= maxOf(previousRowBottom, viewportTop) && badgeBottom <= handleTop
 }
 
-/** Counts people, never scrolls. Only forward, overlapping viewports may extend the first 200. */
+/** Counts people, never scrolls. Only forward, overlapping viewports may extend the first 100. */
 class BuseFollowingRun {
     private val seen = LinkedHashSet<String>()
     private val protected = LinkedHashSet<String>()

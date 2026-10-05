@@ -1,3 +1,27 @@
+# Buse 1.2 — 100 kişi ve kaydırma sayımı düzeltmesi
+
+2026-10-06T00:24:11.577847+03:00
+
+Kullanıcı ilk 200 yerine ilk 100 kişiyi korumayı istedi ve 1.1'de hızlı kaydırma sonrası duraksamayı 1000033462.mp4 ile gösterdi. Video izlendi. Liste birkaç hareketten sonra uzun süre aynı yerde kalıyor; hata mesajı/erişilebilirlik ağacı veya günlük olmadığı için kesin cihaz nedeni doğrulanmadı. Kodda 22 ms hareketin tamamlanması X kaymasının bitmesi gibi kabul ediliyor, 25 ms sonra veya daha erken olay tick'iyle yeniden kaydırılabiliyor; sayım sırasında ara görünümde ortak kişi kaybolursa ilk 200 koruma denetimi hemen duraklatıyordu.
+
+Yeni PROTECTED_COUNT 100; 100. kişi korunur, 101 ve sonrası adaydır. Görev açıklamaları, tüm ilgili çalışma mesajları, erişilebilirlik açıklaması, README/AGENTS/cihaz protokolü ve 100/101 sınır regresyonları güncellendi. Normal Takipten Çıkma, hesap ekleme, pembe UI ve veri biçimleri korunur.
+
+BuseFollowingScroller 22 ms drag sırasında teması sürdürür; aynı parmak yerini 120 ms sabit tutan continueStroke ile bırakır. Amaç hareket sonunda ataletsel fırlamayı azaltmak. Hareketin ve bırakmanın callback'leri tamamlanmadan worker devam etmez. BuseViewportGate her kaydırmadan sonra 32 ms güncel okumalarla 64 ms aynı kullanıcı/koordinat geometrisini arar. Hareketli/eksik/geçici ayrık ekran sayılmaz veya hemen sıra kopması gibi ele alınmaz; yeni kaydırma da gönderilmez. 2 saniyede durulmayan liste duraklatılır. Örtüşme gerçekten kaybolmuşsa ilk 100 kişiyi tahmin ederek işlem yapılmaz. İlk liste başı ve sonu 1,5 saniye kanıtı, kişinin kendi etiketi, iki tam satır okuması, onay ve sonuç doğrulaması korunur. Genel hızlı preset 7/25/21 ms ve /70 aynı; gerçek cihaz toplam hızına 10× garanti yok.
+
+8 yeni sayım/kararlılık regresyonuyla 532 test geçti, 0 başarısız/hata/atlanan. Lint 0 hata/fatal, 12 uyarı/1 öneri. APK manifest/imza/CRC doğrulandı; yeni APK ile fiziksel X denemesi yapılmadı.
+
+VersionCode 3, 1.2-fast100; com.buse.mobile ve Room/ayar kimlikleri aynı. Önceki Buse üzerine güncelleme kurulabilir; mevcut hesap/görev kaydı korunur. Aynı özel anahtar kullanıldı, kaynak/tam pakete özel anahtar konmadı; önceki özel imza yedeği geçerlidir.
+
+APK SHA256 a86500b49ec3f979e70be8bfda1f4f6c5628688ea31c8cc0e3460ee8afc20977
+Sertifika SHA256 9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5
+Temel GitHub Buse commit 53a69526c6338e25a2ea1befe13b1dc829f8bc34
+Kaynak dal buse/1.2-fast100, klasör Buse/
+Atmaca main/dosyalar değiştirilmedi.
+
+---
+
+Önceki sürümlerin tarihsel kayıtları:
+
 # Buse 1.1 — yalnız hız artışı
 
 2026-10-06T00:09:48.403417+03:00

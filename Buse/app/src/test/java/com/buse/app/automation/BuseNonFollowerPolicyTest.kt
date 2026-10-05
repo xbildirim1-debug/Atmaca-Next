@@ -13,8 +13,8 @@ class BuseNonFollowerPolicyTest {
                     following: Boolean = true, treeComplete: Boolean = true, handles: Set<String> = setOf(handle)) =
         BuseRowEvidence(handle, handles, labels, complete, visible, enabled, following, treeComplete)
     private fun prepared(): BuseFollowingRun = BuseFollowingRun().also { run ->
-        assertTrue(run.observe((1..200).map { "user$it" }))
-        assertTrue(run.observe(listOf("user200", "older", "mutual")))
+        assertTrue(run.observe((1..100).map { "user$it" }))
+        assertTrue(run.observe(listOf("user100", "older", "mutual")))
     }
 
     @Test fun turkishBadgeProtectsItsOwner() { assertEquals(BuseRelationship.FOLLOWS_YOU, BuseNonFollowerPolicy.relationship(row(labels = listOf("Seni takip ediyor", "@older")))) }
@@ -41,32 +41,32 @@ class BuseNonFollowerPolicyTest {
     @Test fun alreadyUnfollowedRowIsNotAnAction() { assertEquals(BuseRelationship.UNKNOWN, BuseNonFollowerPolicy.relationship(row(following = false))) }
     @Test fun invalidHandleIsUnknown() { assertEquals(BuseRelationship.UNKNOWN, BuseNonFollowerPolicy.relationship(row(handle = "not a handle"))) }
     @Test fun differentHandleInSubtreeIsUnknown() { assertEquals(BuseRelationship.UNKNOWN, BuseNonFollowerPolicy.relationship(row(handles = setOf("different")))) }
-    @Test fun fewerThan200PeopleNeverProduceAnAction() {
-        val run = BuseFollowingRun(); run.observe((1..199).map { "user$it" })
-        assertFalse(run.ready); assertFalse(run.mayUnfollow(row("user199"), "own", emptySet()))
+    @Test fun fewerThan100PeopleNeverProduceAnAction() {
+        val run = BuseFollowingRun(); run.observe((1..99).map { "user$it" })
+        assertFalse(run.ready); assertFalse(run.mayUnfollow(row("user99"), "own", emptySet()))
     }
-    @Test fun person200StaysProtected() { assertFalse(prepared().mayUnfollow(row("user200"), "own", emptySet())) }
-    @Test fun person201IsEligibleAfterBoundary() { assertTrue(prepared().mayUnfollow(row(), "own", emptySet())) }
-    @Test fun boundaryInsideViewportProtectsExactly200() {
+    @Test fun person100StaysProtected() { assertFalse(prepared().mayUnfollow(row("user100"), "own", emptySet())) }
+    @Test fun person101IsEligibleAfterBoundary() { assertTrue(prepared().mayUnfollow(row(), "own", emptySet())) }
+    @Test fun boundaryInsideViewportProtectsExactly100() {
         val run = BuseFollowingRun()
-        run.observe((1..198).map { "user$it" }); run.observe(listOf("user198", "user199", "user200", "older", "mutual"))
-        assertEquals(200, run.protectedHandles.size); assertEquals(202, run.seenCount)
-        assertFalse(run.mayUnfollow(row("user199"), "own", emptySet())); assertTrue(run.mayUnfollow(row(), "own", emptySet()))
+        run.observe((1..98).map { "user$it" }); run.observe(listOf("user98", "user99", "user100", "older", "mutual"))
+        assertEquals(100, run.protectedHandles.size); assertEquals(102, run.seenCount)
+        assertFalse(run.mayUnfollow(row("user99"), "own", emptySet())); assertTrue(run.mayUnfollow(row(), "own", emptySet()))
     }
     @Test fun overlappingViewportsCountPeopleOnce() {
         val run = BuseFollowingRun()
-        for (start in 1..196 step 5) assertTrue(run.observe((start..start + 9).map { "user$it" }))
-        assertEquals(205, run.seenCount); assertEquals(200, run.protectedHandles.size)
+        for (start in 1..96 step 5) assertTrue(run.observe((start..start + 9).map { "user$it" }))
+        assertEquals(105, run.seenCount); assertEquals(100, run.protectedHandles.size)
     }
     @Test fun repeatedViewportDoesNotAdvanceBoundary() {
-        val run = BuseFollowingRun(); repeat(200) { assertTrue(run.observe(listOf("first", "second"))) }
+        val run = BuseFollowingRun(); repeat(100) { assertTrue(run.observe(listOf("first", "second"))) }
         assertEquals(2, run.seenCount); assertFalse(run.ready)
     }
     @Test fun caseAndAtPrefixDoNotCountTheSamePersonTwice() {
         val run = BuseFollowingRun(); run.observe(listOf("@First", "first", "FIRST", "second"))
         assertEquals(2, run.seenCount)
     }
-    @Test fun skippedViewportPausesBeforeGuessing200() {
+    @Test fun skippedViewportPausesBeforeGuessing100() {
         val run = BuseFollowingRun(); assertTrue(run.observe(listOf("first", "second")))
         assertFalse(run.observe(listOf("distant", "older"))); assertEquals(2, run.seenCount)
     }
@@ -81,9 +81,9 @@ class BuseNonFollowerPolicyTest {
     @Test fun completedAndUnconfirmedPeopleAreNotClickedAgain() { assertFalse(prepared().mayUnfollow(row(), "own", setOf("older"))) }
     @Test fun nonVisibleUnseenPersonIsNotEligible() { assertFalse(prepared().mayUnfollow(row("unseen"), "own", emptySet())) }
     @Test fun mutualFollowerBelowBoundaryIsProtected() { assertFalse(prepared().mayUnfollow(row("mutual", labels = listOf("Seni takip ediyor")), "own", emptySet())) }
-    @Test fun first200RemainProtectedWhenListShrinks() {
-        val run = prepared(); run.observe(listOf("user199", "user200", "mutual"))
-        assertEquals(200, run.protectedHandles.size); assertFalse(run.mayUnfollow(row("user200"), "own", emptySet()))
+    @Test fun first100RemainProtectedWhenListShrinks() {
+        val run = prepared(); run.observe(listOf("user99", "user100", "mutual"))
+        assertEquals(100, run.protectedHandles.size); assertFalse(run.mayUnfollow(row("user100"), "own", emptySet()))
     }
     @Test fun eachAccountGetsAnIndependentBoundary() { assertTrue(prepared().ready); assertFalse(BuseFollowingRun().ready) }
     @Test fun policyExportsOnlyTwoTaskModes() { assertEquals(2, BuseTaskMode.entries.size) }
