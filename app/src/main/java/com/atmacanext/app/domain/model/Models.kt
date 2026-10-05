@@ -71,9 +71,16 @@ data class ScheduledTask(
     val contentText: String? = null,
     val mediaUri: String? = null,
     val useGemini: Boolean = false,
+    val quoteTargets: String? = null,
+    val quotePostedKeys: String? = null,
+    val quotePendingKey: String? = null,
 ) {
+    val quoteTargetHandles: List<String>
+        get() = quoteTargets.orEmpty().lineSequence().map { it.trim().removePrefix("@").lowercase() }
+            .filter { it.matches(Regex("[a-z0-9_]{1,15}")) }.distinct().take(5).toList()
     val totalLimit: Int
-        get() = limit.coerceAtLeast(1) * repeatCount.coerceAtLeast(1)
+        get() = limit.coerceAtLeast(1) * repeatCount.coerceAtLeast(1) *
+            if (type == TaskType.COMMENT_QUOTE_TARGETS) quoteTargetHandles.size.coerceAtLeast(1) else 1
 }
 
 enum class TargetKind { STANDARD, QUOTE }

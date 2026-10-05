@@ -1,3 +1,24 @@
+ATMACA NEXT 26.51 — GÜNCEL DEVİR NOT DEFTERİ
+
+## 26.51 — Yorum Alıntısı gönderi üzerinde kalma düzeltmesi (5 Ekim 2026)
+
+- Temel GitHub main: b9022ab0b02a268e9dd8a4ba1e0353dbcbe863dd (26.50). Kullanıcı son cihazda Yorum Alıntısı görevinin hedef gönderiyi açıp orada kaldığını bildirdi. Bu oturumda yeni cihaz videosu veya ham erişilebilirlik ağacı verilmedi; aşağıdaki nedenler kaynak incelemesidir, cihazdaki kesin neden/başarı olarak sunulmaz.
+- Son main CI 34571512499 derlenemedi: AccountSettingsScreen.kt ve AccountSettingsScreen26_42.kt içindeki StatusLabel overload çakışması. Yeni yardımcıya benzersiz, private ad verildi; Ayarlar sürümü BuildConfig'ten okunur.
+- COMMENT_QUOTE_TARGETS, TaskQueuePlanner'ın desteklediği türlere hiç eklenmemişti. Eklendi. TargetAccount mapper QUOTE kind değerini hem kayıtta hem okumada kaybediyordu; iki yönde düzeltildi. Room 5→6 geçişi, yalnız owner:QUOTE:handle UUID'si ile kanıtlanan eski yanlış STANDARD kayıtlarını onarır; normal hedefleri dönüştürmez.
+- Yeni ReplyComposerEvidence + XUiActions yolları: yalnız görünür/etkin gerçek düğüm; geniş reply/container ID'si veya tıklanabilir ataya çıkma yok. Üst gönderinin Yanıtla kontrolü ve alttaki Yanıtını gönder girişi ayrı seçilir; kabul edilmiş tıklama 1,5 saniyede form açmazsa alternatif kontrol bir kez denenir. Hem ayrı COMPOSER hem gönderi içindeki TWEET_DETAIL editörü desteklenir.
+- Hedef gönderinin yazar ve metni doğrulanmadan yorum yazılmaz. ACTION_SET_TEXT'in kabulü yazma başarısı değildir: sonraki taze erişilebilirlik okumada tam metin eşleşmelidir. Görünür etkin Yanıtla/Gönder kontrolüne bir kez basılır. Yalnız gönderi ekranının görünmesi gönderim başarısı sayılmaz: gönderim bildirimi, yeni kendi yorum satırı veya aynı hedefte 650 ms kararlı form kapanması/temizlenmesi aranır. 10 saniyede sonuç belirsizse tekrar gönderim yerine PAUSED.
+- COMMENT_QUOTE_TARGETS taze root/cache yenileme yoluna eklendi. QUOTE_REPLY, QUOTE_REPLY_OPEN, QUOTE_REPLY_WRITE, QUOTE_REPLY_SUBMIT kayıtları form, seçici, deneme ve doğrulama aşamasını gösterir; yorum metni tanılama kaydına yazılmaz.
+- Gönderim öncesi quotePendingKey Room'a kaydedilmeden tıklama yapılmaz. Yeni süreçte belirsiz gönderim varsa aynı yorum yeniden gönderilmez; X'teki sonuç kullanıcı tarafından kontrol edilmelidir. quotePostedKeys ile doğrulanan gönderiler duraklatma/yeniden başlatma/tekrar döngüsünde yeniden işlenmez. Eski asenkron kayıt bu gönderim kilidini veya daha yüksek ilerlemeyi geri alamaz.
+- Görev başına quoteTargets hedef listesi kaydedilir; çalışma sırasında hedef düzenlemesi yarım görevin hesabını/limitini değiştirmez. Limit her hedef için uygulanır: 5 hedef, Limit 1, Tekrar 1 = toplam 5 doğrulanmış yorum. Eksik hedef/gönderi başarı sayılmaz, eksik limitte ilerleme korunarak duraklar. Yeni gönderi yeniden açma kurtarması bu görevde 120 dakika filtresi uygulamaz; yorumcu/retweetçi takip yaş kuralı korunur.
+- Yorum Alıntısı ekranı seçili hesapları tek grup olarak seri başlatır; tarama/görev kilidi, duraklat/devam/durdur, Türkçe durum, ilerleme ve telefon için kaydırılabilir form/listeler eklendi. Çoklu hesap görevi tek transaction ile kaydedilir; hedefi eksik hesap için oluşturma kapalıdır. Takip/Etkileşim dış sekmeleri doğru başlangıç filtresine bağlandı.
+- Ara hesap sonunda Atmaca'ya erken dönüş kaldırıldı. Son kuyrukta QUEUE_DECISION → QUEUE_HANDOFF / QUEUE_DONE kayıtları yazılır. finishQueue kendi geçiş coroutine'ini iptal edip kayıt/dönüşü yarıda kesmez. Kullanıcının mevcut kuyruğu ikinci bir start çağrısıyla iptal edilemez; start kilidi ve session/index kontrolü eklendi. X zorla kapatılmaz; son seçili görevde Atmaca öne gelir.
+- Kimlik: versionCode 99 / 26.51-reply-flow-recovery; applicationId com.atmacanext.v258; Room v6. Android araç zinciri ve imzalama ayarları korunur.
+- Değişen ana dosyalar: AutomationRuntime, AtmacaAccessibilityService, XUiActions, DiscoveryTweetOpenRecovery, TaskOrchestrator, TaskQueuePlanner, Models, Entities, Dao, Mappers, AtmacaRepository, AtmacaDatabase, TasksScreen/26_42/26_43, AccountSettingsScreen26_42; yeni ReplyComposerEvidence ve QuoteTargetProgressPolicy. Yeni regresyon dosyaları QuoteReplyRegressionTest, QuotePersistenceRegressionTest, QuoteQueueRegressionTest.
+- Yerel git diff --check geçti. Bu çalışma ortamında çalışır Gradle/Android SDK yok; test/lint/assemble/imza/manifest sonucu GitHub Actions'tan alınacak. Henüz yeni testlerin veya APK'nın geçtiği iddia edilmez. Sonuç tamamlanınca bu not güncellenecek.
+- Çalışma dalı: fix/26.51-reply-flow (yerel). Kaynak/testler main'e kaydedilecek; paket kaynak commit'ini ve CI sonuçlarını NOT_DEFTERI.txt içine otomatik ekler. 26.51 APK/tam ZIP/SHA256SUMS salt-okuma yetkili mevcut build workflow tarafından üretilecek.
+- Fiziksel Android/X testi YAPILMADI. İlk kabul: tek hesap + tek hedef + Limit 1 ile gönderi → yorum alanı → taze tam metin → bir gönderim → bir doğrulanmış sonuç. Ardından iki hedef ve iki hesap. Yeni telefon kanıtı olmadan tüm X arayüzleri için kesin çözüm iddia edilmez.
+- Kalıcı imza çözülmedi: CI debug anahtarı önceki APK'dan farklı olabilir; kaldırma kayıtları siler. GitHub Releases yetkisi değiştirilmedi. AGENTS.md içindeki önceki contents:write onay engeli nedeniyle archive-release.yml etkinleştirilmedi; başarılı APK ve ZIP hazır olduktan sonra bu somut yayın adımı için kullanıcı onayı gerekir. Actions artifact kalıcı Releases teslimi diye sunulmaz.
+
 ## 26.33 — Boşuna Tıklama profilinde yanlış bildirim penceresi
 
 - 1000027181.mp4 (35. saniye) normal profil gösteriyor; açık pencere yok. 23:41:42 PROFILE / NOTIFICATION_PROMPT ardından 23:41:43 PAUSED kaydı, taramadan önce durulduğunu kanıtlıyor. Bio içindeki “bildirimleri açın” eski contains("bildirimleri aç") koşulunu tetikliyordu. 26.31/26.32 için ileri sürülen medya kaydırması bu durmanın nedeni değildi; önceki kesin teşhis geri çekildi.
@@ -128,6 +149,16 @@
 - versionCode74 / 26.26-discovery-screen-handoff. Yerelde Gradle/Android SDK yok. CI test/lint/APK henüz çalıştırılmadı. Fiziksel telefon/X testi YAPILMADI. Kaynaklar main'e kaydedilecek; sonuç ve gerçek commit sonradan bu bölüme eklenecek.
 - Kalıcı debug imza sorunu sürer; önceki APK üzerine kurulum reddedilebilir, uygulamayı kaldırmak yerel verileri siler. Reddedilmiş contents:write yayın workflow'u etkinleştirilmedi. GitHub Releases teslimi henüz yapılmadı.
 
+## 26.25 — yorum takip düğmesi ve hedef geçişi; doğrulanmış teslim
+
+- 1000027063.mp4 incelendi. Yorumcu akışı yorum sahibinin ayrı Gönderi ekranını açıyor ve sağ üstte görünür `Takip et` bulunmasına rağmen işlem yapmadan bekliyordu. Kaynak neden: ilişki seçicisi yalnız tam `Takip et`/`Follow` etiketini kabul ediyor, X'in kişi adını içeren erişilebilirlik etiketini reddediyordu; düğüm tıklaması da yalnız koordinat hareketine dayanıyordu.
+- Güvenli eşleştirme `Fth adlı kullanıcıyı takip et` ve `Follow Fth` gibi kişiselleştirilmiş düz takip etiketlerini kapsıyor; `Takip ediliyor`, `Beklemede` ve geri-takip biçimleri hâlâ reddediliyor. Yorum detayındaki tam sağ üst düğmede önce doğrudan ACTION_CLICK, gerekirse aynı düğüm sınırında gesture uygulanıyor; kart üst atasına tıklanmıyor.
+- Retweetçi hedef geçişinde X profil başlığındaki @kullanıcı adını geçici olarak yayımlamazsa ikinci hedefte bekleme oluşuyordu. Artık tam header handle öncelikli; eksikse yalnız açık Gönderiler yüzeyi ile beklenen hedefin yazdığı görünür gönderi birlikte kanıt sayılıyor. Yeni hedefe geçerken etkileşim denemeleri, yorumcu dönüş durumu, liste imzası ve kaydırma sayaçları sıfırlanıyor.
+- Kaynak main commit: 3b6b573e144a6106eb6efbc9f99b829053dce7ad. Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34327358272 . 234 test; 0 başarısız, hata veya atlanan. Test/lint/assemble, imza, manifest ve paketleme tamamlandı.
+- AtmacaNext-26.25.apk: 20.606.700 bayt; versionCode73 / 26.25-comment-follow-click-target-handoff; SHA256 cd99f0431485ad6c0eb50e2dca8fdf36e824233176af96389d56c2ef756e4e0e. TAM-PAKET SHA256 80baa715e8b94a694f237eba79a6c94726ebbc862b7609354b5a15f20bd7e89f; ZIP CRC ve kayıtlı APK hash eşitliği doğrulandı.
+- APK/tam paket artifact 10094418153; test/lint rapor artifact 10094418769. Actions çıktılarının son kullanımı 8 Aralık 2026. Fiziksel telefonda 26.25 henüz çalıştırılmadı; düzeltmenin cihaz sonucu kullanıcı testiyle doğrulanmalıdır.
+- Kalıcı debug imza sorunu çözülmedi. Önceki APK üzerine kurulum reddedilebilir; uygulamayı kaldırmak yerel verileri siler.
+
 ## 26.22 — doğrulanmış APK ve teslim sonucu
 
 - Nihai APK kaynak main commit: ee92236b46712409db247d57b4677276c9ffe5fc. Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34316308189 . Bu sonuç kaydı [skip ci] belge güncellemesidir; APK tekrar derlenmedi.
@@ -159,13 +190,15 @@
 - Git komut satırında kimlik yoktu; kaynak mevcut yetkili GitHub bağlantısıyla main'e kaydedildi. Yerel 128d245 commit'i ile yayınlanan 17c54a5 kaynak ağacı aynıdır; bu kayıt yalnız belgelerdir.
 - Kalıcı imza ve Releases workflow yetki engeli devam ediyor; yetki değişikliği veya kalıcı Releases yayını yapılmadı. APK imzası önceki sürümle uyumsuz olabilir; kaldırma kayıtları siler.
 
-## 26.19 — Compose gönderi okuma ve eksik görev düzeltmesi
+## 26.19 — 23:28 cihaz hatası ve ortak keşif akışı
 
-26.18 cihaz testi başarısız: rows=0, profil öneri kartını FOLLOWING_LIST sanma ve 0/5 COMPLETED.
-26.19 ayrı yazar/saat/metin alanlarını okur; öneri ve medya sınırlarını korur. Yorum/retweetçi ortak tarama,
-sonraki gönderiye dönüş, başarısız dokunuşta kör Geri ve belirsiz takip sonuçları ele alındı.
-Eksik limit tamamlandı sayılmaz. 14 yeni regresyon testi eklendi. CI ve gerçek cihaz doğrulaması bekleniyor.
-Ayrıntılar DEVIR_NOTU.md içinde. Kalıcı imza/Releases izinleri değiştirilmedi.
+- 1000026994.mp4 (66,88 sn) ve 8 Eylül 23:27–23:28 logu: hedef açılıyor, 4 sa gönderi atlanıyor, her taramada rows=0. Son ekran BaBaLa TV / Kimi takip etmeli kartıyla hâlâ Gönderiler; FOLLOWING_LIST bir sınıflama hatasıdır. 0/5 COMPLETED hatalıdır. 26.18 cihaz testini geçmedi.
+- FeedRowEvidence: ortak parent/etkileşim düğmesi şartı olmadan birleşik veya aynı satırda ayrı yazar+saat alanı; ayrı metin/contentDescription. Yeni gönderi, medya ve öneri sınırını aşmadan metin seçimi. Sabitlenmiş/reklam işaretlerini atlama. SHA256 gönderi anahtarı yazar+metindir; yaş/sayaç/kaydırma değişimi aynı gönderiyi yeniden işlemeye neden olmaz. Ham cihaz node ağacı yok; bu yol sentetik düzen testleriyle sınanır.
+- ScreenDetector: Gönderiler + gönderi sayısı/yazar-saat kanıtı öneri takip etiketlerinden önce gelir. Yorum yazma/alıntıları görüntüle kanıtı yorumları ilişki listesi sanmayı önler.
+- Runtime: eksik keşif limiti artık COMPLETED olamaz; ilerleme korunarak PAUSED. Gönderi ancak detay açılınca işlenmiş sayılır. Başarısız yorumcu dokunuşunda kör Geri yok. Daralmış hedef profil başlığında feed/yazar kanıtıyla dönüş kabul edilir. Sonucu belirsiz takip yerine başka kullanıcı işlenmez; Follow ile Following/Requested çelişkisi başarı değildir. Yeni DISCOVERY_READ sınırlı, parola/girdi dışı ekran kanıtı kaydeder; tarama 180 sn bütçelidir.
+- 14 yeni birim testi: ayrı/birleşik başlık, eksik aksiyonlar, açıklama metni, yanlış satır yaşı, body mention, medya, öneri, komşu gönderi sınırı, sabit anahtar, gizli/sabitlenmiş içerik, ekran sınıflama, ölçek.
+- versionCode67 / 26.19-compose-feed-recovery. Derleme ve test sonuçları henüz bekleniyor; gerçek X cihaz testi yapılmadı. Kaynak/testler main'e gönderilecek. Kullanıcı doğrudan sohbetten APK teslimi istiyor.
+- Kalıcı imza ve önceden reddedilen Releases workflow yetkisi değiştirilmedi. Yeni debug imza önceki APK üzerine kurulumla uyumsuz olabilir; kaldırma veri kaybıdır.
 
 ## 26.18 — Gönderiler listesinde dikey kaydırma ve metinden gönderi açma
 
@@ -205,25 +238,23 @@ Ayrıntılar DEVIR_NOTU.md içinde. Kalıcı imza/Releases izinleri değiştiril
 - Derleme/test sonucu henüz bekleniyor. Gerçek telefonda yeni arama yolu test edilmedi; video 26.16 hatasının kanıtıdır.
 - Kalıcı imza çözülmedi. GitHub Releases contents:write workflow için önceki otomatik onay reddi nedeniyle yetki değişikliği yapılmadı; teslim arşivi durumu ayrıca kaydedilecek.
 
-## 26.15 — doğrulanmış derleme ve teslim sonucu
+## 26.15 — doğrulanmış derleme sonucu
 
-- APK kaynak commit: 90751a59ef7bae35dd24d392a2620218c787479f (`main`). Başarılı GitHub Actions: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34215844253 . APK/tam paket artifact 10051836401; test/lint raporları artifact 10051837267. Artifacts 7 Aralık 2026 tarihinde sona erer.
-- 177 birim testi geçti; 0 başarısız, 0 hata, 0 atlanan. Lint, assembleDebug, apksigner, manifest ve paketleme adımları başarılı.
-- AtmacaNext-26.15.apk: versionCode63 / 26.15-discovery-target-start; 20.557.536 bayt; SHA256 `3ab983c9ab97d253e7a1e851f3202ec395d7e3933f021c1a018eaa2c76b9338d`.
-- Actions tam paketinin SHA256 değeri `f361fb551b2d2f497468ae9eb5e6cdc95a38bcb3f8b3f0e975fcbd7c4e9e57b9`. ZIP CRC temiz; iç/dış APK baytları ve hash eşit. Manifest sürümü doğrulandı; INTERNET ve `androidx.startup.InitializationProvider` yok.
-- Bu sürüm kullanıcının 1000026864.mp4 videosundaki hedef başlangıç sorununa göre düzeltildi; yeni APK fiziksel telefonda henüz denenmedi. Birim test ve sentetik erişilebilirlik testleri cihazdaki X sürümünün uçtan uca davranışını tek başına kanıtlamaz.
-- GitHub Releases `contents:write` workflow'u önceki otomatik onay engeli nedeniyle etkinleştirilmedi. Kalıcı imza anahtarı hâlâ yok; yeni Actions debug imzası önceki APK'yla uyumsuz olabilir. Eski uygulamayı kaldırmak cihazdaki hesap/görev/ayar kayıtlarını siler.
+- Kaynak commit 90751a59ef7bae35dd24d392a2620218c787479f; başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34215844253 . APK/tam paket artifact 10051836401, rapor artifact 10051837267.
+- 177 test; 0 başarısız/hata/atlanan. Lint, assemble, apksigner, manifest ve paketleme başarılı. APK code63 / 26.15-discovery-target-start, 20.557.536 bayt, SHA256 `3ab983c9ab97d253e7a1e851f3202ec395d7e3933f021c1a018eaa2c76b9338d`.
+- Actions tam ZIP SHA256 `f361fb551b2d2f497468ae9eb5e6cdc95a38bcb3f8b3f0e975fcbd7c4e9e57b9`; ZIP CRC ve paket içi APK eşitliği doğrulandı. Manifestte INTERNET/Startup provider yok.
+- Fiziksel cihaz testi yapılmadı. Kullanıcının videosu eski 26.14 başlangıç hatasının kanıtıdır; 26.15 hedef yönlendirme tekrarı telefonda ayrıca doğrulanmalıdır. Başarılı başlangıçta logda `DISCOVERY_TARGET ... target=@... attempt=...` ve ardından hedef profil görünmelidir.
+- Actions dosyaları 7 Aralık 2026'da sona erer. Releases workflow'u onay engeli nedeniyle açılmadı; kalıcı imza sorunu sürer ve kaldırarak kurulum yerel verileri silebilir.
 
-## 26.15 — yorumcu/retweetçi hedef başlangıcı ve hız ayarları
+## 26.15 — yorumcu/retweetçi hedef başlangıcı ve hız
 
-8 Eylül 2026 tarihli 1000026864.mp4 cihaz videosunda retweetçi takip görevi oluşturuluyor, `@bildirimhaber1` görev hesabı doğrulanıyor fakat kayıtlı hedef hesaba yönlenmeden görev hesabının kendi profilinde kalıyor ve durduruluyor. Kaynak incelemesinde hedef profil ACTION_VIEW isteğinin, hesap doğrulamasını tamamlayan kendi-profil erişilebilirlik callback'i içinde hemen gönderildiği görüldü. X geçiş hâlindeyken bu bağlantıyı yutabiliyor; runtime yine de OPEN_DISCOVERY_TARGET aşamasında yalnız zaman aşımını bekliyordu.
+1000026864.mp4 cihaz videosu 26.14'ün retweetçi görevinde doğru görev hesabını doğruladığını, fakat kayıtlı hedefe gitmeden görev hesabının kendi profilinde kaldığını kanıtladı. Neden: `beginOperation`, hedef ACTION_VIEW isteğini kendi profil doğrulama callback'i içinde hemen gönderiyordu; X bu geçişi yuttuğunda OPEN_DISCOVERY_TARGET yalnız altı saniyelik zaman aşımını bekliyordu.
 
-- Hedef açılışı hesap doğrulama callback'inden ayrıldı. Kendi profil geçişinin oturması için 450 ms beklenir; sonra kayıtlı tek hedefe gidilir. Ekrandaki tam hedef `@handle` görülmeden gönderi taraması başlamaz.
-- İlk bağlantı X tarafından yutulursa farklı yönlendirme anahtarıyla en fazla üç kontrollü deneme yapılır. Her deneme `DISCOVERY_TARGET` logunda hedef kullanıcı adı, deneme numarası ve mevcut ekranla görünür. Üç denemede de hedef kimliği doğrulanmazsa görev yanlış profilde işlem yapmak yerine güvenli biçimde tamamlanır/sonraki kuyruk öğesine geçer.
-- Varsayılan işlemler arası süre 800'den 500 ms'ye, hesap geçişi 2500'den 1800 ms'ye, görevler arası süre 3000'den 1500 ms'ye indirildi. Ayarlar ekranının alt sınırı 500 ms oldu. Hesap kimliği, hedef kimliği ve takip sonucu kontrolleri kaldırılmadı.
-- Runtime tick 350'den 250 ms'ye indirildi. Uzun görünen eski bekleme hız ayarı değil, başarısız hedef yönlendirmesinin zaman aşımıydı; yeni akış bunu giderir.
-- Üç yeni regresyon testi: ilk hedef açılışından önce geçiş bekleme, yutulan bağlantıda sınırlı tekrar ve tam hedef görünürken yeni yönlendirme üretmeme. Önceki testler korunur.
-- Sürüm 26.15-discovery-target-start / code63. CI ve fiziksel cihaz sonucu bu kaydın sonraki bölümünde ayrıca yazılacaktır. Bu düzeltme henüz telefonda doğrulanmadı. Kalıcı imza ve GitHub Releases `contents:write` onay engeli sürer; yayın yetkisi değiştirilmedi.
+- 26.15 hedef yönlendirmesini ayrı aşamaya aldı: 450 ms sonra tek kayıtlı hedef açılır, tam hedef `@handle` görünene kadar en fazla üç kontrollü deneme yapılır. Denemeler farklı anahtarla gerçekten gönderilir ve `DISCOVERY_TARGET target/attempt/screen` olarak loglanır. Tam hedef kanıtı olmadan tweet veya kullanıcı üzerinde işlem yoktur.
+- Varsayılan hızlar: işlemler arası 500 ms, hesap geçişi 1800 ms, görevler arası 1500 ms; runtime tick 250 ms. Kullanıcı ayarındaki işlem alt sınırı 500 ms. Kimlik/sonuç doğrulamaları korunmuştur.
+- Yeni `DiscoveryTargetLaunchPolicy` ve üç regresyon testi eklendi. Sürüm code63 / 26.15-discovery-target-start. CI ve cihaz testi henüz yapılmadı; sonuç kaydı sonradan eklenecek.
+- 26.14 fiziksel cihazda onaylı kullanıcı takibi çalıştı; yorumcu/retweetçi hedef başlangıcı çalışmadı. Bu yeni düzeltme fiziksel cihazda henüz kanıtlanmadı.
+- GitHub Releases `contents:write` workflow'u önceki otomatik onay engeli nedeniyle etkinleştirilmedi. Kaynak main'e ve APK/tam ZIP başarılı Actions çıktısına eklenecek. Kalıcı imza hâlâ açık sorundur.
 
 ## 26.14 — doğrulanmış derleme ve teslim sonucu
 
@@ -301,6 +332,10 @@ Kodda service XML ve onAccessibilityEvent filtresi TYPE_WINDOW_CONTENT_CHANGED i
 - versionCode 60 / 26.12-verified-tab-label. CI henüz çalıştırılmadı; sonuçlar aşağıdaki sonraki kayıtta belirtilecek. Yeni APK fiziksel telefonda test edilmedi. Main'e kod/test/notlar kaydedilecek; yerel eski 26.9 çalışma dosyaları kullanılmadı ve ezilmedi.
 - Kalıcı debug imzası ve Releases contents:write onay engeli sürüyor; yayın yetkisi değiştirilmedi. Mevcut Actions APK/tam ZIP üretimi korunur.
 
+# Atmaca Next — sohbetler arası devir notu
+
+Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
+
 ## 26.11 — doğrulanmış derleme sonucu
 
 - Kaynak commit: 3ab25eab6570e268fd7a5e07802475f2ea45f154 (main). Bu sonuç kaydı belgedir; APK bu kaynak commit'ten üretildi.
@@ -353,10 +388,6 @@ OPEN_SOURCE_PROFILE sayaç tıklaması reddedildiğinde yeniden tick planlamamas
 - Değişen kod: ScreenDetector, RecentFollowerSelector, AutomationRuntime, VerifiedFollowPolicy, XUiActions, AppServices, TaskOrchestrator, AtmacaNextApp, DashboardScreen; yeni NotificationStore. Regresyonlar: RecentFollowerRegressionTest, VerifiedFollowFlowTest, yeni NotificationFeedTest. Ayrıntılı davranış ve gerekçeler alttaki 26.9 bölümlerindedir.
 - Fiziksel cihaz/X testi ve yeni Anasayfa görsel cihaz doğrulaması yapılmadı. Cihazda denenecekler: gerçek Followers ilk değişken kaynak → seçili Verified followers; yalnız düz Takip et; 10/30 ilerlemeyi koruyan rastgele kaynak geçişi; üç farklı ardışık geri dönüşte hesabı atlayıp sıradaki hesap, zil bildirimi ve yeniden açılışta kalıcılık.
 - Kaynak/testler/notlar main'dedir. Actions artifact sürelidir (6 Aralık 2026). Kalıcı GitHub Releases teslimi henüz tamamlanmadı: AGENTS.md'deki önceki otomatik onay reddi nedeniyle contents:write yayın taslağı etkinleştirilmedi; bu somut kapsam için kullanıcı onayı gerekir. APK ve ZIP sohbetten ayrıca teslim edilir. Başarılı derlemeyi tekrar çalıştırıp aynı sürümü başka debug imzasıyla değiştirmeyin.
-
-# Atmaca Next — sohbetler arası devir notu
-
-Son güncelleme: 7 Eylül 2026. Bu not ve kaynak kod GitHub'da tutulur; başka ChatGPT hesabından devam ederken önce bu dosyayı oku. Önceki sohbet dosyalarına erişebildiğini varsayma.
 
 ## 26.9 — kullanıcının son kuralları ve Anasayfa
 
@@ -573,20 +604,40 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 7. Her yeni düzeltmeyi test et, GitHub'a kaydet, bu notu son testler, APK ve kalan sorunlarla güncelle. Kullanıcı aynı talimatları başka hesapta tekrar etmek zorunda kalmasın.
 ## 26.16 — doğrulanmış derleme sonucu
 
-- APK kaynak commit: b82e89d7d3267bcd01e783015d3a9eabbd7a2440 (`main`). Başarılı GitHub Actions: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34219134897 . APK/tam paket artifact 10053247649; rapor artifact 10053248488.
-- 178 test geçti; 0 başarısız, 0 hata, 0 atlanan. Lint, APK üretimi, apksigner, manifest ve paketleme başarılı.
-- AtmacaNext-26.16.apk: code64 / 26.16-native-profile-route; 20.573.912 bayt; SHA256 `afbfd5174610264f1cd825c3f0b72cc5c397c01b1cb70a6ebb391a21e28d8b0d`.
-- Actions tam paket SHA256 `1fa266432501f141aa3fef83de35602f3640da577be6fb348f0d3b5a96b64179`. ZIP CRC temiz, iç/dış APK eşit. Manifestte INTERNET ve InitializationProvider yok.
-- 26.15'in üç web yönlendirmesinin cihazda yutulduğu fiziksel log/video ile kanıtlandı. 26.16'nın yerel X kullanıcı rotası henüz fiziksel telefonda denenmedi; birim test sonucu cihaz davranışını tek başına kanıtlamaz.
-- Actions artifact 7 Aralık 2026'da sona erer. Kalıcı Releases yetkisi açılmadı; kalıcı imza sorunu sürer.
+- Kaynak commit b82e89d7d3267bcd01e783015d3a9eabbd7a2440; başarılı CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/34219134897 . APK/tam paket artifact 10053247649, rapor artifact 10053248488.
+- 178 test, sıfır hata/başarısız/atlanan. APK code64 / 26.16-native-profile-route, 20.573.912 bayt, SHA256 `afbfd5174610264f1cd825c3f0b72cc5c397c01b1cb70a6ebb391a21e28d8b0d`.
+- Tam paket SHA256 `1fa266432501f141aa3fef83de35602f3640da577be6fb348f0d3b5a96b64179`; CRC, paket içi APK, manifest sürümü ve INTERNET izni yokluğu doğrulandı.
+- 26.16 yerel kullanıcı rotası fiziksel telefonda henüz test edilmedi. Başarılı olursa NAV kaydı `discovery-profile/native-user/pusholder/1` sonrasında ekran `@pusholder` olmalı. Olmazsa yeni log hangi alternatif rotaların tüketildiğini açıkça gösterecek.
 
-## 26.16 — X yerel kullanıcı yönlendirmesi
+## 26.16 — hedef web bağlantısı X tarafından yutuluyor
 
-8 Eylül 2026 13:56 cihaz logu ve 1000026868.mp4 incelendi. 26.15 görev hesabını doğru doğruladı ve kayıtlı tek hedefi `@pusholder` olarak doğru yükledi. Ancak üç deneme de aynı `https://x.com/pusholder` web yoluydu; Android `startActivity` çağrısını başarılı kabul etmesine rağmen X hedefi açmadı ve görev hesabının kendi profilinde kaldı. Bu log, hedef kaydı veya zamanlama hatası değil, cihazdaki X'in web profil intent'ini yuttuğunu kanıtlar.
+26.15 cihaz logu: hedef listeden doğru `@pusholder` geliyor; `discovery-profile/pusholder/1..3` başlangıç çağrıları başarılı yazılıyor ama ekran `@bildirimhaber1` kendi profilinden ayrılmıyor. Üç çağrı da aynı x.com web URI'siydi. 26.16 ilk olarak X'in yerel `twitter://user?screen_name=` yolunu, ardından twitter.com ve x.com yollarını ayrı ayrı kullanır. CLEAR_TOP/SINGLE_TOP eklenmiştir; her rotaya 2500 ms verilir. Tam hedef handle doğrulanmadan tarama veya takip yoktur.
 
-- Birinci deneme X'in yerel kullanıcı deep-link'i: `twitter://user?screen_name=pusholder`.
-- İkinci deneme ayrı `https://twitter.com/pusholder`, üçüncü deneme `https://x.com/pusholder` yoludur. Böylece tekrarlar aynı isteğin kopyası değildir.
-- Intent'e CLEAR_TOP ve SINGLE_TOP eklendi; açık kendi profil activity'sinin eski intent'i tutması yerine yeni hedef intent'ini alması amaçlanır.
-- Her rotaya 2,5 saniye yüklenme süresi verilir. Yalnız ekranda tam `@pusholder` profil kimliği görülürse en az 120 dakikalık gönderi taramasına geçilir. Yanlış profilde işlem yapılmaz.
-- Rota seçimi regresyon testi eklendi; üç denemenin üç farklı URI ürettiği doğrulanır. Önceki 177 test korunur.
-- Sürüm code64 / 26.16-native-profile-route. CI ve bu yeni yolun fiziksel cihaz sonucu sonraki kayıtla yazılacaktır. Hız ayarları 500/1800/1500 ms olarak korunur.
+- code64 / 26.16-native-profile-route. Yeni rota testi eklendi; CI ve cihaz testi bekleniyor.
+- 26.15 hızlı ayarları korunur. GitHub Releases yetkisi ve kalıcı imza durumu değiştirilmedi.
+## 26.20 — tweet ayrıntısındaki satır içi yanıt alanı
+
+- Kaynak main commit: 2606b92cefd2005a9c325537149b02f003481397; CI 34309944401 başarıyla tamamlandı. 211 test; 0 hata, başarısız, atlanan. Lint, assemble, imza, manifest ve paketleme geçti.
+- APK: AtmacaNext-26.20.apk, code68 / 26.20-inline-reply-engagement. SHA256 a38bfb35388bb1ac99b386f7990ff0973007c52275f508d8af74fd648b573cd4. TAM-PAKET SHA256 8062dbae87207dc370570ac60e8e183ded902357fb97e811acffda6621209e4b. ZIP CRC ve sürüm manifesti doğrulandı.
+- APK/tam paket artifact 10088057069; rapor artifact 10088057552. Fiziksel X cihazında 26.20 henüz denenmedi.
+- 1000026996.mp4 ve 8 Eylül 23:53 cihaz logu incelendi. Hedef profil ve iki saatlik gönderi doğru açılıyor; gerçek tweet ayrıntısında Mavi Deniz ve altındaki yorumlar görünür durumda kalıyor. Log `screen=COMPOSER` bildirdiği için yorum işleme aşaması hiç başlamıyor.
+- Kök neden: X, tweet ayrıntısının altındaki `Yanıtını gönder / Post your reply` alanını editable `tweet_box` olarak yayımlıyor. 26.19 bunu tam ekran oluşturucu sanıyordu. Geri düğmesi + gönderi başlığı/aksiyon araç çubuğu/Alıntıları görüntüle kanıtı bulunan satır içi alan artık TWEET_DETAIL sayılır; gerçek tam ekran yanıt oluşturucu COMPOSER kalır.
+- Yorumcu adı sabit değildir. Ayrıntıdaki hedef gönderi yazarı ve görev hesabı dışlandıktan sonra ekranda yukarıdan aşağı ilk gerçek yorum yazarı seçilir, profili açılır; zaten Takip ediliyor/Beklemede ise yeni işlem yapılmadan geri dönülür. Yeni Beklemede sonucu bir işlem sayılır. Ardından aynı tweetin sıradaki yorumuna devam edilir.
+- Retweetçi yolu değişmedi fakat bu ekran düzeltmesiyle artık tweet ayrıntısında çalışabilir: `Alıntıları görüntüle` açılır, sonra sayısı değişken `... tarafından yeniden gönderildi` sekmesi seçilip doğrulanır.
+- İki ekran regresyon testi ve dinamik yorum sırası testi eklendi. versionCode68 / 26.20-inline-reply-engagement. Birim test/CI ve fiziksel cihaz testi henüz yapılmadı; sonuçlar tamamlanınca bu kayıt güncellenecek.
+## 26.21 — yorumcu profil hedefi ve boş etkileşim döngüsü
+
+- Nihai kaynak main commit: 939e4c65ea686f3c65679e828d5a7f213eb85dc5; CI 34313479402 başarılı. 212 test; 0 hata, başarısız, atlanan. Lint, assemble, imza, manifest ve paketleme geçti.
+- APK: AtmacaNext-26.21.apk, code69 / 26.21-comment-profile-loop; SHA256 f065bf978261a1db1defff02d958a2f73923d65043b141d44abdf7ebabb02041. TAM-PAKET SHA256 2dd10bf5f8727c9ab7399c7a2330477cbbe03f1663bef8a70c19447eb17c22fe. Artifact 10089281698; rapor artifact 10089282179. Fiziksel X cihaz testi henüz yapılmadı.
+- 1000027014.mp4, 1000027015.jpg ve 9 Eylül 07:29 cihaz logu incelendi. 26.20 tweet ayrıntısını ilk anda doğru tanıyor; Compose toolbar/back semantiği sonraki tazelemede kaybolunca alttaki editable `Yanıtını gönder` nedeniyle tekrar COMPOSER oluyor. Görünür gerçek tweet/yorum satırları artık kaydırılmış ayrıntı kanıtıdır.
+- Yorum başlığının merkezine dokunmak yorumcunun profili yerine yorumun kendi tweet ayrıntısını açıyordu. Birleşik `Ad @kullanıcı · süre` başlığının profil olan sol ad/kullanıcı bölgesine dokunulur. İsim sabit değildir; hedef ve görev hesabı dışlandıktan sonra görünür yorumcular yukarıdan aşağı dinamik işlenir. Takip ediliyor/Beklemede ise işlem yapılmadan geri dönülür; yeni Beklemede limitten bir işlem sayılır.
+- Yorum kalmazsa ayrıntı aşağı taranır; ekran sonu kararlıysa hedef profile dönülüp sıradaki en az iki saatlik gönderi açılır. Retweetçi görevinde `Alıntıları görüntüle` yoksa en fazla sekiz tarama veya iki kararlı ekran sonunda aynı geçiş yapılır. Limit dolana ya da uygun gönderi kalmayana kadar döngü korunur.
+- versionCode69 / 26.21-comment-profile-loop. Yeni regresyon testi eklendi; CI ve fiziksel cihaz testi henüz yapılmadı.
+- İlk CI 34312711274 ürün kodundan değil yeni test düzeneğinin tüm düğümleri aynı koordinatta oluşturmasından dolayı tek testte başarısız oldu; gerçek ekran bantlarını temsil eden ayrı koordinatlar verilerek test düzeltildi ve yeniden çalıştırılacak.
+- İkinci CI 34313057927 aynı regresyonun satır gruplama kanıtını sınıflandırmada kullanamadığını gösterdi. Kaydırılmış ayrıntı için görünür, süre taşıyan en az iki farklı yazar başlığı doğrudan erken ekran kanıtına eklendi.
+## 26.25 — yorumcu Takip et tıklaması ve sonraki retweet hedefi
+
+- 1000027063.mp4 (61,16 sn) fiziksel 26.24 cihaz kaydı incelendi. Yorumcu Fth'nin ayrı Gönderi ekranı ve sağ üstteki Takip et düğmesi açılıyor fakat işlem yapılmadan bekleniyor. Cihazın düğme açıklamasına kişi adını ekleyebilen biçimi (`... takip et` / `Follow ...`) 26.24'ün dar düz etiket seçicisinde kabul edilmiyordu.
+- Kişiye özel düz takip açıklamaları, Takip ediliyor/Beklemede ile çelişmediği sürece kabul edilir. Seçilen gerçek düğümde önce ACTION_CLICK denenir; yalnız bu düğüm başarısızsa aynı düğüm sınırına gesture gönderilir, yorum kartı atasına çıkılmaz.
+- Retweetçi görevinde sonraki hedefin profil üst kullanıcı adı geçici olarak erişilemez olduğunda motor bekliyordu. Gönderiler yüzeyi ve hedefin kendi yazar satırı birlikte görünüyorsa hedef doğrulanır; hedef değişiminde yorum/etkileşim/gezinme sayaçları sıfırlanır. Yanlış hedefin tweeti doğrulama sayılmaz.
+- İki cihaz regresyon testi eklendi. versionCode73 / 26.25-comment-follow-click-target-handoff. CI ve fiziksel 26.25 cihaz testi henüz yapılmadı.

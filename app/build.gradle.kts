@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 98
-        versionName = "26.50-quote-targets"
+        versionCode = 99
+        versionName = "26.51-reply-flow-recovery"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

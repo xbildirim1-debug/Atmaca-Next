@@ -19,6 +19,7 @@ object TaskQueuePlanner {
         TaskType.BOOKMARK,
         TaskType.COMMENT,
         TaskType.QUOTE,
+        TaskType.COMMENT_QUOTE_TARGETS,
         TaskType.VERIFIED_FOLLOW,
         TaskType.UNFOLLOW,
         TaskType.COMMENTER_FOLLOW,

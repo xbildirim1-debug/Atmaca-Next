@@ -162,6 +162,30 @@ object XUiActions {
     fun clickReply(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         clickByIdOrLabel(service, root, listOf("toolbar_reply", "reply"), XUiVocabulary.replyActions)
 
+    fun openReplyComposer(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, retry: Boolean = false): Boolean {
+        val nodes = AccessibilityTree.nodes(root, maxNodes = 1_000)
+        val index = ReplyComposerEvidence.openIndex(nodes.map { it.toSnapshot() }, retry) ?: return false
+        val node = nodes[index]
+        return (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) || GestureClick.gestureTap(service, node)
+    }
+
+    fun setReplyText(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, value: String): Boolean {
+        val nodes = AccessibilityTree.nodes(root, maxNodes = 1_000)
+        val index = ReplyComposerEvidence.editorIndex(nodes.map { it.toSnapshot() }) ?: return false
+        val node = nodes[index]
+        val args = Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value) }
+        if (node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) return true
+        GestureClick.gestureTap(service, node)
+        return false
+    }
+
+    fun submitReply(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        val nodes = AccessibilityTree.nodes(root, maxNodes = 1_000)
+        val index = ReplyComposerEvidence.submitIndex(nodes.map { it.toSnapshot() }) ?: return false
+        val node = nodes[index]
+        return (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) || GestureClick.gestureTap(service, node)
+    }
+
     fun clickQuote(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
         val node = findBottomExactAction(root, XUiVocabulary.quoteActions) ?: return false
         return GestureClick.click(service, node)

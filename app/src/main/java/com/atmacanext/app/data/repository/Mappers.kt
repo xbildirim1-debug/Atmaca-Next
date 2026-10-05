@@ -66,6 +66,9 @@ internal fun ScheduledTask.toEntity(now: Long = System.currentTimeMillis()) = Ta
     contentText = contentText,
     mediaUri = mediaUri,
     useGemini = useGemini,
+    quoteTargets = quoteTargets,
+    quotePostedKeys = quotePostedKeys,
+    quotePendingKey = quotePendingKey,
     updatedAt = now,
 )
 
@@ -85,6 +88,9 @@ internal fun TaskEntity.toDomain() = ScheduledTask(
     contentText = contentText,
     mediaUri = mediaUri,
     useGemini = useGemini,
+    quoteTargets = quoteTargets,
+    quotePostedKeys = quotePostedKeys,
+    quotePendingKey = quotePendingKey,
 )
 
 internal fun AutomationRuntimeState.toCheckpoint(now: Long = System.currentTimeMillis()) = RuntimeCheckpointEntity(
@@ -126,6 +132,7 @@ internal fun TargetAccount.toEntity(now: Long = System.currentTimeMillis()) = Ta
     ownerAccountId = ownerAccountId,
     handle = handle,
     active = active,
+    kind = kind.name,
     updatedAt = now,
 )
 
@@ -134,4 +141,5 @@ internal fun TargetAccountEntity.toDomain() = TargetAccount(
     ownerAccountId = ownerAccountId,
     handle = handle,
     active = active,
+    kind = runCatching { com.atmacanext.app.domain.model.TargetKind.valueOf(kind) }.getOrDefault(com.atmacanext.app.domain.model.TargetKind.STANDARD),
 )

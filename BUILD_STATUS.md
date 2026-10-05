@@ -1,22 +1,11 @@
-# Atmaca Next V23 Build Status
+# Atmaca Next 26.51 derleme durumu
 
-- versionCode: 23
-- versionName: 0.23.0-startup-fix
-- applicationId: com.atmacanext.app
-- minSdk: 26
-- targetSdk: 36
-- compileSdk: 37.1
-- Android Gradle Plugin: 9.3.0 (yerleşik Kotlin)
-- Gradle: 9.5.0
-- JDK: 17
-- `:app:assembleDebug`: PASS
-- Birim testleri: PASS (67/67)
-- `lintDebug`: PASS
-- APK ZIP bütünlüğü: PASS
-- APK Signature Scheme v2 doğrulaması: PASS
-- Birleşik manifestte `androidx.startup.InitializationProvider`: YOK
-- `AtmacaNextApplication` üzerinden isteğe bağlı WorkManager yapılandırması: AKTİF
-- GitHub Actions: `.github/workflows/android-build.yml`
-
-Not: Üretilen dosya geliştirme/debug anahtarıyla imzalıdır. Play Store veya kalıcı
-dağıtım için kullanıcıya ait release keystore ile ayrıca imzalanmalıdır.
+- Temel kaynak: b9022ab0b02a268e9dd8a4ba1e0353dbcbe863dd (26.50).
+- versionCode: 99; versionName: 26.51-reply-flow-recovery.
+- applicationId: com.atmacanext.v258; minSdk: 26; targetSdk: 36; compileSdk: 37.1.
+- AGP: 9.3.2; Gradle: 9.5.0; JDK: 17; Room schema: 6.
+- 26.50 son main derlemesi başarısız: StatusLabel çakışması (CI 34571512499).
+- 26.51 yerel diff biçim kontrolü geçti. Test/lint/assemble sonucu CI bekliyor.
+- Fiziksel X cihaz testi yapılmadı.
+- Workflow: .github/workflows/android-build.yml (contents:read).
+- Kalıcı release imzası ve Releases yayın yetkisi bu çalışmada değiştirilmedi.

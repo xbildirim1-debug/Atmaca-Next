@@ -317,7 +317,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
                 RuntimeStatus.IDLE, RuntimeStatus.COMPLETED, RuntimeStatus.FAILED))) return
         // A new rootInActiveWindow call alone may still return Android-cached
         // virtual descendants after X changes the relationship pager.
-        val verifiedTask = runtime.taskType in setOf(com.atmacanext.app.domain.model.TaskType.VERIFIED_FOLLOW, com.atmacanext.app.domain.model.TaskType.COMMENTER_FOLLOW, com.atmacanext.app.domain.model.TaskType.RETWEETER_FOLLOW) &&
+        val verifiedTask = runtime.taskType in setOf(com.atmacanext.app.domain.model.TaskType.VERIFIED_FOLLOW, com.atmacanext.app.domain.model.TaskType.COMMENTER_FOLLOW, com.atmacanext.app.domain.model.TaskType.RETWEETER_FOLLOW, com.atmacanext.app.domain.model.TaskType.COMMENT_QUOTE_TARGETS) &&
             !AccountSyncController.isActive
         var cacheCleared = false
         val root = if (verifiedTask) FreshRootReader.read(

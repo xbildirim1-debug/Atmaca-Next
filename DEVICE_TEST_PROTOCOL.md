@@ -1,3 +1,15 @@
+## 26.51 Yorum Alıntısı kabul testi
+
+1. Tek hesap, tek alıntı hedefi, Limit 1, Tekrar 1 ve kısa ayırt edici yorum.
+2. Hedef gönderi açılır; yazar/metin doğru okunur. QUOTE_REPLY ile yorum alanı bulunur; metin yeni ekran okumada doğrulanır. QUOTE_REPLY_SUBMIT yalnız bir kez, ardından ilerleme 1/1.
+3. İki alıntı hedefi, Limit 1: her hedefte bir yorum; toplam 2/2. İlk hedef bitti diye görev tamamlanmaz.
+4. İki hesap seçili tek görev: ilk hesap hedeflerini bitirir, QUEUE_HANDOFF ile ikinci hesaba geçer. Yalnız finalde QUEUE_DONE ve Atmaca dönüşü.
+5. Ayrı yorum oluşturucu ve gönderi içindeki Yanıtını gönder alanını ayrı kontrol et. Hedefte metin genişleyip detay açılmazsa aynı yeni gönderi sınırlı tekrar edilir.
+6. Metin yazılırken veya gönderim doğrulanırken duraklat/durdur. Doğrulanmamış gönderim otomatik tekrar edilmez. Tekrar döngüsünde aynı doğrulanmış gönderi yeniden yorumlanmaz.
+7. Eksik hedef/gönderi veya yanıtsız gönderim: açık PAUSED nedeni ve korunmuş ilerleme; sahte COMPLETED yok.
+
+Bu fiziksel testler bu oturumda henüz yapılmadı. Derleme/birim test başarısı bunların geçtiği anlamına gelmez.
+
 # Checkpoint 10 — X Gerçek Cihaz Test Protokolü
 
 Bu protokol gerçek APK üretildiğinde selector sertleştirmesini tahminle değil, kaydedilmiş accessibility kanıtıyla yapmak içindir.

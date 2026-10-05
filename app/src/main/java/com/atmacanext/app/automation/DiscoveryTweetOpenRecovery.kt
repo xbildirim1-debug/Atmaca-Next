@@ -10,8 +10,8 @@ internal object DiscoveryTweetOpenRecovery {
         .replace(Regex("(?i)\\s*(?:daha fazlasını göster|show more)\\s*$"), "")
         .trimEnd('.', '…', ' ')
 
-    fun matches(attempt: Attempt, candidate: Candidate): Boolean {
-        if (candidate.author != attempt.author || !XTweetInspector.eligibleAge(candidate.age)) return false
+    fun matches(attempt: Attempt, candidate: Candidate, requireOlderPost: Boolean = true): Boolean {
+        if (candidate.author != attempt.author || (requireOlderPost && !XTweetInspector.eligibleAge(candidate.age))) return false
         if (candidate.text.isBlank()) return false
         if (candidate.key == attempt.key) return true
         val before = normalized(attempt.text)

@@ -14,6 +14,7 @@ import com.atmacanext.app.domain.model.TaskType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
@@ -32,6 +33,7 @@ class TaskOrchestrator(
     private val notifications: com.atmacanext.app.data.notifications.NotificationStore,
 ) {
     private val mutex = Mutex()
+    private val startMutex = Mutex()
     private val _state = MutableStateFlow(AutomationQueueState())
     val state = _state.asStateFlow()
     private var transitionJob: Job? = null
@@ -166,20 +168,20 @@ class TaskOrchestrator(
         scheduleAdvance(500L)
     }
 
-    private suspend fun startSelectionInternal(accounts: List<Account>, tasks: List<ScheduledTask>, source: String): Boolean {
-        transitionJob?.cancel()
+    private suspend fun startSelectionInternal(accounts: List<Account>, tasks: List<ScheduledTask>, source: String): Boolean = startMutex.withLock {
         if (_state.value.isActive || AccountSyncController.isActive) {
             repository.log("WARN", "QUEUE_LOCK", null, null, "Yeni görev başlatılmadı; başka hesap/görev işlemi aktif")
-            return false
+            return@withLock false
         }
         val runtime = AutomationController.state.value
-        if (runtime.taskId != null && runtime.status !in TERMINAL_RUNTIME) return false
+        if (runtime.taskId != null && runtime.status !in TERMINAL_RUNTIME) return@withLock false
+        transitionJob?.cancel()
         if (runtime.taskId != null) AutomationController.stop()
 
         val items = TaskQueuePlanner.build(accounts, tasks)
         if (items.isEmpty()) {
             mutate { AutomationQueueState(status = QueueStatus.IDLE, message = "Seçimde çalıştırılabilir aktif görev yok") }
-            return false
+            return@withLock false
         }
         val now = System.currentTimeMillis()
         mutate {
@@ -195,15 +197,19 @@ class TaskOrchestrator(
         }
         repository.log("INFO", "QUEUE_START", items.first().taskId, items.first().username, source, "tasks=${items.size}")
         launchCurrent()
-        return true
+        return@withLock true
     }
 
     private suspend fun launchCurrent() {
         val queue = _state.value
         val item = queue.currentItem ?: return finishQueue("Seçili görevlerin tamamı işlendi")
         if (item.status !in RUNNABLE_ITEM_STATUSES) return advanceNow()
-        val task = repository.getTaskById(item.taskId)
-        if (task == null) return skipAndAdvance("Görev veritabanında bulunamadı")
+        val original = repository.getTaskById(item.taskId) ?: return skipAndAdvance("Görev veritabanında bulunamadı")
+        val task = if (original.type == TaskType.COMMENT_QUOTE_TARGETS && original.quoteTargets.isNullOrBlank()) {
+            val handles = repository.getActiveQuoteTargets(original.accountId).map { it.handle }
+            if (handles.isEmpty()) return skipAndAdvance("Bu hesap için aktif Alıntı Hedefleri yok")
+            original.copy(quoteTargets = handles.joinToString("\n")).also { repository.upsertTask(it) }
+        } else original
         if (task.status == TaskStatus.COMPLETED || task.progress >= task.totalLimit) return completeAndAdvance("Görev zaten tamamlanmış")
         val account = repository.snapshotAccountDomains().firstOrNull { it.id == task.accountId }
             ?: return skipAndAdvance("Görev hesabı bulunamadı")
@@ -222,7 +228,7 @@ class TaskOrchestrator(
         }
 
         val targets = when {
-            task.type == TaskType.COMMENT_QUOTE_TARGETS -> repository.getActiveQuoteTargets(task.accountId).map { it.handle }
+            task.type == TaskType.COMMENT_QUOTE_TARGETS -> task.quoteTargetHandles
             task.type.isDiscoveryFollow -> repository.getActiveTargets(task.accountId).map { it.handle }
             else -> emptyList()
         }
@@ -297,10 +303,8 @@ class TaskOrchestrator(
                     )
                 }
                 repository.log("INFO", "QUEUE_TASK_DONE", item.taskId, item.username, runtime.message)
-                // Her hesap işinden sonra Atmaca'yı öne alıp X'i kapat. Sırada
-                // başka hesap varsa yeni görev X'i temiz şekilde yeniden açar.
-                AutomationController.returnToAtmaca()
-                scheduleAdvance(maxOf(betweenTasksMs, 3_000L))
+                // Stay in X until the final selected account is finished.
+                scheduleAdvance(betweenTasksMs)
             }
             RuntimeStatus.FAILED -> {
                 if (item.status == QueueItemStatus.FAILED) return
@@ -314,8 +318,8 @@ class TaskOrchestrator(
                     )
                 }
                 repository.log("ERROR", "QUEUE_TASK_FAILED", item.taskId, item.username, runtime.message)
-                AutomationController.returnToAtmaca()
-                if (continueAfterFailedTask) scheduleAdvance(maxOf(betweenTasksMs, 3_000L))
+                if (continueAfterFailedTask) scheduleAdvance(betweenTasksMs)
+                else AutomationController.returnToAtmaca()
             }
             RuntimeStatus.PAUSED -> {
                 transitionJob?.cancel()
@@ -336,18 +340,25 @@ class TaskOrchestrator(
 
     private fun scheduleAdvance(delayMs: Long = betweenTasksMs) {
         transitionJob?.cancel()
+        val session = _state.value.sessionId
+        val index = _state.value.currentIndex
         transitionJob = scope.launch {
             delay(delayMs)
+            val current = _state.value
+            if (current.sessionId != session || current.currentIndex != index || current.status != QueueStatus.BETWEEN_TASKS) return@launch
             advanceNow()
         }
     }
 
     private suspend fun advanceNow() {
-        AutomationController.stop()
         val queue = _state.value
         val next = TaskQueuePlanner.nextRunnableIndex(queue.items, queue.currentIndex)
+        repository.log("INFO", "QUEUE_DECISION", queue.currentItem?.taskId, queue.currentItem?.username,
+            "Sıradaki seçili görev değerlendirildi", "current=" + queue.currentIndex + "; next=" + next + "; items=" + queue.items.size)
         if (next < 0) return finishQueue("Seçili görev kuyruğu tamamlandı")
+        AutomationController.stop()
         val item = queue.items[next]
+        repository.log("INFO", "QUEUE_HANDOFF", item.taskId, item.username, "Sıradaki görev X içinde başlatılıyor")
         mutate { state -> state.copy(status = QueueStatus.PREPARING, currentIndex = next, message = "Sıradaki: ${item.username} • ${item.taskType.title}") }
         launchCurrent()
     }
@@ -393,7 +404,9 @@ class TaskOrchestrator(
     }
 
     private suspend fun finishQueue(message: String) {
-        transitionJob?.cancel()
+        val currentJob = currentCoroutineContext()[Job]
+        transitionJob?.takeIf { it != currentJob }?.cancel()
+        transitionJob = null
         AutomationController.stop()
         val status = QueueResultPolicy.finalStatus(_state.value.items)
         val finalMessage = when (status) {

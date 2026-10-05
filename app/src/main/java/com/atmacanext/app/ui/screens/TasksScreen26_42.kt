@@ -54,13 +54,13 @@ import com.atmacanext.app.ui.theme.TextSecondary
  * The existing task editor/list remains unchanged when no batch is active.
  */
 @Composable
-fun TasksScreen26_42(modifier: Modifier = Modifier) {
+fun TasksScreen26_42(modifier: Modifier = Modifier, initialGroup: String? = null) {
     val queue by AppServices.orchestrator.state.collectAsStateWithLifecycle()
     val runtime by AutomationController.state.collectAsStateWithLifecycle()
     val batchActive = queue.isActive && queue.items.map { it.taskId }.distinct().size > 1
 
     if (!batchActive) {
-        TasksScreen(modifier)
+        TasksScreen(modifier, initialGroup)
         return
     }
 

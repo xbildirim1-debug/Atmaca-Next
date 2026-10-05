@@ -201,7 +201,7 @@ private fun legacyTaskSignature(task: ScheduledTask): String = listOf(
 ).joinToString("\u001f")
 
 @Composable
-fun TasksScreen(modifier: Modifier = Modifier) {
+fun TasksScreen(modifier: Modifier = Modifier, initialGroup: String? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val runtime by AutomationController.state.collectAsStateWithLifecycle()
@@ -210,7 +210,7 @@ fun TasksScreen(modifier: Modifier = Modifier) {
     val accounts by AppServices.repository.accounts.collectAsStateWithLifecycle(initialValue = emptyList())
     val settings by AppServices.settings.settings.collectAsStateWithLifecycle(initialValue = com.atmacanext.app.data.settings.AppSettings())
     var selectedKeys by remember { mutableStateOf(emptySet<String>()) }
-    var activeFilter by remember { mutableStateOf<TaskGroup?>(null) }
+    var activeFilter by remember(initialGroup) { mutableStateOf(TaskGroup.entries.firstOrNull { it.name == initialGroup }) }
     var showCreate by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<LogicalTask?>(null) }
     var deleteRequest by remember { mutableStateOf<DeleteRequest?>(null) }

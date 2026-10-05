@@ -74,9 +74,15 @@ class AtmacaRepository(private val db: AtmacaDatabase) {
 
     suspend fun upsertTask(task: ScheduledTask) {
         val existing = db.taskDao().getById(task.id)
-        db.taskDao().upsert(task.toEntity().copy(lastTarget = existing?.lastTarget, lastActionAt = existing?.lastActionAt))
+        val saved = if (task.type == TaskType.COMMENT_QUOTE_TARGETS && task.quoteTargets.isNullOrBlank()) {
+            val handles = getActiveQuoteTargets(task.accountId).map { it.handle }
+            require(handles.isNotEmpty()) { "Bu hesap için önce Alıntı Hedefleri ekle" }
+            task.copy(quoteTargets = handles.joinToString("\n"))
+        } else task
+        db.taskDao().upsert(saved.toEntity().copy(lastTarget = existing?.lastTarget, lastActionAt = existing?.lastActionAt))
         log("INFO", "TASK", task.id, task.username, "Görev kaydedildi: ${task.type.title}", "repeat=${task.repeatCount}; interval=${task.intervalMinutes}m; perCycle=${task.limit}")
     }
+    suspend fun upsertTasks(tasks: List<ScheduledTask>) = db.withTransaction { tasks.forEach { upsertTask(it) } }
     suspend fun deleteTask(id: String) = deleteTasks(listOf(id))
     suspend fun deleteTasks(ids: Collection<String>) = db.withTransaction {
         val safeIds = ids.distinct().filter(String::isNotBlank); if (safeIds.isEmpty()) return@withTransaction
@@ -86,12 +92,24 @@ class AtmacaRepository(private val db: AtmacaDatabase) {
     suspend fun resetTask(id: String) { db.taskDao().resetForScheduledCycle(id, System.currentTimeMillis()); val task = db.taskDao().getById(id); log("INFO", "TASK", id, task?.username, "Görev ilerlemesi sıfırlandı") }
 
     suspend fun persistRuntime(state: AutomationRuntimeState) = db.withTransaction {
-        db.runtimeCheckpointDao().upsert(state.toCheckpoint())
-        val taskId = state.taskId ?: return@withTransaction
+        val taskId = state.taskId
+        if (taskId == null) {
+            db.runtimeCheckpointDao().upsert(state.toCheckpoint())
+            return@withTransaction
+        }
         val existing = db.taskDao().getById(taskId) ?: return@withTransaction
         val boundedProgress = state.verifiedCount.coerceIn(0, state.limit.coerceAtLeast(0))
+        if (boundedProgress < existing.progress) return@withTransaction
+        db.runtimeCheckpointDao().upsert(state.toCheckpoint())
         val verifiedDelta = (boundedProgress - existing.progress).coerceAtLeast(0)
         db.taskDao().updateRuntime(taskId, boundedProgress, state.status.toTaskStatus().name, state.lastTarget, state.lastActionAt, System.currentTimeMillis())
+        if (state.taskType == TaskType.COMMENT_QUOTE_TARGETS) {
+            val keys = (existing.quotePostedKeys.orEmpty().lineSequence() + state.quotePostedKeys.orEmpty().lineSequence())
+                .filter(String::isNotBlank).distinct().joinToString("\n").ifBlank { null }
+            // An older collected snapshot cannot erase a durable in-flight reply.
+            val pendingKey = state.quotePendingKey ?: existing.quotePendingKey.takeIf { verifiedDelta == 0 }
+            db.taskDao().updateQuotePostedKeys(taskId, keys, pendingKey)
+        }
         if (verifiedDelta > 0 && existing.type in DAILY_LIMITED_TYPES.map(TaskType::name)) {
             val dateKey = todayDateKey(); val usageDao = db.dailyAccountUsageDao(); val previous = usageDao.get(dateKey, existing.accountId, existing.type)
             usageDao.upsert(DailyAccountUsageEntity(dateKey, existing.accountId, existing.type, (previous?.verifiedCount ?: 0) + verifiedDelta, System.currentTimeMillis()))

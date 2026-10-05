@@ -29,10 +29,11 @@ interface TaskDao {
     @Query("SELECT COUNT(*) FROM scheduled_tasks") suspend fun count(): Int
     @Upsert suspend fun upsertAll(items: List<TaskEntity>)
     @Upsert suspend fun upsert(item: TaskEntity)
-    @Query("UPDATE scheduled_tasks SET progress = 0, status = 'QUEUED', lastTarget = NULL, lastActionAt = NULL, updatedAt = :updatedAt WHERE id = :id") suspend fun resetForScheduledCycle(id: String, updatedAt: Long)
+    @Query("UPDATE scheduled_tasks SET progress = 0, status = 'QUEUED', lastTarget = NULL, lastActionAt = NULL, quotePostedKeys = NULL, quotePendingKey = NULL, updatedAt = :updatedAt WHERE id = :id") suspend fun resetForScheduledCycle(id: String, updatedAt: Long)
     @Query("DELETE FROM scheduled_tasks WHERE id = :id") suspend fun deleteById(id: String)
     @Query("DELETE FROM scheduled_tasks WHERE id IN (:ids)") suspend fun deleteByIds(ids: List<String>)
     @Query("UPDATE scheduled_tasks SET progress = :progress, status = :status, lastTarget = :lastTarget, lastActionAt = :lastActionAt, updatedAt = :updatedAt WHERE id = :id") suspend fun updateRuntime(id: String, progress: Int, status: String, lastTarget: String?, lastActionAt: Long?, updatedAt: Long)
+    @Query("UPDATE scheduled_tasks SET quotePostedKeys = :keys, quotePendingKey = :pendingKey WHERE id = :id") suspend fun updateQuotePostedKeys(id: String, keys: String?, pendingKey: String?)
 }
 
 @Dao interface RuntimeCheckpointDao {

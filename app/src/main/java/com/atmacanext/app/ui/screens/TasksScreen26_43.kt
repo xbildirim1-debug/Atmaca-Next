@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
@@ -18,11 +19,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atmacanext.app.automation.AutomationController
+import com.atmacanext.app.automation.AccountSyncController
 import com.atmacanext.app.core.AppServices
 import com.atmacanext.app.domain.model.Account
 import com.atmacanext.app.domain.model.ScheduledTask
 import com.atmacanext.app.domain.model.TaskStatus
 import com.atmacanext.app.domain.model.TaskType
+import com.atmacanext.app.domain.model.QueueStatus
+import com.atmacanext.app.domain.model.TargetKind
 import com.atmacanext.app.ui.theme.*
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -39,6 +43,7 @@ fun TasksScreen26_43(modifier: Modifier = Modifier) {
     val accounts by AppServices.repository.accounts.collectAsStateWithLifecycle(initialValue = emptyList())
     val queue by AppServices.orchestrator.state.collectAsStateWithLifecycle()
     val runtime by AutomationController.state.collectAsStateWithLifecycle()
+    val sync by AccountSyncController.state.collectAsStateWithLifecycle()
     var selected by rememberSaveable { mutableStateOf(TaskTab43.FOLLOW.name) }
     val tab = TaskTab43.valueOf(selected)
 
@@ -64,12 +69,13 @@ fun TasksScreen26_43(modifier: Modifier = Modifier) {
         }
 
         when (tab) {
-            TaskTab43.FOLLOW, TaskTab43.ENGAGEMENT -> TasksScreen26_42(Modifier.fillMaxSize())
+            TaskTab43.FOLLOW -> TasksScreen26_42(Modifier.fillMaxSize(), "FOLLOW")
+            TaskTab43.ENGAGEMENT -> TasksScreen26_42(Modifier.fillMaxSize(), "ENGAGEMENT")
             TaskTab43.QUOTE_COMMENT -> QuoteCommentTaskSetup43(
                 modifier = Modifier.fillMaxSize(),
                 tasks = tasks.filter { it.type == TaskType.COMMENT_QUOTE_TARGETS },
                 accounts = accounts.filter { it.active },
-                locked = queue.isActive,
+                locked = queue.isActive || sync.active,
                 active = runtime.taskType == TaskType.COMMENT_QUOTE_TARGETS,
             )
         }
@@ -85,9 +91,12 @@ private fun QuoteCommentTaskSetup43(
     active: Boolean,
 ) {
     val scope = rememberCoroutineScope()
+    val queue by AppServices.orchestrator.state.collectAsStateWithLifecycle()
+    val runtime by AutomationController.state.collectAsStateWithLifecycle()
     var showCreate by remember { mutableStateOf(false) }
+    var saveError by remember { mutableStateOf<String?>(null) }
 
-    Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Surface(color = CardBackground, shape = MaterialTheme.shapes.large) {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -120,6 +129,16 @@ private fun QuoteCommentTaskSetup43(
                 )
 
                 if (active) Text("Yorum Alıntısı şu anda çalışıyor.", color = Success, fontWeight = FontWeight.SemiBold)
+                if (active && queue.isActive) {
+                    Text(runtime.message, color = TextSecondary)
+                    Text("Doğrulanan " + runtime.verifiedCount + "/" + runtime.limit)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = {
+                            if (queue.status == QueueStatus.PAUSED) AppServices.orchestrator.resume() else AppServices.orchestrator.pause()
+                        }) { Text(if (queue.status == QueueStatus.PAUSED) "Devam et" else "Duraklat") }
+                        OutlinedButton(onClick = AppServices.orchestrator::stop) { Text("Durdur") }
+                    }
+                }
                 if (locked && !active) Text("Çalışan görev nedeniyle yeni Yorum Alıntısı görevi eklenemez.", color = TextSecondary)
                 if (accounts.isEmpty()) Text("Önce aktif bir X hesabı ekle.", color = TextSecondary)
             }
@@ -144,29 +163,31 @@ private fun QuoteCommentTaskSetup43(
                 }
             }
         } else {
-            tasks.forEach { task ->
+            tasks.groupBy { it.time.takeIf { value -> value.startsWith("group:") } ?: it.id }.values.forEach { group ->
+                val task = group.first()
                 Surface(color = CardBackground, shape = MaterialTheme.shapes.large) {
                     Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text(task.username, fontWeight = FontWeight.Bold)
+                                Text(group.joinToString(" · ") { it.username }, fontWeight = FontWeight.Bold)
                                 Text(
                                     "Limit ${task.limit} • Tekrar ${task.repeatCount} • ${task.intervalMinutes} dk",
                                     color = TextSecondary,
                                     style = MaterialTheme.typography.bodySmall,
                                 )
                             }
-                            if (task.status == TaskStatus.COMPLETED) Icon(Icons.Filled.CheckCircle, null, tint = Success)
+                            if (group.all { it.status == TaskStatus.COMPLETED }) Icon(Icons.Filled.CheckCircle, null, tint = Success)
                         }
                         Text(task.contentText.orEmpty().take(180), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                        group.forEach { row -> Text(row.username + " · " + row.progress + "/" + row.totalLimit + " · " + quoteTaskStatus(row.status), color = TextSecondary, style = MaterialTheme.typography.bodySmall) }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(
-                                onClick = { scope.launch { AppServices.repository.deleteTask(task.id) } },
+                                onClick = { scope.launch { AppServices.repository.deleteTasks(group.map { it.id }) } },
                                 enabled = !locked,
                             ) { Text("Sil") }
                             Button(
-                                onClick = { AppServices.orchestrator.startSelection(listOf(task)) },
-                                enabled = !locked && task.status != TaskStatus.COMPLETED,
+                                onClick = { AppServices.orchestrator.startSelection(group) },
+                                enabled = !locked && group.any { it.status != TaskStatus.COMPLETED && it.progress < it.totalLimit },
                             ) { Text("Başlat") }
                         }
                     }
@@ -178,10 +199,13 @@ private fun QuoteCommentTaskSetup43(
     if (showCreate) {
         QuoteCommentCreateDialog43(
             accounts = accounts,
+            errorMessage = saveError,
             onDismiss = { showCreate = false },
             onSave = { created ->
-                scope.launch { created.forEach { AppServices.repository.upsertTask(it) } }
-                showCreate = false
+                scope.launch {
+                    try { AppServices.repository.upsertTasks(created); showCreate = false; saveError = null }
+                    catch (error: Exception) { saveError = error.message ?: "Görevler kaydedilemedi" }
+                }
             },
         )
     }
@@ -190,10 +214,12 @@ private fun QuoteCommentTaskSetup43(
 @Composable
 private fun QuoteCommentCreateDialog43(
     accounts: List<Account>,
+    errorMessage: String?,
     onDismiss: () -> Unit,
     onSave: (List<ScheduledTask>) -> Unit,
 ) {
     val available = accounts.distinctBy { it.username.lowercase() }.take(10)
+    val targets by AppServices.repository.targetAccounts.collectAsStateWithLifecycle(initialValue = emptyList())
     var selectedIds by remember(available) {
         mutableStateOf(setOfNotNull(available.firstOrNull { it.isCurrent }?.id ?: available.firstOrNull()?.id))
     }
@@ -206,13 +232,15 @@ private fun QuoteCommentCreateDialog43(
     val repeat = repeatText.toIntOrNull()
     val interval = intervalText.toIntOrNull()
     val valid = selectedIds.isNotEmpty() && comment.isNotBlank() && comment.length <= 280 &&
-        limit != null && limit in 1..20 && repeat != null && repeat in 1..100 && interval != null && interval in 1..1440
+        limit != null && limit in 1..20 && repeat != null && repeat in 1..100 && interval != null && interval in 1..1440 &&
+        selectedIds.all { id -> targets.any { it.ownerAccountId == id && it.kind == TargetKind.QUOTE && it.active } }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Yeni Yorum Alıntısı Görevi", fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 Text("Hesaplar", fontWeight = FontWeight.SemiBold)
                 available.forEach { account ->
                     val checked = account.id in selectedIds
@@ -229,6 +257,7 @@ private fun QuoteCommentCreateDialog43(
                             },
                         )
                         Text(account.username, modifier = Modifier.weight(1f))
+                        if (targets.none { it.ownerAccountId == account.id && it.kind == TargetKind.QUOTE && it.active }) Text("Hedef yok", color = MaterialTheme.colorScheme.error)
                         if (account.isCurrent) Text("X'te açık", color = Success, style = MaterialTheme.typography.bodySmall)
                     }
                 }
@@ -302,4 +331,12 @@ private fun QuoteCommentCreateDialog43(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
     )
+}
+
+private fun quoteTaskStatus(status: TaskStatus): String = when (status) {
+    TaskStatus.QUEUED -> "Bekliyor"
+    TaskStatus.RUNNING -> "Çalışıyor"
+    TaskStatus.PAUSED -> "Duraklatıldı"
+    TaskStatus.COMPLETED -> "Tamamlandı"
+    TaskStatus.FAILED -> "Başarısız"
 }

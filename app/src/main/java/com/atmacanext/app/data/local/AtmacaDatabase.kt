@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [AccountEntity::class, TaskEntity::class, RuntimeCheckpointEntity::class, AutomationLogEntity::class,
         QueueCheckpointEntity::class, QueueItemEntity::class, DailyAccountUsageEntity::class, TargetAccountEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class AtmacaDatabase : RoomDatabase() {
@@ -68,7 +68,25 @@ abstract class AtmacaDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE target_accounts ADD COLUMN kind TEXT NOT NULL DEFAULT 'STANDARD'")
             }
         }
+        internal val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE scheduled_tasks ADD COLUMN quoteTargets TEXT")
+                db.execSQL("ALTER TABLE scheduled_tasks ADD COLUMN quotePostedKeys TEXT")
+                db.execSQL("ALTER TABLE scheduled_tasks ADD COLUMN quotePendingKey TEXT")
+                // 26.50's mapper wrote QUOTE rows as STANDARD. The original UUID
+                // proves which kind was intended, without touching standard targets.
+                db.query("SELECT id, ownerAccountId, handle FROM target_accounts WHERE kind = 'STANDARD'").use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val rowId = cursor.getString(0)
+                        val seed = cursor.getString(1) + ":QUOTE:" + cursor.getString(2)
+                        if (java.util.UUID.nameUUIDFromBytes(seed.toByteArray()).toString() == rowId) {
+                            db.execSQL("UPDATE target_accounts SET kind = 'QUOTE' WHERE id = ?", arrayOf(rowId))
+                        }
+                    }
+                }
+            }
+        }
         fun create(context: Context): AtmacaDatabase = Room.databaseBuilder(context.applicationContext, AtmacaDatabase::class.java, "atmaca_next.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
     }
 }

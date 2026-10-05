@@ -1,4 +1,12 @@
-# Atmaca Next — 26.33
+# Atmaca Next — 26.51
+
+Yorum Alıntısı, hedef gönderiyi doğruladıktan sonra X'in ayrı yorum ekranını veya gönderi içindeki yorum alanını kullanır. Metin yeni okumada doğrulanır, gönderim bir kez yapılır ve sonuç belirsizse aynı yorum tekrar gönderilmez.
+
+Alıntı hedefleri ayrı kaydedilir. Limit her hedef içindir: 5 hedef × Limit 1 = 5 yorum. Seçili hesaplar tek grupta sırayla çalışır; kuyruk tamamlanınca Atmaca Next öne gelir.
+
+26.51 test ve APK sonuçları [DEVIR_NOTU.md](DEVIR_NOTU.md) ve paket içindeki NOT_DEFTERI.txt içinde tutulur. Yeni APK henüz fiziksel X cihazında doğrulanmadı.
+
+## Geçmiş sürüm notları — 26.33
 
 26.33: profil açıklamasındaki “bildirimleri açın” artık bildirim penceresi
 sayılmaz. Pencere sınıflandırması gerçek dialog/kapatma kontrolü gerektirir.
@@ -77,7 +85,7 @@ Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap
 
 ## Geliştirme / APK
 
-JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.16-APK** çıktısını indirin.
+JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.51-APK** çıktısını indirin.
 
 ```sh
 gradle testDebugUnitTest lintDebug :app:assembleDebug

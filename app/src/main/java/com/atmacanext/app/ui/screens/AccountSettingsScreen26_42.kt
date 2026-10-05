@@ -135,7 +135,7 @@ fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
             }
         }
 
-        Text("Atmaca Next · 26.42", color = TextSecondary, fontSize = 12.sp)
+        Text("Atmaca Next · " + com.atmacanext.app.BuildConfig.VERSION_NAME, color = TextSecondary, fontSize = 12.sp)
 
         Card {
             Row(
@@ -146,7 +146,7 @@ fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Ekran okuma", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    StatusLabel(
+                    ConnectionStatusLabel26_42(
                         if (health.connected) "Bağlı ve hazır" else if (health.enabled) "İzin açık · bağlantı bekleniyor" else "İzin kapalı",
                         health.connected,
                     )
@@ -161,7 +161,7 @@ fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun StatusLabel(text: String, positive: Boolean) {
+private fun ConnectionStatusLabel26_42(text: String, positive: Boolean) {
     Text(
         text = text,
         color = if (positive) Teal else TextSecondary,
