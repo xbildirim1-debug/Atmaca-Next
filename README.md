@@ -1,5 +1,9 @@
 # Atmaca Next — 26.58
 
+472 test geçti. Dört hesapta ilk tur biter, ortak döngü süresi beklenir, sonra ikinci tur aynı sırada başlar. Görev ekranında dakika/saniye geri sayımı her saniye güncellenir. Fiziksel yeni APK testi yapılmadı.26.57 ile imza farklıdır; üzerine doğrudan kurulum uyumsuz.
+
+# Atmaca Next — 26.58
+
 ## 26.58 — yalnız toplu görev döngüsü (5 Ekim 2026)
 
 Güncel26.57 üzerine dar yama. Kullanıcı4 hesap/2 döngüde ilk hesap turundan sonra Atmaca beklemesini bildirdi. Artık runtime kuyrukta yalnız tur sınırını bildirir; ilerleme veritabanına kaydedilip sıradaki hesap X içinde başlatılır. Tüm hesaplar ilk turu bitirince ortak tam dakika beklemesi başlar; kalan görevler aynı hesap sırasıyla ikinci tura alınır. Farklı aralıklarla seçilen görevlerde ortak bekleme kalan görevlerin en uzun aralığıdır. Tekrarı biten/atlanan/başarısız görev yeniden alınmaz. Manuel pause/deadline/stop korunur; planlı WAITING_INTERVAL kuyruk watchdog tarafından hareketsizlik sayılmaz. Yalnız döngü sahipliği/kuyruk tur geçişi ve ilgili durum etiketi değişti;26.57 takip/tablet/7×/sonuç düzeltmeleri korunur.Geri sayım her saniye dakika/saniye gösterir, ekran güncellemesi her saniye DB yazmaz.13 yeni test; CI bekleniyor, fiziksel yeni APK testi yapılmadı. versionCode106 /26.58-batch-cycles; com.atmacanext.v258/Room6 aynı. İmza/Releases otomatik onay reddi kısıtları sürer.
