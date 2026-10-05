@@ -72,7 +72,7 @@ data class TargetAccountEntity(
     val ownerAccountId: String,
     val handle: String,
     val active: Boolean = true,
-    @ColumnInfo(defaultValue = "STANDARD") val kind: String = "STANDARD",
+    @ColumnInfo(defaultValue = "'STANDARD'") val kind: String = "STANDARD",
     val updatedAt: Long = System.currentTimeMillis(),
 )
 

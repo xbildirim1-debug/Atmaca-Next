@@ -84,6 +84,12 @@ abstract class AtmacaDatabase : RoomDatabase() {
                         }
                     }
                 }
+                // Normalize the SQL default for databases created by Room v5
+                // (DEFAULT STANDARD) and by MIGRATION_4_5 (DEFAULT 'STANDARD').
+                db.execSQL("CREATE TABLE target_accounts_v6 (id TEXT NOT NULL, ownerAccountId TEXT NOT NULL, handle TEXT NOT NULL, active INTEGER NOT NULL, updatedAt INTEGER NOT NULL, kind TEXT NOT NULL DEFAULT 'STANDARD', PRIMARY KEY(id))")
+                db.execSQL("INSERT INTO target_accounts_v6 (id, ownerAccountId, handle, active, updatedAt, kind) SELECT id, ownerAccountId, handle, active, updatedAt, kind FROM target_accounts")
+                db.execSQL("DROP TABLE target_accounts")
+                db.execSQL("ALTER TABLE target_accounts_v6 RENAME TO target_accounts")
             }
         }
         fun create(context: Context): AtmacaDatabase = Room.databaseBuilder(context.applicationContext, AtmacaDatabase::class.java, "atmaca_next.db")

@@ -27,7 +27,9 @@ jobs:
         with:
           gradle-version: '9.5.0'
       - name: Tests, lint and APK
-        run: gradle --no-daemon testDebugUnitTest lintDebug :app:assembleDebug --stacktrace
+        run: |
+          python3 scripts/verify_quote_migration.py
+          gradle --no-daemon testDebugUnitTest lintDebug :app:assembleDebug --stacktrace
       - name: Verify and package
         shell: bash
         run: |
