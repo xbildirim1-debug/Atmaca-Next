@@ -1,6 +1,6 @@
 # Atmaca Next — 26.55
 
-26.55: güncel 26.54 main korunarak sol/sağ/alt gezinme çubuğu canlı semantik ve sınırlarla bulunur. Tablet kaydırması içerik panelinde kalır; hesap seçici gerçek drawer paneline bağlanır. Önceki görev düzeltmeleri ve En hızlı · 7× korunur. Yeni test/lint/APK sonucu bekleniyor; fiziksel cihaz testi yapılmadı.
+26.55: güncel 26.54 main korunarak sol/sağ/alt gezinme çubuğu canlı semantik ve sınırlarla bulunur. Tablet kaydırması içerik panelinde kalır; hesap seçici gerçek drawer paneline bağlanır. Önceki görev düzeltmeleri ve En hızlı · 7× korunur. CI 37341767741 başarılı:435 test (18 yeni), lint ve APK/imza/paketleme geçti. APK kaynağı efde2b84dc211c515bbbfc5c83f41f80f989b785. Fiziksel cihaz testi yapılmadı.
 
 26.54: hesap seçicisinde ilk hesap durması, ikinci hesapta kaydırma hatası ve onaylı liste sonu düzeltildi. Limit dolmazsa aynı listeden rastgele başka kaynak → takipçileri → Onaylı döngüsü sürer. Geçici ekran hataları aynı aşamadan yeniden okunur; ortak hareketsizlik denetimi tüm görevleri kapsar. Varsayılan 7× hız ve Ayarlar’da En hızlı · 7× seçeneği eklendi. CI 37303366905 başarılı; ayrıntılar DEVIR_NOTU.md içinde.
 
