@@ -1,3 +1,9 @@
+# Atmaca Next — 26.57
+
+## 26.57 — boş onaylı listeden sıralı takipçi geçişi (5 Ekim 2026)
+
+Güncel 26.56 temeli korunur. 1000033428.mp4 sonunda Gökçe Yalın onaylı listesinde yalnız kendi hesap satırı vardır. Yeni kaynak yoksa iki saniyelik taze liste beklemesinden sonra kaynak profile geri dönülür ve normal takipçilerindeki ziyaret edilmemiş kişiler ekran sırasıyla denenir. Aynı onaylı listede uygun kaynak varsa önceki rastgele zincir korunur. Eksik kota kaynak tükenince tamamlanmış sayılmaz. Sayaç/session/bekleyen işlem, tablet ve 7× hız korunur. Yeni alanlar görev sıfırlamasında temizlenir. versionCode105. CI bekleniyor; fiziksel yeni APK testi yapılmadı. Kalıcı imza ve AGENTS.md yayın onayı kısıtları sürer.
+
 # Atmaca Next — 26.56
 
 26.56: yalnız Onaylı takipte Geri Takip Et/sonuç doğrulaması, ara hesap seçici ekranı ve10 saniye hareketsizlik kurtarması güncellendi. Sayaç/aşama/bekleyen işlem korunarak motor adımı yeniden başlar; CI37348618113 başarılı:455 test/20 yeni regresyon, lint/APK imzası/paket doğrulaması geçti. Önceki26.55 APK ile sertifika farklı; doğrudan üzerine kurulum uyumlu değil. Fiziksel yeni APK testi yapılmadı. Diğer26.55 davranışları korunur.

@@ -1,3 +1,7 @@
+## 26.57 — boş onaylı listeden sıralı takipçi geçişi (5 Ekim 2026)
+
+Güncel 26.56 temeli korunur. 1000033428.mp4 sonunda Gökçe Yalın onaylı listesinde yalnız kendi hesap satırı vardır. Yeni kaynak yoksa iki saniyelik taze liste beklemesinden sonra kaynak profile geri dönülür ve normal takipçilerindeki ziyaret edilmemiş kişiler ekran sırasıyla denenir. Aynı onaylı listede uygun kaynak varsa önceki rastgele zincir korunur. Eksik kota kaynak tükenince tamamlanmış sayılmaz. Sayaç/session/bekleyen işlem, tablet ve 7× hız korunur. Yeni alanlar görev sıfırlamasında temizlenir. versionCode105. CI bekleniyor; fiziksel yeni APK testi yapılmadı. Kalıcı imza ve AGENTS.md yayın onayı kısıtları sürer.
+
 ## 26.56 — doğrulanmış yama teslimi (5 Ekim 2026)
 
 - Başarılı kaynak main commit63461e8a24e0a9d55bfbd08f73a09c403de5dc6d; CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37348618113 .455 test/20 yeni regresyon;0 başarısız/hata/atlanan. Önceki435 test de geçti. Lint0 hata/fatal,21 uyarı; SQLite5→6/test/lint/assemble/APK imzası/manifest/paketleme geçti. Yeni fiziksel X testi yapılmadı.

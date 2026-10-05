@@ -189,6 +189,8 @@ object AutomationController {
     private val unfollowBeforeAnchorHandles = LinkedHashSet<String>()
     private val sourceHandles = LinkedHashSet<String>()
     private var sourceHandle: String? = null
+    private var exhaustedSourceHandle: String? = null
+    private var fallbackFollowersOpened = false
     private var unfollowProfileStatClickIssued = false
     private var unfollowAnchorPending = false
     private var unfollowNeedForwardScroll = false
@@ -969,7 +971,7 @@ object AutomationController {
                 val own = XIdentityDetector.normalizeUsername(current.username.orEmpty())
                 val source = RecentFollowerSelector.orderedHandles(AccessibilityTree.snapshots(root), sourceHandles + own).firstOrNull()
                 if (source == null) {
-                    if (!scrollForwardAndTrack(service, root)) finishCycleOrTask(service, "Ziyaret edilecek yeni takipçi kalmadı; bulunan kadar onaylı kullanıcı takip edildi")
+                    if (!scrollForwardAndTrack(service, root)) pause("Ziyaret edilecek yeni takipçi kalmadı; ${current.verifiedCount}/${current.limit} korundu")
                     service.requestAutomationTick(500L)
                     return
                 }
@@ -980,9 +982,18 @@ object AutomationController {
                 }
             }
             XFlowStage.RETURN_VERIFIED_SOURCE -> {
-                // Older in-memory routes are redirected without leaving the source list.
-                moveStage(XFlowStage.LOCATE_SOURCE_ROW, "Açık onaylı listeden yeni kaynak aranıyor")
-                service.requestAutomationTick(150L)
+                if (fallbackFollowersOpened && screen == XScreen.FOLLOWERS_LIST) {
+                    fallbackFollowersOpened = false
+                    moveStage(XFlowStage.FIND_RECENT_FOLLOWER, "Kaynak takipçileri sırayla deneniyor; ziyaret edilenler atlanacak")
+                } else if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == exhaustedSourceHandle) {
+                    if (XUiActions.clickProfileFollowers(service, root)) fallbackFollowersOpened = true
+                } else if (!fallbackFollowersOpened && screen in setOf(XScreen.FOLLOWERS_LIST, XScreen.VERIFIED_FOLLOWERS_LIST)) {
+                    if (!XUiActions.clickVisibleBack(service, root)) service.pressBack()
+                } else if (now - stageStartedAt >= 15_000L) {
+                    return pause("Kaynak profilin takipçi listesine dönüş doğrulanamadı; ilerleme korundu")
+                }
+                nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
+                service.requestAutomationTick(700L)
             }
             XFlowStage.LOCATE_SOURCE_ROW -> {
                 if (screen != XScreen.VERIFIED_FOLLOWERS_LIST) {
@@ -1002,7 +1013,18 @@ object AutomationController {
                     moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "Onaylı listedeki @$source adına dokunuldu; profil doğrulanıyor")
                     nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
                 } else {
-                    if (now - stageStartedAt >= 30_000L) return pause("Açık listede ziyaret edilmemiş kaynak bulunamadı; ${current.verifiedCount}/${current.limit} korundu")
+                    if (visible.isEmpty() && now - stageStartedAt >= 2_000L) {
+                        fallbackFollowersOpened = false
+                        moveStage(XFlowStage.RETURN_VERIFIED_SOURCE, "Onaylı listede yeni kaynak yok; kaynak profilin takipçileri sırayla denenecek")
+                        service.requestAutomationTick(150L)
+                        return
+                    }
+                    if (now - stageStartedAt >= 30_000L) {
+                        fallbackFollowersOpened = false
+                        moveStage(XFlowStage.RETURN_VERIFIED_SOURCE, "Görünür yeni kaynak bulunamadı; normal takipçi sırasına dönülüyor")
+                        service.requestAutomationTick(150L)
+                        return
+                    }
                     val moved = ListViewportController.tryScrollUserRowsBackward(root) == ScrollAttemptResult.SCROLLED ||
                         ListGesture.backward(service, root)
                     if (!moved) {
@@ -2069,7 +2091,7 @@ object AutomationController {
     }
 
     private fun nextVerifiedSource(service: AtmacaAccessibilityService, reason: String) {
-        sourceHandle?.let(sourceHandles::add)
+        sourceHandle?.let { sourceHandles.add(it); exhaustedSourceHandle = it }
         listEndStable = 0
         lastListSignature = ""
         sourceHandle = null
@@ -2505,6 +2527,8 @@ object AutomationController {
         unfollowReverseMode = false
         unfollowFollowObservedAt = 0L
         sourceHandle = null
+        exhaustedSourceHandle = null
+        fallbackFollowersOpened = false
     }
 
     private fun resetCycleNavigation() {
