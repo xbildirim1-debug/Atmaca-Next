@@ -76,7 +76,7 @@ object XUiVocabulary {
 
     val structuralLabels: Set<String> = buildSet {
         addAll(followersHeaders); addAll(followingHeaders); addAll(verifiedFollowersHeaders)
-        addAll(followActions); addAll(followingActions); addAll(unfollowConfirmationActions)
+        addAll(followActions); addAll(followingActions); addAll(requestedActions); addAll(unfollowConfirmationActions)
         addAll(likeActions); addAll(unlikeActions); addAll(repostActions); addAll(undoRepostActions)
         addAll(bookmarkActions); addAll(removeBookmarkActions); addAll(replyActions); addAll(quoteActions)
         addAll(postActions); addAll(composerSignals); addAll(tweetDetailSignals); addAll(engagementSignals)
@@ -89,4 +89,3 @@ object XUiVocabulary {
     fun normalize(raw: String?): String = raw.orEmpty().lowercase(Locale.ROOT).trim()
     fun containsExact(labels: Collection<String>, vocabulary: Set<String>): Boolean = labels.any { normalize(it) in vocabulary }
 }
-

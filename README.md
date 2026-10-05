@@ -1,6 +1,10 @@
-# Atmaca Next — 26.52
+# Atmaca Next — 26.53
 
-26.52: yorumcu takipte yalnız o yorum satırına bağlı resim/GIF/video medya olarak atlanır. Görünür metin yorumları sırayla işlenir; belirsiz kimlik/tıklama sessiz atlama yerine ilerleme korunarak duraklar. Yorumcu ve retweetçi takip, hedef profile geri dönünce yeniden Geri/arama yapmadan aynı konumdan taramaya devam eder.
+26.53: tüm görevlerde önceki X ekranından hesap menüsüne sınırlı Back ile dönülür; sonraki hesap tam kimlikle doğrulanır. Açılan yorumun alt yanıtlarına girilmez; Takip et yoksa ana yorumlara dönüp sıradaki görünür yorumla devam edilir. Yeni takip isteği Beklemede olduğunda onay beklenmeden işlem sayılır.
+
+26.53 derleme/teslim durumu [DEVIR_NOTU.md](DEVIR_NOTU.md) ve [BUILD_STATUS.md](BUILD_STATUS.md) içindedir. Yeni APK henüz fiziksel cihazda doğrulanmadı.
+
+26.52'den korunan davranış: yorumcu takipte yalnız o yorum satırına bağlı resim/GIF/video medya olarak atlanır. Görünür metin yorumları sırayla işlenir; belirsiz kimlik/tıklama sessiz atlama yerine ilerleme korunarak duraklar. Yorumcu ve retweetçi takip, hedef profile geri dönünce yeniden Geri/arama yapmadan aynı konumdan taramaya devam eder.
 
 26.52 için [CI 37293523368](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37293523368) başarılı: 352 test (18 yeni regresyon), lint, APK imzası ve paketleme geçti. Test edilen APK kaynağı `7e5b34890d78b7d8dd272014543ba74beb5b1660`. Ayrıntılar [DEVIR_NOTU.md](DEVIR_NOTU.md), [BUILD_STATUS.md](BUILD_STATUS.md) ve paket içindeki NOT_DEFTERI.txt içinde tutulur. Yeni APK henüz fiziksel X cihazında doğrulanmadı; Releases yayını için depoda belirtilen workflow onayı bekleniyor.
 
@@ -89,7 +93,7 @@ Gönderilen V25.12.17 kaynak paketi temel alınmıştır. Hesap taraması, hesap
 
 ## Geliştirme / APK
 
-JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.52-APK** çıktısını indirin.
+JDK 17, Gradle 9.5.0 ve Android SDK 37.1 gerektirir. Depodaki `android-build.yml` test, lint, APK ve imza kontrolünü çalıştırır. Başarılı çalıştırmanın **AtmacaNext-26.53-APK** çıktısını indirin.
 
 ```sh
 gradle testDebugUnitTest lintDebug :app:assembleDebug

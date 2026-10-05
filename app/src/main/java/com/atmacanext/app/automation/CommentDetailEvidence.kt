@@ -24,6 +24,7 @@ internal object CommentDetailEvidence {
             n.visible && !n.editable && n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
                 n.bounds.top >= title.bounds.bottom
         }.sortedBy { nodes[it].bounds.top }
+        val timedHeaders = FeedRowEvidence.rows(nodes).map { it.headerIndex }.toSet()
 
         // The expanded post's own author is the first untimed identity below the
         // detail title. A timed author belongs to a reply/feed row, so do not ever
@@ -31,7 +32,7 @@ internal object CommentDetailEvidence {
         for (i in candidates) {
             val n = nodes[i]
             val rawLabels = labels(n)
-            if (rawLabels.any { TweetContentEvidence.header(it) != null }) return null
+            if (i in timedHeaders || rawLabels.any { TweetContentEvidence.header(it) != null }) return null
             val handle = rawLabels.firstNotNullOfOrNull(::headerHandle)
             if (handle != null) return Header(handle, i)
         }
@@ -48,14 +49,12 @@ internal object CommentDetailEvidence {
         // band around the actual header instead of requiring its top edge to end on
         // the exact @handle line. This still excludes Follow buttons on replies below.
         val bandTop = h.top - (lineHeight * 2)
-        val nextReplyTop = nodes.filter { it.visible && it.bounds.top > h.top &&
-            labels(it).any { label -> TweetContentEvidence.header(label) != null } }
-            .minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE
+        val nextReplyTop = firstReplyTop(nodes, h.top)
         val bandBottom = minOf(h.bottom + (lineHeight * 3), nextReplyTop)
         return nodes.indices.asSequence().filter { i ->
             val n = nodes[i]
             val b = n.bounds
-            n.visible && n.enabled && !n.editable && b.right > b.left && b.bottom > b.top &&
+            n.visible && (n.enabled || statusOnly(accepted)) && !n.editable && b.right > b.left && b.bottom > b.top &&
                 b.bottom >= bandTop && b.bottom <= bandBottom &&
                 b.left >= h.left && b.right > (h.left + h.right) / 2 &&
                 b.bottom - b.top <= lineHeight * 3 &&
@@ -80,11 +79,12 @@ internal object CommentDetailEvidence {
             ?: return null
         val screenRight = nodes.filter { it.visible }.maxOfOrNull { it.bounds.right } ?: return null
         val titleHeight = (title.bounds.bottom - title.bounds.top).coerceAtLeast(1)
-        val bandBottom = title.bounds.bottom + maxOf(360, titleHeight * 8)
+        val bandBottom = minOf(title.bounds.bottom + maxOf(360, titleHeight * 8),
+            firstReplyTop(nodes, title.bounds.bottom))
         return nodes.indices.asSequence().filter { i ->
             val n = nodes[i]
             val b = n.bounds
-            n.visible && n.enabled && !n.editable && b.right > b.left && b.bottom > b.top &&
+            n.visible && (n.enabled || statusOnly(accepted)) && !n.editable && b.right > b.left && b.bottom > b.top &&
                 b.top >= title.bounds.bottom && b.bottom <= bandBottom &&
                 b.left >= screenRight * 3 / 5 && b.right >= screenRight * 4 / 5 &&
                 b.bottom - b.top <= titleHeight * 3 &&
@@ -94,6 +94,28 @@ internal object CommentDetailEvidence {
 
     fun hasHeaderAction(nodes: List<NodeSnapshot>, accepted: Set<String>) =
         headerActionIndex(nodes, accepted) != null
+
+    /** Missing identity permits the bounded header fallback; a conflicting identity never does. */
+    fun relationshipActionIndex(nodes: List<NodeSnapshot>, expected: String, accepted: Set<String>): Int? {
+        val author = header(nodes)
+        if (author != null) {
+            if (author.handle != XIdentityDetector.normalizeUsername(expected)) return null
+            return actionIndex(nodes, expected, accepted)
+        }
+        return headerActionIndex(nodes, accepted)
+    }
+
+    private fun statusOnly(accepted: Set<String>): Boolean =
+        accepted.isNotEmpty() && accepted.all { it in XUiVocabulary.followingActions || it in XUiVocabulary.requestedActions }
+
+    private fun firstReplyTop(nodes: List<NodeSnapshot>, after: Int): Int {
+        val rowTop = FeedRowEvidence.rows(nodes).asSequence().map { nodes[it.headerIndex].bounds.top }
+            .filter { it > after }.minOrNull() ?: Int.MAX_VALUE
+        val separator = nodes.filter { n -> n.visible && !n.editable && n.bounds.top > after &&
+            labels(n).any { XUiVocabulary.normalize(it) in setOf("alakalı", "relevant", "en yeni", "latest", "yanıtlar", "replies") } }
+            .minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE
+        return minOf(rowTop, separator)
+    }
 
     private fun headerHandle(raw: String): String? {
         AccountSwitcherInspector.dedicatedHandle(raw)?.let { return it }

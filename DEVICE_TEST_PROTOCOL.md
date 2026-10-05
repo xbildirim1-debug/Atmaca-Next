@@ -1,3 +1,13 @@
+## 26.53 toplu geçiş / alt yorum / Beklemede kabul testi
+
+1. İki hesap, Limit1/Tekrar1; sırayla Takipten çık, Onaylı takip, Yorumcu, Retweetçi ve link görevlerini ayrı çalıştır. İlk işin son X ekranında ACCOUNT_RETURN görülmeli; menü→seçici→ikinci kendi profilindeki tam @handle; sonra ikinci iş. Manuel Back/Atmaca müdahalesi gerekmeden devam etmeli. Tam kuyruk sonunda QUEUE_DONE ve başarılı QUEUE_RETURN; Atmaca öne gelmeli.
+2. Hedef yorum listesinden altında kendi yanıtları olan bir yorum aç. Yalnız o yorumcunun başlığı işlenmeli; alt yanıt düğmeleri açılmamalı ve başarı sayılmamalı.
+3. Üstte Mesaj gönder/Abone ol veya hiç Takip et olmayan yorum: COMMENT_SKIP_NO_FOLLOW, bir kontrollü dönüş, COMMENT_RETURN PARENT; aynı ana listedeki sonraki görünür metin yorumundan devam, sayaç artışı yok. Hedef profil zaten açılmışsa ekstra Back yok.
+4. Onaylı listede bir yeni takip isteği Beklemede olsun: FOLLOW_REQUEST, bir sayaç artışı ve hemen sonraki kişi. Önceden Beklemede olan kişi tekrar işlenmemeli. Disabled Requested status, bir sonraki satırın düğmesi ve sekme adları karıştırılmamalı.
+5. Aynı senaryolar farklı ekran ölçeklerinde ve ikinci hesapta. Ayarlar sürümünü, cihaz/X sürümünü ve Hata Raporu ZIP'ini sakla.
+
+Yeni 26.53 APK ile bu fiziksel testler henüz yapılmadı. 1000033391.mp4 hata kanıtıdır; ham node dökümü değildir.
+
 ## 26.52 yorumcu/retweetçi kabul testi
 
 1. Tek hedefte metin, resim, metin, GIF, metin yorum sırası. Metinler görünür sırayla takip edilmeli; yalnız medyalı satır atlanmalı. Avatar ve metinde geçen video/fotoğraf sözcüğü atlama nedeni olmamalı.

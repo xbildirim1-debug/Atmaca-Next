@@ -267,6 +267,8 @@ class TaskOrchestrator(
         val queue = _state.value
         val item = queue.currentItem ?: return
         if (runtime.taskId != item.taskId || queue.status in TERMINAL_QUEUE) return
+        // Late snapshots of a terminal item cannot cancel its scheduled hand-off.
+        if (item.status !in RUNNABLE_ITEM_STATUSES) return
 
         if (runtime.accountVerified && lastVerifiedAccountSession != runtime.sessionId) {
             repository.markCurrentAccount(item.accountId)
@@ -295,6 +297,9 @@ class TaskOrchestrator(
         when (runtime.status) {
             RuntimeStatus.COMPLETED -> {
                 if (item.status == QueueItemStatus.COMPLETED) return
+                // The independent StateFlow persistence observer can conflate this
+                // final snapshot with the next task. Save it before stop/start.
+                repository.persistRuntime(runtime)
                 mutate { state ->
                     state.copy(
                         status = QueueStatus.BETWEEN_TASKS,
@@ -417,7 +422,14 @@ class TaskOrchestrator(
         val final = mutate { it.copy(status = status, message = finalMessage) }
         val level = if (status == QueueStatus.FAILED) "ERROR" else if (status == QueueStatus.PARTIAL) "WARN" else "INFO"
         repository.log(level, "QUEUE_DONE", final.currentItem?.taskId, final.currentItem?.username, finalMessage, "completed=${final.completedCount}; skipped=${final.skippedCount}; failed=${final.failedCount}")
-        AutomationController.returnToAtmaca()
+        AutomationController.returnToAtmaca { returned ->
+            scope.launch {
+                if (_state.value.sessionId != final.sessionId || _state.value.isActive) return@launch
+                repository.log(if (returned) "INFO" else "WARN", "QUEUE_RETURN", final.currentItem?.taskId,
+                    final.currentItem?.username, if (returned) "Seçili görevler bitti; Atmaca Next'e dönüş doğrulandı"
+                    else "Görevler bitti; Atmaca dönüşü doğrulanamadı, dönüş bildirimi kontrol edilmeli")
+            }
+        }
     }
 
     private suspend fun mutate(transform: (AutomationQueueState) -> AutomationQueueState): AutomationQueueState = mutex.withLock {

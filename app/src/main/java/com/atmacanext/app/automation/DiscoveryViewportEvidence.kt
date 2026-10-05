@@ -47,16 +47,23 @@ internal object DiscoveryViewportEvidence {
         currentKeys: List<String>,
         openedAuthor: String?,
         child: String?,
+        childKey: String? = null,
+        parentAuthor: String? = null,
     ): Boolean {
         if (before.isBlank() || child.isNullOrBlank()) return false
         if (openedAuthor == child) return false
+        if (parentAuthor != null && openedAuthor != null && openedAuthor != parentAuthor) return false
         if (before == current) return true
 
         val previous = beforeKeys.filter(String::isNotBlank).toSet()
         val now = currentKeys.filter(String::isNotBlank).toSet()
         if (previous.isEmpty() || now.isEmpty()) return false
 
-        val sharedCount = previous.intersect(now).size
+        // The selected comment can itself remain above its own nested replies.
+        // Its key alone must never prove that Back restored the original thread.
+        val shared = previous.intersect(now)
+        if (parentAuthor != null && openedAuthor == parentAuthor && shared.isNotEmpty()) return true
+        val sharedCount = shared.count { it != childKey }
         return if (openedAuthor != null) sharedCount >= 1 else sharedCount >= 2
     }
 }

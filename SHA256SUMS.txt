@@ -1,6 +1,1 @@
-58d7d97b3b03085a6ab1ad3c5826806693220f5f0e4da9e6acaf69ca5c43cdbf  AtmacaNext-26.52.apk
-2788a15216bbbb2ccec60c2a52d2517d9d7e5e830ee0c64b65f99d2e415c0594  AtmacaNext-26.52-Kaynak.zip
-5a0a63621d44bf020a598506f64f167df5b73fb327e4df408b880d60c0513b21  AtmacaNext-26.52-Testler.zip
-9cdf415b5dcbe54859fbdd25554528aeb3c1b0d19f44f6ae6f5fc053fbb6bb4f  NOT_DEFTERI.txt
-14e53aabac7bdbe9a34c87be099bc2a1fb037d7fba672df59745dd9a3f927b42  manifest.xml
-f0ea0760f2c42ca1c1086908e648bba708273ca0cbe72563627fe2536de1ff11  AtmacaNext-26.52-TAM-PAKET.zip
+# 26.53 teslim dosyalarının gerçek SHA256 değerleri başarılı CI ardından kaydedilecek.

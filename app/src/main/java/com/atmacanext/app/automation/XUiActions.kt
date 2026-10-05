@@ -107,7 +107,7 @@ object XUiActions {
                     row = null
                     return@repeat
                 }
-                val actions = descendants.filter(::isRelationshipActionNode)
+                val actions = descendants.filter { isRelationshipActionNode(it, observation = true) }
                 if (actions.isNotEmpty()) {
                     return actions.any { action ->
                         if (normalized == VerifiedFollowPolicy.plainFollowLabels) VerifiedFollowPolicy.isPlainFollow(labels(action) + (clickableAncestor(action)?.let(::labels) ?: emptyList()))
@@ -117,21 +117,11 @@ object XUiActions {
                 row = current.parent
             }
         }
-        return relaxedRelationshipTargets(root, normalized, emptySet()).any { it.handle == wanted }
+        return relaxedRelationshipTargets(root, normalized, emptySet(), observation = true).any { it.handle == wanted }
     }
 
-    private fun isRelationshipActionNode(node: AccessibilityNodeInfo): Boolean {
-        if (!node.isVisibleToUser || !node.isEnabled) return false
-        val id = node.viewIdResourceName.orEmpty().lowercase(Locale.ROOT)
-        val clazz = node.className?.toString().orEmpty().lowercase(Locale.ROOT)
-        if (id.contains("tab") || clazz.contains("tab") || labels(node).any {
-            val label = XUiVocabulary.normalize(it)
-            label.contains("sekme") || label.contains(" tab")
-        }) return false
-        val relationLabels = XUiVocabulary.followActions + XUiVocabulary.followingActions
-        return labels(node).any { matchesActionLabel(XUiVocabulary.normalize(it), relationLabels) } &&
-            (node.isClickable || clazz.contains("button") || id.contains("follow") || node.parent?.isClickable == true)
-    }
+    private fun isRelationshipActionNode(node: AccessibilityNodeInfo, observation: Boolean = false): Boolean =
+        RelationshipActionEvidence.matches(node.toSnapshot(), node.parent?.isClickable == true, observation)
 
     fun clickUnfollowConfirmation(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         clickByIdOrLabel(service, root, listOf("unfollow"), XUiVocabulary.unfollowConfirmationActions)
@@ -213,11 +203,11 @@ object XUiActions {
         val nodes = AccessibilityTree.nodes(root)
         val snapshots = nodes.map { it.toSnapshot() }
         val exactIndex = CommentDetailEvidence.actionIndex(snapshots, handle, VerifiedFollowPolicy.plainFollowLabels)
-        val index = exactIndex ?: CommentDetailEvidence.headerActionIndex(snapshots, VerifiedFollowPolicy.plainFollowLabels) ?: run {
+        val index = CommentDetailEvidence.relationshipActionIndex(snapshots, handle, VerifiedFollowPolicy.plainFollowLabels) ?: run {
             OperationLog.w("COMMENT_CLICK", "@$handle için güncel başlık/düğme eşleşmedi; tıklama yapılmadı")
             return false
         }
-        if (CommentDetailEvidence.hasHeaderAction(snapshots, XUiVocabulary.followingActions + XUiVocabulary.requestedActions)) return false
+        if (CommentDetailEvidence.relationshipActionIndex(snapshots, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions) != null) return false
         val n = snapshots[index]
         if (!VerifiedFollowPolicy.isPlainFollow(listOfNotNull(n.text, n.contentDescription))) return false
         val node = nodes[index]
@@ -391,6 +381,7 @@ object XUiActions {
         root: AccessibilityNodeInfo?,
         accepted: Set<String>,
         excludedHandles: Set<String>,
+        observation: Boolean = false,
     ): List<RelationshipTarget> {
         if (root == null) return emptyList()
         val nodes = AccessibilityTree.nodes(root, maxNodes = 1_100)
@@ -403,8 +394,9 @@ object XUiActions {
         }.toList()
 
         return nodes.asSequence().mapNotNull { node ->
-            val label = normalizedLabel(node) ?: return@mapNotNull null
-            if (!isRelationshipActionNode(node) || !matchesActionLabel(label, accepted)) return@mapNotNull null
+            val label = labels(node).map(XUiVocabulary::normalize).firstOrNull { matchesActionLabel(it, accepted) }
+                ?: return@mapNotNull null
+            if (!isRelationshipActionNode(node, observation)) return@mapNotNull null
             if (accepted == VerifiedFollowPolicy.plainFollowLabels && !VerifiedFollowPolicy.isPlainFollow(labels(node))) return@mapNotNull null
             val rowAnchor = clickableAncestor(node) ?: node
             if (accepted == VerifiedFollowPolicy.plainFollowLabels &&
