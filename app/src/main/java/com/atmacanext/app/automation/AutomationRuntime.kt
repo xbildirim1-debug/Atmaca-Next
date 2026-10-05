@@ -999,8 +999,14 @@ object AutomationController {
             }
             XFlowStage.LOCATE_SOURCE_ROW -> {
                 if (screen != XScreen.VERIFIED_FOLLOWERS_LIST) {
-                    if (now - stageStartedAt >= 8_000L) return pause("Yeni kaynak için onaylı liste doğrulanamadı; ilerleme korundu")
-                    if (screen == XScreen.FOLLOWERS_LIST) XUiActions.clickVerifiedTab(service, root)
+                    if ((screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == parentSourceHandle) ||
+                        (now - stageStartedAt >= 2_000L && screen == XScreen.FOLLOWERS_LIST)) {
+                        fallbackFollowersOpened = false
+                        moveStage(XFlowStage.RETURN_VERIFIED_SOURCE, "Kaynak değişiminde üst profile dönülüyor; takipçi sırası korunuyor")
+                        service.requestAutomationTick(150L)
+                        return
+                    }
+                    if (now - stageStartedAt >= 8_000L) return pause("Yeni kaynak için ekran kimliği doğrulanamadı; ilerleme korundu")
                     service.requestAutomationTick(500L)
                     return
                 }
@@ -1026,6 +1032,10 @@ object AutomationController {
                         fallbackFollowersOpened = false
                         moveStage(XFlowStage.RETURN_VERIFIED_SOURCE, "Görünür yeni kaynak bulunamadı; normal takipçi sırasına dönülüyor")
                         service.requestAutomationTick(150L)
+                        return
+                    }
+                    if (visible.isEmpty()) {
+                        service.requestAutomationTick(500L)
                         return
                     }
                     val moved = ListViewportController.tryScrollUserRowsBackward(root) == ScrollAttemptResult.SCROLLED ||
