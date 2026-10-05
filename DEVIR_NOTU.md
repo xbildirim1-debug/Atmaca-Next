@@ -1,3 +1,32 @@
+## Güncel durum ve devam talimatı — 5 Ekim 2026, 22:24 (Türkiye)
+
+Bu kayıt, kullanıcının “Dene tekrar” isteği sonrasında yapılan kontrolü ve yeniden deneme sonucunu açıklar. Yalnız dokümantasyon güncellenmiştir; uygulama kodu, sürüm numarası ve mevcut derlemenin kaynak commit'i değiştirilmemiştir.
+
+### Hazır olan kaynak ve düzeltmenin kapsamı
+- En güncel yama: **26.59-unfollow-recovery**, versionCode **107**. Derlenecek kaynak: `fec95b5b8dacd12f5ba0dc2745eb21121319d708`. Bu kayıt öncesinde main'in son dokümantasyon commit'i `041efbf0cd0fc9f5855fc59b6bd86183760be775`.
+- Kullanıcı kanıtı: takibi bırak onayı açılmadığında görev **16/20, döngü 2/2** durumunda PAUSED'a geçiyor; bu yüzden hareketsizlik denetimi Atmaca'ya dönüp görevi tekrar başlatmıyordu.
+- Kaynaktaki yama: onay verilmemiş, aynı kişi hâlâ “Takip ediliyor” durumunda en az bir saniye kararlı görülmüş ve deneme üzerinden 10 saniye geçmişse Atmaca'ya dönüş denenir; ardından X'te aktif hesap yeniden doğrulanarak aynı görev sürdürülür. Toplam ilerleme, döngü ve işlenen/atlanan kişiler korunur. Sorunlu kişi tekrar denenmez. Yalnız uygulanmadığı doğrulanan denemenin işlem bütçesi geri verilir.
+- Onay verilmiş veya sonucu belirsiz işlemler otomatik tekrar edilmez. Kullanıcının duraklatması/durdurması veya oturum değişmesi gecikmiş yeniden başlatma çağrısını geçersiz kılar.
+- Önceki **26.58 toplu döngü sırası** (önce bütün hesaplar, sonra ortak bekleme), dakika/saniye geri sayımı, tablet menü desteği ve hız ayarları korunur. Proje baştan yazılmadı.
+
+### Derleme kontrolü ve gerçek yeniden deneme
+- [GitHub Actions koşusu 37361516199](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37361516199), build işi **111937007861**.
+- Bu kayıt hazırlanırken API durumu **queued**, sonuç **null**; koşunun son güncelleme zamanı **19:10:44 UTC / 22:10:44 Türkiye**. İş adımları henüz başlamadı.
+- Önceki turda yalnız sorgulama yapılmadı: build işi için GitHub yeniden çalıştırma çağrısı da gönderildi. GitHub **HTTP 403** ve **“The workflow run containing this job is already running”** yanıtını verdi. Yani mevcut koşu hâlâ aktif kabul edildiği için ikinci deneme başlatılmadı.
+- Bu yanıt bir Kotlin derleme/test hatası değildir; henüz derleyici ve test çıktısı yoktur. Mevcut koşu iptal edilmedi, yinelenen kaynak commit'i veya ikinci build oluşturulmadı.
+- **26.59 APK ve tam paket ZIP henüz oluşmadı, indirilmedi ve teslim edilmedi.** 10 yeni test dahil beklenen toplam 482'dir; bu sayı başarılı test sonucu olarak sunulmamalıdır. Önceki 26.58'in 472 başarılı testi yeni yamayı doğrulamaz.
+- Yerelde daha önce yapılan `git diff --check` ve SQLite 5→6 kontrolü geçti. Yerel Android SDK/Gradle/Kotlin derleyicisi bulunmadığından APK burada derlenemedi. Yeni sürüm fiziksel telefon/tablet üzerinde test edilmedi.
+
+### Buradan devam edilecek iş
+1. Önce GitHub main ve bu koşunun güncel sonucunu kontrol et; eski yerel çalışma kopyasından devam etme. Bekleyen koşunun APK kaynak commit'i fec95b5 olarak kalmalıdır.
+2. Başarısız biterse ilgili adımın gerçek hata kaydını incele ve yalnız gerekli düzeltmeyi yap. Hâlâ queued ise test geçti veya paket hazır deme.
+3. Başarılı biterse APK/tam paket ve test raporlarını indir; 482 test, 10 yeni regresyon, lint, manifest sürümü 107/26.59, kaynak commit'i, arşiv CRC/digest ve SHA256 listelerini doğrula.
+4. Yeni APK sertifikasını 26.58 sertifikası `bb89917d2046f37d76ad6113e208349f0409764d32c04b543710492d7cfecde4` ile karşılaştır. İmza eşleşmesi doğrulanmadan eski kurulumun üzerine güncelleme yapılabildiğini söyleme. Uygulamayı kaldırmak yerel kayıtları silebilir.
+5. Doğrulanan APK + tam ZIP'i kullanıcıya ver; gerçek CI sonucu, kaynak commit'i ve cihazda denenmemiş noktaları notlara yaz.
+6. GitHub Releases otomasyonu için AGENTS.md'deki önceki otomatik onay reddi hâlâ geçerlidir. Bu not ekleme isteği contents:write yetkili yayın iş akışını etkinleştirme onayı değildir; taslak etkinleştirilmedi ve yayın tamamlanmış sayılmadı.
+
+Bu dokümantasyon commit'i **[skip ci]** ile kaydedilir; bekleyen APK derlemesini değiştirmez.
+
 ## 26.59 — kaynak kaydedildi, CI çalıştırıcı sırası engeli (5 Ekim 2026)
 
 - Yama kaynağı main fec95b5b8dacd12f5ba0dc2745eb21121319d708. CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37361516199 . Koşu ve build111937007861 tekrar sorgulandı:queued, adımlar başlamadı.10 yeni regresyon/toplam482 bekleniyor; yeni test/lint/APK sonucu HENÜZ YOK. Bu sürüm testleri geçti veya APK teslim edildi denmez. Yerel Android SDK/Gradle/Kotlin derleyicisi mevcut değil; alternatif yerel derleme yapılamadı. SQLite5→6 ve git diff --check yerelde PASS.

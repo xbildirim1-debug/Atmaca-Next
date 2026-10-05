@@ -1,3 +1,7 @@
+## Son durum — 5 Ekim 2026, 22:24 (Türkiye)
+
+26.59 kaynak düzeltmesi main'de; [37361516199](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37361516199) hâlâ **queued**. Build 111937007861 için yeniden çalıştırma gerçekten denendi; GitHub HTTP 403 “The workflow run containing this job is already running” yanıtıyla reddetti. Testler başlamadı; 482 test bekleniyor, başarılı sonuç henüz yok. Yeni APK/ZIP hazır değil. Önceki 26.58 sonucu ayrı tutulmalıdır. Ayrıntılı neden, korunan davranışlar ve devam adımları [DEVIR_NOTU.md](DEVIR_NOTU.md) başındadır. Bu kayıt yalnız dokümantasyondur; kaynak fec95b5b8dacd12f5ba0dc2745eb21121319d708 değişmedi.
+
 ## 26.59 — kaynak kaydedildi, CI çalıştırıcı sırası engeli (5 Ekim 2026)
 
 - Yama kaynağı main fec95b5b8dacd12f5ba0dc2745eb21121319d708. CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37361516199 . Koşu ve build111937007861 tekrar sorgulandı:queued, adımlar başlamadı.10 yeni regresyon/toplam482 bekleniyor; yeni test/lint/APK sonucu HENÜZ YOK. Bu sürüm testleri geçti veya APK teslim edildi denmez. Yerel Android SDK/Gradle/Kotlin derleyicisi mevcut değil; alternatif yerel derleme yapılamadı. SQLite5→6 ve git diff --check yerelde PASS.
