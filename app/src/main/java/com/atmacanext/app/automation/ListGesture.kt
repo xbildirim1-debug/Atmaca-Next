@@ -57,16 +57,8 @@ object ListGesture {
                 OperationLog.i("COMMENT_END", "Yorum sonu işareti görüldü; Daha fazla keşfet alanına kaydırılmadı")
                 return false
             }
-            val snapshots = AccessibilityTree.snapshots(root)
-            val visibleAuthors = XTweetInspector.visibleReplyAuthors(root)
-            val signature = DiscoveryViewportEvidence.signature(snapshots)
-            if (!CommenterViewportPolicy.allowScrollAfterStableEmpty(visibleAuthors, signature)) {
-                OperationLog.i(
-                    "COMMENT_DRAIN_WAIT",
-                    "Yorum görünümü Back sonrası henüz kesin boş değil; görünür adaylar tekrar okunmadan kaydırılmadı",
-                )
-                return false
-            }
+            // The runtime waits for the post-return tree before trying a gesture.
+            // A settling wait must not be counted as an unchanged/end-of-list swipe.
         }
         val bounds = Rect().also(root::getBoundsInScreen)
         if (bounds.width() <= 0 || bounds.height() <= 0) return false

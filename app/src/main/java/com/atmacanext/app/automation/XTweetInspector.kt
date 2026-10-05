@@ -164,9 +164,7 @@ object XTweetInspector {
         // media detection to this reply's visible vertical slice so media in another
         // reply cannot cause the wrong author to be skipped.
         val allNodes = AccessibilityTree.snapshots(root)
-        val nextTop = rows.drop(rowIndex + 1).map { it.bounds.top }.filter { it > row.bounds.top }.minOrNull()
-        val rowBottom = nextTop ?: row.bounds.bottom.coerceAtLeast(row.bounds.top + 320)
-        if (ReplyMediaEvidence.hasMedia(allNodes, row.bounds.top, rowBottom)) {
+        if (replyHasMedia(root, row, rows, allNodes)) {
             OperationLog.i("COMMENT_SKIP", "@$handle resimli/medyalı yorum; açılmadan atlandı")
             return false
         }
@@ -185,6 +183,19 @@ object XTweetInspector {
             }
         } ?: return false
         return GestureClick.gestureTapLeading(service, node)
+    }
+
+    fun replyHasMedia(root: AccessibilityNodeInfo?, row: TweetRow,
+                      rows: List<TweetRow> = visibleTweets(root),
+                      nodes: List<NodeSnapshot> = AccessibilityTree.snapshots(root)): Boolean {
+        fun headerTop(reply: TweetRow): Int = reply.authorTarget?.let { Rect().also(it::getBoundsInScreen).top } ?: reply.bounds.top
+        val top = headerTop(row)
+        val nextTop = rows.map(::headerTop).filter { it > top }.minOrNull() ?: Int.MAX_VALUE
+        val bottomControl = nodes.filter { n -> n.visible && n.bounds.top > top &&
+            (n.editable || listOfNotNull(n.text, n.contentDescription).any(ReplyThreadEndEvidence::isEndLabel)) }
+            .minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE
+        val viewportBottom = root?.let { Rect().also(it::getBoundsInScreen).bottom } ?: row.bounds.bottom
+        return ReplyMediaEvidence.hasMedia(nodes, top, minOf(nextTop, bottomControl, viewportBottom))
     }
 
     fun eligibleLatestFive(

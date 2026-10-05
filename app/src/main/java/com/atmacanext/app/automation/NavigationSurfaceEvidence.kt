@@ -15,9 +15,7 @@ internal object NavigationSurfaceEvidence {
         // because its identity/header takes a moment to settle. The runtime can wait
         // and fall back to X search instead of escaping the target profile entirely.
         val returningToTargetProfile = flowStage == XFlowStage.RETURN_DISCOVERY_TARGET &&
-            (screen == XScreen.PROFILE ||
-                (screen == XScreen.UNKNOWN &&
-                    (ProfileSurfaceEvidence.read(nodes) != null || FeedRowEvidence.profileFeed(nodes))))
+            (screen == XScreen.PROFILE || ProfileSurfaceEvidence.read(nodes) != null || FeedRowEvidence.profileFeed(nodes))
         if (returningToTargetProfile) return null
 
         return nodes.indices.firstOrNull { i ->

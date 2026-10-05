@@ -1,3 +1,13 @@
+## 26.52 yorumcu/retweetçi kabul testi
+
+1. Tek hedefte metin, resim, metin, GIF, metin yorum sırası. Metinler görünür sırayla takip edilmeli; yalnız medyalı satır atlanmalı. Avatar ve metinde geçen video/fotoğraf sözcüğü atlama nedeni olmamalı.
+2. Açma dokunuşu ekranı değiştirmezse COMMENT_OPEN_RETRY; kişi sessizce atlanmamalı. Takip sonucu belirsizse PAUSED ve korunan sayaç.
+3. Bir gönderi limiti dolduramazsa Gönderi→hedef profil; DISCOVERY_RETURN SCAN sonrasında fazladan BACK veya yeniden DISCOVERY_SEARCH olmamalı, sonraki uygun gönderiden devam etmeli.
+4. Retweetçi için liste→Gönderi→hedef profil, iki ayrı doğrulanmış dönüş; hedef profilinden çıkış yok.
+5. İki hesap arasında eski medya/retry/return state yeni hesaba taşınmamalı.
+
+Yeni APK ile bu fiziksel testler henüz yapılmadı. 1000033389.mp4 önceki çalışmanın hata kanıtıdır.
+
 ## 26.51 Yorum Alıntısı kabul testi
 
 1. Tek hesap, tek alıntı hedefi, Limit 1, Tekrar 1 ve kısa ayırt edici yorum.

@@ -135,6 +135,9 @@ object AutomationController {
     private var engagementOpenAttempts = 0
     private var engagementRestoreAttempts = 0
     private var commenterAdvanceRequired = false
+    private val skippedReplyKeys = LinkedHashSet<String>()
+    private val replyOpenAttempts = LinkedHashMap<String, Int>()
+    private var discoveryReturnLastBackAt = 0L
     private var loadingSince = 0L
     private var loadingRecoveries = 0
     private var lastLoadingBackAt = 0L
@@ -369,6 +372,11 @@ object AutomationController {
 
         if (popup == PopupType.NONE && NavigationSurfaceEvidence.loading(AccessibilityTree.snapshots(root))) {
             if (loadingSince == 0L) loadingSince = now
+            if (current.taskType == TaskType.COMMENTER_FOLLOW && current.flowStage == XFlowStage.OPEN_ENGAGER_PROFILE) {
+                if (now - loadingSince >= 8_000L) pause("Yorumcu ekranı yüklenmedi; kullanıcı atlanmadı, ilerleme korundu")
+                else service.requestAutomationTick(450L)
+                return
+            }
             if (now - loadingSince < 1_800L) { service.requestAutomationTick(450L); return }
             if (loadingRecoveries >= 2) {
                 pause("X yükleme ekranı iki geri denemesinden sonra kapanmadı; ilerleme korundu")
@@ -1259,15 +1267,7 @@ object AutomationController {
         }
         when (current.flowStage) {
             XFlowStage.RETURN_DISCOVERY_TARGET -> {
-                if (screen in setOf(XScreen.PROFILE, XScreen.UNKNOWN) && DiscoveryProfileEvidence.matches(
-                        AccessibilityTree.snapshots(root), XIdentityDetector.detectProfileHandle(root), target)) {
-                    moveStage(XFlowStage.SCAN_LATEST_TWEETS, "Hedefte sıradaki en az iki saatlik gönderi aranıyor")
-                } else if (stageAttempts >= 2 || now - stageStartedAt >= 6_000L) {
-                    beginDiscoverySearch(service, target)
-                    return
-                } else if (now - stageStartedAt >= 1_000L && XUiActions.clickVisibleBack(service, root)) stageAttempts++
-                nextActionNotBefore = now + AutomationTuning.scaleDelay(650L)
-                service.requestAutomationTick(650L)
+                continueDiscoveryReturn(service, root, screen, now, target)
             }
             XFlowStage.OPEN_DISCOVERY_TARGET -> {
                 if (screen in setOf(XScreen.PROFILE, XScreen.UNKNOWN) && DiscoveryProfileEvidence.matches(
@@ -1497,19 +1497,8 @@ object AutomationController {
                         target,
                     )
                     val visibleAfterReturn = XTweetInspector.visibleReplyAuthors(root)
-                    if (CommenterViewportPolicy.shouldScroll(visibleAfterReturn, afterReturnExcluded)) {
-                        val accepted = dispatchListScroll(service, root, forward = true)
-                        if (accepted) {
-                            listScrolls++
-                            _state.value = _state.value.copy(listScrolls = listScrolls)
-                        }
-                        lastListSignature = DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root))
-                        nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
-                        OperationLog.i("COMMENT_SCROLL", "Görünür işlenmemiş yorumcu kalmadı; alt yorumlara kaydırma accepted=$accepted scroll=$listScrolls")
-                        service.requestAutomationTick(900L)
-                        return
-                    }
-                    OperationLog.i("COMMENT_DRAIN", "Aynı görünümde işlenmemiş yorumcu var; kaydırmadan sıradaki kullanıcı işlenecek")
+                    CommenterViewportPolicy.shouldScroll(visibleAfterReturn, afterReturnExcluded, now)
+                    OperationLog.i("COMMENT_DRAIN", "Görünür yorumlar yeniden okunuyor; yerleşme bekleyişi liste sonu sayılmayacak")
                 }
                 val excluded = processedHandles + skippedHandles + setOf(
                     XIdentityDetector.normalizeUsername(current.username.orEmpty()),
@@ -1530,20 +1519,50 @@ object AutomationController {
                     return
                 }
                 if (current.taskType == TaskType.COMMENTER_FOLLOW) {
-                    val author = XTweetInspector.visibleReplyAuthors(root).firstOrNull { it !in excluded }
-                    if (author != null) {
-                        engagerHandle = author
-                        engagerParentSignature = DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root))
-                        engagerParentKeys = XTweetInspector.visibleTweets(root).map { it.key }
-                        moveStage(XFlowStage.OPEN_ENGAGER_PROFILE, "Yorumcu @$author gönderisi veya profili doğrulanıyor")
-                        if (!XTweetInspector.clickReplyAuthor(service, root, author)) {
-                            skippedHandles += author
-                            moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Yorumcu profili açılmadı; yorumlarda sıradaki kullanıcı aranıyor")
-                            service.requestAutomationTick(350L)
-                        } else {
+                    val nodes = AccessibilityTree.snapshots(root)
+                    val endTop = nodes.filter { it.visible && listOfNotNull(it.text, it.contentDescription)
+                        .any(ReplyThreadEndEvidence::isEndLabel) }.minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE
+                    val rows = XTweetInspector.visibleTweets(root).filter { it.bounds.top < endTop }
+                    val reply = rows.firstOrNull { it.author != null && it.key !in skippedReplyKeys &&
+                        (it.authorTruncated || it.author !in excluded) }
+                    if (reply != null) {
+                        val author = reply.author!!
+                        if (XTweetInspector.replyHasMedia(root, reply, rows, nodes)) {
+                            skippedReplyKeys += reply.key
+                            OperationLog.i("COMMENT_SKIP_MEDIA", "@$author yalnız bu medyalı yorum atlandı; görünür metin yorumlarına devam")
+                            service.requestAutomationTick(250L)
+                            return
+                        }
+                        if (reply.authorTruncated) {
+                            pause("Yorumcu kullanıcı adı eksik okunuyor; metin yorumu atlanmadı, ilerleme korundu")
+                            return
+                        }
+                        val parentSignature = DiscoveryViewportEvidence.signature(nodes)
+                        val parentKeys = rows.map { it.key }
+                        if (XTweetInspector.clickReplyAuthor(service, root, author)) {
+                            replyOpenAttempts.remove(reply.key)
+                            engagerHandle = author
+                            engagerParentSignature = parentSignature
+                            engagerParentKeys = parentKeys
+                            moveStage(XFlowStage.OPEN_ENGAGER_PROFILE, "Yorumcu @$author gönderisi veya profili doğrulanıyor")
                             nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
                             service.requestAutomationTick(700L)
+                        } else {
+                            val attempts = (replyOpenAttempts[reply.key] ?: 0) + 1
+                            replyOpenAttempts[reply.key] = attempts
+                            OperationLog.w("COMMENT_OPEN_RETRY", "@$author attempt=$attempts; metin yorumu atlanmadı")
+                            if (attempts >= 3) pause("@$author yorumu açılamadı; kullanıcı atlanmadı, ilerleme korundu")
+                            else {
+                                nextActionNotBefore = now + AutomationTuning.scaleDelay(650L)
+                                service.requestAutomationTick(650L)
+                            }
                         }
+                        return
+                    }
+                    if (!CommenterViewportPolicy.allowScrollAfterStableEmpty(
+                            XTweetInspector.visibleReplyAuthors(root), DiscoveryViewportEvidence.signature(nodes), now)) {
+                        OperationLog.i("COMMENT_DRAIN_WAIT", "Ana yorum ağacı yerleşiyor; bekleme liste sonu sayılmadı")
+                        service.requestAutomationTick(350L)
                         return
                     }
                 }
@@ -1554,7 +1573,22 @@ object AutomationController {
                 service.requestAutomationTick(500L)
             }
             XFlowStage.OPEN_ENGAGER_PROFILE -> {
-                val handle = engagerHandle ?: return nextDiscoveryTweet(service, "Yorumcu kimliği bulunamadı")
+                val handle = engagerHandle ?: return pause("Yorumcu kimliği okunamadı; kullanıcı atlanmadı, ilerleme korundu")
+                if (screen == XScreen.TWEET_DETAIL && isEngagerParent(root)) {
+                    if (stageTimedOut(now)) pause("@$handle yorumu açılmadı; kullanıcı atlanmadı, ilerleme korundu")
+                    else {
+                        if (now - stageStartedAt >= 1_500L && stageAttempts < 2) {
+                            val retry = ++stageAttempts
+                            val row = XTweetInspector.visibleTweets(root).firstOrNull { !it.authorTruncated && it.author == handle }
+                            val accepted = row != null && !XTweetInspector.replyHasMedia(root, row) &&
+                                XTweetInspector.click(service, row, retryAttempt = retry)
+                            OperationLog.i("COMMENT_OPEN_RETRY", "@$handle bodyAttempt=$retry accepted=$accepted; aynı ana yorum görünümü")
+                            nextActionNotBefore = now + AutomationTuning.scaleDelay(850L)
+                        }
+                        service.requestAutomationTick(350L)
+                    }
+                    return
+                }
                 val detailNodes = AccessibilityTree.snapshots(root)
                 val detailAuthor = if (screen in setOf(XScreen.TWEET_DETAIL, XScreen.UNKNOWN)) CommentDetailEvidence.header(detailNodes)?.handle else null
                 val topFollowing = screen == XScreen.TWEET_DETAIL && CommentDetailEvidence.hasHeaderAction(
@@ -1577,22 +1611,14 @@ object AutomationController {
                         _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now,
                             message = "@$handle gönderi başlığındaki takip sonucu doğrulanıyor")
                         service.requestAutomationTick(450L)
-                    } else if (now - stageStartedAt >= 1_500L) {
-                        OperationLog.i("COMMENT_SKIP", "@$handle başlığında kullanılabilir takip düğmesi yok; sıradaki yoruma dönülüyor")
-                        skippedHandles += handle
-                        returnFromEngager(service)
+                    } else if (stageTimedOut(now)) {
+                        pause("@$handle yorumunda Takip et doğrulanamadı; kullanıcı atlanmadı, ilerleme korundu")
                     } else service.requestAutomationTick(350L)
                     return
                 }
                 if (screen != XScreen.PROFILE || XIdentityDetector.detectProfileHandle(root) != handle) {
                     if (stageTimedOut(now)) {
-                        skippedHandles += handle
-                        if (screen == XScreen.TWEET_DETAIL && isEngagerParent(root)) {
-                            engagerHandle = null
-                            moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Profil açılmadı; sıradaki yorumcu aranıyor")
-                            service.requestAutomationTick(350L)
-                        } else if (screen == XScreen.TWEET_DETAIL || screen == XScreen.PROFILE) returnFromEngager(service)
-                        else pause("Yorumcu gönderisi/profili doğrulanamadı; alt yorumlara girilmedi")
+                        pause("Yorumcu gönderisi/profili doğrulanamadı; kullanıcı atlanmadı, ilerleme korundu")
                     }
                     else service.requestAutomationTick(350L)
                 } else if (XUiActions.isDirectFollowing(root) || XUiActions.directRequested(root)) {
@@ -1603,7 +1629,7 @@ object AutomationController {
                     _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now,
                         message = "@$handle profilindeki takip sonucu doğrulanıyor")
                     service.requestAutomationTick(450L)
-                } else if (now - stageStartedAt >= 1_500L) { skippedHandles += handle; returnFromEngager(service) }
+                } else if (stageTimedOut(now)) pause("@$handle profilinde Takip et doğrulanamadı; kullanıcı atlanmadı")
                 else service.requestAutomationTick(350L)
             }
             XFlowStage.RETURN_ENGAGEMENT -> {
@@ -1612,7 +1638,9 @@ object AutomationController {
                     lastListSignature = ""
                     moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Sıradaki yorumcu aranıyor")
                     service.requestAutomationTick(250L)
-                } else if (stageTimedOut(now)) nextDiscoveryTweet(service, "Ana yorumlara dönüş okunamadı; hedefin sonraki gönderisi aranıyor")
+                } else if (DiscoveryProfileEvidence.matches(AccessibilityTree.snapshots(root), XIdentityDetector.detectProfileHandle(root), target)) {
+                    nextDiscoveryTweet(service, "Hedef profile dönüldü; limit için tarama sürüyor")
+                } else if (stageTimedOut(now)) pause("Ana yorumlara dönüş doğrulanamadı; hedef terk edilmedi, ilerleme korundu")
                 else if (now - stageStartedAt >= 1_500L && stageAttempts == 0 &&
                     ((screen == XScreen.TWEET_DETAIL && CommentDetailEvidence.header(AccessibilityTree.snapshots(root))?.handle == engagerHandle) ||
                         (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == engagerHandle))) {
@@ -2074,13 +2102,40 @@ object AutomationController {
         engagerParentSignature = ""
         engagerParentKeys = emptyList()
         commenterAdvanceRequired = false
+        replyOpenAttempts.clear()
+        CommenterViewportPolicy.clearScrollGuard()
         listEndStable = 0
         lastListSignature = ""
         val target = discoveryTargets.getOrNull(discoveryTargetIndex)
             ?: return finishCycleOrTask(service, reason)
         moveStage(XFlowStage.RETURN_DISCOVERY_TARGET, "$reason; @$target gönderilerine geri dönülüyor")
-        XUiActions.clickVisibleBack(service, service.rootInActiveWindow)
-        service.requestAutomationTick(650L)
+        discoveryReturnLastBackAt = 0L
+        val root = service.rootInActiveWindow
+        continueDiscoveryReturn(service, root, ScreenDetector.detect(root), System.currentTimeMillis(), target)
+    }
+
+    private fun continueDiscoveryReturn(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?,
+                                        screen: XScreen, now: Long, target: String) {
+        val targetVisible = DiscoveryProfileEvidence.matches(AccessibilityTree.snapshots(root),
+            XIdentityDetector.detectProfileHandle(root), target)
+        val decision = DiscoveryReturnPolicy.decide(targetVisible, screen, stageAttempts,
+            now - stageStartedAt, now - discoveryReturnLastBackAt)
+        OperationLog.i("DISCOVERY_RETURN", "target=@$target screen=$screen decision=$decision backAttempts=$stageAttempts progress=${_state.value.verifiedCount}/${_state.value.limit}")
+        when (decision) {
+            DiscoveryReturnPolicy.Decision.SCAN -> {
+                moveStage(XFlowStage.SCAN_LATEST_TWEETS, "@$target profilinde sıradaki uygun gönderi aranıyor")
+                service.requestAutomationTick(250L)
+            }
+            DiscoveryReturnPolicy.Decision.BACK -> {
+                stageAttempts++
+                discoveryReturnLastBackAt = now
+                XUiActions.clickVisibleBack(service, root)
+                nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
+                service.requestAutomationTick(700L)
+            }
+            DiscoveryReturnPolicy.Decision.WAIT -> service.requestAutomationTick(350L)
+            DiscoveryReturnPolicy.Decision.PAUSE -> pause("@$target profiline dönüş doğrulanamadı; ilerleme korundu")
+        }
     }
 
     private fun nextDiscoveryTarget(service: AtmacaAccessibilityService, reason: String) {
@@ -2102,6 +2157,9 @@ object AutomationController {
         engagerParentSignature = ""
         engagerParentKeys = emptyList()
         commenterAdvanceRequired = false
+        discoveryReturnLastBackAt = 0L
+        replyOpenAttempts.clear()
+        CommenterViewportPolicy.clearScrollGuard()
         listEndStable = 0
         lastListSignature = ""
         listScrolls = 0
@@ -2301,6 +2359,9 @@ object AutomationController {
         engagerParentSignature = ""
         engagerParentKeys = emptyList()
         commenterAdvanceRequired = false
+        discoveryReturnLastBackAt = 0L
+        replyOpenAttempts.clear()
+        CommenterViewportPolicy.clearScrollGuard()
         stageStartedAt = System.currentTimeMillis()
         stageAttempts = 0
         listEndStable = 0
@@ -2319,6 +2380,7 @@ object AutomationController {
         resetOperationNavigation()
         processedHandles.clear()
         skippedHandles.clear()
+        skippedReplyKeys.clear()
         depthHandles.clear()
         sourceHandles.clear()
         discoveryTargetIndex = 0

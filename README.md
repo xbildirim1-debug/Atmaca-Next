@@ -1,6 +1,10 @@
-# Atmaca Next — 26.51
+# Atmaca Next — 26.52
 
-Yorum Alıntısı, hedef gönderiyi doğruladıktan sonra X'in ayrı yorum ekranını veya gönderi içindeki yorum alanını kullanır. Metin yeni okumada doğrulanır, gönderim bir kez yapılır ve sonuç belirsizse aynı yorum tekrar gönderilmez.
+26.52: yorumcu takipte yalnız o yorum satırına bağlı resim/GIF/video medya olarak atlanır. Görünür metin yorumları sırayla işlenir; belirsiz kimlik/tıklama sessiz atlama yerine ilerleme korunarak duraklar. Yorumcu ve retweetçi takip, hedef profile geri dönünce yeniden Geri/arama yapmadan aynı konumdan taramaya devam eder.
+
+26.52 derleme ve cihaz doğrulama durumu [DEVIR_NOTU.md](DEVIR_NOTU.md) içinde tutulur. Yeni APK henüz fiziksel cihazda doğrulanmadı.
+
+26.51'den korunan davranış: Yorum Alıntısı, hedef gönderiyi doğruladıktan sonra X'in ayrı yorum ekranını veya gönderi içindeki yorum alanını kullanır. Metin yeni okumada doğrulanır, gönderim bir kez yapılır ve sonuç belirsizse aynı yorum tekrar gönderilmez.
 
 Alıntı hedefleri ayrı kaydedilir. Limit her hedef içindir: 5 hedef × Limit 1 = 5 yorum. Seçili hesaplar tek grupta sırayla çalışır; kuyruk tamamlanınca Atmaca Next öne gelir.
 
