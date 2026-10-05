@@ -153,10 +153,10 @@ object XTweetInspector {
         return if (row.authorTruncated) author.length >= 4 && target.startsWith(author) else author == target
     }
 
-    fun clickReplyAuthor(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, handle: String): Boolean {
+    fun clickReplyAuthor(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, handle: String, replyKey: String? = null): Boolean {
         if (root == null) return false
         val rows = visibleTweets(root)
-        val rowIndex = rows.indexOfFirst { !it.authorTruncated && it.author == handle }
+        val rowIndex = rows.indexOfFirst { !it.authorTruncated && it.author == handle && (replyKey == null || it.key == replyKey) }
         if (rowIndex < 0) return false
         val row = rows[rowIndex]
 

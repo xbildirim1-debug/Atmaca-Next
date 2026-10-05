@@ -130,6 +130,7 @@ object AutomationController {
     private var activeTask: ScheduledTask? = null
     private var preparedContents: List<String> = emptyList()
     private var engagerHandle: String? = null
+    private var engagerReplyKey: String? = null
     private var engagerParentSignature = ""
     private var engagerParentKeys = emptyList<String>()
     private var engagementOpenAttempts = 0
@@ -1539,9 +1540,10 @@ object AutomationController {
                         }
                         val parentSignature = DiscoveryViewportEvidence.signature(nodes)
                         val parentKeys = rows.map { it.key }
-                        if (XTweetInspector.clickReplyAuthor(service, root, author)) {
+                        if (XTweetInspector.clickReplyAuthor(service, root, author, reply.key)) {
                             replyOpenAttempts.remove(reply.key)
                             engagerHandle = author
+                            engagerReplyKey = reply.key
                             engagerParentSignature = parentSignature
                             engagerParentKeys = parentKeys
                             moveStage(XFlowStage.OPEN_ENGAGER_PROFILE, "Yorumcu @$author gönderisi veya profili doğrulanıyor")
@@ -1579,7 +1581,7 @@ object AutomationController {
                     else {
                         if (now - stageStartedAt >= 1_500L && stageAttempts < 2) {
                             val retry = ++stageAttempts
-                            val row = XTweetInspector.visibleTweets(root).firstOrNull { !it.authorTruncated && it.author == handle }
+                            val row = XTweetInspector.visibleTweets(root).firstOrNull { !it.authorTruncated && it.author == handle && it.key == engagerReplyKey }
                             val accepted = row != null && !XTweetInspector.replyHasMedia(root, row) &&
                                 XTweetInspector.click(service, row, retryAttempt = retry)
                             OperationLog.i("COMMENT_OPEN_RETRY", "@$handle bodyAttempt=$retry accepted=$accepted; aynı ana yorum görünümü")
@@ -1635,6 +1637,7 @@ object AutomationController {
             XFlowStage.RETURN_ENGAGEMENT -> {
                 if (screen == XScreen.TWEET_DETAIL && isEngagerParent(root)) {
                     engagerHandle = null
+                    engagerReplyKey = null
                     lastListSignature = ""
                     moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Sıradaki yorumcu aranıyor")
                     service.requestAutomationTick(250L)
@@ -2099,6 +2102,7 @@ object AutomationController {
         discoveryOpenAttempt = null
         discoveryTweetKey = null
         engagerHandle = null
+        engagerReplyKey = null
         engagerParentSignature = ""
         engagerParentKeys = emptyList()
         commenterAdvanceRequired = false
@@ -2154,6 +2158,7 @@ object AutomationController {
         discoveryTweetKey = null
         engagementOpenAttempts = 0
         engagerHandle = null
+        engagerReplyKey = null
         engagerParentSignature = ""
         engagerParentKeys = emptyList()
         commenterAdvanceRequired = false
@@ -2356,6 +2361,7 @@ object AutomationController {
         discoveryCandidateSince = 0L
         discoveryOpenAttempt = null
         engagerHandle = null
+        engagerReplyKey = null
         engagerParentSignature = ""
         engagerParentKeys = emptyList()
         commenterAdvanceRequired = false

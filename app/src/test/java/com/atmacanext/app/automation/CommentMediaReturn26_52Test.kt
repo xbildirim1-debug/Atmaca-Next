@@ -50,6 +50,16 @@ class CommentMediaReturn26_52Test {
         assertFalse(ReplyMediaEvidence.hasMedia(listOf(image.copy(visible = false)), 500, 1000))
         assertFalse(ReplyMediaEvidence.hasMedia(listOf(image.copy(editable = true)), 500, 1000))
     }
+    @Test fun sameAuthorMediaReplyDoesNotExcludeTheirSeparateTextReply() {
+        val nodes = listOf(n("İsim @sameauthor · 2 sa", 100), n(top = 250, height = 400, id = "tweet_photo"),
+            n("İsim @sameauthor · 1 sa", 800), n("Aynı kişinin metin yorumu", 900, id = "tweet_text"))
+        val rows = FeedRowEvidence.rows(nodes)
+        assertEquals(2, rows.size); assertNotEquals(rows[0].key, rows[1].key)
+        assertTrue(ReplyMediaEvidence.hasMedia(nodes, 100, 800))
+        assertFalse(ReplyMediaEvidence.hasMedia(nodes, 800, 1100))
+        val skipped = setOf(rows[0].key)
+        assertEquals(rows[1].key, rows.first { it.key !in skipped }.key)
+    }
     @Test fun videoTextCommentersAllRemainDistinctFeedCandidates() {
         val handles = listOf("AVG1689282", "siyahkutup_", "envytr355", "Mustafa849037", "sessizistila58", "Egeliyikbiz")
         val nodes = handles.flatMapIndexed { i, handle -> listOf(n("İsim @$handle · 2 sa", 150 + i * 300),
@@ -95,9 +105,11 @@ class CommentMediaReturn26_52Test {
             for (type in listOf(TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW)) {
                 skipped.add("old-media-reply"); attempts["old-comment"] = 2
                 field("discoveryReturnLastBackAt").setLong(controller, 1234L)
+                field("engagerReplyKey").set(controller, "old-reply")
                 assertTrue(controller.start(ScheduledTask("new-$type", "new-account", "account", type = type), listOf("pusholder")))
                 assertTrue(skipped.isEmpty()); assertTrue(attempts.isEmpty())
                 assertEquals(0L, field("discoveryReturnLastBackAt").getLong(controller))
+                assertNull(field("engagerReplyKey").get(controller))
                 controller.stop()
             }
         } finally { controller.stop() }
