@@ -18,8 +18,8 @@ class BuseViewportGateTest {
         val gate = BuseViewportGate()
         gate.afterScroll(1_000L)
         assertEquals(BuseViewportGate.Decision.WAIT, gate.observe("first:500|second:700", 1_500L))
-        assertEquals(BuseViewportGate.Decision.WAIT, gate.observe("first:500|second:700", 1_532L))
-        assertEquals(BuseViewportGate.Decision.READY, gate.observe("first:500|second:700", 1_564L))
+        assertEquals(BuseViewportGate.Decision.WAIT, gate.observe("first:500|second:700", 1_516L))
+        assertEquals(BuseViewportGate.Decision.READY, gate.observe("first:500|second:700", 1_532L))
         assertFalse(gate.pending)
     }
 

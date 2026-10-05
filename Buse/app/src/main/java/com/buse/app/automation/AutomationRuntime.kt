@@ -202,8 +202,8 @@ object AutomationController {
     private var unfollowFollowObservedAt = 0L
     private var buseFollowingRun = BuseFollowingRun()
     private val buseViewportGate = BuseViewportGate()
+    private val buseScrollBoundary = BuseScrollBoundary()
     private var buseAtTop = false
-    private var buseStableSince = 0L
     private var buseViewport = ""
     private var buseProbeHandle: String? = null
     private var buseProbeSince = 0L
@@ -766,8 +766,8 @@ object AutomationController {
                     if (com.buse.app.domain.policy.BuseTaskPolicy.isNonFollower(activeTask)) {
                         buseFollowingRun = BuseFollowingRun()
                         buseViewportGate.reset()
+                        buseScrollBoundary.reset()
                         buseAtTop = false
-                        buseStableSince = 0L
                         buseViewport = ""
                         buseProbeHandle = null
                         buseProbeSince = 0L
@@ -941,7 +941,8 @@ object AutomationController {
             recoverOperation(service, "Seni takip etmeyenler taranırken Takip ediliyor listesi kayboldu")
             return
         }
-        val rows = BuseFollowingInspector.rows(root)
+        val reading = BuseFollowingInspector.read(root)
+        val rows = reading.rows
         val signature = rows.joinToString("|") { "${it.evidence.handle}:${it.bounds.top}:${it.bounds.bottom}" }
         // Events can arrive while X is still moving or recycling its rows. Do not count,
         // pause for an apparent gap, or issue another drag until fresh geometry is stable.
@@ -965,27 +966,28 @@ object AutomationController {
             return
         }
         val changed = signature != buseViewport
+        val reachedBoundary = buseScrollBoundary.observe(signature)
         if (changed) {
             buseViewport = signature
-            buseStableSince = now
             listEndStable = 0
             listScrolls++
         }
         if (!buseAtTop) {
             // A previously opened X list may restore an old scroll position. Count only from a stable top.
-            if (!changed && now - buseStableSince >= 1500L) {
+            if (reachedBoundary) {
                 buseAtTop = true
-                buseStableSince = now
+                buseScrollBoundary.reset()
                 buseViewport = ""
                 moveStage(XFlowStage.SEEK_UNFOLLOW_DEPTH, "Liste başı doğrulandı; ilk 100 farklı kişi atlanıyor")
                 service.requestAutomationTickExact(20L)
                 return
             }
-            if (!BuseFollowingScroller.scroll(service, root, rows, forward = false)) {
+            if (!BuseFollowingScroller.scroll(service, root, rows, forward = false, snapshots = reading.snapshots)) {
                 pause("Liste başına kaydırma tamamlanamadı; başlangıç sırası tahmin edilmedi")
                 return
             }
             buseViewportGate.afterScroll(System.currentTimeMillis())
+            buseScrollBoundary.afterScroll(signature)
             service.requestAutomationTickExact(BuseViewportGate.POLL_MS)
             return
         }
@@ -998,7 +1000,6 @@ object AutomationController {
                 else "İlk 100 kişi korunuyor; daha eski kişiler kontrol ediliyor")
         if (buseFollowingRun.ready && current.flowStage == XFlowStage.SEEK_UNFOLLOW_DEPTH) {
             moveStage(XFlowStage.PROCESS_UNFOLLOW, "101. kişiden aşağıya; seni takip edenler korunuyor")
-            buseStableSince = now
         }
         if (cycleTargetReached()) {
             finishCycleOrTask(service, "Seni takip etmeyenlerden belirlenen sayıda çıkıldı")
@@ -1007,6 +1008,7 @@ object AutomationController {
         val excluded = processedHandles + skippedHandles
         val candidate = rows.firstOrNull { buseFollowingRun.mayUnfollow(it.evidence, current.username.orEmpty(), excluded) }
         if (candidate != null) {
+            buseScrollBoundary.reset()
             val handle = candidate.evidence.handle
             val proof = "$handle:${candidate.bounds.top}:${candidate.bounds.bottom}:${candidate.evidence.labels.joinToString("|")}"
             if (buseProbeHandle != handle || proof != buseProbeSignature) {
@@ -1035,7 +1037,6 @@ object AutomationController {
                 pendingAction = PendingAction(PendingKind.UNFOLLOW, handle)
                 buseProbeHandle = null
                 buseProbeSince = 0L
-                buseStableSince = now
                 _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now,
                     message = "@$handle seni takip etmiyor; takipten çıkma sonucu doğrulanıyor")
                 service.requestAutomationTick(450L)
@@ -1046,7 +1047,7 @@ object AutomationController {
         buseProbeSince = 0L
         val uncertain = rows.count { it.evidence.handle !in buseFollowingRun.protectedHandles &&
             it.evidence.handle !in excluded && BuseNonFollowerPolicy.relationship(it.evidence) == BuseRelationship.UNKNOWN }
-        if (!changed && now - buseStableSince >= 1500L) {
+        if (reachedBoundary) {
             val reason = if (!buseFollowingRun.ready) "Liste 100 kişiden önce bitti; herkes korundu"
                 else "Listenin eski ucuna ulaşıldı; ${current.verifiedCount} işlem doğrulandı"
             // A partial scan ends with its actual count; the requested limit is never fabricated.
@@ -1055,12 +1056,13 @@ object AutomationController {
         }
         if (listScrolls >= 10000) { pause("Tarama kaydırma sınırında duraklatıldı; ilerleme korundu"); return }
         if (uncertain > 0) buseUnknownViewports++
-        if (!BuseFollowingScroller.scroll(service, root, rows, forward = true)) {
+        if (!BuseFollowingScroller.scroll(service, root, rows, forward = true, snapshots = reading.snapshots)) {
             pause("Daha eski kişilere kaydırma tamamlanamadı; yeni kişilere dönülmedi")
             return
         }
         // Forward only: no reverse pass can touch the protected recent users.
         buseViewportGate.afterScroll(System.currentTimeMillis())
+        buseScrollBoundary.afterScroll(signature)
         service.requestAutomationTickExact(BuseViewportGate.POLL_MS)
     }
 
@@ -2184,6 +2186,7 @@ object AutomationController {
         unfollowFollowObservedAt = 0L
         target?.removePrefix("@")?.let(processedHandles::add)
         if (current.taskType == TaskType.UNFOLLOW) afterUnfollowTargetHandled()
+        if (current.taskType == TaskType.UNFOLLOW) buseScrollBoundary.reset()
         val next = (current.verifiedCount + 1).coerceAtMost(current.limit)
         _state.value = current.copy(
             status = RuntimeStatus.RUNNING,
@@ -2265,7 +2268,7 @@ object AutomationController {
 
     private fun finishCycleOrTask(service: BuseAccessibilityService, reason: String) {
         val current = _state.value
-        if ((current.taskType?.isDiscoveryFollow == true || current.taskType == TaskType.COMMENT_QUOTE_TARGETS) && !cycleTargetReached()) {
+        if ((current.taskType == TaskType.UNFOLLOW || current.taskType?.isDiscoveryFollow == true || current.taskType == TaskType.COMMENT_QUOTE_TARGETS) && !cycleTargetReached()) {
             pause("$reason. ${current.verifiedCount}/${current.limit}; limit tamamlanmadı, ilerleme korundu")
             return
         }

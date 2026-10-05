@@ -21,3 +21,11 @@ Gerçek X erişilebilirlik ağacı bu çalışmada alınmadı. Kişi satırı gr
 - Kullanıcının 1000033462.mp4 videosundaki 125–130 saniye akışını aynı hesapta yeniden dene. İlk 100 kişi sayılmalı; 101 ve sonrası uygun satırlar işlenmeli.
 - Kayıtta ara ekranlar hareket ederken hiçbir ilişki düğmesine basılmadığını ve iki komşu penceredeki ortak kişilerin bir kez sayıldığını doğrula.
 - Bu adımlar yeni APK ile henüz fiziksel cihazda uygulanmadı.
+
+## 1.3 hız ve limit kabulü
+
+- Takip Etmeyenleri Çıkma, tek hesap, limit 20: ilk 100 kişi korunmalı; 1, 2, …, 19 sonuçtan sonra X’te kalıp daha eski uygun kişilere devam etmeli. Yalnız 20 doğrulanmış sonuçta Buse’ye dönmeli.
+- Onay/sonuç beklemesi 1,5 saniyeyi aşınca erken liste sonu üretilmemeli. Gerçek son için üç ayrı tamamlanmış kaydırma ve sonrasındaki taze kararlı görünüm aynı kalmalı.
+- Normal Takipten Çıkma için de 1/20 ve 19/20 tamamlanmış sayılmamalı. Gerçek uygun liste biterse sayaç korunarak duraklamalı.
+- Büyük kaydırma adımında ardışık görünümlerde iki eski tam satır kalmalı; ilk 100 kimlik bir kez sayılmalı, Seni takip ediyor etiketi bulunan kişiler korunmalı.
+- Aynı hesaptaki 1.2 tarama süresiyle karşılaştır. Yeni APK ile bu cihaz adımları henüz uygulanmadı.

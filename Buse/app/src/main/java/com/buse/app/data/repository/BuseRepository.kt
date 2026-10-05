@@ -124,6 +124,12 @@ class BuseRepository(private val db: BuseDatabase) {
             db.taskDao().updateRuntime(task.id, checkpoint.verifiedCount.coerceAtLeast(0), TaskStatus.PAUSED.name, checkpoint.lastTarget, checkpoint.lastActionAt, System.currentTimeMillis())
             db.automationLogDao().insert(AutomationLogEntity(System.currentTimeMillis(), "WARN", "RESTART_STOP", task.id, task.username, "Yarım görev uygulama açılışında güvenli biçimde durduruldu; otomatik devam ettirilmedi"))
         }
+        db.taskDao().getAll().filter { com.buse.app.domain.policy.BuseTaskPolicy.completionNeedsRecovery(it.toDomain()) }.forEach { task ->
+            db.taskDao().updateRuntime(task.id, task.progress, TaskStatus.PAUSED.name, task.lastTarget, task.lastActionAt, System.currentTimeMillis())
+            db.automationLogDao().insert(AutomationLogEntity(System.currentTimeMillis(), "WARN", "PARTIAL_TASK_RECOVERED",
+                task.id, task.username, "Eksik sonuçla bitmiş görev yeniden başlatılabilir hale getirildi; doğrulanan ilerleme korundu",
+                "progress=${task.progress}/${task.toDomain().totalLimit}"))
+        }
         db.runtimeCheckpointDao().clear(); db.queueItemDao().clear(); db.queueCheckpointDao().clear()
     }
     suspend fun clearRuntimeCheckpoint() = db.runtimeCheckpointDao().clear()

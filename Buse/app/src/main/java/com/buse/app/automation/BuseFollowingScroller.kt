@@ -12,18 +12,20 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Fast overlapping drags end with a stationary touch instead of launching an inertial fling. */
 object BuseFollowingScroller {
-    fun scroll(service: AccessibilityService, root: AccessibilityNodeInfo?, rows: List<BuseFollowingInspector.Row>, forward: Boolean): Boolean {
+    fun scroll(service: AccessibilityService, root: AccessibilityNodeInfo?, rows: List<BuseFollowingInspector.Row>, forward: Boolean,
+               snapshots: List<NodeSnapshot>? = null): Boolean {
         if (root == null || rows.isEmpty()) return false
         val display = service.resources.displayMetrics
         val bounds = ListGestureGeometry.viewport(Rect().also(root::getBoundsInScreen), display.widthPixels, display.heightPixels) ?: return false
-        val viewport = AdaptiveNavigationEvidence.contentViewport(AccessibilityTree.snapshots(root), bounds)
+        val viewport = AdaptiveNavigationEvidence.contentViewport(snapshots ?: AccessibilityTree.snapshots(root), bounds)
         val visible = rows.filter { it.bounds.top >= viewport.top && it.bounds.bottom <= viewport.bottom }
         if (visible.isEmpty()) return false
         val contentTop = maxOf(viewport.top, visible.first().bounds.top)
         val contentBottom = minOf(viewport.bottom, visible.last().bounds.bottom)
         val span = contentBottom - contentTop
         if (span < 32) return false
-        val distance = minOf(span * .40f, visible.minOf { it.bounds.height() }.coerceAtLeast(32) * 1.5f)
+        val distance = BuseScrollStride.distance(contentTop, contentBottom, visible.map { it.bounds.top })
+        if (distance <= 0f) return false
         val x = viewport.left + viewport.width() * .12f
         val start = if (forward) contentBottom - span * .10f else contentTop + span * .10f
         val end = if (forward) start - distance else start + distance

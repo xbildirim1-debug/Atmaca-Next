@@ -1,3 +1,29 @@
+# Buse 1.3 — yavaş tarama ve 1/20 erken bitiş düzeltmesi
+
+2026-10-06T00:44:28.775078+03:00
+
+Kullanıcı 1.2’nin aşağı kaydırdığını fakat çok yavaş olduğunu; limit 20 iken bir çıkıştan sonra Buse’ye döndüğünü bildirdi. Bu deneme için yeni video/erişilebilirlik günlüğü yok. Kodda iki somut sorun bulundu: buseStableSince işlem dokunuşunda tutuluyor, onay/sonuç beklerken 1,5 saniye geçince aynı görünüm liste sonu olarak kabul edilip hiç yeni kaydırma yapılmadan finishCycleOrTask çağrılabiliyor. Ortak finishCycleOrTask UNFOLLOW eksik limitini engellemiyor; repeat=1 için 1/20 COMPLETED yapıp kuyruk Buse’ye dönebiliyor. Ayrıca Bitti kaydı UI ve kuyruğun Başlat yolunu kapatıyor.
+
+BuseScrollBoundary zaman yerine üç ayrı başarılı drag/release ve sonrasındaki taze kararlı geometrinin hiç ilerlememesini izler. Bekleme/tekrar okuma tek başına sınır değildir. Aday işlem ve doğrulanmış sonuç eski sınır kanıtını temizler. UNFOLLOW limit dolmadan finish çağrısı PAUSED ve gerçek ilerlemeyle kalır; hayali tamamlanma veya sonraki tura geçiş yok. Normal Takipten Çıkma için de aynı tamamlanma koruması geçerlidir. BuseRepository.discardInterruptedWork açılışında BuseTaskPolicy.completionNeedsRecovery ile eski geçerli COMPLETED fakat eksik görevler PAUSED’ye döner; progress, lastTarget, lastActionAt ve günlük kullanım korunur. Kullanıcı Başlat ile devam eder, güncelleme otomatik işlem yapmaz.
+
+Tarama hızında 1–1,5 kısa satır adımı yerine %72 görünüm ilerlemesi kullanılır; son iki tam görünür satır eski pencereyle örtüşür. Tek/iki satır görünümünde daha kısa adım korunur. 22 ms hareket + 120 ms sabit bırakma aynı; kararlı görünüm okumaları 16 ms, kanıt penceresi 32 ms. İlk 100 kişi/101’den devam, iki tam okuma ve doğru kişinin Seni takip ediyor/Follows you etiketi korunur.
+
+BuseFollowingInspector her canlı düğümü bir kez yakalar; ebeveyn/çocuk indeksleri, alt ağaç kişi kümeleri, sınır/etiket kanıtı yerel taze NodeSnapshot verisinden hesaplanır. Önceki her kişi için dokuz üst-alt ağaç dolaşımı ve etiket/koordinat için tüm ağacın tekrar okunması kaldırılır. Aynı yakalanmış snapshot listesi kaydırma geometrisine verilir. Çok kimlikli, kırpılmış, isimsiz, eksik/büyük ağaç ve komşu etiket korumaları testlenmiştir. Bu toplam hızın cihazda ölçüldüğü iddiası değildir.
+
+29 yeni anlamlı regresyonla 561 test geçti; 0 başarısız/hata/atlanan. recordSuccess gerçek özel runtime yolunda 1–19 RUNNING, 20 COMPLETED kontrol edildi; eksik liste bitişi ve tekrar turları da kontrol edildi. Lint 0 hata/fatal, 12 uyarı/1 öneri. Final temiz derleme, APK manifest/imza/CRC başarılı. Fiziksel yeni APK/X kabul testi yapılmadı; cihaz protokolü güncellendi.
+
+VersionCode 4, 1.3-fast-limit; com.buse.mobile/Room/ayar kimlikleri aynı. Önceki Buse üzerine kur; uygulamayı kaldırma. Eski 1/20 Bitti görevi açılışta Duraklatıldı’ya dönüşür, Başlat kalan 19 doğrulanmış sonuca devam edebilir. Özel anahtar kaynak/tam pakete eklenmedi; mevcut özel imza yedeği geçerlidir.
+
+APK SHA256 fb6d0de84b07f1a3815e80e8efc22ad0145b463ae4ca1784c617369e5ac04045
+Sertifika SHA256 9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5
+Temel GitHub Buse commit d40ae32f2f08368a8aed74e1d1399ab186211323
+Kaynak dal buse/1.3-fast-limit, klasör Buse/
+Atmaca main/dosyalar değiştirilmedi.
+
+---
+
+Önceki sürümlerin tarihsel kayıtları:
+
 # Buse 1.2 — 100 kişi ve kaydırma sayımı düzeltmesi
 
 2026-10-06T00:24:11.577847+03:00

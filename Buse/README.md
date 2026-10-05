@@ -1,11 +1,13 @@
-# Buse 1.2 — 100 kişi ve kararlı hızlı kaydırma
+# Buse 1.3 — hızlı tarama ve gerçek işlem limiti
 
 Pembe ağırlıklı, bağımsız Android uygulaması. Yalnız **Hesaplar** ve **Görevler** ekranları vardır.
 
 - **Takipten Çıkma:** Atmaca 26.59'un hesap doğrulama, onay ve sonuç doğrulama akışını kullanır.
 - **Takip Etmeyenleri Çıkma:** Kendi hesabının Takip ediliyor listesini baştan açar. İlk 100 farklı kullanıcı korunur. 101. kişiden daha aşağıya doğru devam eder. Kişinin kendi satırında “Seni takip ediyor” / “Follows you” varsa bırakır. Etiketi olmayan, tam ve aynı kimlikle iki kez okunmuş satırlardaki kişiler çıkarılır.
 - 100 kişi, kaydırma sayısı değildir. Kayan ekranlar örtüşür; aynı kullanıcı iki kez sayılmaz. Sıra kesilirse görev duraklar. Liste 100 kişiden kısaysa hiç kimse çıkarılmaz. Liste sonunda yeni kişilere dönülmez. Eksik/kırpılmış/belirsiz satırlar işlenmez.
-- En hızlı genel süre ayarı korunur. Takip Etmeyenleri Çıkma listesindeki 22 ms hareketin sonunda parmak 120 ms sabit tutulup bırakılır; kontrolsüz devam eden kayma azaltılır. Yeni kaydırma veya sayım için güncel kişi/konum ağacının 64 ms değişmemesi gerekir (32 ms arayla okunur). Hareketli/eksik ara ekran sayılmaz; 2 saniyede sabitlenmeyen liste duraklatılır. X yükleme süresine hız garantisi verilmez; kişi/onay/sonuç ve liste ucu kanıtları korunur.
+- Takip Etmeyenleri Çıkma taraması ekranın en fazla %72’sini ilerletir; sayım için iki tam eski kişi satırı bırakır. Kısa 22 ms hareket ve 120 ms sabit bırakma korunur. Kararlılık 16 ms arayla güncel okumalarla 32 ms içinde doğrulanır; hareketli/eksik ekran işlenmez. Satır, üst satır ve etiket kontrolleri tek taze ekran ağacından yapılır; ağacı tekrar tekrar dolaşmaz. X yüklenme süresi için hız garantisi yoktur.
+- İşlem onayı beklemek liste sonu sayılmaz. Baş/son sınırı ancak üç tamamlanmış kaydırmadan sonra taze, kararlı kişi/konum görünümü hiç ilerlemiyorsa kabul edilir. Bir doğrulanmış işlemden sonra eski kaydırma kanıtı temizlenir.
+- 20 seçildiğinde yalnız 20 doğrulanmış sonuç turu tamamlar; 1/20 veya 19/20 tamamlandı sayılmaz. Gerçek liste sonunda uygun kişi kalmazsa görev eksik sayıyla duraklatılır ve ilerleme korunur. Önceki sürümün eksik sayıyla Bitti kaydettiği görevler açılışta aynı ilerlemeyle Duraklatıldı durumuna alınır; Başlat yeniden kullanılabilir.
 - En fazla 10 X hesabı. Her tur için 1–35 kişi; tur sayısı ve turlar arası bekleme seçilebilir. Her iki görevde X’in işlem sınırları ve uygulamanın deneme/sonuç doğrulama koruması geçerlidir.
 
 ## Bağımsızlık

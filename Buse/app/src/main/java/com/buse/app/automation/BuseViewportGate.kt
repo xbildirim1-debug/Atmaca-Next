@@ -39,8 +39,8 @@ class BuseViewportGate {
     }
 
     companion object {
-        const val POLL_MS = 32L
-        const val STABLE_MS = 64L
+        const val POLL_MS = 16L
+        const val STABLE_MS = 32L
         const val TIMEOUT_MS = 2_000L
     }
 }

@@ -2,6 +2,7 @@ package com.buse.app.domain.policy
 
 import com.buse.app.domain.model.ScheduledTask
 import com.buse.app.domain.model.TaskType
+import com.buse.app.domain.model.TaskStatus
 
 enum class BuseTaskMode(val title: String, val description: String) {
     UNFOLLOW("Takipten Çıkma", "Takip edilen kullanıcıları seçtiğin limite kadar çıkarır."),
@@ -20,4 +21,8 @@ object BuseTaskPolicy {
 
     fun isNonFollower(task: ScheduledTask?): Boolean = task?.type == TaskType.UNFOLLOW &&
         task.contentPrompt == NON_FOLLOWER_MARKER
+
+    /** Older Buse releases could persist COMPLETED after finding only part of the requested limit. */
+    fun completionNeedsRecovery(task: ScheduledTask): Boolean = accepts(task) &&
+        task.status == TaskStatus.COMPLETED && task.progress < task.totalLimit
 }
