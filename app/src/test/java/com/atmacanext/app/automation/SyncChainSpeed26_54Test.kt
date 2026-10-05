@@ -181,8 +181,8 @@ class SyncChainSpeed26_54Test {
             AutomationController.stop(); putState(state().copy(status = RuntimeStatus.VERIFYING))
             val kind = Class.forName("com.atmacanext.app.automation.AutomationController\$PendingKind").enumConstants.first { it.toString() == "FOLLOW" }
             val clazz = Class.forName("com.atmacanext.app.automation.AutomationController\$PendingAction")
-            val constructor = clazz.declaredConstructors.first { it.parameterCount == 8 }.apply { isAccessible = true }
-            val pending = constructor.newInstance(kind, "ipekinthetardis", System.currentTimeMillis(), false, null, false, emptySet<String>(), null)
+            val constructor = clazz.declaredConstructors.first { it.parameterCount == 9 }.apply { isAccessible = true }
+            val pending = constructor.newInstance(kind, "ipekinthetardis", System.currentTimeMillis(), false, null, false, emptySet<String>(), null, null)
             field("pendingAction").set(AutomationController, pending)
             AutomationController.onSnapshotReadFailure(service)
             assertSame(pending, field("pendingAction").get(AutomationController))
