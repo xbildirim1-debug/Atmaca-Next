@@ -188,6 +188,8 @@ object AutomationController {
     private val depthHandles = LinkedHashSet<String>()
     private val unfollowBeforeAnchorHandles = LinkedHashSet<String>()
     private val sourceHandles = LinkedHashSet<String>()
+    private var unfollowRecoveryReturning = false
+    private var unfollowNoConfirmationSince = 0L
     private var queueOwnsCycleWait = false
     private var sourceHandle: String? = null
     private var exhaustedSourceHandle: String? = null
@@ -288,6 +290,7 @@ object AutomationController {
     }
 
     fun pause(reason: String = "Görev duraklatıldı") {
+        unfollowRecoveryReturning = false
         val current = _state.value
         if (current.taskId == null || current.status in terminalStatuses()) return
         if (pendingAction?.kind != PendingKind.POST || current.taskType != TaskType.COMMENT_QUOTE_TARGETS) pendingAction = null
@@ -341,6 +344,7 @@ object AutomationController {
         attach(service)
         val current = _state.value
         if (!isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
+        if (unfollowRecoveryReturning) return
         if (service.isOutsideSuppressed()) {
             service.requestAutomationTick(TICK_MS)
             return
@@ -380,7 +384,7 @@ object AutomationController {
         val service = serviceRef?.get() ?: return false
         return service.runOnAutomationThread {
             val current = _state.value
-            if (current.taskId == taskId && current.sessionId == sessionId && AutomationStallPolicy.shouldWatch(current)) {
+            if (current.taskId == taskId && current.sessionId == sessionId && !unfollowRecoveryReturning && AutomationStallPolicy.shouldWatch(current)) {
                 val signature = AutomationStallPolicy.signature(current)
                 if (signature != stallRecoverySignature) { stallRecoverySignature = signature; stallRecoveryAttempts = 0 }
                 stallRecoveryAttempts++
@@ -408,6 +412,7 @@ object AutomationController {
     ) {
         attach(service)
         var current = _state.value
+        if (unfollowRecoveryReturning) return
         if (!isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
         if (current.activeScreen != screen) {
             current = current.copy(activeScreen = screen)
@@ -874,6 +879,7 @@ object AutomationController {
                     if (performStep(service, root, screen, "unfollow", target.handle) { XUiActions.clickRelationship(service, target) }) {
                         unfollowIssuedCount++
                         unfollowFollowObservedAt = 0L
+                        unfollowNoConfirmationSince = 0L
                         pendingAction = PendingAction(PendingKind.UNFOLLOW, target.handle)
                         _state.value = current.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now, message = "@${target.handle} için takipten çıkma sonucu doğrulanıyor")
                         service.requestAutomationTick(450L)
@@ -1861,7 +1867,20 @@ object AutomationController {
                     // SUCCESS yukarıdaki gözlem penceresinde ele alınır.
                     UnfollowOutcome.SUCCESS -> service.requestAutomationTick(350L)
                     UnfollowOutcome.DAILY_LIMIT -> skipUnfollowTarget(service, handle, "Günlük limit için önce Takip et geçişi görülmedi; sonuç sayılmadı")
-                    UnfollowOutcome.UNCONFIRMED -> skipUnfollowTarget(service, handle, "Takibi bırak onayı açılmadı; günlük limit sayılmadan hesap atlandı")
+                    UnfollowOutcome.UNCONFIRMED -> {
+                        if (rowStillFollowing && !rowShowsFollow) {
+                            if (unfollowNoConfirmationSince == 0L) unfollowNoConfirmationSince = now
+                        } else unfollowNoConfirmationSince = 0L
+                        if (UnfollowRecoveryPolicy.shouldRestart(pending.confirmationClicked, unfollowFollowObservedAt > 0L,
+                                rowShowsFollow, rowStillFollowing, elapsed,
+                                if (unfollowNoConfirmationSince == 0L) 0L else now - unfollowNoConfirmationSince)) {
+                            restartUnconfirmedUnfollow(service, handle)
+                        } else {
+                            _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING,
+                                message = "@$handle onayı açılmadı;10 saniyelik kurtarma için değişmeyen ilişki doğrulanıyor")
+                            service.requestAutomationTick(400L)
+                        }
+                    }
                     UnfollowOutcome.UNKNOWN -> skipUnfollowTarget(service, handle, "Takipten çıkma sonucu kesin doğrulanamadı; günlük limit sayılmadan hesap atlandı")
                     UnfollowOutcome.WAIT -> service.requestAutomationTick(400L)
                 }
@@ -2031,6 +2050,41 @@ object AutomationController {
             if (current.flowStage == XFlowStage.OPEN_ENGAGER_PROFILE) returnFromEngager(service)
             nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.betweenActionsMs
             service.requestAutomationTickExact(AutomationTuning.betweenActionsMs)
+        }
+    }
+
+    private fun restartUnconfirmedUnfollow(service: AtmacaAccessibilityService, handle: String) {
+        val current = _state.value
+        val completed = processedHandles.toSet()
+        val skipped = skippedHandles.toSet() + handle
+        val issued = (unfollowIssuedCount - 1).coerceAtLeast(current.verifiedCount)
+        val cycleStart = cycleStartProgress
+        pendingAction = null // No confirmation was clicked and Following remained stable.
+        unfollowFollowObservedAt = 0L
+        unfollowNoConfirmationSince = 0L
+        resetCycleNavigation()
+        processedHandles.addAll(completed)
+        skippedHandles.addAll(skipped)
+        unfollowIssuedCount = issued
+        cycleStartProgress = cycleStart
+        unfollowRecoveryReturning = true
+        _state.value = current.copy(status = RuntimeStatus.RECOVERING, accountVerified = false,
+            flowStage = XFlowStage.VERIFY_ACCOUNT,
+            message = "Onay açılmadı; Atmaca'ya dönülüp aynı görev ${current.verifiedCount}/${current.limit} ilerlemesiyle yeniden başlatılıyor")
+        val token = current.sessionId
+        service.launchAtmaca { returned ->
+            service.runOnAutomationThread {
+                val live = _state.value
+                if (unfollowRecoveryReturning && live.sessionId == token && isSessionActive(live) &&
+                    live.status != RuntimeStatus.PAUSED && live.status !in terminalStatuses()) {
+                    unfollowRecoveryReturning = false
+                    OperationLog.i("UNFOLLOW_RESTART", "returned=$returned progress=${live.verifiedCount}/${live.limit}; skipped=@$handle; cycle=${live.cycleIndex + 1}")
+                    _state.value = live.copy(status = RuntimeStatus.PREPARING, activeScreen = XScreen.UNKNOWN,
+                        message = "Takipten çıkma aynı ilerlemeyle yeniden tetiklendi; görev hesabı doğrulanıyor")
+                    if (!service.launchXHome()) fail("Takipten çıkma kurtarmasında X açılamadı")
+                    else service.requestAutomationTick(TICK_MS)
+                }
+            }
         }
     }
 
@@ -2583,6 +2637,8 @@ object AutomationController {
     }
 
     private fun resetTransient(clearSession: Boolean) {
+        unfollowRecoveryReturning = false
+        unfollowNoConfirmationSince = 0L
         pendingAction = null
         stallRecoverySignature = ""
         stallRecoveryAttempts = 0

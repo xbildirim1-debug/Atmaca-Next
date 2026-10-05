@@ -1,3 +1,7 @@
+## 26.59 — yalnız açılmayan takibi bırak onayında kurtarma (5 Ekim 2026)
+
+Güncel temel main10bbd57 /26.58; yerel eski26.55 temiz dal bırakılarak güncel main ayrıfix/26.59-unfollow-recovery dalına alındı.22:05 görselindeki22:00:42 hata @azizsisman_ onayı açılmadan16/20 cycle2/2 PAUSED; eski yol watchdog dışına çıkıyordu. Artık onay verilmemiş ve aynı satır Following halinde en az1 saniye stabil,10 saniye geçmişse Atmaca dönüşü ardından aynı task/session/toplam sayaç/döngü ile aktif hesap baştan doğrulanır. Başarısız kişi görevde dışlanır; yalnız uygulanmadığı kanıtlanan bu denemenin bütçesi geri verilir. Tamamlanan/atlanan kişiler ve döngü başlangıç ilerlemesi korunur. Onay verilmiş/belirsiz/kayıp/çelişkili satır veya gerçek geri dönüş bu kurtarma ile ek işlem üretmez. Manuel pause/stop/session değişimi dönüş callback'ini geçersiz kılar.26.58 ortak döngü ve saniyelik geri sayım/tablet/7× korunur.10 yeni test; toplam482 bekleniyor. CI bekleniyor, fiziksel yeni cihaz testi yapılmadı. versionCode107 /26.59-unfollow-recovery. İmza/Releases otomatik onay reddi kısıtları sürer.
+
 # Atmaca Next — 26.58
 
 472 test geçti. Dört hesapta ilk tur biter, ortak döngü süresi beklenir, sonra ikinci tur aynı sırada başlar. Görev ekranında dakika/saniye geri sayımı her saniye güncellenir. Fiziksel yeni APK testi yapılmadı.26.57 ile imza farklıdır; üzerine doğrudan kurulum uyumsuz.
