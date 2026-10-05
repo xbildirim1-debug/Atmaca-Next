@@ -1,38 +1,65 @@
-## Güncel durum ve devam talimatı — 5 Ekim 2026, 22:24 (Türkiye)
+# Atmaca Next — uygulama devir notu
 
-Bu kayıt, kullanıcının “Dene tekrar” isteği sonrasında yapılan kontrolü ve yeniden deneme sonucunu açıklar. Yalnız dokümantasyon güncellenmiştir; uygulama kodu, sürüm numarası ve mevcut derlemenin kaynak commit'i değiştirilmemiştir.
+Güncelleme: 5 Ekim 2026. Bu belge başka sohbet veya hesap üzerinden çalışmaya devam edecek kişinin **uygulamayı ve son değişiklikleri** devralması içindir. Anlık Actions durumu ve yeniden deneme kayıtları [BUILD_STATUS.md](BUILD_STATUS.md) içindedir.
 
-### Hazır olan kaynak ve düzeltmenin kapsamı
-- En güncel yama: **26.59-unfollow-recovery**, versionCode **107**. Derlenecek kaynak: `fec95b5b8dacd12f5ba0dc2745eb21121319d708`. Bu kayıt öncesinde main'in son dokümantasyon commit'i `041efbf0cd0fc9f5855fc59b6bd86183760be775`.
-- Kullanıcı kanıtı: takibi bırak onayı açılmadığında görev **16/20, döngü 2/2** durumunda PAUSED'a geçiyor; bu yüzden hareketsizlik denetimi Atmaca'ya dönüp görevi tekrar başlatmıyordu.
-- Kaynaktaki yama: onay verilmemiş, aynı kişi hâlâ “Takip ediliyor” durumunda en az bir saniye kararlı görülmüş ve deneme üzerinden 10 saniye geçmişse Atmaca'ya dönüş denenir; ardından X'te aktif hesap yeniden doğrulanarak aynı görev sürdürülür. Toplam ilerleme, döngü ve işlenen/atlanan kişiler korunur. Sorunlu kişi tekrar denenmez. Yalnız uygulanmadığı doğrulanan denemenin işlem bütçesi geri verilir.
-- Onay verilmiş veya sonucu belirsiz işlemler otomatik tekrar edilmez. Kullanıcının duraklatması/durdurması veya oturum değişmesi gecikmiş yeniden başlatma çağrısını geçersiz kılar.
-- Önceki **26.58 toplu döngü sırası** (önce bütün hesaplar, sonra ortak bekleme), dakika/saniye geri sayımı, tablet menü desteği ve hız ayarları korunur. Proje baştan yazılmadı.
+## Güncel temel ve çalışma kuralı
 
-### Derleme kontrolü ve gerçek yeniden deneme
-- [GitHub Actions koşusu 37361516199](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37361516199), build işi **111937007861**.
-- Bu kayıt hazırlanırken API durumu **queued**, sonuç **null**; koşunun son güncelleme zamanı **19:10:44 UTC / 22:10:44 Türkiye**. İş adımları henüz başlamadı.
-- Önceki turda yalnız sorgulama yapılmadı: build işi için GitHub yeniden çalıştırma çağrısı da gönderildi. GitHub **HTTP 403** ve **“The workflow run containing this job is already running”** yanıtını verdi. Yani mevcut koşu hâlâ aktif kabul edildiği için ikinci deneme başlatılmadı.
-- Bu yanıt bir Kotlin derleme/test hatası değildir; henüz derleyici ve test çıktısı yoktur. Mevcut koşu iptal edilmedi, yinelenen kaynak commit'i veya ikinci build oluşturulmadı.
-- **26.59 APK ve tam paket ZIP henüz oluşmadı, indirilmedi ve teslim edilmedi.** 10 yeni test dahil beklenen toplam 482'dir; bu sayı başarılı test sonucu olarak sunulmamalıdır. Önceki 26.58'in 472 başarılı testi yeni yamayı doğrulamaz.
-- Yerelde daha önce yapılan `git diff --check` ve SQLite 5→6 kontrolü geçti. Yerel Android SDK/Gradle/Kotlin derleyicisi bulunmadığından APK burada derlenemedi. Yeni sürüm fiziksel telefon/tablet üzerinde test edilmedi.
+- Güncel kaynak sürümü **26.59-unfollow-recovery**, versionCode **107**, uygulama kimliği **com.atmacanext.v258**, Room şeması **6**; minSdk 26 / targetSdk 36. Kaynak yama commit'i: `fec95b5b8dacd12f5ba0dc2745eb21121319d708`.
+- En son doğrulanmış APK sürümü **26.58-batch-cycles**; kaynak `8af17d7a51e9565d5bf403bfde42698836c370ed`. 26.59 kaynakta hazırlanmıştır, henüz başarılı APK/test sonucu yoktur.
+- Kaynak ve testler GitHub **main** üzerindedir. Yerel çalışma dalı **fix/26.59-unfollow-recovery**. Devralırken önce uzak main'i doğrula: daha önce çalışma alanı eski 26.55 kopyasına dönmüştü. Eski kopyaya yeni düzeltmeleri yeniden uygulamak güncel özellikleri kaybettirebilir.
+- Kullanıcı yalnız sorunlu alanın düzeltilmesini istiyor. Uygulamayı baştan yazma, çalışan modülleri gereksiz değiştirme; tablet, hız, hesap doğrulaması, işlem sayacı ve önceki düzeltmeleri koru.
 
-### Buradan devam edilecek iş
-1. Önce GitHub main ve bu koşunun güncel sonucunu kontrol et; eski yerel çalışma kopyasından devam etme. Bekleyen koşunun APK kaynak commit'i fec95b5 olarak kalmalıdır.
-2. Başarısız biterse ilgili adımın gerçek hata kaydını incele ve yalnız gerekli düzeltmeyi yap. Hâlâ queued ise test geçti veya paket hazır deme.
-3. Başarılı biterse APK/tam paket ve test raporlarını indir; 482 test, 10 yeni regresyon, lint, manifest sürümü 107/26.59, kaynak commit'i, arşiv CRC/digest ve SHA256 listelerini doğrula.
-4. Yeni APK sertifikasını 26.58 sertifikası `bb89917d2046f37d76ad6113e208349f0409764d32c04b543710492d7cfecde4` ile karşılaştır. İmza eşleşmesi doğrulanmadan eski kurulumun üzerine güncelleme yapılabildiğini söyleme. Uygulamayı kaldırmak yerel kayıtları silebilir.
-5. Doğrulanan APK + tam ZIP'i kullanıcıya ver; gerçek CI sonucu, kaynak commit'i ve cihazda denenmemiş noktaları notlara yaz.
-6. GitHub Releases otomasyonu için AGENTS.md'deki önceki otomatik onay reddi hâlâ geçerlidir. Bu not ekleme isteği contents:write yetkili yayın iş akışını etkinleştirme onayı değildir; taslak etkinleştirilmedi ve yayın tamamlanmış sayılmadı.
+## Uygulamanın yapısı ve görev akışları
 
-Bu dokümantasyon commit'i **[skip ci]** ile kaydedilir; bekleyen APK derlemesini değiştirmez.
+Android AccessibilityService, cihazdaki X uygulamasının ekranlarını okuyup eylemleri yürütür. Hesap senkronizasyonu açık X oturumlarını seçerek kimlik ve sayaçları doğrular; sonuçları Atmaca'ya kaydeder. Görev başlamadan seçilen X hesabı doğrulanır; yalnız hesap adına tıklanmış olması yeterli değildir.
 
-## 26.59 — kaynak kaydedildi, CI çalıştırıcı sırası engeli (5 Ekim 2026)
+Takip görevleri onaylı kullanıcı, yorumcu ve retweetçi takibi ile takibi bırakmayı kapsar. Etkileşim ve tweet/alıntı işlemlerinin önceki akışları da korunur. Görev ilerlemesi yalnız doğrulanan sonuçlardan hesaplanır; tıklama başarısı işlem başarısı değildir. Görev/oturum, kişi kimliği, döngü ve toplam ilerleme birbirine karıştırılmamalıdır.
 
-- Yama kaynağı main fec95b5b8dacd12f5ba0dc2745eb21121319d708. CI https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37361516199 . Koşu ve build111937007861 tekrar sorgulandı:queued, adımlar başlamadı.10 yeni regresyon/toplam482 bekleniyor; yeni test/lint/APK sonucu HENÜZ YOK. Bu sürüm testleri geçti veya APK teslim edildi denmez. Yerel Android SDK/Gradle/Kotlin derleyicisi mevcut değil; alternatif yerel derleme yapılamadı. SQLite5→6 ve git diff --check yerelde PASS.
-- DEVAM: bu koşunun sonucunu kontrol et. Başarılıysa APK/tam paket ve rapor artifactlerini indir; dış digest/CRC/manifest107/26.59/kaynakfec95b5 ve482 test/10 yeni suite/checksum/paketAPK eşitliğini doğrula.26.58 sertifikası bb89917d2046f37d76ad6113e208349f0409764d32c04b543710492d7cfecde4; yeni sertifika henüz yok, karşılaştır. Teslim yardımcıları /workspace/scratch/71675236270e/AtmacaNext-26.59-delivery altında beklenen JSON ve doğrulama betiği; yerel workspace tekrar eski sürüme dönebilir, önce main'i doğrula. Yeni APK ile fiziksel cihaz testi yapılmadı.
-- Kullanıcının22:05 ekran görüntüsü yerel upload dosyasından okundu:22:00:42 @atmaca2025 /@azizsisman_ onayı açılmadığı için PAUSED; verified16/20,cycle2/2. Kaynakta10 saniye geçici uygulanmamış onay kurtarması eklendi: Atmaca dönüşü→X→aynı task/session/sayaç/döngü ve işlenen/atlanan kişiler korunarak aktif hesabı doğrulama. İşlem sayısı uydurulmaz; onay verilmiş veya belirsiz sonuç ek işlem üretmez. Manuel pause/stop dönüş callback guard'ını iptal eder.26.58 ortak4 hesap döngüsü ve saniyelik geri sayım korunur.
-- Kaynak/test/notlar main'de; yerel fix/26.59-unfollow-recovery. Releases otomatik onay reddi sürer; yayın workflow etkin değil. Henüz yeni APK/ZIP oluşturulmadığından yayımlanmadı veya kullanıcıya verilmedi. Bu notlar [skip ci] ile ayrıca kaydedilir; mevcutqueued koşunun kaynak commit'i değişmez.
+- **AutomationRuntime.kt:** görev aşamaları, bekleyen işlem sonucu, sayaç, hesap doğrulaması ve kurtarma.
+- **TaskOrchestrator.kt:** seçili hesapların görev kuyruğu, tur sırası, ortak bekleme, otomatik sonraki tur ve Atmaca'ya dönüş.
+- **AccountSyncController.kt:** hesap ekleme/senkronizasyon aşamaları.
+- **XNavigator.kt / ScreenDetector.kt:** ekran tanıma ve gezinme; telefonun alt menüsü ile tabletin yan menüsü desteklenmelidir.
+- **BatchCyclePolicy.kt:** sonraki tura girecek görevler ve dakika/saniye geri sayımı.
+- **UnfollowRecoveryPolicy.kt:** uygulanmamış takibi bırak denemesinin yeniden başlatılabileceği koşullar.
+
+Dosyalar `app/src/main/java/com/atmacanext/app/` altındadır; BatchCyclePolicy `domain/engine/`, diğer motor dosyaları `automation/` içindedir. Kullanıcıya görünen durumlar `ui/screens/` altında gösterilir.
+
+## Korunacak güncel davranışlar
+
+| Alan | Kaynaktaki davranış / korunacak düzeltme |
+| --- | --- |
+| Toplu görev ve döngü (26.58) | 4 hesap × 2 döngüde önce 1→2→3→4 hesaplarının ilk turu yapılır. Ardından ortak aralık beklenir, kalan görevler aynı sırayla ikinci tura girer. İlk hesap tek başına beklemeye alınmaz. Son turdan sonra ek döngü beklemesi yoktur. |
+| Geri sayım (26.58) | “Sonraki döngüye N dakika M saniye kaldı” her saniye güncellenir. Ortak bekleme son hesabın turu bitince başlar; farklı aralıklarda kalan görevlerin en uzun aralığı kullanılır. Süre bitince kuyruk otomatik tetiklenir. |
+| Planlı bekleme ve kullanıcı kontrolü | WAITING_INTERVAL, 10 saniyelik hareketsizlik değildir. Manuel duraklatma/durdurma ve oturum değişikliği gecikmiş otomatik başlatmayı engeller. Duraklatılan döngü aynı bitiş zamanı üzerinden sürdürülür. |
+| Onaylı kaynak değiştirme (26.54/26.57) | Listede uygun aday biterse aynı onaylı listeden ziyaret edilmemiş başka profil denenir. Liste boşsa veya yalnız kendi hesap satırı varsa önceki kaynak profile dönülür; normal takipçilerinde ziyaret edilmiş ilk kişi dışlanarak ikinci, sonra üçüncü kişi ekran sırasıyla denenir. Eksik kota tamamlandı sayılmaz. |
+| Takip düğmeleri (26.53/26.56) | “Geri takip et” uygun takip eylemi olarak ele alınır. “İstek gönderildi/Beklemede” kalıcı duraksamaya yol açmamalıdır. Sonucu belirsiz bir eylem başarı sayılmaz veya körlemesine tekrar tıklanmaz. |
+| Yorumcu/retweetçi gezinmesi (26.52/26.53) | Gereksiz hedef profilden çıkıp tekrar açma azaltılmıştır. İç içe yorum, takip düğmesi bulunmayan profil ve mesaj gibi farklı düğmeler için geri dönüş akışı korunur. Medya atlama kararları ilgili satıra ait olmalıdır; komşu satırın görseli nedeniyle uygun kişi atlanmamalıdır. |
+| Yorum alıntısı (26.51) | Hedef gönderi doğrulanır, yorum metni doğru alanda yeniden okunur; gönderim tek kez yapılır. Belirsiz gönderim aynı yorumu yeniden yayımlamamalıdır. |
+| Cihaz ve hız (26.54/26.55) | Tabletin soldaki menüsü ve farklı ekran sınırları dikkate alınır. 7× hız seçeneği korunur; hız artırımı ekran/hesap/sonuç doğrulamasını kaldırmaz. Her cihazda kusursuz çalıştığı henüz fiziksel olarak doğrulanmış değildir. |
+
+## Son yama: 26.59 takibi bırak kurtarması
+
+Kullanıcının ekran görüntüsünde `@atmaca2025` hesabı, `@azizsisman_` için onay penceresi açılmayınca **16/20, döngü 2/2** durumunda PAUSED'a geçiyordu. PAUSED hareketsizlik denetimine girmediğinden Atmaca'ya dönüp yeniden tetikleme yapılmıyordu.
+
+Yama, bu özel durumda hemen PAUSED'a geçmek yerine sonucu okumaya devam eder. **Onay verilmemiş**, aynı kişi hâlâ **Takip ediliyor** halinde **en az 1 saniye kararlı** görülmüş ve denemeden itibaren **10 saniye geçmişse**, Atmaca'ya dönüş denenir ve X hesabı yeniden doğrulanarak aynı görev sürdürülür. Doğrulanmış 16/20 ilerleme, ikinci döngü, döngü başlangıç ilerlemesi ve işlenen/atlanan kişiler korunur. Sorunlu kişi tekrar işlenmez; yalnız uygulanmadığı kanıtlanan denemenin bütçesi geri verilir.
+
+Onay verilmiş, kişi satırı kaybolmuş, düğmeler çelişkili veya sonuç belirsizse bu kural ilave işlem üretmez. Manuel pause/stop veya farklı session, dönüş callback'ini iptal eder. Atmaca dönüşü doğrulanamazsa log doğru sonucu yazar; dönüş başarılıymış gibi gösterilmez.
+
+Davranış değişikliği **AutomationRuntime.kt** ve yeni **UnfollowRecoveryPolicy.kt** ile sınırlıdır; **UnfollowRecovery26_59Test.kt** içinde 10 regresyon eklendi. 26.58 tur/döngü ve diğer modüller yeniden yazılmadı.
+
+## Doğrulama, kalan işler ve teslim
+
+- 26.58: **472 test geçti**, lint 0 hata / 21 uyarı; APK ve paket kontrolü tamamlandı. Bu sonuç 26.59'un geçtiği anlamına gelmez.
+- 26.59: beklenen toplam **482 test / 10 yeni regresyon**. Başarılı CI sonucu ve yeni APK henüz yok. Yerelde `git diff --check` ve SQLite 5→6 kontrolü yapılmıştır. Yeni yamayla fiziksel X testi yapılmadı.
+- Öncelikli cihaz kontrolleri: 4 hesap/2 turda sıra ve sayaç; bekleme sonunda otomatik tetikleme; 16/20 takibi bırak takılmasında Atmaca dönüşü ve aynı ilerlemeden devam; manuel durdurmanın sonradan bozulmaması.
+- Sonraki kontroller: ilk hesap senkronizasyonu; “Geri takip et/Beklemede”; boş onaylı listeden ikinci/üçüncü takipçiye geçiş; tablet yan menüsü; iç içe yorumdan doğru listeye dönüş. Geçmiş kullanıcı sorunları kod düzeltmesi bulunduğu için cihazda kesin çözülmüş sayılmamalıdır.
+- Yeni çalışma: önce güncel kaynak ve gerçek hata kanıtını karşılaştır, yalnız ilgili alanı değiştir, anlamlı regresyonu çalıştır. Başarılı derlemede APK + kaynak/test/notlar içeren tam ZIP doğrulanıp teslim edilir.
+- Kalıcı imza sorunu açıktır: CI debug sertifikası sürümler arasında değişmiştir. Sertifika eşleşmeden “üzerine güncelleme olur” denmez; uygulamayı kaldırmak yerel kayıtları silebilir. Önceki özel anahtar mevcut değildir.
+- Releases yayın otomasyonu için AGENTS.md'deki otomatik onay reddi devam eder; taslak etkin değildir. Yayın izni ve gerçek yayın sonucu olmadan GitHub Releases teslimi tamamlandı denmez.
+
+## Önceki sürümlerin ayrıntılı uygulama kayıtları
+
+Aşağıdaki kayıtlar tarihseldir. Güncel uygulama özeti yukarıdadır; anlık derleme sonucu BUILD_STATUS.md üzerinden izlenir.
 
 ## 26.59 — yalnız açılmayan takibi bırak onayında kurtarma (5 Ekim 2026)
 

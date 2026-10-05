@@ -1,6 +1,6 @@
-## Son durum — 5 Ekim 2026, 22:24 (Türkiye)
+# Atmaca Next — güncel uygulama kaynağı 26.59
 
-26.59 kaynak düzeltmesi main'de; [37361516199](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37361516199) hâlâ **queued**. Build 111937007861 için yeniden çalıştırma gerçekten denendi; GitHub HTTP 403 “The workflow run containing this job is already running” yanıtıyla reddetti. Testler başlamadı; 482 test bekleniyor, başarılı sonuç henüz yok. Yeni APK/ZIP hazır değil. Önceki 26.58 sonucu ayrı tutulmalıdır. Ayrıntılı neden, korunan davranışlar ve devam adımları [DEVIR_NOTU.md](DEVIR_NOTU.md) başındadır. Bu kayıt yalnız dokümantasyondur; kaynak fec95b5b8dacd12f5ba0dc2745eb21121319d708 değişmedi.
+Uygulamanın mimarisi, toplu döngü sırası, geri sayım, son takibi bırak kurtarması ve kalan cihaz kontrolleri [uygulama devir notunda](DEVIR_NOTU.md) açıklanmıştır. Anlık APK/test durumu [BUILD_STATUS.md](BUILD_STATUS.md) içindedir. Son doğrulanmış APK 26.58; 26.59 kaynak yaması henüz başarılı derleme ile doğrulanmamıştır.
 
 ## 26.59 — yalnız açılmayan takibi bırak onayında kurtarma (5 Ekim 2026)
 

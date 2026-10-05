@@ -1,3 +1,9 @@
+## Güncel derleme kontrolü — 5 Ekim 2026, 22:35 (Türkiye)
+
+İlk deneme artık beklemiyor: koşu 37361516199 **failure**, build 111937007861 **cancelled** ile 22:25:47'de sonlandı. Adımlar ve log bağlantısı yok; artifact listesi boş. Kesin iptal nedeni alınamadı; bunu kaynak kodu/test hatası diye yorumlama. Yeniden çalıştırma çağrısı bu kez kabul edildi; aynı kaynak fec95b5 için yeni build işi **111945976775**, son kontrol **queued**. Yeni APK/test sonucu henüz yok. [Koşuyu aç](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37361516199).
+
+Devir notu uygulama mimarisi, korunan davranışlar, son yama ve açık cihaz kontrolleri olarak düzenlendi. Anlık CI kayıtlarının yeri bu dosyadır.
+
 ## Son durum — 5 Ekim 2026, 22:24 (Türkiye)
 
 26.59 kaynak düzeltmesi main'de; [37361516199](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37361516199) hâlâ **queued**. Build 111937007861 için yeniden çalıştırma gerçekten denendi; GitHub HTTP 403 “The workflow run containing this job is already running” yanıtıyla reddetti. Testler başlamadı; 482 test bekleniyor, başarılı sonuç henüz yok. Yeni APK/ZIP hazır değil. Önceki 26.58 sonucu ayrı tutulmalıdır. Ayrıntılı neden, korunan davranışlar ve devam adımları [DEVIR_NOTU.md](DEVIR_NOTU.md) başındadır. Bu kayıt yalnız dokümantasyondur; kaynak fec95b5b8dacd12f5ba0dc2745eb21121319d708 değişmedi.
