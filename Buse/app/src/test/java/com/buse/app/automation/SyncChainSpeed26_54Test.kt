@@ -231,20 +231,20 @@ class SyncChainSpeed26_54Test {
             }
         } finally { AutomationController.stop() }
     }
-    @Test fun upgradeEnablesSevenTimesSpeedIncludingPreviouslySavedSlowSettings() {
-        assertEquals(AutomationSpeedPreset.Timing(71, 257, 214), AutomationSpeedPreset.resolve(false, 500, 1800, 1500))
-        assertEquals(AutomationSpeedPreset.Timing(71, 257, 214), AutomationSpeedPreset.resolve(false, 15000, 15000, 60000))
+    @Test fun upgradeEnablesBuseTenfoldSpeedIncludingPreviouslySavedSlowSettings() {
+        assertEquals(AutomationSpeedPreset.Timing(7, 25, 21), AutomationSpeedPreset.resolve(false, 500, 1800, 1500))
+        assertEquals(AutomationSpeedPreset.Timing(7, 25, 21), AutomationSpeedPreset.resolve(false, 15000, 15000, 60000))
     }
     @Test fun laterManualTimingChoiceSurvivesAndRemainsBounded() {
         assertEquals(AutomationSpeedPreset.Timing(500, 1800, 1500), AutomationSpeedPreset.resolve(true, 500, 1800, 1500))
-        assertEquals(AutomationSpeedPreset.Timing(71, 100, 60000), AutomationSpeedPreset.resolve(true, 1, 1, 999999))
+        assertEquals(AutomationSpeedPreset.Timing(7, 25, 60000), AutomationSpeedPreset.resolve(true, 1, 1, 999999))
     }
-    @Test fun fastestPresetDividesUiDelaysBySevenExactlyOnce() {
+    @Test fun fastestBusePresetDividesUiDelaysBySeventyExactlyOnce() {
         val before = AutomationTuning.betweenActionsMs
         try {
-            AutomationTuning.betweenActionsMs = 71
-            assertEquals(100L, AutomationTuning.scaleDelay(700))
-            assertEquals(171L, AutomationTuning.scaleDelay(1200))
+            AutomationTuning.betweenActionsMs = 7
+            assertEquals(16L, AutomationTuning.scaleDelay(700))
+            assertEquals(17L, AutomationTuning.scaleDelay(1200))
             assertEquals(16L, AutomationTuning.scaleDelay(50))
             AutomationTuning.betweenActionsMs = 500
             assertEquals(700L, AutomationTuning.scaleDelay(700))

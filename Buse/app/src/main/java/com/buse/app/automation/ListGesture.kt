@@ -73,7 +73,7 @@ object ListGesture {
             path.startY,
             x,
             path.endY,
-            durationMs = 620L,
+            durationMs = 62L,
         )
     }
 
@@ -103,14 +103,14 @@ object ListGesture {
         startY: Float,
         endX: Float,
         endY: Float,
-        durationMs: Long = 420L,
+        durationMs: Long = 42L,
     ): Boolean {
         if (!ListGestureGeometry.Stroke(startX, startY, endX, endY).valid()) return false
         val path = Path().apply { moveTo(startX, startY); lineTo(endX, endY) }
         return dispatch(service, path, durationMs)
     }
 
-    private fun dispatch(service: AccessibilityService, path: Path, durationMs: Long = 420L): Boolean {
+    private fun dispatch(service: AccessibilityService, path: Path, durationMs: Long = 42L): Boolean {
         return try {
             val stroke = GestureDescription.StrokeDescription(path, 0L, durationMs)
             val completed = AtomicBoolean(false)

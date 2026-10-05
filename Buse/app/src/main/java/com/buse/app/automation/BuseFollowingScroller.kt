@@ -32,7 +32,7 @@ object BuseFollowingScroller {
             val path = Path().apply { moveTo(x, start); lineTo(x, end) }
             val completed = AtomicBoolean(false)
             val latch = CountDownLatch(1)
-            val accepted = service.dispatchGesture(GestureDescription.Builder().addStroke(GestureDescription.StrokeDescription(path, 0, 220)).build(),
+            val accepted = service.dispatchGesture(GestureDescription.Builder().addStroke(GestureDescription.StrokeDescription(path, 0, 22)).build(),
                 object : AccessibilityService.GestureResultCallback() {
                     override fun onCompleted(gestureDescription: GestureDescription?) { completed.set(true); latch.countDown() }
                     override fun onCancelled(gestureDescription: GestureDescription?) { latch.countDown() }

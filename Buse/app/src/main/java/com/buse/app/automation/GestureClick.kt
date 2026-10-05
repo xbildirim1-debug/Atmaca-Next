@@ -83,7 +83,7 @@ object GestureClick {
         if (!x.isFinite() || !y.isFinite() || x < 0f || y < 0f) return false
         val path = Path().apply { moveTo(x, y) }
         return try {
-            val stroke = GestureDescription.StrokeDescription(path, 0L, 60L)
+            val stroke = GestureDescription.StrokeDescription(path, 0L, 6L)
             val result = AtomicBoolean(false)
             val latch = CountDownLatch(1)
             val accepted = service.dispatchGesture(

@@ -1,3 +1,25 @@
+# Buse 1.1 — yalnız hız artışı
+
+2026-10-06T00:09:48.403417+03:00
+
+Kullanıcı Buse 1.0'da kaydırma/işlem hızını yavaş buldu, yalnız hızı 10× artırıp yeni APK istedi. Görev/hesap/200 kişi/etiket/sonuç algoritmaları değiştirilmedi. Pembe arayüzde yalnız hız etiketi güncellendi.
+
+220 ms Buse kaydırması 22 ms; 250 ms arası 25 ms; 200 ms iki satır okuması arası 20 ms. Normal listenin 420 ms hareketi 42 ms; 60 ms dokunuş 6 ms. Varsayılan işlem/hesap/kuyruk arası 71/257/214→7/25/21 ms. Genel nominal gecikme /7 yerine /70, ekran okuma tabanı 16 ms. Daha önce kaydedilmiş yavaş süreler yeni buse_timing_11_saved anahtarıyla bu hız ayarına geçer. Ayar sınırları yeni preset minimumlarını kabul eder. Liste başı/sonu kararlılığı 1,5 saniye, kimlik/onay/sonuç/deneme/rate-limit kuralları korunur. X yükleme/ağ ve cihaz süresi 10× ölçülmüş kabul edilmez.
+
+VersionCode 2, 1.1-fast10; aynı com.buse.mobile ve aynı Room/ayar dosyası. APK Buse 1.0 sertifikasıyla aynıdır ve Buse 1.0 üzerine güncellenebilir. Özel anahtar kaynağa/tam pakete eklenmez; mevcut özel 1.0 imza yedeği geçerlidir.
+
+524 test geçti; yeni preset için mevcut üç hız regresyonunun beklentileri güncellendi, 42 Buse kişi/etiket/sınır regresyonu korundu. Lint 0 hata/fatal, 15 uyarı/1 öneri. Artımlı BuseApp derleme önbelleği hatası temiz derlemeyle giderildi. APK imza/manifest/CRC doğrulandı. Fiziksel yeni APK/X denemesi yapılmadı.
+
+APK SHA256 365d9ec23242972fa3e6b4619ac2d65d764f8ac157cd2f2d149a563270190121
+Sertifika SHA256 9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5
+Temel GitHub Buse commit 968939024320e866936841b20fe02906f5981fd6
+Kaynak dal buse/1.1-fast10, klasör Buse/
+Atmaca main/dosyalar değiştirilmedi.
+
+---
+
+Önceki sürümün tarihsel kaydı:
+
 # Buse 1.0 devir notu
 
 Tamamlanma: 2026-10-05T23:50:39.711651+03:00

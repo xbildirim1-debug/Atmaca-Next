@@ -42,7 +42,7 @@ class SettingsStore(private val context: Context) {
         val betweenActionsMs = longPreferencesKey("between_actions_ms")
         val accountSwitchSettleMs = longPreferencesKey("account_switch_settle_ms")
         val betweenTasksMs = longPreferencesKey("between_tasks_ms")
-        val timingUpdated = booleanPreferencesKey("timing_2654_saved")
+        val timingUpdated = booleanPreferencesKey("buse_timing_11_saved")
         val continueAfterFailedTask = booleanPreferencesKey("continue_after_failed_task")
         val rateLimitCooldownMinutes = intPreferencesKey("rate_limit_cooldown_minutes")
         val minimumTweetAgeMinutes = intPreferencesKey("minimum_tweet_age_minutes")
@@ -93,8 +93,8 @@ class SettingsStore(private val context: Context) {
     suspend fun setAutomationTiming(betweenActionsMs: Long, accountSwitchSettleMs: Long, cooldownMinutes: Int, betweenTasksMs: Long = AutomationSpeedPreset.TASK_MS) {
         context.buseDataStore.edit { p ->
             p[Keys.betweenActionsMs] = betweenActionsMs.coerceIn(AutomationSpeedPreset.ACTION_MS, 15_000L)
-            p[Keys.accountSwitchSettleMs] = accountSwitchSettleMs.coerceIn(100L, 15_000L)
-            p[Keys.betweenTasksMs] = betweenTasksMs.coerceIn(100L, 60_000L)
+            p[Keys.accountSwitchSettleMs] = accountSwitchSettleMs.coerceIn(AutomationSpeedPreset.ACCOUNT_MS, 15_000L)
+            p[Keys.betweenTasksMs] = betweenTasksMs.coerceIn(AutomationSpeedPreset.TASK_MS, 60_000L)
             p[Keys.timingUpdated] = true
             p[Keys.rateLimitCooldownMinutes] = cooldownMinutes.coerceIn(5, 180)
         }

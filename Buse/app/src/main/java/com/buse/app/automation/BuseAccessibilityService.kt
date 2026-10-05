@@ -20,8 +20,8 @@ class BuseAccessibilityService : AccessibilityService() {
         const val X_PACKAGE = "com.twitter.android"
         private const val RELAUNCH_GAP_MS = 2_800L
         private const val OUTSIDE_SUPPRESS_MS = 3_500L
-        private const val EVENT_DEBOUNCE_MS = 220L
-        private const val POST_PROCESS_DELAY_MS = 80L
+        private const val EVENT_DEBOUNCE_MS = 22L
+        private const val POST_PROCESS_DELAY_MS = 8L
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())

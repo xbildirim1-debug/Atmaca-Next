@@ -11,12 +11,12 @@ object AutomationTuning {
 
     /**
      * The user's action interval is also the global runtime speed control.
-     * 500 ms preserves authored timings. The 71 ms preset divides UI delays by 7.
+     * 500 ms preserves authored timings. The 7 ms Buse preset divides UI delays by 70 (10x faster than 1.0).
      * Keep a small floor so Android can publish the next accessibility tree.
      */
     fun scaleDelay(nominalMs: Long): Long {
         val value = betweenActionsMs.coerceIn(AutomationSpeedPreset.ACTION_MS, 15_000L)
-        return if (value == AutomationSpeedPreset.ACTION_MS) (nominalMs / 7L).coerceIn(16L, 60_000L)
+        return if (value == AutomationSpeedPreset.ACTION_MS) (nominalMs / 70L).coerceIn(16L, 60_000L)
         else (nominalMs * value / 500L).coerceIn(60L, 60_000L)
     }
 }

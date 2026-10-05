@@ -1,0 +1,93 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:clean
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:processDebugNavigationResources
+> Task :app:parseDebugLocalResources
+> Task :app:generateDebugRFile
+> Task :app:javaPreCompileDebug
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:compileDebugNavigationResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:extractProguardFiles
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
+> Task :app:generateDebugGlobalSynthetics
+> Task :app:checkDebugDuplicateClasses
+> Task :app:desugarDebugFileDependencies
+> Task :app:kspDebugKotlin
+> Task :app:mergeExtDexDebug
+> Task :app:mergeLibDexDebug
+> Task :app:mergeDebugJniLibFolders
+> Task :app:mergeDebugNativeLibs
+
+> Task :app:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libdatastore_shared_counter.so. Run with --info option to learn more.
+
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+
+> Task :app:compileDebugKotlin
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/BuseFollowingInspector.kt:15:38 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/EngagementListEvidence.kt:45:62 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/ListViewportController.kt:64:32 Elvis operator (?:) always returns the left operand of non-nullable type 'AccessibilityNodeInfo'.
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/NodeSnapshot.kt:34:19 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/RelationshipTabInspector.kt:38:52 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/TweetAgeEvidence.kt:18:31 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/XTweetInspector.kt:300:51 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/XTweetInspector.kt:313:55 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/XTweetInspector.kt:314:50 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/XTweetInspector.kt:323:111 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/main/java/com/buse/app/automation/XUiActions.kt:352:68 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:processDebugJavaRes
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:generateDebugLintReportModel
+> Task :app:generateDebugUnitTestLintModel
+> Task :app:kspDebugUnitTestKotlin
+
+> Task :app:compileDebugUnitTestKotlin
+w: file:///workspace/scratch/248af96632bf/Buse/app/src/test/java/com/buse/app/automation/SyncChainSpeed26_54Test.kt:182:24 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'Array<(out) CapturedType(*)!>?'.
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+> Task :app:testDebugUnitTest
+> Task :app:lintAnalyzeDebugAndroidTest
+> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:mergeDebugJavaResource
+> Task :app:dexBuilderDebug
+> Task :app:mergeProjectDexDebug
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+> Task :app:lintAnalyzeDebug
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///workspace/scratch/248af96632bf/Buse/app/build/reports/lint-results-debug.html
+Wrote SARIF report to file:///workspace/scratch/248af96632bf/Buse/app/build/reports/lint-results-debug.sarif
+
+> Task :app:lintDebug
+
+BUILD SUCCESSFUL in 2m 5s
+56 actionable tasks: 56 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.5.0/userguide/configuration_cache_enabling.html

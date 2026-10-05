@@ -946,7 +946,7 @@ object AutomationController {
         }
         if (rows.isEmpty()) {
             if (stageTimedOut(now)) pause("Kişi satırları tam okunamadı; ilk 200 kişi korunarak görev duraklatıldı")
-            else service.requestAutomationTickExact(200L)
+            else service.requestAutomationTickExact(20L)
             return
         }
         val signature = rows.joinToString("|") { "${it.evidence.handle}:${it.bounds.top}:${it.bounds.bottom}" }
@@ -964,14 +964,14 @@ object AutomationController {
                 buseStableSince = now
                 buseViewport = ""
                 moveStage(XFlowStage.SEEK_UNFOLLOW_DEPTH, "Liste başı doğrulandı; ilk 200 farklı kişi atlanıyor")
-                service.requestAutomationTickExact(200L)
+                service.requestAutomationTickExact(20L)
                 return
             }
             if (!BuseFollowingScroller.scroll(service, root, rows, forward = false)) {
                 pause("Liste başına kaydırma tamamlanamadı; başlangıç sırası tahmin edilmedi")
                 return
             }
-            service.requestAutomationTickExact(250L)
+            service.requestAutomationTickExact(25L)
             return
         }
         if (!buseFollowingRun.observe(rows.map { it.evidence.handle })) {
@@ -998,11 +998,11 @@ object AutomationController {
                 buseProbeHandle = handle
                 buseProbeSignature = proof
                 buseProbeSince = now
-                service.requestAutomationTickExact(200L)
+                service.requestAutomationTickExact(20L)
                 return
             }
             // Read the same complete row twice; an absent badge during loading is not enough.
-            if (now - buseProbeSince < 200L) { service.requestAutomationTickExact(200L); return }
+            if (now - buseProbeSince < 20L) { service.requestAutomationTickExact(20L); return }
             val target = XUiActions.findRelationshipTarget(root, XUiVocabulary.followingActions,
                 excluded + rows.filter { it.evidence.handle != handle }.map { it.evidence.handle }, fromBottom = false)
             if (target?.handle != handle) {
@@ -1045,7 +1045,7 @@ object AutomationController {
             return
         }
         // Forward only: no reverse pass can touch the protected recent users.
-        service.requestAutomationTickExact(250L)
+        service.requestAutomationTickExact(25L)
     }
 
     private fun handleVerifiedFollow(service: BuseAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {

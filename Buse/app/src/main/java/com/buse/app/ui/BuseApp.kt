@@ -231,7 +231,7 @@ private fun BuseTasks(modifier: Modifier) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(Icons.Outlined.Bolt, null, tint = BusePink, modifier = Modifier.size(18.dp))
-                Text("En hızlı · 7× işlem ayarı", color = BusePink, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+                Text("En hızlı · 10× hız artışı", color = BusePink, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
             }
         }
         if (queue.isActive || runtime.taskId != null) item {

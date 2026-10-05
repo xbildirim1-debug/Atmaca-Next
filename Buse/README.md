@@ -1,11 +1,11 @@
-# Buse 1.0
+# Buse 1.1 — yalnız hız
 
 Pembe ağırlıklı, bağımsız Android uygulaması. Yalnız **Hesaplar** ve **Görevler** ekranları vardır.
 
 - **Takipten Çıkma:** Atmaca 26.59'un hesap doğrulama, onay ve sonuç doğrulama akışını kullanır.
 - **Takip Etmeyenleri Çıkma:** Kendi hesabının Takip ediliyor listesini baştan açar. İlk 200 farklı kullanıcı korunur. 201. kişiden daha aşağıya doğru devam eder. Kişinin kendi satırında “Seni takip ediyor” / “Follows you” varsa bırakır. Etiketi olmayan, tam ve aynı kimlikle iki kez okunmuş satırlardaki kişiler çıkarılır.
 - 200 kişi, kaydırma sayısı değildir. Kayan ekranlar örtüşür; aynı kullanıcı iki kez sayılmaz. Sıra kesilirse görev duraklar. Liste 200 kişiden kısaysa hiç kimse çıkarılmaz. Liste sonunda yeni kişilere dönülmez. Eksik/kırpılmış/belirsiz satırlar işlenmez.
-- En hızlı **7× işlem ayarı** varsayılandır. X ağ ve ekran yükleme süresi 7 kat hızlanmış sayılmaz. Kısa 220 ms kaydırma ve 200 ms satır tekrar okuması kullanılır; sonuç kanıtı kaldırılmaz.
+- Buse 1.0’a göre **10× hızlı süre ayarı** varsayılandır. Kaydırma 220→22 ms, kaydırma sonrası bekleme 250→25 ms ve satır tekrar okuması 200→20 ms. X ağ ve ekran yükleme süresine hız garantisi verilmez; kişi/onay/sonuç, 200 kişi sınırı ve liste ucu kanıtları korunur.
 - En fazla 10 X hesabı. Her tur için 1–35 kişi; tur sayısı ve turlar arası bekleme seçilebilir. Her iki görevde X’in işlem sınırları ve uygulamanın deneme/sonuç doğrulama koruması geçerlidir.
 
 ## Bağımsızlık
