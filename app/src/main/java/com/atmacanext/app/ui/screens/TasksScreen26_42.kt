@@ -103,7 +103,8 @@ fun TasksScreen26_42(modifier: Modifier = Modifier, initialGroup: String? = null
                             StatusPill(
                                 when (queue.status) {
                                     QueueStatus.PREPARING -> "Hazırlanıyor"
-                                    QueueStatus.BETWEEN_TASKS -> "Geçiş"
+                                    QueueStatus.WAITING_INTERVAL -> "Döngü bekleniyor"
+    QueueStatus.BETWEEN_TASKS -> "Geçiş"
                                     QueueStatus.PAUSED -> "Duraklatıldı"
                                     else -> "Çalışıyor"
                                 },

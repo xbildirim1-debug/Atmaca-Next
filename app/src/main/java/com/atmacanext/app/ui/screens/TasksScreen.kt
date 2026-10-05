@@ -1293,6 +1293,7 @@ private fun queueStatusLabel(status: QueueStatus): String = when (status) {
     QueueStatus.IDLE -> "Hazır"
     QueueStatus.PREPARING -> "Hazırlanıyor"
     QueueStatus.RUNNING -> "Çalışıyor"
+    QueueStatus.WAITING_INTERVAL -> "Döngü bekleniyor"
     QueueStatus.BETWEEN_TASKS -> "Sıradaki görev"
     QueueStatus.PAUSED -> "Duraklatıldı"
     QueueStatus.STOPPED -> "Durduruldu"

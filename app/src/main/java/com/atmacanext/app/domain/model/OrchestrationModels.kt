@@ -5,6 +5,7 @@ enum class QueueStatus {
     PREPARING,
     RUNNING,
     BETWEEN_TASKS,
+    WAITING_INTERVAL,
     PAUSED,
     COMPLETED,
     PARTIAL,
@@ -55,5 +56,5 @@ data class AutomationQueueState(
         get() = items.count { it.status in setOf(QueueItemStatus.PENDING, QueueItemStatus.PAUSED, QueueItemStatus.RUNNING) }
 
     val isActive: Boolean
-        get() = status in setOf(QueueStatus.PREPARING, QueueStatus.RUNNING, QueueStatus.BETWEEN_TASKS, QueueStatus.PAUSED)
+        get() = status in setOf(QueueStatus.PREPARING, QueueStatus.RUNNING, QueueStatus.BETWEEN_TASKS, QueueStatus.WAITING_INTERVAL, QueueStatus.PAUSED)
 }

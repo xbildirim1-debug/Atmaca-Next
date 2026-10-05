@@ -188,6 +188,7 @@ object AutomationController {
     private val depthHandles = LinkedHashSet<String>()
     private val unfollowBeforeAnchorHandles = LinkedHashSet<String>()
     private val sourceHandles = LinkedHashSet<String>()
+    private var queueOwnsCycleWait = false
     private var sourceHandle: String? = null
     private var exhaustedSourceHandle: String? = null
     private var parentSourceHandle: String? = null
@@ -222,6 +223,7 @@ object AutomationController {
         targets: List<String> = emptyList(),
         contents: List<String> = listOfNotNull(task.contentText),
         initialUnfollowReverts: Int = 0,
+        delegateCycleWait: Boolean = false,
     ): Boolean {
         val current = _state.value
         if (current.taskId != null && current.status !in terminalStatuses()) return false
@@ -233,6 +235,7 @@ object AutomationController {
         if (task.type == TaskType.IMAGE_TWEET && task.mediaUri.isNullOrBlank()) return false
 
         resetTransient(clearSession = true)
+        queueOwnsCycleWait = delegateCycleWait
         val session = UUID.randomUUID().toString()
         activeSessionToken = session
         activeTask = task
@@ -2078,11 +2081,13 @@ object AutomationController {
             flowStage = XFlowStage.WAIT_INTERVAL,
             message = "$reason. ${nextCycle + 1}/${current.repeatCount} döngü için ${current.intervalMinutes} dakika bekleniyor.",
         )
+        if (queueOwnsCycleWait) return // The batch runs the other accounts before its shared wait.
         service.launchAtmacaOnAutomationThread()
         service.requestAutomationTick(min(60_000L, current.intervalMinutes * 60_000L))
     }
 
     private fun handleIntervalWait(service: AtmacaAccessibilityService, now: Long) {
+        if (queueOwnsCycleWait) return
         val current = _state.value
         val until = current.cycleWaitUntil ?: now
         if (now < until) {

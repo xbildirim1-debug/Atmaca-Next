@@ -2,6 +2,7 @@ package com.atmacanext.app.automation
 
 import com.atmacanext.app.ai.GeminiContentService
 import com.atmacanext.app.data.repository.AtmacaRepository
+import com.atmacanext.app.domain.engine.BatchCyclePolicy
 import com.atmacanext.app.domain.engine.TaskQueuePlanner
 import com.atmacanext.app.domain.engine.QueueResultPolicy
 import com.atmacanext.app.domain.model.Account
@@ -42,6 +43,9 @@ class TaskOrchestrator(
     private var dailyFollowLimitPerAccount: Int = 35
     private var dailyUnfollowLimitPerAccount: Int = 35
     private var lastVerifiedAccountSession: String? = null
+    private val deferredCycleTasks = LinkedHashSet<String>()
+    private var roundIntervalMs = 0L
+    private var roundWaitUntil: Long? = null
 
     init {
         scope.launch { AutomationController.state.collect(::handleRuntime) }
@@ -112,6 +116,16 @@ class TaskOrchestrator(
             }
             val current = _state.value
             if (current.status != QueueStatus.PAUSED) return@launch
+            if (roundWaitUntil != null) {
+                mutate { it.copy(status = QueueStatus.WAITING_INTERVAL, message = "Toplu döngü beklemesi sürdürülüyor") }
+                scheduleRoundResume()
+                return@launch
+            }
+            if (current.currentItem?.taskId in deferredCycleTasks) {
+                mutate { it.copy(status = QueueStatus.BETWEEN_TASKS, message = "Diğer hesapların turu sürdürülüyor") }
+                scheduleAdvance(300L)
+                return@launch
+            }
             val runtime = AutomationController.state.value
             if (runtime.taskId == current.currentItem?.taskId && runtime.status == RuntimeStatus.PAUSED) {
                 mutate { state -> state.copy(status = QueueStatus.RUNNING, message = "Görev ve hesap yeniden doğrulanıyor") }
@@ -178,6 +192,9 @@ class TaskOrchestrator(
         transitionJob?.cancel()
         if (runtime.taskId != null) AutomationController.stop()
 
+        deferredCycleTasks.clear()
+        roundIntervalMs = 0L
+        roundWaitUntil = null
         val items = TaskQueuePlanner.build(accounts, tasks)
         if (items.isEmpty()) {
             mutate { AutomationQueueState(status = QueueStatus.IDLE, message = "Seçimde çalıştırılabilir aktif görev yok") }
@@ -259,6 +276,7 @@ class TaskOrchestrator(
             targets = targets,
             contents = contents,
             initialUnfollowReverts = account.unfollowRevertCount,
+            delegateCycleWait = true,
         )
         if (!started) failAndAdvance("Yeni görev motoru görevi kabul etmedi; alanları kontrol et")
     }
@@ -295,6 +313,23 @@ class TaskOrchestrator(
         }
 
         when (runtime.status) {
+            RuntimeStatus.WAITING -> {
+                if (runtime.flowStage != XFlowStage.WAIT_INTERVAL) return
+                if (!deferredCycleTasks.add(item.taskId)) return
+                repository.persistRuntime(runtime)
+                roundIntervalMs = maxOf(roundIntervalMs, runtime.intervalMinutes * 60_000L)
+                mutate { state -> state.copy(
+                    status = QueueStatus.BETWEEN_TASKS,
+                    items = state.items.mapIndexed { index, row ->
+                        if (index == state.currentIndex) row.copy(status = QueueItemStatus.PAUSED, note = "Tur tamamlandı; diğer hesaplar çalışacak") else row
+                    },
+                    message = "${item.username} turu tamamlandı; sıradaki hesap hazırlanıyor",
+                ) }
+                AutomationController.stop()
+                repository.log("INFO", "QUEUE_CYCLE_DONE", item.taskId, item.username,
+                    "Hesabın turu bitti; ortak beklemeden önce diğer hesaplara geçiliyor", "progress=${runtime.verifiedCount}/${runtime.limit}")
+                scheduleAdvance(betweenTasksMs)
+            }
             RuntimeStatus.COMPLETED -> {
                 if (item.status == QueueItemStatus.COMPLETED) return
                 // The independent StateFlow persistence observer can conflate this
@@ -360,12 +395,59 @@ class TaskOrchestrator(
         val next = TaskQueuePlanner.nextRunnableIndex(queue.items, queue.currentIndex)
         repository.log("INFO", "QUEUE_DECISION", queue.currentItem?.taskId, queue.currentItem?.username,
             "Sıradaki seçili görev değerlendirildi", "current=" + queue.currentIndex + "; next=" + next + "; items=" + queue.items.size)
-        if (next < 0) return finishQueue("Seçili görev kuyruğu tamamlandı")
+        if (next < 0) {
+            if (BatchCyclePolicy.nextRoundIndices(queue.items, deferredCycleTasks).isNotEmpty()) {
+                AutomationController.stop()
+                if (roundWaitUntil == null) roundWaitUntil = System.currentTimeMillis() + roundIntervalMs
+                mutate { it.copy(status = QueueStatus.WAITING_INTERVAL,
+                    message = "Tüm hesapların turu tamamlandı; sonraki tur için ${roundIntervalMs / 60_000L} dakika bekleniyor") }
+                repository.log("INFO", "QUEUE_CYCLE_WAIT", queue.currentItem?.taskId, queue.currentItem?.username,
+                    "Tüm seçili hesaplardan sonra ortak döngü beklemesi", "until=$roundWaitUntil")
+                AutomationController.returnToAtmaca()
+                scheduleRoundResume()
+                return
+            }
+            return finishQueue("Seçili görev kuyruğu tamamlandı")
+        }
         AutomationController.stop()
         val item = queue.items[next]
         repository.log("INFO", "QUEUE_HANDOFF", item.taskId, item.username, "Sıradaki görev X içinde başlatılıyor")
         mutate { state -> state.copy(status = QueueStatus.PREPARING, currentIndex = next, message = "Sıradaki: ${item.username} • ${item.taskType.title}") }
         launchCurrent()
+    }
+
+    private suspend fun scheduleRoundResume() {
+        val currentJob = currentCoroutineContext()[Job]
+        transitionJob?.takeIf { it != currentJob }?.cancel()
+        val session = _state.value.sessionId
+        val deadline = roundWaitUntil ?: return
+        transitionJob = scope.launch {
+            while (System.currentTimeMillis() < deadline) {
+                val stillWaiting = mutex.withLock {
+                    val current = _state.value
+                    if (current.sessionId != session || current.status != QueueStatus.WAITING_INTERVAL || roundWaitUntil != deadline) false
+                    else {
+                        // Display-only tick: do not write a database checkpoint every second.
+                        _state.value = current.copy(message = BatchCyclePolicy.remainingLabel(deadline, System.currentTimeMillis()))
+                        true
+                    }
+                }
+                if (!stillWaiting) return@launch
+                delay(minOf(1_000L, (deadline - System.currentTimeMillis()).coerceAtLeast(1L)))
+            }
+            val queue = _state.value
+            if (queue.sessionId != session || queue.status != QueueStatus.WAITING_INTERVAL || roundWaitUntil != deadline) return@launch
+            val indices = BatchCyclePolicy.nextRoundIndices(queue.items, deferredCycleTasks)
+            roundWaitUntil = null
+            roundIntervalMs = 0L
+            deferredCycleTasks.clear()
+            if (indices.isEmpty()) return@launch finishQueue("Seçili görev kuyruğu tamamlandı")
+            mutate { state -> state.copy(status = QueueStatus.PREPARING, currentIndex = indices.first(),
+                items = state.items.mapIndexed { index, row ->
+                    if (index in indices) row.copy(status = QueueItemStatus.PENDING, note = null) else row
+                }, message = "Yeni toplu tur başlıyor; ilk kalan hesap hazırlanıyor") }
+            launchCurrent()
+        }
     }
 
     private suspend fun skipAndAdvance(reason: String, skipAccount: Boolean = false) {
