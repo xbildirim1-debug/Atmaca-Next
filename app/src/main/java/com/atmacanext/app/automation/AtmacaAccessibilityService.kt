@@ -335,9 +335,9 @@ class AtmacaAccessibilityService : AccessibilityService() {
                 RuntimeStatus.IDLE, RuntimeStatus.COMPLETED, RuntimeStatus.FAILED))) return
         // A new rootInActiveWindow call alone may still return Android-cached
         // virtual descendants after X changes the relationship pager.
-        val key = if (AccountSyncController.isActive) AccountSyncController.recoveryKey() else runtime.sessionId.orEmpty()
-        if (key != readSessionKey) {
-            readSessionKey = key
+        val sessionReadKey = if (AccountSyncController.isActive) AccountSyncController.recoveryKey() else runtime.sessionId.orEmpty()
+        if (sessionReadKey != readSessionKey) {
+            readSessionKey = sessionReadKey
             missingFreshRootSince = 0L
             outsideReadSince = 0L
             snapshotRetries.recovered()
