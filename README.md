@@ -1,6 +1,8 @@
-# Atmaca Next — 26.54
+# Atmaca Next — 26.55
 
-26.54: hesap seçicisinde ilk hesap durması, ikinci hesapta kaydırma hatası ve onaylı liste sonu düzeltildi. Limit dolmazsa aynı listeden rastgele başka kaynak → takipçileri → Onaylı döngüsü sürer. Geçici ekran hataları aynı aşamadan yeniden okunur; ortak hareketsizlik denetimi tüm görevleri kapsar. Varsayılan 7× hız ve Ayarlar’da En hızlı · 7× seçeneği eklendi. CI/APK doğrulaması bekleniyor; ayrıntılar DEVIR_NOTU.md içinde.
+26.55: güncel 26.54 main korunarak sol/sağ/alt gezinme çubuğu canlı semantik ve sınırlarla bulunur. Tablet kaydırması içerik panelinde kalır; hesap seçici gerçek drawer paneline bağlanır. Önceki görev düzeltmeleri ve En hızlı · 7× korunur. Yeni test/lint/APK sonucu bekleniyor; fiziksel cihaz testi yapılmadı.
+
+26.54: hesap seçicisinde ilk hesap durması, ikinci hesapta kaydırma hatası ve onaylı liste sonu düzeltildi. Limit dolmazsa aynı listeden rastgele başka kaynak → takipçileri → Onaylı döngüsü sürer. Geçici ekran hataları aynı aşamadan yeniden okunur; ortak hareketsizlik denetimi tüm görevleri kapsar. Varsayılan 7× hız ve Ayarlar’da En hızlı · 7× seçeneği eklendi. CI 37303366905 başarılı; ayrıntılar DEVIR_NOTU.md içinde.
 
 
 26.53: tüm görevlerde önceki X ekranından hesap menüsüne sınırlı Back ile dönülür; sonraki hesap tam kimlikle doğrulanır. Açılan yorumun alt yanıtlarına girilmez; Takip et yoksa ana yorumlara dönüp sıradaki görünür yorumla devam edilir. Yeni takip isteği Beklemede olduğunda onay beklenmeden işlem sayılır.

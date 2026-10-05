@@ -29,6 +29,7 @@ internal object DiscoverySearchSelector {
      * The final fallback uses live bounds, never a fixed screen coordinate.
      */
     fun searchTab(nodes: List<NodeSnapshot>): Int? {
+        AdaptiveNavigationEvidence.searchIndex(nodes)?.let { return it }
         val visible = nodes.filter { it.visible && it.bounds.right > it.bounds.left && it.bounds.bottom > it.bounds.top }
         if (visible.isEmpty()) return null
         val screenBottom = visible.maxOf { it.bounds.bottom }

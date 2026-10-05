@@ -93,7 +93,8 @@ object ListGesture {
     private fun visibleViewport(service: AccessibilityService, root: AccessibilityNodeInfo): Rect? {
         val bounds = Rect().also(root::getBoundsInScreen)
         val display = service.resources.displayMetrics
-        return ListGestureGeometry.viewport(bounds, display.widthPixels, display.heightPixels)
+        val viewport = ListGestureGeometry.viewport(bounds, display.widthPixels, display.heightPixels) ?: return null
+        return AdaptiveNavigationEvidence.contentViewport(AccessibilityTree.snapshots(root), viewport)
     }
 
     private fun dispatchSwipe(

@@ -79,7 +79,7 @@ object GestureClick {
         return gestureTapAt(service, x, y)
     }
 
-    private fun gestureTapAt(service: AccessibilityService, x: Float, y: Float): Boolean {
+    internal fun gestureTapAt(service: AccessibilityService, x: Float, y: Float): Boolean {
         if (!x.isFinite() || !y.isFinite() || x < 0f || y < 0f) return false
         val path = Path().apply { moveTo(x, y) }
         return try {

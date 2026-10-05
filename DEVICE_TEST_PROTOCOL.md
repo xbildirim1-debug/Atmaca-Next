@@ -1,3 +1,13 @@
+## 26.55 telefon/tablet ve güncellik kabulü
+
+1. Ayarlar sürümü 26.55-adaptive-navigation olmalı; eski 26.54/26.53 APK ile karıştırılmamalı. X sürümü, cihaz modeli, yön ve ekran ölçeğini loga ekle.
+2. Görseldeki sol çubuk, sağ çubuk, telefon dip çubuğu ve yatay/split pencere: yorumcu/retweetçi hedef arama doğru Arama ikonunu açmalı; profil büyüteci yanlış global arama sayılmamalı.
+3. Tablet içerik kaydırması sol gezinme çubuğuna değil akışa denk gelmeli. Resim/GIF/video kaydırmayı tüketirse ikinci içerik şeridi denenmeli; hedef profilden gereksiz çıkış olmamalı.
+4. Dar tablet drawer panelinde hesabı tara/değiştir: arka plana yanlış dokunma olmadan seçici; ilk açık hesabın seçicisinden çıkış; tam kimlik/sayaç ve final Atmaca dönüşü. Beş hesapta ikinci iş10/15 sonrası kaynak zinciri devamı.
+5. En hızlı · 7× Kaydet, yeniden başlat; önceki yorum/no-follow/Beklemede/kuyruk ve pending işlem korumalarını tekrar dene. Belirsiz ikon veya çoklu adayda başka kontrole tahmini dokunma olmamalı.
+
+Fiziksel test henüz yapılmadı; görsel düzeni için kullanılan regresyon düğümleri sentetiktir.
+
 ## 26.54 kabul senaryoları
 
 1. X ilk açık hesabını değiştirmeden hesap taraması: seçici kendiliğinden kapanmalı, beş hesap ve sayaçları alınmalı, Atmaca dönüşü doğrulanmalı. Manuel müdahale gerekirse log ve Hata Raporu alınmalı.

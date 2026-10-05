@@ -121,7 +121,8 @@ object XNavigator {
 
     private fun clickTopLeftAvatar(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo): Boolean {
         if (ScreenDetector.detect(root) != XScreen.HOME) return false
-        val rootBounds = Rect().also(root::getBoundsInScreen)
+        val windowBounds = Rect().also(root::getBoundsInScreen)
+        val rootBounds = AdaptiveNavigationEvidence.contentViewport(AccessibilityTree.snapshots(root), windowBounds)
         if (rootBounds.width() <= 0 || rootBounds.height() <= 0) return false
         val topLimit = rootBounds.top + rootBounds.height() * 0.16f
         val leftLimit = rootBounds.left + rootBounds.width() * 0.22f
@@ -133,7 +134,7 @@ object XNavigator {
                     .joinToString(" ").lowercase(Locale.ROOT)
                 val avatarLike = clazz.contains("image") || clazz.contains("button") ||
                     listOf("avatar", "profil", "profile", "hesap", "account").any(blob::contains)
-                b.width() > 0 && b.height() > 0 && b.centerY() <= topLimit && b.centerX() <= leftLimit &&
+                b.width() > 0 && b.height() > 0 && b.centerY() <= topLimit && b.centerX() >= rootBounds.left && b.centerX() <= leftLimit &&
                     b.width() <= rootBounds.width()*0.22f && b.height() <= rootBounds.height()*0.13f &&
                     node.isVisibleToUser && node.isEnabled && avatarLike && !XUiVocabulary.forbiddenProfilePhrases.any(blob::contains)
             }
@@ -141,7 +142,9 @@ object XNavigator {
         for ((node,_) in candidates) if (GestureClick.click(service,node)) return true
         // X can expose the avatar as a non-semantic canvas node. A ratio-based fallback is safe
         // only after HOME is independently verified; the next snapshot must still prove DRAWER.
-        return GestureClick.tapAtRatio(service, root, xRatio = 0.075f, yRatio = 0.065f)
+        return GestureClick.gestureTapAt(service,
+            rootBounds.left + rootBounds.width() * 0.075f,
+            rootBounds.top + rootBounds.height() * 0.065f)
     }
 
     private fun clickAccountSheetTrigger(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
@@ -157,13 +160,14 @@ object XNavigator {
             return true
         }
         if (ScreenDetector.detect(root) != XScreen.ACCOUNT_DRAWER) return false
-        val rootBounds=Rect().also(root::getBoundsInScreen)
+        val rootBounds=accountDrawerBounds(root)
         if (rootBounds.width()<=0 || rootBounds.height()<=0) return false
         val candidates=AccessibilityTree.nodes(root,maxNodes=500).asSequence().map { it to Rect().also(it::getBoundsInScreen) }
             .filter { (node,b) ->
                 val blob=listOfNotNull(node.text?.toString(),node.contentDescription?.toString()).joinToString(" ").trim()
                 val clazz=node.className?.toString()?.lowercase(Locale.ROOT).orEmpty()
                 b.centerY()<=rootBounds.top+rootBounds.height()*0.20f && b.centerX()>=rootBounds.left+rootBounds.width()*0.60f &&
+                    b.left>=rootBounds.left && b.right<=rootBounds.right && node.isVisibleToUser &&
                     b.width()<=rootBounds.width()*0.25f && b.height()<=rootBounds.height()*0.15f && node.isEnabled &&
                     (blob.isBlank() || XUiVocabulary.accountSwitcherLabels.any { blob.contains(it,true) }) &&
                     (clazz.contains("image") || clazz.contains("button") || clazz.contains("view"))
@@ -179,12 +183,35 @@ object XNavigator {
         // Konum yedeği yalnızca bağımsız olarak ACCOUNT_DRAWER olduğu kanıtlanan
         // ekranda kullanılır; çağıran aşama bir sonraki snapshot'ta ACCOUNT_SWITCHER
         // kanıtı arar ve başka bir yüzeyi başarı saymaz.
-        if (GestureClick.tapAtRatio(service, root, xRatio = 0.795f, yRatio = 0.10f)) {
+        if (GestureClick.gestureTapAt(service, rootBounds.left + rootBounds.width() * 0.795f, rootBounds.top + rootBounds.height() * 0.10f)) {
             OperationLog.i("NAV", "account switcher uyarlanabilir STEP-2 bölgesiyle açıldı")
             return true
         }
         OperationLog.w("NAV", "account switcher açılamadı: semantik, avatar kümesi ve STEP-2 başarısız")
         return false
+    }
+
+    /** A tablet drawer can occupy only one pane; never tap the window backdrop. */
+    private fun accountDrawerBounds(root: AccessibilityNodeInfo): Rect {
+        val window = Rect().also(root::getBoundsInScreen)
+        val handle = AccessibilityTree.nodes(root, maxNodes = 600).firstOrNull { node ->
+            node.isVisibleToUser && listOfNotNull(node.text?.toString(), node.contentDescription?.toString())
+                .any { AccountSwitcherInspector.dedicatedHandle(it) != null }
+        } ?: return window
+        var ancestor: AccessibilityNodeInfo? = handle.parent
+        repeat(12) {
+            val candidate = ancestor ?: return window
+            val nodes = AccessibilityTree.snapshots(candidate, maxNodes = 650)
+            val labels = nodes.filter { it.visible }.flatMap { listOfNotNull(it.text, it.contentDescription) }
+                .map(XUiVocabulary::normalize)
+            val signals = XUiVocabulary.drawerSignals.count { signal -> labels.any { it == signal } }
+            val bounds = Rect().also(candidate::getBoundsInScreen)
+            if (signals >= 2 && bounds.width() > 0 && bounds.height() >= window.height() * .35f &&
+                bounds.left >= window.left && bounds.right <= window.right &&
+                bounds.top >= window.top && bounds.bottom <= window.bottom) return bounds
+            ancestor = candidate.parent
+        }
+        return window
     }
 
     private fun clickExactLabel(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, labels: Set<String>): Boolean {

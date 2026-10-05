@@ -1,3 +1,7 @@
+## 26.55 — yeni derleme bekleniyor
+
+Güncel temel b6297ce / 26.54; CI 37303366905 başarılı. Tablet sol/sağ/dip gezinmesi ve içerik paneli düzeltmesi; 18 yeni regresyon, beklenen toplam435. SQLite geçişi ve diff kontrolü geçti. Yeni CI sonucu, APK ve tam paket doğrulaması bekleniyor. Fiziksel cihaz testi yapılmadı.
+
 ## 26.54 — test/derleme bekleniyor
 
 Temel main 2a4976816cf22f26ab9d1acee9a1707b372c193c. Yerel diff ve SQLite geçiş kontrolü geçti. 33 yeni regresyon eklendi. Test/lint/APK gerçek CI sonucu henüz alınmadı. Fiziksel X testi yapılmadı. İmza ve Releases onay engeli devam eder.
