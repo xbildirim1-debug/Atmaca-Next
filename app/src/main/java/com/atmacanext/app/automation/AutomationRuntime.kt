@@ -190,6 +190,7 @@ object AutomationController {
     private val sourceHandles = LinkedHashSet<String>()
     private var sourceHandle: String? = null
     private var exhaustedSourceHandle: String? = null
+    private var parentSourceHandle: String? = null
     private var fallbackFollowersOpened = false
     private var unfollowProfileStatClickIssued = false
     private var unfollowAnchorPending = false
@@ -975,6 +976,7 @@ object AutomationController {
                     service.requestAutomationTick(500L)
                     return
                 }
+                if (parentSourceHandle == null) parentSourceHandle = own
                 sourceHandle = source
                 if (performStep(service, root, screen, "open_source_follower", source) { XUiActions.clickSourceProfile(service, root, source) }) {
                     moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "Followers listesinin en üstündeki @$source profili açılıyor")
@@ -985,9 +987,9 @@ object AutomationController {
                 if (fallbackFollowersOpened && screen == XScreen.FOLLOWERS_LIST) {
                     fallbackFollowersOpened = false
                     moveStage(XFlowStage.FIND_RECENT_FOLLOWER, "Kaynak takipçileri sırayla deneniyor; ziyaret edilenler atlanacak")
-                } else if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == exhaustedSourceHandle) {
+                } else if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == parentSourceHandle) {
                     if (XUiActions.clickProfileFollowers(service, root)) fallbackFollowersOpened = true
-                } else if (!fallbackFollowersOpened && screen in setOf(XScreen.FOLLOWERS_LIST, XScreen.VERIFIED_FOLLOWERS_LIST)) {
+                } else if (!fallbackFollowersOpened && screen in setOf(XScreen.PROFILE, XScreen.FOLLOWERS_LIST, XScreen.VERIFIED_FOLLOWERS_LIST)) {
                     if (!XUiActions.clickVisibleBack(service, root)) service.pressBack()
                 } else if (now - stageStartedAt >= 15_000L) {
                     return pause("Kaynak profilin takipçi listesine dönüş doğrulanamadı; ilerleme korundu")
@@ -1008,6 +1010,7 @@ object AutomationController {
                 val visible = VerifiedSourcePolicy.visible(nodes, own, sourceHandles, viewport)
                 val source = VerifiedSourcePolicy.choose(visible, verifiedSourceCandidates, own, sourceHandles)
                 if (source != null && source in visible && XUiActions.clickSourceProfile(service, root, source)) {
+                    parentSourceHandle = exhaustedSourceHandle ?: parentSourceHandle
                     sourceHandle = source
                     verifiedSourceCandidates.clear()
                     moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "Onaylı listedeki @$source adına dokunuldu; profil doğrulanıyor")
@@ -2528,6 +2531,7 @@ object AutomationController {
         unfollowFollowObservedAt = 0L
         sourceHandle = null
         exhaustedSourceHandle = null
+        parentSourceHandle = null
         fallbackFollowersOpened = false
     }
 
