@@ -5,8 +5,8 @@ Güncelleme: 5 Ekim 2026. Bu belge başka sohbet veya hesap üzerinden çalışm
 ## Güncel temel ve çalışma kuralı
 
 - Güncel kaynak sürümü **26.59-unfollow-recovery**, versionCode **107**, uygulama kimliği **com.atmacanext.v258**, Room şeması **6**; minSdk 26 / targetSdk 36. Kaynak yama commit'i: `fec95b5b8dacd12f5ba0dc2745eb21121319d708`.
-- En son doğrulanmış APK sürümü **26.58-batch-cycles**; kaynak `8af17d7a51e9565d5bf403bfde42698836c370ed`. 26.59 kaynakta hazırlanmıştır, henüz başarılı APK/test sonucu yoktur.
-- Kaynak ve testler GitHub **main** üzerindedir. Yerel çalışma dalı **fix/26.59-unfollow-recovery**. Devralırken önce uzak main'i doğrula: daha önce çalışma alanı eski 26.55 kopyasına dönmüştü. Eski kopyaya yeni düzeltmeleri yeniden uygulamak güncel özellikleri kaybettirebilir.
+- En son **CI doğrulanmış** APK **26.58-batch-cycles**; kaynak `8af17d7a51e9565d5bf403bfde42698836c370ed`. **26.59 yerelde doğrulandı:** 482 test / 10 yeni regresyon geçti, lint 0 hata / 16 uyarı, APK ve tam paket kontrolü başarılı. Test edilen kaynak `21f162ea33490dc3fd22584459605ab41f9c2f4d`; uygulama yaması aynı `fec95b5`. GitHub CI üç denemede çalıştırıcı atayamadı; yerel başarı CI başarısı değildir. Fiziksel X testi henüz yok. Yerel APK imzası 26.58 CI APK ile farklıdır. Kanıt ve teslim bilgileri [BUILD_STATUS.md](BUILD_STATUS.md) / [doğrulama özeti](validation/26.59-local/summary.json) içindedir.
+- Kaynak ve testler GitHub **main** üzerindedir. Son doğrulama güncel main'in ayrı klonunda **main** dalında yapıldı; önceki yama çalışma dalı **fix/26.59-unfollow-recovery** tarihsel kayıttır. Devralırken önce uzak main'i doğrula: daha önce çalışma alanı eski 26.55 kopyasına dönmüştü. Eski kopyaya yeni düzeltmeleri yeniden uygulamak güncel özellikleri kaybettirebilir.
 - Kullanıcı yalnız sorunlu alanın düzeltilmesini istiyor. Uygulamayı baştan yazma, çalışan modülleri gereksiz değiştirme; tablet, hız, hesap doğrulaması, işlem sayacı ve önceki düzeltmeleri koru.
 
 ## Uygulamanın yapısı ve görev akışları
@@ -50,7 +50,7 @@ Davranış değişikliği **AutomationRuntime.kt** ve yeni **UnfollowRecoveryPol
 ## Doğrulama, kalan işler ve teslim
 
 - 26.58: **472 test geçti**, lint 0 hata / 21 uyarı; APK ve paket kontrolü tamamlandı. Bu sonuç 26.59'un geçtiği anlamına gelmez.
-- 26.59: beklenen toplam **482 test / 10 yeni regresyon**. Başarılı CI sonucu ve yeni APK henüz yok. Yerelde `git diff --check` ve SQLite 5→6 kontrolü yapılmıştır. Yeni yamayla fiziksel X testi yapılmadı.
+- 26.59: **482 test / 10 yeni regresyon yerelde geçti**, 0 başarısız/hata/atlanan; lint 0 hata / 16 uyarı. Yerel APK/tam paket, imza/manifest/CRC/checksum ve SQLite 5→6 doğrulandı. GitHub CI çalıştırıcı atanamadığından başarısız; CI APK yok. Yerel APK ayrı Yerel-Test adıyla teslim edildi. Yeni yamayla fiziksel X testi yapılmadı.
 - Öncelikli cihaz kontrolleri: 4 hesap/2 turda sıra ve sayaç; bekleme sonunda otomatik tetikleme; 16/20 takibi bırak takılmasında Atmaca dönüşü ve aynı ilerlemeden devam; manuel durdurmanın sonradan bozulmaması.
 - Sonraki kontroller: ilk hesap senkronizasyonu; “Geri takip et/Beklemede”; boş onaylı listeden ikinci/üçüncü takipçiye geçiş; tablet yan menüsü; iç içe yorumdan doğru listeye dönüş. Geçmiş kullanıcı sorunları kod düzeltmesi bulunduğu için cihazda kesin çözülmüş sayılmamalıdır.
 - Yeni çalışma: önce güncel kaynak ve gerçek hata kanıtını karşılaştır, yalnız ilgili alanı değiştir, anlamlı regresyonu çalıştır. Başarılı derlemede APK + kaynak/test/notlar içeren tam ZIP doğrulanıp teslim edilir.

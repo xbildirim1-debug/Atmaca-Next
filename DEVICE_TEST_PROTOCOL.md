@@ -1,3 +1,14 @@
+## 26.59 takibi bırak kurtarması ve döngü kabulü
+
+Bu bölüm yeni 26.59 APK ile yapılacak fiziksel kontrollerdir; henüz yapılmadı. Birim test ve derleme sonucu cihaz doğrulaması yerine geçmez.
+
+1. Ayarlar sürümü `26.59-unfollow-recovery`, APK versionCode 107 olmalı. Kurulu APK ile imza eşleşmeden üzerine güncelleme varsayılmamalı; uygulamayı kaldırmak yerel kayıtları siler.
+2. Takibi bırak onayı açılmayan mevcut hata senaryosunda aynı kişi hâlâ Takip ediliyor olarak en az 1 saniye kararlı okunmalı. Denemeden itibaren 10 saniye sonra Atmaca dönüşü ve X hesabının yeniden doğrulanması görülmeli. `UNFOLLOW_RESTART` kaydı gerçek dönüş sonucunu yazmalı.
+3. Örnekteki 16/20 ilerleme ve 2/2 döngü korunmalı; görev ilk döngüye dönmemeli. Onayı açılmayan kişi yeniden işlenmemeli, başarısız deneme başarı sayılmamalı. Kalan uygun kişilerle aynı görev devam etmeli.
+4. Onay verilmiş, kişi satırı kaybolmuş veya Takip et/Takip ediliyor düğmeleri çelişkiliyse bu kurtarma ek işlem üretmemeli. Dönüş sırasında Duraklat/Durdur ve yeni oturum, eski callback'in görevi sonradan başlatmasını engellemeli.
+5. Dört hesap ve iki döngüde ilk tur 1→2→3→4 sırasıyla bitmeli. Ortak dakika/saniye geri sayımı son hesabın turundan sonra başlamalı; süre sonunda kalan görevler aynı sırayla otomatik başlamalı. Planlı bekleme 10 saniyelik hareketsizlik kurtarmasına girmemeli; son turdan sonra ek bekleme olmamalı.
+6. Telefon/tablet gezinmesi, hesap senkronizasyonu, Geri takip et/Beklemede, boş onaylı kaynakta ikinci/üçüncü takipçiye geçiş ve iç içe yorumdan dönüş için aşağıdaki önceki kabul senaryoları ayrıca doğrulanmalı. Cihaz/X sürümü ve Hata Raporu ZIP'i sonuçla birlikte saklanmalı.
+
 ## 26.56 dar kapsam kabulü
 
 1. Ayarlar sürümü26.56 olmalı. Onaylı listede Geri Takip Et kişisi seçilip Following/Requested sonucu doğrulanmalı; önceden Following/Requested tekrar seçilmemeli.

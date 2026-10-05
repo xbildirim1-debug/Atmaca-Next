@@ -1,6 +1,8 @@
 # Atmaca Next — güncel uygulama kaynağı 26.59
 
-Uygulamanın mimarisi, toplu döngü sırası, geri sayım, son takibi bırak kurtarması ve kalan cihaz kontrolleri [uygulama devir notunda](DEVIR_NOTU.md) açıklanmıştır. Anlık APK/test durumu [BUILD_STATUS.md](BUILD_STATUS.md) içindedir. Son doğrulanmış APK 26.58; 26.59 kaynak yaması henüz başarılı derleme ile doğrulanmamıştır.
+Uygulamanın mimarisi, toplu döngü sırası, geri sayım, son takibi bırak kurtarması ve kalan cihaz kontrolleri [uygulama devir notunda](DEVIR_NOTU.md) açıklanmıştır. Anlık APK/test durumu [BUILD_STATUS.md](BUILD_STATUS.md) içindedir. 26.59 yerelde doğrulandı: **482 test geçti**, lint 0 hata / 16 uyarı ve APK/tam paket kontrolü başarılı. GitHub CI çalıştırıcı atayamadı; son CI doğrulanmış APK 26.58. Yerel 26.59 APK imzası 26.58 CI APK ile farklıdır; uygulamayı kaldırmak kayıtları siler. Fiziksel X testi bekliyor. [Gerçek raporlar](validation/26.59-local/summary.json) / [cihaz kabul adımları](DEVICE_TEST_PROTOCOL.md).
+
+Aşağıdaki sürüm kayıtları önceki hazırlık aşamalarının tarihsel notlarıdır; güncel doğrulama yukarıda ve BUILD_STATUS.md içindedir.
 
 ## 26.59 — yalnız açılmayan takibi bırak onayında kurtarma (5 Ekim 2026)
 

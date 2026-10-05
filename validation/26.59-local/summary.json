@@ -1,0 +1,47 @@
+{
+  "version": "26.59-unfollow-recovery",
+  "version_code": 107,
+  "build_kind": "local",
+  "source_commit": "21f162ea33490dc3fd22584459605ab41f9c2f4d",
+  "application_patch_commit": "fec95b5b8dacd12f5ba0dc2745eb21121319d708",
+  "verified_at": "2026-10-05T23:10:12+03:00",
+  "source_code_unchanged": true,
+  "tests": {
+    "tests": 482,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "new_suite": {
+    "tests": 10,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Fatal": 0,
+    "Error": 0,
+    "Warning": 16,
+    "Information": 0
+  },
+  "migration": "PASS: both historical v5 layouts preserved",
+  "device_tested": false,
+  "signing_cert_sha256": "9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5",
+  "matches_26_58_certificate": false,
+  "apk": {
+    "filename": "AtmacaNext-26.59-Yerel-Test.apk",
+    "bytes": 20854528,
+    "sha256": "a48fa7c1967cc46f75c0f15af3d37e38c50eb4a2e670af8387928fdc299685cc"
+  },
+  "toolchain": {
+    "jdk": "Temurin 17.0.20.1+1",
+    "gradle": "9.5.0",
+    "sdk": "37.1",
+    "build_tools": "36.0.0"
+  },
+  "bundle": {
+    "filename": "AtmacaNext-26.59-Yerel-Test-TAM-PAKET.zip",
+    "bytes": 20776874,
+    "sha256": "447e8011089ac993a33f3c1a263ef901c6d186e8492f67a924c8f36a550898b8"
+  }
+}
