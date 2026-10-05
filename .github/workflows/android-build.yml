@@ -16,7 +16,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
+        with:
+          cmdline-tools-version: 15859902
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - name: Android SDK
         run: sdkmanager "platform-tools" "platforms;android-37.1" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4

@@ -9,3 +9,5 @@
 - Fiziksel X cihaz testi yapılmadı.
 - Workflow: .github/workflows/android-build.yml (contents:read).
 - Kalıcı release imzası ve Releases yayın yetkisi bu çalışmada değiştirilmedi.
+
+İlk 26.51 CI 37287905394 eski tools SDK paketi bulunamadığı için kurulum aşamasında durdu; testler çalışmadı. SDK action v4 ve 15859902 ile düzeltildi, yeni CI bekleniyor.
