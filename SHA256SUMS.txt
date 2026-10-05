@@ -1,1 +1,6 @@
-# 26.51 gerçek dosya özetleri başarılı CI sonucunda dist/SHA256SUMS.txt içinde üretilir.
+13871547313f28ce434689d3faeb2f18d3099a3617cc237d16453f15503cc51b  AtmacaNext-26.51.apk
+29028d9b3787a3c9205e3ffef23fdb956a783939dfc0eaf4a458888e5249357c  AtmacaNext-26.51-Kaynak.zip
+3f8fb7711537823a6b27947a46cc8ab8b212fc45509ba3f72e3685d394025544  AtmacaNext-26.51-Testler.zip
+327471eb9a2340834d1a55ceef18200e51ab9aced3cba77426c8290c536a969e  NOT_DEFTERI.txt
+3201404726ae820e66af3f79516c154dda0bd82c7f5703ce33ec695cd23e3a3e  manifest.xml
+a5bb6595aa23a83c855b7d1dfa96e8442a68d8d2b49144c5bf6c8f0075772f9d  AtmacaNext-26.51-TAM-PAKET.zip

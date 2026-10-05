@@ -1,13 +1,16 @@
 # Atmaca Next 26.51 derleme durumu
 
-- Temel kaynak: b9022ab0b02a268e9dd8a4ba1e0353dbcbe863dd (26.50).
-- versionCode: 99; versionName: 26.51-reply-flow-recovery.
-- applicationId: com.atmacanext.v258; minSdk: 26; targetSdk: 36; compileSdk: 37.1.
-- AGP: 9.3.2; Gradle: 9.5.0; JDK: 17; Room schema: 6.
-- 26.50 son main derlemesi başarısız: StatusLabel çakışması (CI 34571512499).
-- CI 37288168240 (8de43244bdb760aa12738448caec3773bc742b96): test/lint/assemble/imza/manifest/paketleme başarılı. Son veritabanı normalleştirmesi ve gerçek SQLite geçiş kontrolü için yeni CI bekleniyor.
-- Fiziksel X cihaz testi yapılmadı.
-- Workflow: .github/workflows/android-build.yml (contents:read).
-- Kalıcı release imzası ve Releases yayın yetkisi bu çalışmada değiştirilmedi.
-
-İlk 26.51 CI 37287905394 eski tools SDK paketi bulunamadığı için kurulum aşamasında durdu; testler çalışmadı. SDK action v4 ve 15859902 ile düzeltildi; sonraki CI başarılı oldu.
+- APK kaynak commit: 7df763bcbe58fc79878d391b641ebdcf757b11aa (main).
+- Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37289341028 .
+- versionCode99 / 26.51-reply-flow-recovery; applicationId com.atmacanext.v258; Room schema6.
+- minSdk26; targetSdk36; compileSdk37.1; AGP9.3.2; Gradle9.5.0; JDK17.
+- 334 test: 0 başarısız, 0 hata, 0 atlanan. 23 yeni Yorum Alıntısı regresyonu.
+- İki eski v5 tablo biçimiyle gerçek SQLite geçişi başarılı; hedef/görev ilerlemesi korundu.
+- Test/lint/assemble/APK imzası/manifest/paketleme başarılı. Lint: 0 hata, 0 fatal, 21 uyarı.
+- APK SHA256: 13871547313f28ce434689d3faeb2f18d3099a3617cc237d16453f15503cc51b.
+- Tam paket SHA256: a5bb6595aa23a83c855b7d1dfa96e8442a68d8d2b49144c5bf6c8f0075772f9d. İndirilen dosyaların CRC/hash ve APK eşitlik kontrolü başarılı.
+- 26.50 son main CI 34571512499 StatusLabel çakışmasıyla başarısızdı; düzeltildi.
+- İlk 26.51 CI 37287905394 eski tools SDK paketinde durdu; setup-android v4 ve 15859902 ile düzeltildi. CI 37288168240 ve son 37289341028 başarılıdır.
+- Fiziksel X cihaz testi yapılmadı. Debug imzasının önceki kurulumla uyumu doğrulanmadı.
+- Build workflow contents:read. Releases workflow taslağı hazır; AGENTS.md uyarınca contents:write etkinleştirme onayı bekler. Henüz kalıcı Releases yayını yapılmadı.
+- Devir/test/teslim ayrıntıları DEVIR_NOTU.md ve NOT_DEFTERI.txt içindedir.

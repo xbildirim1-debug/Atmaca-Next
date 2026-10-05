@@ -4,7 +4,7 @@ Yorum Alıntısı, hedef gönderiyi doğruladıktan sonra X'in ayrı yorum ekran
 
 Alıntı hedefleri ayrı kaydedilir. Limit her hedef içindir: 5 hedef × Limit 1 = 5 yorum. Seçili hesaplar tek grupta sırayla çalışır; kuyruk tamamlanınca Atmaca Next öne gelir.
 
-26.51 test ve APK sonuçları [DEVIR_NOTU.md](DEVIR_NOTU.md) ve paket içindeki NOT_DEFTERI.txt içinde tutulur. Yeni APK henüz fiziksel X cihazında doğrulanmadı.
+26.51 için [CI 37289341028](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37289341028) başarılı: 334 test, lint, APK imzası ve paketleme geçti. Test edilen APK kaynağı `7df763bcbe58fc79878d391b641ebdcf757b11aa`. Ayrıntılar [DEVIR_NOTU.md](DEVIR_NOTU.md), [BUILD_STATUS.md](BUILD_STATUS.md) ve paket içindeki NOT_DEFTERI.txt içinde tutulur. Yeni APK henüz fiziksel X cihazında doğrulanmadı; Releases yayını için depoda belirtilen workflow onayı bekleniyor.
 
 ## Geçmiş sürüm notları — 26.33
 

@@ -8,11 +8,17 @@ on:
     branches: [main]
     paths: [".github/workflows/archive-release.yml"]
   workflow_dispatch:
+    inputs:
+      run_id:
+        description: Basarili main APK derlemesinin run ID degeri
+        required: false
+        type: string
+        default: '37289341028'
 permissions:
   contents: write
   actions: read
 concurrency:
-  group: apk-archive-${{ github.event.workflow_run.id || '34111507110' }}
+  group: apk-archive-${{ github.event.workflow_run.id || inputs.run_id || '37289341028' }}
   cancel-in-progress: false
 jobs:
   archive:
@@ -28,5 +34,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          SOURCE_RUN_ID: ${{ github.event.workflow_run.id || '34111507110' }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id || '37289341028' }}
         run: python3 scripts/archive_release.py

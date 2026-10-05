@@ -20,7 +20,7 @@ run = json.loads(gh("api", f"repos/{repo}/actions/runs/{run_id}"))
 assert run["conclusion"] == "success", "Only successful builds may be published"
 assert run["head_repository"]["full_name"] == repo
 assert run["path"] == ".github/workflows/android-build.yml"
-assert run["head_branch"] == "main" or run_id == "34111507110"
+assert run["head_branch"] == "main"
 source = run["head_sha"]
 artifacts = json.loads(gh("api", f"repos/{repo}/actions/runs/{run_id}/artifacts"))["artifacts"]
 apk_artifact = next(a for a in artifacts if a["name"].startswith("AtmacaNext-") and a["name"].endswith("-APK"))
@@ -80,6 +80,10 @@ with tempfile.TemporaryDirectory() as temp:
     with zipfile.ZipFile(package, "w", zipfile.ZIP_DEFLATED) as archive:
         for path in assets + [checksum]:
             archive.write(path, path.name)
+    # The standalone sums include the completed ZIP; its inner sums cannot
+    # include a hash of their own containing archive.
+    with checksum.open("a", encoding="utf-8") as sums:
+        sums.write(f"{hashlib.sha256(package.read_bytes()).hexdigest()}  {package.name}\n")
     existing = subprocess.run(["gh", "release", "view", tag, "--json", "isDraft"], capture_output=True, text=True)
     if existing.returncode == 0 and not json.loads(existing.stdout)["isDraft"]:
         print(f"Release already published: {tag}")
