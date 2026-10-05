@@ -1,1 +1,6 @@
-# 26.53 teslim dosyalarının gerçek SHA256 değerleri başarılı CI ardından kaydedilecek.
+bf740883e9fb1000efbb66719b7f3e7ab4c5e3a6c0950289bd558c35d15d0e0c  AtmacaNext-26.53.apk
+29f82a2cb8e1946361eae8fb9168040c13fb22bd490eeeacbc34d31e0ef40f08  AtmacaNext-26.53-Kaynak.zip
+c9ed6be7df93438603f15534eb99ef9bf05d67ab914211e307966a0b683ba830  AtmacaNext-26.53-Testler.zip
+4bfd6a014dea1c6251dd3b4310eb308d26a9602a8e873edcb0a44a9847ac1ca7  NOT_DEFTERI.txt
+b5e894f4d8d60e9cccd6ba8a21b6893e46196bf205c7e29895d7aae031b34036  manifest.xml
+07530966f7697aa3557eb0b319428d443dc06269f7ad09a3663fb51f6a4b7cfd  AtmacaNext-26.53-TAM-PAKET.zip

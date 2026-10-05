@@ -2,7 +2,7 @@
 
 26.53: tüm görevlerde önceki X ekranından hesap menüsüne sınırlı Back ile dönülür; sonraki hesap tam kimlikle doğrulanır. Açılan yorumun alt yanıtlarına girilmez; Takip et yoksa ana yorumlara dönüp sıradaki görünür yorumla devam edilir. Yeni takip isteği Beklemede olduğunda onay beklenmeden işlem sayılır.
 
-26.53 derleme/teslim durumu [DEVIR_NOTU.md](DEVIR_NOTU.md) ve [BUILD_STATUS.md](BUILD_STATUS.md) içindedir. Yeni APK henüz fiziksel cihazda doğrulanmadı.
+26.53 için [CI 37299334945](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37299334945) başarılı: 384 test (32 yeni regresyon), lint, APK imzası ve paketleme geçti. APK kaynağı `bb7f9e4ffcf5071be632e6b5df0e827d8b6cf6f2`. Ayrıntılar [DEVIR_NOTU.md](DEVIR_NOTU.md) ve [BUILD_STATUS.md](BUILD_STATUS.md) içindedir. Yeni APK henüz fiziksel cihazda doğrulanmadı; Releases workflow onayı bekleniyor.
 
 26.52'den korunan davranış: yorumcu takipte yalnız o yorum satırına bağlı resim/GIF/video medya olarak atlanır. Görünür metin yorumları sırayla işlenir; belirsiz kimlik/tıklama sessiz atlama yerine ilerleme korunarak duraklar. Yorumcu ve retweetçi takip, hedef profile geri dönünce yeniden Geri/arama yapmadan aynı konumdan taramaya devam eder.
 

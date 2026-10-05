@@ -13,12 +13,12 @@ on:
         description: Basarili main APK derlemesinin run ID degeri
         required: false
         type: string
-        default: '37293523368'
+        default: '37299334945'
 permissions:
   contents: write
   actions: read
 concurrency:
-  group: apk-archive-${{ github.event.workflow_run.id || inputs.run_id || '37293523368' }}
+  group: apk-archive-${{ github.event.workflow_run.id || inputs.run_id || '37299334945' }}
   cancel-in-progress: false
 jobs:
   archive:
@@ -34,5 +34,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          SOURCE_RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id || '37293523368' }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id || '37299334945' }}
         run: python3 scripts/archive_release.py
