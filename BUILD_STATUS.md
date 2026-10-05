@@ -1,6 +1,6 @@
 ## 26.54 — test/derleme bekleniyor
 
-Temel main 2a4976816cf22f26ab9d1acee9a1707b372c193c. Yerel diff ve SQLite geçiş kontrolü geçti. 32 yeni regresyon eklendi. Test/lint/APK gerçek CI sonucu henüz alınmadı. Fiziksel X testi yapılmadı. İmza ve Releases onay engeli devam eder.
+Temel main 2a4976816cf22f26ab9d1acee9a1707b372c193c. Yerel diff ve SQLite geçiş kontrolü geçti. 33 yeni regresyon eklendi. Test/lint/APK gerçek CI sonucu henüz alınmadı. Fiziksel X testi yapılmadı. İmza ve Releases onay engeli devam eder.
 
 # Atmaca Next 26.53 derleme durumu
 

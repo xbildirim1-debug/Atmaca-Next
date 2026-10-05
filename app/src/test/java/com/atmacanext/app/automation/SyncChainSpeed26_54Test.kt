@@ -30,6 +30,14 @@ class SyncChainSpeed26_54Test {
         gate.clear()
         assertFalse(gate.wait(XScreen.ACCOUNT_DRAWER, 4050))
     }
+    @Test fun temporaryUnknownDuringDrawerAnimationDoesNotRearmTap() {
+        val gate = AccountNavigationGate()
+        gate.issued(XScreen.HOME, 1000)
+        assertTrue(gate.wait(XScreen.UNKNOWN, 1100))
+        assertTrue(gate.wait(XScreen.HOME, 1200))
+        assertFalse(gate.wait(XScreen.UNKNOWN, 2500))
+        assertFalse(gate.wait(XScreen.ACCOUNT_DRAWER, 2600))
+    }
     private fun field(name: String) = AutomationController.javaClass.getDeclaredField(name).apply { isAccessible = true }
     @Suppress("UNCHECKED_CAST") private fun putState(value: AutomationRuntimeState) {
         (field("_state").get(AutomationController) as MutableStateFlow<AutomationRuntimeState>).value = value

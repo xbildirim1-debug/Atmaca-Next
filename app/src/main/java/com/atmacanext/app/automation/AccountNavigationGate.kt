@@ -6,6 +6,7 @@ internal class AccountNavigationGate {
     private var issuedAt = 0L
     fun issued(screen: XScreen, now: Long) { issuedScreen = screen; issuedAt = now }
     fun wait(screen: XScreen, now: Long): Boolean {
+        if (screen == XScreen.UNKNOWN && issuedScreen != null) return issuedAt > 0L && now - issuedAt < 1_500L
         if (screen != issuedScreen) { clear(); return false }
         return issuedAt > 0L && now - issuedAt < 1_500L
     }

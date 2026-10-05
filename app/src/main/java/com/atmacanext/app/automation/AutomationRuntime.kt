@@ -2354,6 +2354,9 @@ object AutomationController {
             if (_state.value.taskType == TaskType.UNFOLLOW) {
                 nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(UNFOLLOW_SCROLL_SETTLE_MS))
             }
+            if (_state.value.taskType == TaskType.VERIFIED_FOLLOW) {
+                nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(900L).coerceAtLeast(180L))
+            }
         }
         if (changed) listEndStable = 0
         // dispatchGesture alt sınıra gelince de 'tamamlandı' dönebilir. Gerçek
@@ -2375,6 +2378,9 @@ object AutomationController {
             if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.scaleDelay(850L)
             if (_state.value.taskType == TaskType.UNFOLLOW) {
                 nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(UNFOLLOW_SCROLL_SETTLE_MS))
+            }
+            if (_state.value.taskType == TaskType.VERIFIED_FOLLOW) {
+                nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(900L).coerceAtLeast(180L))
             }
         }
         if (changed) listEndStable = 0
