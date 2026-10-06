@@ -130,5 +130,133 @@
   ],
   "update_compatible_apk_delivered": false,
   "signing_blocker": "Local execution workspace is unavailable. CI certificate differs from the local 26.59 key; no upgrade-compatible APK delivered.",
-  "github_releases_published": false
+  "github_releases_published": false,
+  "main_validation": {
+    "version": "26.60-nonfollowers-recovery",
+    "version_code": 108,
+    "application_id": "com.atmacanext.v258",
+    "build_kind": "github_ci",
+    "source_commit": "6aaa71ab25886a7e06c432c90203be9ca17b3490",
+    "device_tested": false,
+    "run_url": "https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37450117619",
+    "tests": {
+      "tests": 580,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "new_suites": {
+      "com.atmacanext.app.automation.NavigationRestart26_60Test": {
+        "tests": 23,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "com.atmacanext.app.automation.NonFollowerFollowingInspectorTest": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "com.atmacanext.app.automation.NonFollowerPolicyTest": {
+        "tests": 37,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "com.atmacanext.app.automation.NonFollowerScrollProgressTest": {
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "com.atmacanext.app.automation.NonFollowerTimingTest": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "com.atmacanext.app.automation.NonFollowerUnfollowCompletionTest": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "com.atmacanext.app.automation.NonFollowerViewportGateTest": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "com.atmacanext.app.domain.engine.NonFollowerBatch26_60Test": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "lint": {
+      "Fatal": 0,
+      "Error": 0,
+      "Warning": 21,
+      "Information": 0
+    },
+    "migration": "PASS: both historical v5 layouts preserved",
+    "signing_cert_sha256": "bbbe7bcb56a580e24221a3370cdb413bdc39e0c0fe64001099ac346579be541a",
+    "matches_26_59_local_certificate": false,
+    "apk": {
+      "filename": "AtmacaNext-26.60.apk",
+      "bytes": 20868832,
+      "sha256": "7dba9deba91cc4384ab3ae5ad0f39dff22cebb6ee7d86848b8c96decc2ea66d4",
+      "crc": "PASS"
+    },
+    "bundle": {
+      "bundle": "AtmacaNext-26.60-TAM-PAKET.zip",
+      "bytes": 20939631,
+      "sha256": "7e797daa7767cceb4372f96270b3bbc8a4127d9d5ccb0fc0f7dffc19e858dad4",
+      "crc": "PASS",
+      "same_apk": true,
+      "private_key_excluded": true
+    },
+    "artifacts": [
+      {
+        "id": 11406611706,
+        "name": "AtmacaNext-26.60-APK",
+        "size_in_bytes": 41774983,
+        "url": "https://api.github.com/repos/xbildirim1-debug/Atmaca-Next/actions/artifacts/11406611706",
+        "archive_download_url": "https://api.github.com/repos/xbildirim1-debug/Atmaca-Next/actions/artifacts/11406611706/zip",
+        "expired": false,
+        "created_at": "2026-10-06T10:33:45Z",
+        "expires_at": "2027-01-04T10:29:29Z",
+        "updated_at": "2026-10-06T10:33:45Z",
+        "digest": "sha256:5ced24064a65a47ab50d77becb403ae5b7e4f17daf332a83e75f078efc343ccc",
+        "workflow_run": {
+          "id": 37450117619,
+          "repository_id": 1359058397,
+          "head_repository_id": 1359058397,
+          "head_branch": "main",
+          "head_sha": "6aaa71ab25886a7e06c432c90203be9ca17b3490"
+        }
+      },
+      {
+        "id": 11406566759,
+        "name": "validation-reports",
+        "size_in_bytes": 224888,
+        "url": "https://api.github.com/repos/xbildirim1-debug/Atmaca-Next/actions/artifacts/11406566759",
+        "archive_download_url": "https://api.github.com/repos/xbildirim1-debug/Atmaca-Next/actions/artifacts/11406566759/zip",
+        "expired": false,
+        "created_at": "2026-10-06T10:33:46Z",
+        "expires_at": "2027-01-04T10:29:29Z",
+        "updated_at": "2026-10-06T10:33:46Z",
+        "digest": "sha256:155616043808df7d47384943d8929c521c1f4b1c0a748d7162b6d2ab1d164a5c",
+        "workflow_run": {
+          "id": 37450117619,
+          "repository_id": 1359058397,
+          "head_repository_id": 1359058397,
+          "head_branch": "main",
+          "head_sha": "6aaa71ab25886a7e06c432c90203be9ca17b3490"
+        }
+      }
+    ]
+  }
 }

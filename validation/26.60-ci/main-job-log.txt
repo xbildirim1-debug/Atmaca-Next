@@ -1,0 +1,650 @@
+﻿2026-10-06T10:29:32.5407022Z Current runner version: '2.337.0'
+2026-10-06T10:29:32.5444259Z ##[group]Runner Image Provisioner
+2026-10-06T10:29:32.5446004Z Hosted Compute Agent
+2026-10-06T10:29:32.5447122Z Version: 20260901.588
+2026-10-06T10:29:32.5448233Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-06T10:29:32.5449525Z Build Date: 2026-09-01T19:56:44Z
+2026-10-06T10:29:32.5450731Z Worker ID: {336bf5bc-0157-4270-bffa-7ee4c14218f1}
+2026-10-06T10:29:32.5452176Z Azure Region: eastus
+2026-10-06T10:29:32.5453476Z ##[endgroup]
+2026-10-06T10:29:32.5455852Z ##[group]Operating System
+2026-10-06T10:29:32.5457003Z Ubuntu
+2026-10-06T10:29:32.5457808Z 24.04.5
+2026-10-06T10:29:32.5458655Z LTS
+2026-10-06T10:29:32.5459617Z ##[endgroup]
+2026-10-06T10:29:32.5460536Z ##[group]Runner Image
+2026-10-06T10:29:32.5461596Z Image: ubuntu-24.04
+2026-10-06T10:29:32.5462573Z Version: 20260927.320.1
+2026-10-06T10:29:32.5464998Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-06T10:29:32.5467873Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+2026-10-06T10:29:32.5469586Z ##[endgroup]
+2026-10-06T10:29:32.5472100Z ##[group]GITHUB_TOKEN Permissions
+2026-10-06T10:29:32.5475762Z Contents: read
+2026-10-06T10:29:32.5476742Z Metadata: read
+2026-10-06T10:29:32.5477716Z ##[endgroup]
+2026-10-06T10:29:32.5480687Z Secret source: Actions
+2026-10-06T10:29:32.5482375Z Cache mode: write
+2026-10-06T10:29:32.5484302Z Prepare workflow directory
+2026-10-06T10:29:32.5955202Z Prepare all required actions
+2026-10-06T10:29:32.6003646Z Getting action download info
+2026-10-06T10:29:32.8466607Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-06T10:29:32.9461326Z Download action repository 'actions/setup-java@v4' (SHA:cf277c60eb25467037889841efdb72551f06f6c3)
+2026-10-06T10:29:33.1938576Z Download action repository 'android-actions/setup-android@v4' (SHA:be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd)
+2026-10-06T10:29:33.3149459Z Download action repository 'gradle/actions@v4' (SHA:ed408507eac070d1f99cc633dbcf757c94c7933a)
+2026-10-06T10:29:33.9055803Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-06T10:29:34.1853677Z Complete job name: build
+2026-10-06T10:29:34.2934415Z ##[group]Run actions/checkout@v4
+2026-10-06T10:29:34.2935861Z with:
+2026-10-06T10:29:34.2936767Z   repository: xbildirim1-debug/Atmaca-Next
+2026-10-06T10:29:34.2946333Z   token: ***
+2026-10-06T10:29:34.2947180Z   ssh-strict: true
+2026-10-06T10:29:34.2948041Z   ssh-user: git
+2026-10-06T10:29:34.2948914Z   persist-credentials: true
+2026-10-06T10:29:34.2949867Z   clean: true
+2026-10-06T10:29:34.2950752Z   sparse-checkout-cone-mode: true
+2026-10-06T10:29:34.2951786Z   fetch-depth: 1
+2026-10-06T10:29:34.2952643Z   fetch-tags: false
+2026-10-06T10:29:34.2953722Z   show-progress: true
+2026-10-06T10:29:34.2954618Z   lfs: false
+2026-10-06T10:29:34.2955434Z   submodules: false
+2026-10-06T10:29:34.2956355Z   set-safe-directory: true
+2026-10-06T10:29:34.2957363Z   allow-unsafe-pr-checkout: false
+2026-10-06T10:29:34.2958688Z ##[endgroup]
+2026-10-06T10:29:34.4019147Z Syncing repository: xbildirim1-debug/Atmaca-Next
+2026-10-06T10:29:34.4022735Z ##[group]Getting Git version info
+2026-10-06T10:29:34.4025183Z Working directory is '/home/runner/work/Atmaca-Next/Atmaca-Next'
+2026-10-06T10:29:34.4027241Z [command]/usr/bin/git version
+2026-10-06T10:29:34.4144178Z git version 2.55.0
+2026-10-06T10:29:34.4171068Z ##[endgroup]
+2026-10-06T10:29:34.4187038Z Temporarily overriding HOME='/home/runner/work/_temp/16bbe56d-4d87-4980-9c12-a7982f23f459' before making global git config changes
+2026-10-06T10:29:34.4190285Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-06T10:29:34.4194033Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Atmaca-Next/Atmaca-Next
+2026-10-06T10:29:34.4253751Z Deleting the contents of '/home/runner/work/Atmaca-Next/Atmaca-Next'
+2026-10-06T10:29:34.4261377Z ##[group]Initializing the repository
+2026-10-06T10:29:34.4264032Z [command]/usr/bin/git init /home/runner/work/Atmaca-Next/Atmaca-Next
+2026-10-06T10:29:34.4395913Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-06T10:29:34.4399378Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-06T10:29:34.4402544Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-06T10:29:34.4405310Z hint: call:
+2026-10-06T10:29:34.4407081Z hint:
+2026-10-06T10:29:34.4408823Z hint: 	git config --global init.defaultBranch <name>
+2026-10-06T10:29:34.4410911Z hint:
+2026-10-06T10:29:34.4412913Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-06T10:29:34.4416374Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-06T10:29:34.4418934Z hint:
+2026-10-06T10:29:34.4420314Z hint: 	git branch -m <name>
+2026-10-06T10:29:34.4421913Z hint:
+2026-10-06T10:29:34.4424754Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-06T10:29:34.4428396Z Initialized empty Git repository in /home/runner/work/Atmaca-Next/Atmaca-Next/.git/
+2026-10-06T10:29:34.4433344Z [command]/usr/bin/git remote add origin https://github.com/xbildirim1-debug/Atmaca-Next
+2026-10-06T10:29:34.4494939Z ##[endgroup]
+2026-10-06T10:29:34.4497551Z ##[group]Disabling automatic garbage collection
+2026-10-06T10:29:34.4499751Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-06T10:29:34.4544857Z ##[endgroup]
+2026-10-06T10:29:34.4547317Z ##[group]Setting up auth
+2026-10-06T10:29:34.4554106Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-06T10:29:34.4596339Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-06T10:29:34.5039285Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-06T10:29:34.5076916Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-06T10:29:34.5319701Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-06T10:29:34.5362742Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-06T10:29:34.5636657Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-06T10:29:34.5685595Z ##[endgroup]
+2026-10-06T10:29:34.5689215Z ##[group]Fetching the repository
+2026-10-06T10:29:34.5700935Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +6aaa71ab25886a7e06c432c90203be9ca17b3490:refs/remotes/origin/main
+2026-10-06T10:29:34.9577151Z From https://github.com/xbildirim1-debug/Atmaca-Next
+2026-10-06T10:29:34.9578908Z  * [new ref]         6aaa71ab25886a7e06c432c90203be9ca17b3490 -> origin/main
+2026-10-06T10:29:34.9597376Z ##[endgroup]
+2026-10-06T10:29:34.9598866Z ##[group]Determining the checkout info
+2026-10-06T10:29:34.9600405Z ##[endgroup]
+2026-10-06T10:29:34.9601688Z [command]/usr/bin/git sparse-checkout disable
+2026-10-06T10:29:34.9659254Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-06T10:29:34.9694070Z ##[group]Checking out the ref
+2026-10-06T10:29:34.9700332Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-10-06T10:29:34.9946747Z Switched to a new branch 'main'
+2026-10-06T10:29:34.9952917Z branch 'main' set up to track 'origin/main'.
+2026-10-06T10:29:34.9959466Z ##[endgroup]
+2026-10-06T10:29:35.0009547Z [command]/usr/bin/git log -1 --format=%H
+2026-10-06T10:29:35.0039805Z 6aaa71ab25886a7e06c432c90203be9ca17b3490
+2026-10-06T10:29:35.0391184Z ##[group]Run actions/setup-java@v4
+2026-10-06T10:29:35.0392262Z with:
+2026-10-06T10:29:35.0393005Z   distribution: temurin
+2026-10-06T10:29:35.0393972Z   java-version: 17
+2026-10-06T10:29:35.0394725Z   java-package: jdk
+2026-10-06T10:29:35.0395485Z   check-latest: false
+2026-10-06T10:29:35.0396253Z   server-id: github
+2026-10-06T10:29:35.0397029Z   server-username: GITHUB_ACTOR
+2026-10-06T10:29:35.0397849Z   server-password: GITHUB_TOKEN
+2026-10-06T10:29:35.0398669Z   overwrite-settings: true
+2026-10-06T10:29:35.0399456Z   job-status: success
+2026-10-06T10:29:35.0403308Z   token: ***
+2026-10-06T10:29:35.0404061Z ##[endgroup]
+2026-10-06T10:29:35.2186871Z ##[warning]setup-java v4 is deprecated and will no longer receive updates. Please migrate to actions/setup-java@v5.
+2026-10-06T10:29:35.2195779Z ##[group]Installed distributions
+2026-10-06T10:29:35.2239423Z Resolved Java 17.0.20+1 from tool-cache
+2026-10-06T10:29:35.2240392Z Setting Java 17.0.20+1 as the default
+2026-10-06T10:29:35.2252322Z (node:2303) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-06T10:29:35.2255172Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-06T10:29:35.2257157Z Creating toolchains.xml for JDK version 17 from temurin
+2026-10-06T10:29:35.2337922Z Writing to /home/runner/.m2/toolchains.xml
+2026-10-06T10:29:35.2338785Z 
+2026-10-06T10:29:35.2339438Z Java configuration:
+2026-10-06T10:29:35.2340574Z   Distribution: temurin
+2026-10-06T10:29:35.2341881Z   Version: 17.0.20+1
+2026-10-06T10:29:35.2343269Z   Path: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:29:35.2344382Z 
+2026-10-06T10:29:35.2345853Z ##[endgroup]
+2026-10-06T10:29:35.2361570Z Creating settings.xml with server-id: github
+2026-10-06T10:29:35.2396489Z Writing to /home/runner/.m2/settings.xml
+2026-10-06T10:29:35.2629659Z ##[group]Run android-actions/setup-android@v4
+2026-10-06T10:29:35.2630638Z with:
+2026-10-06T10:29:35.2631426Z   cmdline-tools-version: 15859902
+2026-10-06T10:29:35.2632313Z   packages: platform-tools
+2026-10-06T10:29:35.2633379Z   log-accepted-android-sdk-licenses: false
+2026-10-06T10:29:35.2634301Z   accept-android-sdk-licenses: true
+2026-10-06T10:29:35.2635124Z env:
+2026-10-06T10:29:35.2636012Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:29:35.2637363Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:29:35.2638363Z ##[endgroup]
+2026-10-06T10:29:35.3700335Z Found preinstalled sdkmanager in /usr/local/lib/android/sdk/cmdline-tools/latest with following source.properties:
+2026-10-06T10:29:35.3702780Z Pkg.Revision=12.0
+2026-10-06T10:29:35.3704586Z Pkg.Path=cmdline-tools;12.0
+2026-10-06T10:29:35.3706207Z Pkg.Desc=Android SDK Command-line Tools
+2026-10-06T10:29:35.3707198Z 
+2026-10-06T10:29:35.3708062Z Wrong version in preinstalled sdkmanager
+2026-10-06T10:29:35.3710212Z Downloading commandline tools from https://dl.google.com/android/repository/commandlinetools-linux-15859902_latest.zip
+2026-10-06T10:29:36.2499208Z [command]/usr/bin/unzip -o -q /home/runner/work/_temp/ec4b51bf-ccbe-4cab-8c08-ab820189c44f
+2026-10-06T10:29:37.0955628Z Accepting Android SDK licenses
+2026-10-06T10:29:40.3185290Z [command]/usr/local/lib/android/sdk/cmdline-tools/22.0/bin/sdkmanager platform-tools
+2026-10-06T10:29:40.4164985Z WARNING: The SDK Manager CLI tool (sdkmanager) is deprecated. Use Android CLI instead.
+2026-10-06T10:29:40.4178499Z The 'android' binary can also be found in the cmdline-tools directory, and 'android sdk' is the replacement for 'sdkmanager'.
+2026-10-06T10:29:40.4204815Z To learn more about the Android CLI and how to use it, see the documentation (https://d.android.com/tools/agents/android-cli)
+2026-10-06T10:29:40.4226906Z 
+2026-10-06T10:29:41.2315025Z Loading package information...                                                  
+2026-10-06T10:29:41.3227304Z Loading local repository...                                                     
+2026-10-06T10:29:41.3234881Z [                                       ] 3% Loading local repository...        
+2026-10-06T10:29:41.3336384Z [                                       ] 3% Fetch remote repository...         
+2026-10-06T10:29:41.7387171Z [=                                      ] 3% Fetch remote repository...         
+2026-10-06T10:29:41.8120217Z [=                                      ] 4% Fetch remote repository...         
+2026-10-06T10:29:41.8636604Z [=                                      ] 5% Fetch remote repository...         
+2026-10-06T10:29:41.9128631Z [==                                     ] 5% Fetch remote repository...         
+2026-10-06T10:29:41.9858883Z [==                                     ] 6% Fetch remote repository...         
+2026-10-06T10:29:42.0681018Z [==                                     ] 7% Fetch remote repository...         
+2026-10-06T10:29:42.0704138Z [==                                     ] 7% Computing updates...               
+2026-10-06T10:29:42.0842218Z [===                                    ] 8% Computing updates...               
+2026-10-06T10:29:42.0958036Z [===                                    ] 10% Computing updates...              
+2026-10-06T10:29:42.0961408Z [=======================================] 100% Computing updates...             
+2026-10-06T10:29:42.0962190Z 
+2026-10-06T10:29:42.1484920Z ##[group]Run sdkmanager "platform-tools" "platforms;android-37.1" "build-tools;36.0.0"
+2026-10-06T10:29:42.1485626Z [36;1msdkmanager "platform-tools" "platforms;android-37.1" "build-tools;36.0.0"[0m
+2026-10-06T10:29:42.1775925Z shell: /usr/bin/bash -e {0}
+2026-10-06T10:29:42.1776272Z env:
+2026-10-06T10:29:42.1776628Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:29:42.1777196Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:29:42.1777661Z   ANDROID_HOME: /usr/local/lib/android/sdk
+2026-10-06T10:29:42.1778002Z   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+2026-10-06T10:29:42.1778342Z ##[endgroup]
+2026-10-06T10:29:42.2882646Z WARNING: The SDK Manager CLI tool (sdkmanager) is deprecated. Use Android CLI instead.
+2026-10-06T10:29:42.2885098Z The 'android' binary can also be found in the cmdline-tools directory, and 'android sdk' is the replacement for 'sdkmanager'.
+2026-10-06T10:29:42.2887603Z To learn more about the Android CLI and how to use it, see the documentation (https://d.android.com/tools/agents/android-cli)
+2026-10-06T10:29:42.2889032Z 
+2026-10-06T10:29:43.1411953Z Loading package information...                                                  
+2026-10-06T10:29:43.2506424Z Loading local repository...                                                     
+2026-10-06T10:29:43.2534364Z [                                       ] 3% Loading local repository...        
+2026-10-06T10:29:43.2629221Z [                                       ] 3% Fetch remote repository...         
+2026-10-06T10:29:43.6751084Z [=                                      ] 3% Fetch remote repository...         
+2026-10-06T10:29:43.7548214Z [=                                      ] 4% Fetch remote repository...         
+2026-10-06T10:29:43.7934964Z [=                                      ] 5% Fetch remote repository...         
+2026-10-06T10:29:43.8380039Z [==                                     ] 5% Fetch remote repository...         
+2026-10-06T10:29:43.9278992Z [==                                     ] 6% Fetch remote repository...         
+2026-10-06T10:29:44.0107197Z [==                                     ] 7% Fetch remote repository...         
+2026-10-06T10:29:44.0138989Z [==                                     ] 7% Computing updates...               
+2026-10-06T10:29:44.0245348Z [===                                    ] 8% Computing updates...               
+2026-10-06T10:29:44.0315075Z [===                                    ] 10% Computing updates...              
+2026-10-06T10:29:44.0316672Z [=======================================] 100% Computing updates...             
+2026-10-06T10:29:44.0317415Z 
+2026-10-06T10:29:44.0855802Z ##[group]Run gradle/actions/setup-gradle@v4
+2026-10-06T10:29:44.0856122Z with:
+2026-10-06T10:29:44.0856323Z   gradle-version: 9.5.0
+2026-10-06T10:29:44.0856546Z   cache-disabled: false
+2026-10-06T10:29:44.0856770Z   cache-read-only: false
+2026-10-06T10:29:44.0857005Z   cache-write-only: false
+2026-10-06T10:29:44.0857257Z   cache-overwrite-existing: false
+2026-10-06T10:29:44.0857519Z   cache-cleanup: on-success
+2026-10-06T10:29:44.0857803Z   gradle-home-cache-includes: caches
+notifications
+
+2026-10-06T10:29:44.0858116Z   add-job-summary: always
+2026-10-06T10:29:44.0858377Z   add-job-summary-as-pr-comment: never
+2026-10-06T10:29:44.0858659Z   dependency-graph: disabled
+2026-10-06T10:29:44.0858970Z   dependency-graph-report-dir: dependency-graph-reports
+2026-10-06T10:29:44.0859333Z   dependency-graph-continue-on-failure: true
+2026-10-06T10:29:44.0859633Z   build-scan-publish: false
+2026-10-06T10:29:44.0859877Z   validate-wrappers: true
+2026-10-06T10:29:44.0860171Z   allow-snapshot-wrappers: false
+2026-10-06T10:29:44.0860454Z   gradle-home-cache-strict-match: false
+2026-10-06T10:29:44.0860733Z   workflow-job-context: null
+2026-10-06T10:29:44.0863670Z   github-token: ***
+2026-10-06T10:29:44.0863888Z env:
+2026-10-06T10:29:44.0864186Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:29:44.0864667Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:29:44.0865074Z   ANDROID_HOME: /usr/local/lib/android/sdk
+2026-10-06T10:29:44.0865366Z   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+2026-10-06T10:29:44.0865638Z ##[endgroup]
+2026-10-06T10:29:44.4356259Z Merged default JDK locations into /home/runner/.m2/toolchains.xml
+2026-10-06T10:29:44.4357574Z Preparing cache for cleanup.
+2026-10-06T10:29:44.4358895Z ##[group]Restore Gradle state from cache
+2026-10-06T10:29:44.5044553Z Cache hit for restore-key: gradle-home-v1|Linux-X64|build[f69f36acdb9bbf7ae2323b7b252233e2]-8af17d7a51e9565d5bf403bfde42698836c370ed
+2026-10-06T10:29:44.7360058Z Received 3882954 of 3882954 (100.0%), 21.2 MBs/sec
+2026-10-06T10:29:44.7362017Z Cache Size: ~4 MB (3882954 B)
+2026-10-06T10:29:44.7399968Z [command]/usr/bin/tar -xf /home/runner/work/_temp/2ad762eb-9d48-4ef8-92bd-b2282cc2a410/cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --use-compress-program unzstd
+2026-10-06T10:29:44.8690469Z Cache restored successfully
+2026-10-06T10:29:44.8698068Z Restored cache entry with key gradle-home-v1|Linux-X64|build[f69f36acdb9bbf7ae2323b7b252233e2]-6aaa71ab25886a7e06c432c90203be9ca17b3490 to /home/runner/.gradle/caches,/home/runner/.gradle/notifications,/home/runner/.gradle/.setup-gradle in 432ms
+2026-10-06T10:29:44.9380087Z Cache hit for: gradle-instrumented-jars-v1-b9063ba18e30dee0b78315f2314b8a13
+2026-10-06T10:29:44.9412996Z Cache hit for: gradle-transforms-v1-6150451e8ab94a3e061be9fa7aa8622c
+2026-10-06T10:29:44.9420630Z Cache hit for: gradle-dependencies-v1-f62e52c137a0103cf125ec3a22b30a21
+2026-10-06T10:29:44.9465262Z Cache hit for: gradle-generated-gradle-jars-v1-385d131625f54d4dab75422dfcb34a24
+2026-10-06T10:29:44.9530235Z Cache hit for: gradle-kotlin-dsl-v1-6ca630467b9e04acdd4ec12c00a682d5
+2026-10-06T10:29:44.9537839Z Cache hit for: gradle-groovy-dsl-v1-ce6566e1b0176ffeff6f6ebb479d5706
+2026-10-06T10:29:45.0817101Z Received 64663 of 64663 (100.0%), 0.6 MBs/sec
+2026-10-06T10:29:45.0817986Z Cache Size: ~0 MB (64663 B)
+2026-10-06T10:29:45.1529956Z Received 85519 of 85519 (100.0%), 0.6 MBs/sec
+2026-10-06T10:29:45.1530766Z Cache Size: ~0 MB (85519 B)
+2026-10-06T10:29:45.1946647Z Received 104888 of 104888 (100.0%), 0.8 MBs/sec
+2026-10-06T10:29:45.1947558Z Cache Size: ~0 MB (104888 B)
+2026-10-06T10:29:45.2262962Z [command]/usr/bin/tar -xf /home/runner/work/_temp/c096dbc6-ad80-45c1-8753-64d8db1cfd8e/cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --use-compress-program unzstd
+2026-10-06T10:29:45.2532933Z Cache restored successfully
+2026-10-06T10:29:45.2546107Z Restored cache entry with key gradle-instrumented-jars-v1-b9063ba18e30dee0b78315f2314b8a13 to /home/runner/.gradle/caches/jars-*/*/ in 383ms
+2026-10-06T10:29:45.3051611Z [command]/usr/bin/tar -xf /home/runner/work/_temp/8af3a932-56a8-492b-975b-90741b6f0d4e/cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --use-compress-program unzstd
+2026-10-06T10:29:45.3676162Z [command]/usr/bin/tar -xf /home/runner/work/_temp/02c7e1aa-badf-439f-bdd8-7a964a5bae15/cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --use-compress-program unzstd
+2026-10-06T10:29:45.3830713Z Cache restored successfully
+2026-10-06T10:29:45.4072289Z Restored cache entry with key gradle-kotlin-dsl-v1-6ca630467b9e04acdd4ec12c00a682d5 to /home/runner/.gradle/caches/*/kotlin-dsl/accessors/*/,/home/runner/.gradle/caches/*/kotlin-dsl/scripts/*/ in 535ms
+2026-10-06T10:29:45.4143679Z Cache restored successfully
+2026-10-06T10:29:45.4316389Z Restored cache entry with key gradle-groovy-dsl-v1-ce6566e1b0176ffeff6f6ebb479d5706 to /home/runner/.gradle/caches/*/groovy-dsl/*/ in 553ms
+2026-10-06T10:29:45.9483794Z Received 42071662 of 42071662 (100.0%), 44.8 MBs/sec
+2026-10-06T10:29:45.9486267Z Cache Size: ~40 MB (42071662 B)
+2026-10-06T10:29:45.9739202Z Received 117440512 of 450604778 (26.1%), 111.3 MBs/sec
+2026-10-06T10:29:46.0213447Z Received 92274688 of 200204869 (46.1%), 88.0 MBs/sec
+2026-10-06T10:29:46.0215650Z [command]/usr/bin/tar -xf /home/runner/work/_temp/1fa32758-99aa-4b81-bc41-6334b9916797/cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --use-compress-program unzstd
+2026-10-06T10:29:46.5477553Z Cache restored successfully
+2026-10-06T10:29:46.9037745Z Restored cache entry with key gradle-generated-gradle-jars-v1-385d131625f54d4dab75422dfcb34a24 to /home/runner/.gradle/caches/9.5.0/generated-gradle-jars/gradle-api-9.5.0.jar in 2033ms
+2026-10-06T10:29:46.9441209Z Received 200204869 of 200204869 (100.0%), 99.3 MBs/sec
+2026-10-06T10:29:46.9443912Z Cache Size: ~191 MB (200204869 B)
+2026-10-06T10:29:46.9785778Z Received 272629760 of 450604778 (60.5%), 129.3 MBs/sec
+2026-10-06T10:29:47.0459923Z [command]/usr/bin/tar -xf /home/runner/work/_temp/7293a547-ac1d-455c-9ed9-b7f3dbe611f1/cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --use-compress-program unzstd
+2026-10-06T10:29:47.6084616Z Received 450604778 of 450604778 (100.0%), 162.7 MBs/sec
+2026-10-06T10:29:47.6090643Z Cache Size: ~430 MB (450604778 B)
+2026-10-06T10:29:47.6125134Z [command]/usr/bin/tar -xf /home/runner/work/_temp/4339a1f0-9b59-420b-98f8-1f949d052569/cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --use-compress-program unzstd
+2026-10-06T10:29:48.7718451Z Cache restored successfully
+2026-10-06T10:29:49.0779453Z Restored cache entry with key gradle-dependencies-v1-f62e52c137a0103cf125ec3a22b30a21 to /home/runner/.gradle/caches/modules-*/files-*/*/*/*/* in 4207ms
+2026-10-06T10:29:49.6525509Z Cache restored successfully
+2026-10-06T10:29:49.6615778Z Restored cache entry with key gradle-transforms-v1-6150451e8ab94a3e061be9fa7aa8622c to /home/runner/.gradle/caches/transforms-4/*/,/home/runner/.gradle/caches/*/transforms/*/ in 4788ms
+2026-10-06T10:29:49.6828409Z ##[endgroup]
+2026-10-06T10:29:49.6917002Z ##[group]All Gradle Wrapper jars are valid
+2026-10-06T10:29:49.6917844Z 
+2026-10-06T10:29:49.6918313Z ##[endgroup]
+2026-10-06T10:29:49.7648456Z ##[group]Provision Gradle 9.5.0
+2026-10-06T10:30:01.6333830Z Cache hit for: gradle-9.5.0
+2026-10-06T10:30:02.2984726Z Received 140178608 of 140178608 (100.0%), 210.5 MBs/sec
+2026-10-06T10:30:02.3014000Z Cache Size: ~134 MB (140178608 B)
+2026-10-06T10:30:02.3098624Z [command]/usr/bin/tar -xf /home/runner/work/_temp/29eda078-483a-4781-abca-bd5fa6cdd440/cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --use-compress-program unzstd
+2026-10-06T10:30:02.5147202Z Cache restored successfully
+2026-10-06T10:30:02.5215150Z Restored Gradle distribution gradle-9.5.0 from cache to /home/runner/work/_temp/.gradle-actions/gradle-installations/downloads/gradle-9.5.0-bin.zip
+2026-10-06T10:30:02.5236432Z [command]/usr/bin/unzip -o -q /home/runner/work/_temp/.gradle-actions/gradle-installations/downloads/gradle-9.5.0-bin.zip
+2026-10-06T10:30:03.5402338Z Extracted Gradle 9.5.0 to /home/runner/work/_temp/.gradle-actions/gradle-installations/installs/gradle-9.5.0
+2026-10-06T10:30:03.5404986Z Provisioned Gradle executable /home/runner/work/_temp/.gradle-actions/gradle-installations/installs/gradle-9.5.0/bin/gradle
+2026-10-06T10:30:03.5406505Z ##[endgroup]
+2026-10-06T10:30:03.5599252Z ##[group]Run python3 scripts/verify_quote_migration.py
+2026-10-06T10:30:03.5599795Z [36;1mpython3 scripts/verify_quote_migration.py[0m
+2026-10-06T10:30:03.5600335Z [36;1mgradle --no-daemon testDebugUnitTest lintDebug :app:assembleDebug --stacktrace[0m
+2026-10-06T10:30:03.5666087Z shell: /usr/bin/bash -e {0}
+2026-10-06T10:30:03.5666402Z env:
+2026-10-06T10:30:03.5666767Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:30:03.5667339Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:30:03.5667816Z   ANDROID_HOME: /usr/local/lib/android/sdk
+2026-10-06T10:30:03.5668162Z   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+2026-10-06T10:30:03.5668548Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
+2026-10-06T10:30:03.5668904Z   GRADLE_USER_HOME: /home/runner/.gradle
+2026-10-06T10:30:03.5669246Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+2026-10-06T10:30:03.5669633Z   GRADLE_BUILD_ACTION_CACHE_RESTORED: true
+2026-10-06T10:30:03.5670134Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+2026-10-06T10:30:03.5670667Z   DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+2026-10-06T10:30:03.5671031Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+2026-10-06T10:30:03.5671351Z ##[endgroup]
+2026-10-06T10:30:03.6098946Z Quote migration: PASS (both v5 defaults, targets and task progress preserved)
+2026-10-06T10:30:04.2470845Z To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+2026-10-06T10:30:05.2465625Z Daemon will be stopped at the end of the build 
+2026-10-06T10:30:20.7474483Z > Task :app:preBuild UP-TO-DATE
+2026-10-06T10:30:20.7475550Z > Task :app:preDebugBuild UP-TO-DATE
+2026-10-06T10:30:20.8471576Z > Task :app:generateDebugBuildConfig
+2026-10-06T10:30:20.8490302Z > Task :app:generateDebugResources
+2026-10-06T10:30:21.0474507Z > Task :app:packageDebugResources
+2026-10-06T10:30:21.4459786Z > Task :app:processDebugNavigationResources
+2026-10-06T10:30:28.4460108Z > Task :app:parseDebugLocalResources
+2026-10-06T10:30:29.0460007Z > Task :app:generateDebugRFile
+2026-10-06T10:30:29.0494320Z > Task :app:javaPreCompileDebug
+2026-10-06T10:30:29.0554345Z > Task :app:mapDebugSourceSetPaths
+2026-10-06T10:30:29.1484726Z > Task :app:checkDebugAarMetadata
+2026-10-06T10:30:29.1528498Z > Task :app:compileDebugNavigationResources
+2026-10-06T10:30:30.4504677Z > Task :app:createDebugCompatibleScreenManifests
+2026-10-06T10:30:30.4534268Z > Task :app:extractDeepLinksDebug
+2026-10-06T10:30:30.8474713Z > Task :app:processDebugMainManifest
+2026-10-06T10:30:31.0515054Z > Task :app:processDebugManifest
+2026-10-06T10:30:31.3462750Z > Task :app:preDebugUnitTestBuild UP-TO-DATE
+2026-10-06T10:30:31.3474180Z > Task :app:processDebugManifestForPackage
+2026-10-06T10:30:31.3504415Z > Task :app:preDebugAndroidTestBuild SKIPPED
+2026-10-06T10:30:31.4466182Z > Task :app:extractProguardFiles
+2026-10-06T10:30:31.4491527Z > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+2026-10-06T10:30:31.4519873Z > Task :app:generateDebugAssets UP-TO-DATE
+2026-10-06T10:30:31.5491420Z > Task :app:javaPreCompileDebugUnitTest
+2026-10-06T10:30:31.5514383Z > Task :app:mergeDebugAssets
+2026-10-06T10:30:31.5544442Z > Task :app:compressDebugAssets
+2026-10-06T10:30:31.6484327Z > Task :app:mergeDebugResources
+2026-10-06T10:30:35.2467735Z > Task :app:generateDebugGlobalSynthetics
+2026-10-06T10:30:35.6464541Z > Task :app:desugarDebugFileDependencies
+2026-10-06T10:30:35.6465716Z > Task :app:mergeDebugJniLibFolders
+2026-10-06T10:30:35.7464473Z > Task :app:checkDebugDuplicateClasses
+2026-10-06T10:30:35.8479388Z > Task :app:processDebugResources
+2026-10-06T10:30:35.8517303Z > Task :app:mergeDebugNativeLibs
+2026-10-06T10:30:36.0492193Z > Task :app:mergeLibDexDebug
+2026-10-06T10:30:36.6459456Z > Task :app:stripDebugDebugSymbols
+2026-10-06T10:30:38.9465116Z > Task :app:validateSigningDebug
+2026-10-06T10:30:38.9483947Z > Task :app:writeDebugAppMetadata
+2026-10-06T10:30:38.9509136Z > Task :app:writeDebugSigningConfigVersions
+2026-10-06T10:30:49.9459066Z > Task :app:mergeExtDexDebug
+2026-10-06T10:30:50.5458727Z > Task :app:kspDebugKotlin
+2026-10-06T10:31:20.5484660Z > Task :app:compileDebugKotlin
+2026-10-06T10:31:34.2471729Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/automation/EngagementListEvidence.kt:45:62 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+2026-10-06T10:31:34.3476367Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/automation/ListViewportController.kt:64:32 Elvis operator (?:) always returns the left operand of non-nullable type 'AccessibilityNodeInfo'.
+2026-10-06T10:31:34.3529793Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/automation/NodeSnapshot.kt:34:19 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+2026-10-06T10:31:34.3545191Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/automation/RelationshipTabInspector.kt:38:52 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+2026-10-06T10:31:34.3595608Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/automation/TweetAgeEvidence.kt:18:31 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+2026-10-06T10:31:34.3625455Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/automation/XTweetInspector.kt:300:51 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+2026-10-06T10:31:34.3656366Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/automation/XTweetInspector.kt:313:55 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+2026-10-06T10:31:34.3685368Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/automation/XTweetInspector.kt:314:50 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+2026-10-06T10:31:34.3695480Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/automation/XTweetInspector.kt:323:111 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+2026-10-06T10:31:34.3765454Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/automation/XUiActions.kt:352:68 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+2026-10-06T10:31:34.3786330Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/ui/screens/AccountSettingsScreen.kt:32:73 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+2026-10-06T10:31:34.3808318Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/ui/screens/AccountSettingsScreen26_42.kt:69:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+2026-10-06T10:31:34.3818463Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/ui/screens/DashboardScreen.kt:183:43 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+2026-10-06T10:31:34.3855409Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/ui/screens/LogsScreen.kt:197:127 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+2026-10-06T10:31:34.3865221Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/ui/screens/TasksScreen.kt:1191:101 Unnecessary non-null assertion (!!) on a non-null receiver of type 'Int'.
+2026-10-06T10:31:34.3874800Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/main/java/com/atmacanext/app/ui/screens/TasksScreen.kt:1315:59 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+2026-10-06T10:31:38.3477214Z 
+2026-10-06T10:31:38.3533972Z > Task :app:compileDebugJavaWithJavac
+2026-10-06T10:31:38.5474372Z > Task :app:processDebugJavaRes
+2026-10-06T10:31:38.5504417Z > Task :app:bundleDebugClassesToRuntimeJar
+2026-10-06T10:31:38.5534077Z > Task :app:bundleDebugClassesToCompileJar
+2026-10-06T10:31:39.2460179Z > Task :app:generateDebugLintReportModel
+2026-10-06T10:31:39.8467299Z > Task :app:generateDebugAndroidTestLintModel
+2026-10-06T10:31:39.8495016Z > Task :app:generateDebugUnitTestLintModel
+2026-10-06T10:31:41.1459742Z > Task :app:kspDebugUnitTestKotlin
+2026-10-06T10:31:53.7463844Z 
+2026-10-06T10:31:53.7524288Z > Task :app:compileDebugUnitTestKotlin
+2026-10-06T10:31:53.7555973Z w: file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/src/test/java/com/atmacanext/app/automation/SyncChainSpeed26_54Test.kt:182:24 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'Array<(out) CapturedType(*)!>?'.
+2026-10-06T10:31:54.2463599Z 
+2026-10-06T10:31:54.2494693Z > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+2026-10-06T10:31:54.3484460Z > Task :app:processDebugUnitTestJavaRes
+2026-10-06T10:31:55.5459029Z > Task :app:lintAnalyzeDebugAndroidTest
+2026-10-06T10:31:59.6464621Z > Task :app:testDebugUnitTest
+2026-10-06T10:32:01.8484570Z > Task :app:mergeDebugJavaResource
+2026-10-06T10:32:09.8464370Z > Task :app:lintAnalyzeDebug
+2026-10-06T10:32:10.0474348Z > Task :app:lintAnalyzeDebugUnitTest
+2026-10-06T10:32:17.5514356Z > Task :app:dexBuilderDebug
+2026-10-06T10:32:18.4459032Z > Task :app:mergeProjectDexDebug
+2026-10-06T10:32:20.0484392Z > Task :app:packageDebug
+2026-10-06T10:32:20.1484693Z > Task :app:createDebugApkListingFileRedirect
+2026-10-06T10:32:20.1514095Z > Task :app:assembleDebug
+2026-10-06T10:33:39.8458234Z 
+2026-10-06T10:33:39.8469726Z > Task :app:lintReportDebug
+2026-10-06T10:33:39.8471468Z Wrote HTML report to file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/build/reports/lint-results-debug.html
+2026-10-06T10:33:39.8473698Z Wrote SARIF report to file:///home/runner/work/Atmaca-Next/Atmaca-Next/app/build/reports/lint-results-debug.sarif
+2026-10-06T10:33:39.9457687Z 
+2026-10-06T10:33:39.9458606Z > Task :app:lintDebug
+2026-10-06T10:33:39.9460222Z gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1791282607181.json
+2026-10-06T10:33:40.0483921Z 
+2026-10-06T10:33:40.0514446Z BUILD SUCCESSFUL in 3m 36s
+2026-10-06T10:33:40.0515646Z 55 actionable tasks: 55 executed
+2026-10-06T10:33:40.0544881Z Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.5.0/userguide/configuration_cache_enabling.html
+2026-10-06T10:33:40.4360147Z ##[group]Run set -euo pipefail
+2026-10-06T10:33:40.4360548Z [36;1mset -euo pipefail[0m
+2026-10-06T10:33:40.4360845Z [36;1mmkdir -p dist[0m
+2026-10-06T10:33:40.4361174Z [36;1mAPK=app/build/outputs/apk/debug/app-debug.apk[0m
+2026-10-06T10:33:40.4361752Z [36;1m"$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$APK" > dist/SIGNATURE.txt[0m
+2026-10-06T10:33:40.4362372Z [36;1mapkanalyzer manifest print "$APK" > dist/manifest.xml[0m
+2026-10-06T10:33:40.4363381Z [36;1mif rg -q 'android.permission.INTERNET|androidx.startup.InitializationProvider' dist/manifest.xml; then exit 1; fi[0m
+2026-10-06T10:33:40.4364063Z [36;1mcp "$APK" dist/AtmacaNext-26.60.apk[0m
+2026-10-06T10:33:40.4364535Z [36;1msha256sum dist/AtmacaNext-26.60.apk > dist/AtmacaNext-26.60.apk.sha256[0m
+2026-10-06T10:33:40.4365044Z [36;1mcp NOT_DEFTERI.txt dist/NOT_DEFTERI.txt[0m
+2026-10-06T10:33:40.4365430Z [36;1mpython3 scripts/package_build_notes.py[0m
+2026-10-06T10:33:40.4366020Z [36;1mpython3 scripts/verify_delivery.py[0m
+2026-10-06T10:33:40.4366474Z [36;1mgit archive --format=zip --output=dist/AtmacaNext-26.60-Kaynak.zip HEAD[0m
+2026-10-06T10:33:40.4367107Z [36;1m(cd dist && sha256sum *.apk *-Kaynak.zip *-Testler.zip *.txt manifest.xml *.json > SHA256SUMS.txt)[0m
+2026-10-06T10:33:40.4367841Z [36;1m(cd dist && zip AtmacaNext-26.60-TAM-PAKET.zip *.apk *.sha256 *.xml *.txt *.json *-Kaynak.zip *-Testler.zip)[0m
+2026-10-06T10:33:40.4368487Z [36;1m(cd dist && sha256sum AtmacaNext-26.60-TAM-PAKET.zip >> SHA256SUMS.txt)[0m
+2026-10-06T10:33:40.4369084Z [36;1mpython3 scripts/verify_delivery.py --bundle dist/AtmacaNext-26.60-TAM-PAKET.zip[0m
+2026-10-06T10:33:40.4434401Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-06T10:33:40.4434790Z env:
+2026-10-06T10:33:40.4435138Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:33:40.4435695Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:33:40.4436176Z   ANDROID_HOME: /usr/local/lib/android/sdk
+2026-10-06T10:33:40.4436523Z   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+2026-10-06T10:33:40.4436881Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
+2026-10-06T10:33:40.4437225Z   GRADLE_USER_HOME: /home/runner/.gradle
+2026-10-06T10:33:40.4437557Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+2026-10-06T10:33:40.4437885Z   GRADLE_BUILD_ACTION_CACHE_RESTORED: true
+2026-10-06T10:33:40.4438361Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+2026-10-06T10:33:40.4438891Z   DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+2026-10-06T10:33:40.4439249Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+2026-10-06T10:33:40.4439553Z ##[endgroup]
+2026-10-06T10:33:42.5058604Z /home/runner/work/_temp/221136d6-92ac-4520-bc60-17b4d1faa740.sh: line 6: rg: command not found
+2026-10-06T10:33:42.8699448Z BUILD_VERIFICATION={"version": "26.60-nonfollowers-recovery", "version_code": 108, "application_id": "com.atmacanext.v258", "build_kind": "github_ci", "source_commit": "6aaa71ab25886a7e06c432c90203be9ca17b3490", "device_tested": false, "run_url": "https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37450117619", "tests": {"tests": 580, "failures": 0, "errors": 0, "skipped": 0}, "new_suites": {"com.atmacanext.app.automation.NavigationRestart26_60Test": {"tests": 23, "failures": 0, "errors": 0, "skipped": 0}, "com.atmacanext.app.automation.NonFollowerFollowingInspectorTest": {"tests": 8, "failures": 0, "errors": 0, "skipped": 0}, "com.atmacanext.app.automation.NonFollowerPolicyTest": {"tests": 37, "failures": 0, "errors": 0, "skipped": 0}, "com.atmacanext.app.automation.NonFollowerScrollProgressTest": {"tests": 11, "failures": 0, "errors": 0, "skipped": 0}, "com.atmacanext.app.automation.NonFollowerTimingTest": {"tests": 2, "failures": 0, "errors": 0, "skipped": 0}, "com.atmacanext.app.automation.NonFollowerUnfollowCompletionTest": {"tests": 5, "failures": 0, "errors": 0, "skipped": 0}, "com.atmacanext.app.automation.NonFollowerViewportGateTest": {"tests": 8, "failures": 0, "errors": 0, "skipped": 0}, "com.atmacanext.app.domain.engine.NonFollowerBatch26_60Test": {"tests": 4, "failures": 0, "errors": 0, "skipped": 0}}, "lint": {"Fatal": 0, "Error": 0, "Warning": 21, "Information": 0}, "migration": "PASS: both historical v5 layouts preserved", "signing_cert_sha256": "bbbe7bcb56a580e24221a3370cdb413bdc39e0c0fe64001099ac346579be541a", "matches_26_59_local_certificate": false, "apk": {"filename": "AtmacaNext-26.60.apk", "bytes": 20868832, "sha256": "7dba9deba91cc4384ab3ae5ad0f39dff22cebb6ee7d86848b8c96decc2ea66d4", "crc": "PASS"}}
+2026-10-06T10:33:43.4920358Z   adding: AtmacaNext-26.60.apk (deflated 3%)
+2026-10-06T10:33:43.4921345Z   adding: AtmacaNext-26.60.apk.sha256 (deflated 9%)
+2026-10-06T10:33:43.4921923Z   adding: manifest.xml (deflated 75%)
+2026-10-06T10:33:43.4993707Z   adding: NOT_DEFTERI.txt (deflated 67%)
+2026-10-06T10:33:43.4994675Z   adding: SHA256SUMS.txt (deflated 34%)
+2026-10-06T10:33:43.4995769Z   adding: SIGNATURE.txt (deflated 38%)
+2026-10-06T10:33:43.4996457Z   adding: BUILD_VERIFICATION.json (deflated 67%)
+2026-10-06T10:33:43.5016151Z   adding: AtmacaNext-26.60-Kaynak.zip (stored 0%)
+2026-10-06T10:33:43.5018331Z   adding: AtmacaNext-26.60-Testler.zip (stored 0%)
+2026-10-06T10:33:43.6793996Z {"bundle": "AtmacaNext-26.60-TAM-PAKET.zip", "bytes": 20939631, "sha256": "7e797daa7767cceb4372f96270b3bbc8a4127d9d5ccb0fc0f7dffc19e858dad4", "crc": "PASS", "same_apk": true, "private_key_excluded": true}
+2026-10-06T10:33:43.6932278Z ##[group]Run actions/upload-artifact@v4
+2026-10-06T10:33:43.6932638Z with:
+2026-10-06T10:33:43.6932884Z   name: AtmacaNext-26.60-APK
+2026-10-06T10:33:43.6933458Z   path: dist/
+2026-10-06T10:33:43.6933707Z   if-no-files-found: error
+2026-10-06T10:33:43.6933986Z   compression-level: 6
+2026-10-06T10:33:43.6934239Z   overwrite: false
+2026-10-06T10:33:43.6934492Z   include-hidden-files: false
+2026-10-06T10:33:43.6934771Z env:
+2026-10-06T10:33:43.6935112Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:33:43.6935678Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:33:43.6936141Z   ANDROID_HOME: /usr/local/lib/android/sdk
+2026-10-06T10:33:43.6936492Z   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+2026-10-06T10:33:43.6936853Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
+2026-10-06T10:33:43.6937194Z   GRADLE_USER_HOME: /home/runner/.gradle
+2026-10-06T10:33:43.6937546Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+2026-10-06T10:33:43.6937886Z   GRADLE_BUILD_ACTION_CACHE_RESTORED: true
+2026-10-06T10:33:43.6938371Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+2026-10-06T10:33:43.6938902Z   DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+2026-10-06T10:33:43.6939260Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+2026-10-06T10:33:43.6939563Z ##[endgroup]
+2026-10-06T10:33:43.8645886Z (node:3183) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-06T10:33:43.8646781Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-06T10:33:43.8725740Z With the provided path, there will be 10 files uploaded
+2026-10-06T10:33:43.8729060Z Artifact name is valid!
+2026-10-06T10:33:43.8729995Z Root directory input is valid!
+2026-10-06T10:33:44.0679841Z Beginning upload of artifact content to blob storage
+2026-10-06T10:33:44.3541320Z (node:3183) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-06T10:33:44.5204469Z Uploaded bytes 8388608
+2026-10-06T10:33:44.7781653Z Uploaded bytes 16777216
+2026-10-06T10:33:45.0761524Z Uploaded bytes 25165824
+2026-10-06T10:33:45.3068634Z Uploaded bytes 33554432
+2026-10-06T10:33:45.5252919Z Uploaded bytes 41774983
+2026-10-06T10:33:45.5415632Z Finished uploading artifact content to blob storage!
+2026-10-06T10:33:45.5417368Z SHA256 digest of uploaded artifact zip is 5ced24064a65a47ab50d77becb403ae5b7e4f17daf332a83e75f078efc343ccc
+2026-10-06T10:33:45.5419030Z Finalizing artifact upload
+2026-10-06T10:33:45.7637432Z Artifact AtmacaNext-26.60-APK.zip successfully finalized. Artifact ID 11406611706
+2026-10-06T10:33:45.7639024Z Artifact AtmacaNext-26.60-APK has been successfully uploaded! Final size is 41774983 bytes. Artifact ID is 11406611706
+2026-10-06T10:33:45.7644066Z Artifact download URL: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37450117619/artifacts/11406611706
+2026-10-06T10:33:45.7825605Z ##[group]Run actions/upload-artifact@v4
+2026-10-06T10:33:45.7825962Z with:
+2026-10-06T10:33:45.7826211Z   name: validation-reports
+2026-10-06T10:33:45.7826552Z   path: app/build/reports/
+app/build/test-results/
+
+2026-10-06T10:33:45.7826918Z   if-no-files-found: warn
+2026-10-06T10:33:45.7827199Z   compression-level: 6
+2026-10-06T10:33:45.7827457Z   overwrite: false
+2026-10-06T10:33:45.7827711Z   include-hidden-files: false
+2026-10-06T10:33:45.7828265Z env:
+2026-10-06T10:33:45.7828604Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:33:45.7829141Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-06T10:33:45.7829597Z   ANDROID_HOME: /usr/local/lib/android/sdk
+2026-10-06T10:33:45.7829940Z   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+2026-10-06T10:33:45.7830311Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
+2026-10-06T10:33:45.7830656Z   GRADLE_USER_HOME: /home/runner/.gradle
+2026-10-06T10:33:45.7831011Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+2026-10-06T10:33:45.7831349Z   GRADLE_BUILD_ACTION_CACHE_RESTORED: true
+2026-10-06T10:33:45.7831828Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+2026-10-06T10:33:45.7832355Z   DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+2026-10-06T10:33:45.7832709Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+2026-10-06T10:33:45.7833019Z ##[endgroup]
+2026-10-06T10:33:45.9522998Z (node:3195) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-06T10:33:45.9524014Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-06T10:33:46.0286478Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-10-06T10:33:46.0290005Z The least common ancestor is /home/runner/work/Atmaca-Next/Atmaca-Next/app/build. This will be the root directory of the artifact
+2026-10-06T10:33:46.0291693Z With the provided path, there will be 158 files uploaded
+2026-10-06T10:33:46.0293345Z Artifact name is valid!
+2026-10-06T10:33:46.0294146Z Root directory input is valid!
+2026-10-06T10:33:46.2122161Z Beginning upload of artifact content to blob storage
+2026-10-06T10:33:46.3746918Z (node:3195) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-06T10:33:46.4254527Z Uploaded bytes 224888
+2026-10-06T10:33:46.4417264Z Finished uploading artifact content to blob storage!
+2026-10-06T10:33:46.4418812Z SHA256 digest of uploaded artifact zip is 155616043808df7d47384943d8929c521c1f4b1c0a748d7162b6d2ab1d164a5c
+2026-10-06T10:33:46.4420019Z Finalizing artifact upload
+2026-10-06T10:33:46.6602534Z Artifact validation-reports.zip successfully finalized. Artifact ID 11406566759
+2026-10-06T10:33:46.6604032Z Artifact validation-reports has been successfully uploaded! Final size is 224888 bytes. Artifact ID is 11406566759
+2026-10-06T10:33:46.6611021Z Artifact download URL: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37450117619/artifacts/11406566759
+2026-10-06T10:33:46.6844315Z Post job cleanup.
+2026-10-06T10:33:46.9308472Z In post-action step
+2026-10-06T10:33:46.9320858Z ##[group]Stopping Gradle daemons
+2026-10-06T10:33:46.9322143Z Stopping Gradle daemons for /home/runner/work/_temp/.gradle-actions/gradle-installations/installs/gradle-9.5.0
+2026-10-06T10:33:46.9339545Z [command]/home/runner/work/_temp/.gradle-actions/gradle-installations/installs/gradle-9.5.0/bin/gradle --stop
+2026-10-06T10:33:47.5978671Z No Gradle daemons are running.
+2026-10-06T10:33:47.6074345Z ##[endgroup]
+2026-10-06T10:33:47.6093388Z ##[group]Provision Gradle >= 9.5.0
+2026-10-06T10:33:48.1483890Z Gradle version 9.5.0 is available at /home/runner/work/_temp/.gradle-actions/gradle-installations/installs/gradle-9.5.0/bin/gradle and >= 9.5.0. Not installing.
+2026-10-06T10:33:48.1485108Z ##[endgroup]
+2026-10-06T10:33:48.1487387Z ##[group]Executing Gradle to clean up caches
+2026-10-06T10:33:48.1488205Z Cleaning up caches last used before 1791282584435
+2026-10-06T10:33:48.1491287Z [command]/home/runner/work/_temp/.gradle-actions/gradle-installations/installs/gradle-9.5.0/bin/gradle -g /home/runner/.gradle -I init.gradle --info --no-daemon --no-scan --build-cache -DGITHUB_DEPENDENCY_GRAPH_ENABLED=false -DGRADLE_ACTIONS_SKIP_BUILD_RESULT_CAPTURE=true noop
+2026-10-06T10:33:48.5778532Z Initialized native services in: /home/runner/.gradle/native
+2026-10-06T10:33:48.5816661Z Initialized jansi services in: /home/runner/.gradle/native
+2026-10-06T10:33:48.7085168Z The current JVM process isn't compatible with build requirement. The maximum heap size is insufficient.
+2026-10-06T10:33:48.7114022Z 
+2026-10-06T10:33:48.8118962Z To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+2026-10-06T10:33:48.8155042Z Starting process 'Gradle build daemon'. Working directory: /home/runner/.gradle/daemon/9.5.0 Command: /usr/lib/jvm/temurin-17-jdk-amd64/bin/java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED --add-opens=java.base/java.time=ALL-UNNAMED -XX:MaxMetaspaceSize=384m -XX:+HeapDumpOnOutOfMemoryError -Xms256m -Xmx512m -Dfile.encoding=UTF-8 -Duser.country -Duser.language=en -Duser.variant -cp /home/runner/work/_temp/.gradle-actions/gradle-installations/installs/gradle-9.5.0/lib/gradle-daemon-main-9.5.0.jar -javaagent:/home/runner/work/_temp/.gradle-actions/gradle-installations/installs/gradle-9.5.0/lib/agents/gradle-instrumentation-agent-9.5.0.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 9.5.0
+2026-10-06T10:33:48.8184262Z Successfully started process 'Gradle build daemon'
+2026-10-06T10:33:49.7073550Z An attempt to start the daemon took 0.856 secs.
+2026-10-06T10:33:49.7091913Z The client will now receive all logging from the daemon (pid: 3326). The daemon log file: /home/runner/.gradle/daemon/9.5.0/daemon-3326.out.log
+2026-10-06T10:33:49.7093819Z Daemon will be stopped at the end of the build 
+2026-10-06T10:33:50.1084458Z Using 4 worker leases.
+2026-10-06T10:33:50.1118654Z Operational build model parameters: {cachingModelBuilding=false, configurationCache=false, configurationCacheDisabledReason=null, configurationCacheParallelLoad=false, configurationCacheParallelStore=false, configureOnDemand=false, invalidateCoupledProjects=false, isolatedProjects=false, modelAsProjectDependency=false, modelBuilding=false, parallelModelBuilding=false, parallelProjectConfiguration=false, parallelProjectExecution=false, resilientModelBuilding=false}
+2026-10-06T10:33:50.4107152Z Received JVM installation metadata from '/usr/lib/jvm/temurin-17-jdk-amd64': {JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64, JAVA_VERSION=17.0.20.1, JAVA_VENDOR=Eclipse Adoptium, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=17.0.20.1+1, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.20.1+1, VM_VENDOR=Eclipse Adoptium, OS_ARCH=amd64}
+2026-10-06T10:33:50.7081775Z Watching the file system is configured to be enabled if available
+2026-10-06T10:33:50.7084323Z Now considering [/home/runner/work/_temp/dummy-cleanup-project] as hierarchies to watch
+2026-10-06T10:33:50.7085966Z File system watching is active
+2026-10-06T10:33:51.1092505Z Caching disabled for Groovy DSL script compilation (cp_init) because:
+2026-10-06T10:33:51.1094130Z   Build cache is disabled
+2026-10-06T10:33:51.1109912Z   Not worth caching.
+2026-10-06T10:33:51.1111541Z Compiling initialization script '/home/runner/work/_temp/dummy-cleanup-project/init.gradle' using SubsetScriptTransformer.
+2026-10-06T10:33:51.8084335Z Caching disabled for Groovy DSL script compilation (init) because:
+2026-10-06T10:33:51.8085423Z   Build cache is disabled
+2026-10-06T10:33:51.8086137Z   Not worth caching.
+2026-10-06T10:33:51.8087549Z Compiling initialization script '/home/runner/work/_temp/dummy-cleanup-project/init.gradle' using BuildScriptTransformer.
+2026-10-06T10:33:52.5090293Z gradle/actions: Not capturing build results
+2026-10-06T10:33:52.7072301Z Starting Build
+2026-10-06T10:33:52.7084867Z Settings evaluated using settings file '/home/runner/work/_temp/dummy-cleanup-project/settings.gradle'.
+2026-10-06T10:33:52.7087147Z Using local directory build cache for the root build (location = /home/runner/.gradle/caches/build-cache-1, remove unused entries = older than 2026-10-06 10:29:44 UTC).
+2026-10-06T10:33:52.8079640Z Projects loaded. Root project using build file '/home/runner/work/_temp/dummy-cleanup-project/build.gradle'.
+2026-10-06T10:33:52.8084564Z Included projects: [root project 'dummy-cleanup-project']
+2026-10-06T10:33:53.1094434Z 
+2026-10-06T10:33:53.1104848Z > Configure project :
+2026-10-06T10:33:53.1106658Z Evaluating root project 'dummy-cleanup-project' using build file '/home/runner/work/_temp/dummy-cleanup-project/build.gradle'.
+2026-10-06T10:33:53.1108432Z All projects evaluated.
+2026-10-06T10:33:53.1146867Z Task name matched 'noop'
+2026-10-06T10:33:53.1152895Z Selected primary task 'noop' from project :
+2026-10-06T10:33:53.2084681Z Tasks to be executed: [task ':noop']
+2026-10-06T10:33:53.2085489Z Tasks that were excluded: []
+2026-10-06T10:33:53.2124180Z Resolve mutations for :noop (Thread[Execution worker,5,main]) started.
+2026-10-06T10:33:53.2143984Z :noop (Thread[Execution worker,5,main]) started.
+2026-10-06T10:33:53.2174174Z 
+2026-10-06T10:33:53.2194729Z > Task :noop UP-TO-DATE
+2026-10-06T10:33:53.2195531Z Skipping task ':noop' as it has no actions.
+2026-10-06T10:33:53.3077273Z 
+2026-10-06T10:33:53.3079459Z BUILD SUCCESSFUL in 5s
+2026-10-06T10:33:53.3088587Z Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.5.0/userguide/configuration_cache_enabling.html
+2026-10-06T10:33:53.3103902Z Build cache (/home/runner/.gradle/caches/build-cache-1) removing files not accessed on or after Tue Oct 06 10:29:44 UTC 2026.
+2026-10-06T10:33:53.3106440Z Build cache (/home/runner/.gradle/caches/build-cache-1) cleanup deleted 0 files/directories.
+2026-10-06T10:33:53.3108646Z Build cache (/home/runner/.gradle/caches/build-cache-1) cleaned up in 0.003 secs.
+2026-10-06T10:33:53.3110776Z Artifact transforms cache removing files not accessed on or after Tue Oct 06 10:29:44 UTC 2026.
+2026-10-06T10:33:53.5094794Z Artifact transforms cache cleanup deleted 8 files/directories.
+2026-10-06T10:33:53.6084751Z Artifact transforms cache cleaned up in 0.265 secs.
+2026-10-06T10:33:53.6095242Z jars (/home/runner/.gradle/caches/jars-9) cleanup deleted 0 files/directories.
+2026-10-06T10:33:53.6124938Z jars (/home/runner/.gradle/caches/jars-9) removing files not accessed on or after Tue Oct 06 10:29:44 UTC 2026.
+2026-10-06T10:33:53.6174059Z jars (/home/runner/.gradle/caches/jars-9) cleanup deleted 1 files/directories.
+2026-10-06T10:33:53.6175304Z jars (/home/runner/.gradle/caches/jars-9) cleaned up in 0.004 secs.
+2026-10-06T10:33:53.6176580Z groovy-dsl removing files not accessed on or after Tue Oct 06 10:29:44 UTC 2026.
+2026-10-06T10:33:53.6177621Z groovy-dsl cleanup deleted 8 files/directories.
+2026-10-06T10:33:53.6178357Z groovy-dsl cleaned up in 0.033 secs.
+2026-10-06T10:33:53.6179417Z artifact cache (/home/runner/.gradle/caches/modules-2) cleanup deleted 0 files/directories.
+2026-10-06T10:33:53.6181268Z artifact cache (/home/runner/.gradle/caches/modules-2) [subdir: /home/runner/.gradle/caches/modules-2/resources-2.1] cleanup deleted 0 files/directories.
+2026-10-06T10:33:53.6183936Z artifact cache (/home/runner/.gradle/caches/modules-2) [subdir: /home/runner/.gradle/caches/modules-2/resources-2.1] removing files not accessed on or after Tue Oct 06 10:29:44 UTC 2026.
+2026-10-06T10:33:53.6186347Z artifact cache (/home/runner/.gradle/caches/modules-2) [subdir: /home/runner/.gradle/caches/modules-2/resources-2.1] cleanup deleted 0 files/directories.
+2026-10-06T10:33:53.6188671Z artifact cache (/home/runner/.gradle/caches/modules-2) [subdir: /home/runner/.gradle/caches/modules-2/files-2.1] cleanup deleted 0 files/directories.
+2026-10-06T10:33:53.6191744Z artifact cache (/home/runner/.gradle/caches/modules-2) [subdir: /home/runner/.gradle/caches/modules-2/files-2.1] removing files not accessed on or after Tue Oct 06 10:29:44 UTC 2026.
+2026-10-06T10:33:53.6194490Z artifact cache (/home/runner/.gradle/caches/modules-2) [subdir: /home/runner/.gradle/caches/modules-2/files-2.1] cleanup deleted 0 files/directories.
+2026-10-06T10:33:53.6196834Z artifact cache (/home/runner/.gradle/caches/modules-2) [subdir: /home/runner/.gradle/caches/modules-2/metadata-2.107] cleanup deleted 0 files/directories.
+2026-10-06T10:33:53.6199000Z artifact cache (/home/runner/.gradle/caches/modules-2) cleanup deleted 0 files/directories.
+2026-10-06T10:33:53.6200467Z artifact cache (/home/runner/.gradle/caches/modules-2) cleaned up in 0.037 secs.
+2026-10-06T10:33:53.7077603Z ##[endgroup]
+2026-10-06T10:33:53.7078526Z ##[group]Caching Gradle state
+2026-10-06T10:33:54.0711437Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --files-from manifest.txt --use-compress-program zstdmt
+2026-10-06T10:33:54.1288421Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --files-from manifest.txt --use-compress-program zstdmt
+2026-10-06T10:33:54.1382143Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --files-from manifest.txt --use-compress-program zstdmt
+2026-10-06T10:33:54.2488070Z Sent 100237 of 100237 (100.0%), 2.6 MBs/sec
+2026-10-06T10:33:54.2649892Z Sent 64939 of 64939 (100.0%), 0.9 MBs/sec
+2026-10-06T10:33:54.2952229Z Sent 86882 of 86882 (100.0%), 1.3 MBs/sec
+2026-10-06T10:33:54.3576745Z Saved cache entry with key gradle-groovy-dsl-v1-10a9a7ab9b2a4391d18d7c82c0bc03ca from /home/runner/.gradle/caches/*/groovy-dsl/*/ in 255ms
+2026-10-06T10:33:54.3788859Z Saved cache entry with key gradle-instrumented-jars-v1-3d3165d84646ee47a2ad976c49b2b818 from /home/runner/.gradle/caches/jars-*/*/ in 329ms
+2026-10-06T10:33:54.3882544Z Saved cache entry with key gradle-kotlin-dsl-v1-e15d38f1f9f7e5d91f638e8d167227e2 from /home/runner/.gradle/caches/*/kotlin-dsl/accessors/*/,/home/runner/.gradle/caches/*/kotlin-dsl/scripts/*/ in 313ms
+2026-10-06T10:33:55.3471671Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --files-from manifest.txt --use-compress-program zstdmt
+2026-10-06T10:33:58.1136740Z Sent 199807567 of 199807567 (100.0%), 190.4 MBs/sec
+2026-10-06T10:33:58.2081701Z Saved cache entry with key gradle-transforms-v1-e98751d6c3f75272fccd86dad5cb98f7 from /home/runner/.gradle/caches/transforms-4/*/,/home/runner/.gradle/caches/*/transforms/*/ in 3488ms
+2026-10-06T10:33:59.2153905Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/Atmaca-Next/Atmaca-Next --files-from manifest.txt --use-compress-program zstdmt
+2026-10-06T10:33:59.5186946Z Sent 3905164 of 3905164 (100.0%), 26.6 MBs/sec
+2026-10-06T10:33:59.5998812Z Saved cache entry with key gradle-home-v1|Linux-X64|build[f69f36acdb9bbf7ae2323b7b252233e2]-6aaa71ab25886a7e06c432c90203be9ca17b3490 from /home/runner/.gradle/caches,/home/runner/.gradle/notifications,/home/runner/.gradle/.setup-gradle in 398ms
+2026-10-06T10:33:59.6000937Z ##[endgroup]
+2026-10-06T10:33:59.6007795Z Generating Job Summary
+2026-10-06T10:33:59.6023223Z Completed post-action step
+2026-10-06T10:33:59.6234713Z Post job cleanup.
+2026-10-06T10:33:59.7645939Z (node:3428) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-06T10:33:59.7647093Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-06T10:33:59.7897622Z Post job cleanup.
+2026-10-06T10:33:59.8930594Z [command]/usr/bin/git version
+2026-10-06T10:33:59.8977125Z git version 2.55.0
+2026-10-06T10:33:59.9024143Z Temporarily overriding HOME='/home/runner/work/_temp/af1d66f9-e2da-4d63-8e21-77c8c6a267f1' before making global git config changes
+2026-10-06T10:33:59.9026322Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-06T10:33:59.9045805Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Atmaca-Next/Atmaca-Next
+2026-10-06T10:33:59.9079543Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-06T10:33:59.9117906Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-06T10:33:59.9377906Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-06T10:33:59.9410542Z http.https://github.com/.extraheader
+2026-10-06T10:33:59.9425935Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-06T10:33:59.9468218Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-06T10:33:59.9745442Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-06T10:33:59.9787617Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-06T10:34:00.0191566Z Cleaning up orphan processes
+2026-10-06T10:34:00.0533745Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-java@v4, actions/upload-artifact@v4, gradle/actions/setup-gradle@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
