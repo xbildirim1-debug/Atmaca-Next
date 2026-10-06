@@ -1,0 +1,134 @@
+{
+  "version": "26.60-nonfollowers-recovery",
+  "version_code": 108,
+  "application_id": "com.atmacanext.v258",
+  "build_kind": "github_ci",
+  "source_commit": "6c04b2b86a32e6f35b1d0466c9bd4596d4824125",
+  "device_tested": false,
+  "run_url": "https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37449294716",
+  "tests": {
+    "tests": 580,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "new_suites": {
+    "com.atmacanext.app.automation.NavigationRestart26_60Test": {
+      "tests": 23,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerFollowingInspectorTest": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerPolicyTest": {
+      "tests": 37,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerScrollProgressTest": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerTimingTest": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerUnfollowCompletionTest": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerViewportGateTest": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.domain.engine.NonFollowerBatch26_60Test": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "Fatal": 0,
+    "Error": 0,
+    "Warning": 21,
+    "Information": 0
+  },
+  "migration": "PASS: both historical v5 layouts preserved",
+  "signing_cert_sha256": "57d25d1f1d3549efcaa39f8e629c490ff7ea99842c4d201ffb15e7fbceefb4ca",
+  "matches_26_59_local_certificate": false,
+  "apk": {
+    "filename": "AtmacaNext-26.60.apk",
+    "bytes": 20868832,
+    "sha256": "537292be5a42fb5008e48e529c2b47b911cd6f9dd614bd585b15df138b9d847e",
+    "crc": "PASS"
+  },
+  "application_source_commit": "6aaa71ab25886a7e06c432c90203be9ca17b3490",
+  "tested_tree": "f1e55fd4840e55f392aad4c86322546666b9113c",
+  "new_test_count": 98,
+  "bundle": {
+    "bundle": "AtmacaNext-26.60-TAM-PAKET.zip",
+    "bytes": 20939558,
+    "sha256": "3d154a7110a207a1eae37782eb0c15cb47ee5bb797b8a52728fee1247aa5396a",
+    "crc": "PASS",
+    "same_apk": true,
+    "private_key_excluded": true
+  },
+  "artifacts": [
+    {
+      "id": 11406955173,
+      "name": "validation-reports",
+      "size_in_bytes": 224611,
+      "url": "https://api.github.com/repos/xbildirim1-debug/Atmaca-Next/actions/artifacts/11406955173",
+      "archive_download_url": "https://api.github.com/repos/xbildirim1-debug/Atmaca-Next/actions/artifacts/11406955173/zip",
+      "expired": false,
+      "created_at": "2026-10-06T10:26:06Z",
+      "expires_at": "2027-01-04T10:21:59Z",
+      "updated_at": "2026-10-06T10:26:06Z",
+      "digest": "sha256:d259fd0c8a3f2519de38cbcbba360c78dc4fcad06c7ad443b5f1eac9288b9964",
+      "workflow_run": {
+        "id": 37449294716,
+        "repository_id": 1359058397,
+        "head_repository_id": 1359058397,
+        "head_branch": "feature/26.60-nonfollowers-recovery",
+        "head_sha": "6aaa71ab25886a7e06c432c90203be9ca17b3490"
+      }
+    },
+    {
+      "id": 11405601510,
+      "name": "AtmacaNext-26.60-APK",
+      "size_in_bytes": 41774827,
+      "url": "https://api.github.com/repos/xbildirim1-debug/Atmaca-Next/actions/artifacts/11405601510",
+      "archive_download_url": "https://api.github.com/repos/xbildirim1-debug/Atmaca-Next/actions/artifacts/11405601510/zip",
+      "expired": false,
+      "created_at": "2026-10-06T10:26:04Z",
+      "expires_at": "2027-01-04T10:21:59Z",
+      "updated_at": "2026-10-06T10:26:04Z",
+      "digest": "sha256:050f73b6be8a6a61b91cc499bb08206d05e4df03dd955c6fb08e4a0b8a6b0662",
+      "workflow_run": {
+        "id": 37449294716,
+        "repository_id": 1359058397,
+        "head_repository_id": 1359058397,
+        "head_branch": "feature/26.60-nonfollowers-recovery",
+        "head_sha": "6aaa71ab25886a7e06c432c90203be9ca17b3490"
+      }
+    }
+  ],
+  "update_compatible_apk_delivered": false,
+  "signing_blocker": "Local execution workspace is unavailable. CI certificate differs from the local 26.59 key; no upgrade-compatible APK delivered.",
+  "github_releases_published": false
+}
