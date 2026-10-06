@@ -199,5 +199,5 @@ class AtmacaRepository(private val db: AtmacaDatabase) {
     suspend fun snapshotTargets() = db.targetAccountDao().getAll()
     private fun todayDateKey(): String = LocalDate.now().toString()
     private fun normalizeHandle(value: String): String = value.trim().lowercase().removePrefix("@")
-    companion object { private val DAILY_LIMITED_TYPES = setOf(TaskType.VERIFIED_FOLLOW, TaskType.UNFOLLOW, TaskType.FOLLOW, TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW) }
+    companion object { private val DAILY_LIMITED_TYPES = setOf(TaskType.VERIFIED_FOLLOW, TaskType.UNFOLLOW, TaskType.UNFOLLOW_NON_FOLLOWERS, TaskType.FOLLOW, TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW) }
 }

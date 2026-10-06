@@ -1,4 +1,15 @@
-# Atmaca Next — güncel uygulama kaynağı 26.59
+# Atmaca Next — 26.60
+
+**Takip Etmeyenleri Çık**, Yeni Görev Akışı > Takip bölümünde **Takipten çık** seçeneğinin hemen altındadır. Birden çok hesapla, Limit/Tekrar/Aralık ayarlarıyla toplu çalışır. Buse 1.3'te doğrulanan tarama taşındı: ilk 100 kişi korunur, 101'den daha eski kişilere gidilir; seni takip edenler ve belirsiz satırlar korunur.
+
+Yorumdan dönüş ve diğer geçici gezinme hataları artık 10 saniye kuralından çıkmaz. Atmaca'ya dönülüp aynı görev, ilerleme ve döngüyle hesap yeniden doğrulanır; manuel durdurma ve bekleyen eylem tekrar edilmez. Ayrıntılar [DEVIR_NOTU.md](DEVIR_NOTU.md), test/derleme durumu [BUILD_STATUS.md](BUILD_STATUS.md).
+
+Doğrulama: DOĞRULAMA_BEKLIYOR. Yeni Atmaca APK'sı fiziksel X cihazında henüz denenmedi. Yerel 26.59 APK ile aynı imza; eski CI 26.58 farklı imzalıdır. Buse bağımsız uygulaması ve dalı değiştirilmedi.
+
+---
+Önceki sürümlerin tarihsel notları:
+
+## 26.59 tarihsel notları
 
 Uygulamanın mimarisi, toplu döngü sırası, geri sayım, son takibi bırak kurtarması ve kalan cihaz kontrolleri [uygulama devir notunda](DEVIR_NOTU.md) açıklanmıştır. Anlık APK/test durumu [BUILD_STATUS.md](BUILD_STATUS.md) içindedir. 26.59 yerelde doğrulandı: **482 test geçti**, lint 0 hata / 16 uyarı ve APK/tam paket kontrolü başarılı. GitHub CI çalıştırıcı atayamadı; son CI doğrulanmış APK 26.58. Yerel 26.59 APK imzası 26.58 CI APK ile farklıdır; uygulamayı kaldırmak kayıtları siler. Fiziksel X testi bekliyor. [Gerçek raporlar](validation/26.59-local/summary.json) / [cihaz kabul adımları](DEVICE_TEST_PROTOCOL.md).
 

@@ -22,6 +22,7 @@ object TaskQueuePlanner {
         TaskType.COMMENT_QUOTE_TARGETS,
         TaskType.VERIFIED_FOLLOW,
         TaskType.UNFOLLOW,
+        TaskType.UNFOLLOW_NON_FOLLOWERS,
         TaskType.COMMENTER_FOLLOW,
         TaskType.RETWEETER_FOLLOW,
         TaskType.QUOTER_FOLLOW,

@@ -78,7 +78,8 @@ class AtmacaAccessibilityService : AccessibilityService() {
     }
 
     fun requestAutomationTick(delayMillis: Long) {
-        scheduleAutomationTick(AutomationTuning.scaleDelay(delayMillis))
+        scheduleAutomationTick(NonFollowerTiming.scaleDelay(delayMillis,
+            AutomationController.state.value.taskType == com.atmacanext.app.domain.model.TaskType.UNFOLLOW_NON_FOLLOWERS))
     }
 
     /** Persisted task/account gaps are already absolute user values. */

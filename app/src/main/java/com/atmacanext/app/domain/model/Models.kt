@@ -31,6 +31,7 @@ enum class TaskType(val title: String) {
     QUOTE("Alıntı"),
     COMMENT_QUOTE_TARGETS("Yorum Alıntısı"),
     UNFOLLOW("Takipten çık"),
+    UNFOLLOW_NON_FOLLOWERS("Takip Etmeyenleri Çık"),
     VERIFIED_FOLLOW("Onaylı kullanıcı takibi"),
     COMMENTER_FOLLOW("Yorumcu takip etme"),
     RETWEETER_FOLLOW("Retweetçi takip etme"),
@@ -39,6 +40,9 @@ enum class TaskType(val title: String) {
     TREND("Trend paylaşımı"),
     COMMUNITY("Topluluk etkileşimi"),
     SYNC("Hesap senkronizasyonu");
+
+    val isUnfollowAction: Boolean
+        get() = this == UNFOLLOW || this == UNFOLLOW_NON_FOLLOWERS
 
     val requiresLink: Boolean
         get() = this in setOf(FOLLOW, LIKE, RETWEET, BOOKMARK, COMMENT, QUOTE)

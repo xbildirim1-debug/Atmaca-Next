@@ -235,7 +235,7 @@ class TaskOrchestrator(
         val dailyLimit = when (task.type) {
             // The visible task Limit is authoritative for manual unfollow work.
             // X's own daily ceiling is detected from a confirmed button reversion.
-            TaskType.UNFOLLOW -> Int.MAX_VALUE
+            TaskType.UNFOLLOW, TaskType.UNFOLLOW_NON_FOLLOWERS -> Int.MAX_VALUE
             TaskType.FOLLOW, TaskType.VERIFIED_FOLLOW, TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW -> dailyFollowLimitPerAccount
             else -> Int.MAX_VALUE
         }

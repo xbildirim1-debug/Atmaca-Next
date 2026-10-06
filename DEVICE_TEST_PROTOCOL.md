@@ -1,3 +1,18 @@
+# 26.60 cihaz kabul adımları
+
+- Yeni Görev Akışı > Takip: Takip Etmeyenleri Çık, Takipten çık'ın hemen altında görünmeli. Aynı ekranda birden çok hesap, limit 20, tekrar 2 ve aralık seçilebilmeli.
+- Yeni görev ilk 100 farklı kişiyi korumalı; 101 ve daha eskilerde kendi Seni takip ediyor/Follows you etiketi olanlara dokunmamalı. 1/20 sonrasında sürmeli, 20 doğrulanmış sonuçta tur bitmeli.
+- Dört hesap/iki tur: tüm hesapların ilk turu, ortak dakika/saniye beklemesi, aynı sırada ikinci tur. Eksik limit tamamlanmış gibi gösterilmemeli.
+- Yorumcu takip 4/35: ana yorumlara dönüşte HOME görüldüğünde 10 saniye ilerleme yoksa Atmaca'ya dönülmeli; aynı taskId/session/progress/cycle ve aynı hedefle X'te yeniden başlatılmalı. İşlenen kişiler tekrar sayılmamalı.
+- Ana yorumun başlığı görünür fakat satırlar geç yüklenirken fazladan Geri basılmamalı. COMMENT_RETURN başlık/çocuk/ana yorum kimliği ve süreyi, TASK_RESTART_RETURN gerçek dönüş sonucunu kaydeder.
+- Geçici ekran/gezinme hatalarında onaylı, yorumcu, retweetçi, yeni/normal çıkma ve yayın görevleri ortak 10 saniye yolunu kullanmalı. Bekleyen eylem, manuel pause/stop, ekran kilidi, X limiti ve planlı bekleme otomatik yeniden işlem üretmemeli.
+- Atmaca'ya dönüş sırasında Duraklat/Durdur'a basıldığında gecikmiş callback X'i tekrar başlatmamalı. Aynı ilerlemede üç başarısız yeniden başlatmadan sonra sayaçlar korunarak durmalı.
+
+Bu yeni Atmaca APK'sında bu cihaz adımları henüz uygulanmadı. Kullanıcı Buse 1.3'ü çalışır olarak doğruladı; bu yalnız Buse kanıtıdır.
+
+---
+Önceki cihaz protokolleri:
+
 ## 26.59 takibi bırak kurtarması ve döngü kabulü
 
 Bu bölüm yeni 26.59 APK ile yapılacak fiziksel kontrollerdir; henüz yapılmadı. Birim test ve derleme sonucu cihaz doğrulaması yerine geçmez.

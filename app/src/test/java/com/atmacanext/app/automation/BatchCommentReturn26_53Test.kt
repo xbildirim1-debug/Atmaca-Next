@@ -126,8 +126,8 @@ class BatchCommentReturn26_53Test {
     }
     @Test fun uncertainCommentReturnDoesNotEnterAnotherReplyOrBlindlyBack() {
         assertEquals(CommenterReturnPolicy.Decision.WAIT, CommenterReturnPolicy.decide(false, false, false, 0, 2000, Long.MAX_VALUE))
-        assertEquals(CommenterReturnPolicy.Decision.PAUSE, CommenterReturnPolicy.decide(false, false, false, 0, 6000, Long.MAX_VALUE))
-        assertEquals(CommenterReturnPolicy.Decision.PAUSE, CommenterReturnPolicy.decide(false, false, true, 3, 6000, 1000))
+        assertEquals(CommenterReturnPolicy.Decision.WAIT, CommenterReturnPolicy.decide(false, false, false, 0, 6000, Long.MAX_VALUE))
+        assertEquals(CommenterReturnPolicy.Decision.WAIT, CommenterReturnPolicy.decide(false, false, true, 3, 6000, 1000))
     }
     @Test fun selectedReplyKeyAloneCannotProveParentWhileItsNestedRepliesAreOpen() {
         assertFalse(DiscoveryViewportEvidence.returnedToParent("before", "after", listOf("selected", "other"),

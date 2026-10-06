@@ -163,7 +163,8 @@ class AutomationForegroundService : Service() {
                 "ageMs=${stallWatchdog.ageMillis()}; stage=${runtime.flowStage}; screen=${runtime.activeScreen}; verified=${runtime.verifiedCount}/${runtime.limit}")
             updateNotification(reason)
             // The accessibility actor validates the same session and preserves pending actions.
-            // No stop/resume, app return or account switch is part of this read recovery.
+            // Navigation stalls return through Atmaca and verify the account again.
+            // Pending actions remain in result verification and cannot be issued twice.
             if (!AutomationController.requestStallRecovery(runtime.taskId, runtime.sessionId)) {
                 AppServices.orchestrator.pauseForSafety("Ekran okuma bağlantısı olmadan kurtarma yapılamadı; ilerleme korundu")
             }

@@ -1,4 +1,20 @@
-# Atmaca Next — uygulama devir notu
+# Atmaca Next — 26.60: takip etmeyenleri çık ve ortak kurtarma
+
+6 Ekim 2026. Temel GitHub main: 8b467a3baaa991abaa3202dca78ff9299ad1c2c0 (26.59). Uygulama kimliği com.atmacanext.v258; versionCode 108; versionName 26.60-nonfollowers-recovery; Room şeması 6.
+
+Kullanıcı Buse 1.3'ün cihazda güzel çalıştığını doğruladı ve aynı görevi Atmaca'nın toplu görev ekranında Takipten çık'ın hemen altında istedi. Yeni UNFOLLOW_NON_FOLLOWERS görevi hesap seçimi, Limit, Tekrar, Aralık, tek/toplu başlatma ve hesap bazlı ortak döngüye bağlandı. İlk 100 farklı kişi korunur; 101. kişiden daha eskilere gidilir. Yalnız kişinin kendi Seni takip ediyor/Follows you etiketi olmayan, tam ve kimliği doğrulanan satırlar işlenir. Buse 1.3'ün örtüşen hızlı kaydırma, tek taze ağaç okuması, 16 ms/32 ms kararlı görünüm, 22 ms hareket + 120 ms sabit bırakma ve üç gerçek değişmeyen kaydırma ile liste sınırı mantığı taşındı. Yeni görev Buse'nin /70 zamanlamasını kullanır; diğer görevlerde Atmaca'nın mevcut kullanıcı hız ayarı korunur. Normal ve yeni takipten çıkma limiti tamamlanmadan COMPLETED olmaz.
+
+Yorumcu takip günlük kanıtı: 6 Ekim 07:59:56, @saresirinnn, 4/35, cycle 1/1, screen HOME, stage RETURN_ENGAGEMENT, lastTarget kirmizituborg48. Kodda ana yorumlara dönüş 6 saniyede PAUSED yapılıyordu; AutomationStallPolicy PAUSED'ı izlemiyordu ve mevcut 10 saniyelik yol sadece aynı aşamayı tekrar okuyordu. Ayrıca her TWEET_DETAIL ekranı çocuk yorum sayıldığından geç yüklenen ana yorum yüzeyine fazladan Back basılabilirdi. Günlük tek başına HOME'a hangi dokunuşla gidildiğini kanıtlamaz; bu sınıflandırma kaynakta bulunan olası fazladan Back nedenidir.
+
+Artık Back için çocuk başlık kimliği gerekir. Geçici gezinme hataları RECOVERING olarak 10 saniye denetiminde kalır; düzelmezse Atmaca'ya dönüş, aynı görev/session/ilerleme ve döngüyle aktif hesabın yeniden doğrulanması ve X'te yeniden başlatma yapılır. İşlenen kişiler, atlanan yorumlar, mevcut hedef indeksi, döngü başlangıç ilerlemesi ve kuyruk sahipliği korunur. 4/35 sıfırlanmaz. Genel watchdog tüm görev türlerinde bu yolu kullanır. Bekleyen gönderim/eylem tekrar uygulanmaz; yalnız sonucu doğrulanır. Kullanıcının pause/stop'u, cihaz duraklaması, X limiti, belirsiz gönderim ve planlı döngü beklemesi otomatik devam ettirilmez. Aynı ilerlemede en fazla üç gezinme yeniden başlatması vardır; yeni doğrulanmış başarı bütçeyi sıfırlar. Eski callback başka görev/session veya manuel pause/stop sonrası çalışamaz.
+
+Doğrulama: DOĞRULAMA_BEKLIYOR. Yeni Atmaca APK'sı fiziksel X cihazında henüz denenmedi. Buse'nin kullanıcı doğrulaması bu APK'nın cihaz testi değildir. Önceki yerel 26.59 ve Buse 1.3 ile aynı özel imza yedeği geri getirildi; özel anahtar GitHub'a veya teslim ZIP'ine konmadı. Sertifika SHA256 9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5. 26.58 CI farklı imzalıdır; bu eski CI sürümü için üzerine kurulum uyumu iddia edilmez.
+
+Kaynak/testler main'e kaydedilecek; teslim APK ve tam kaynak/test/not ZIP'i yerel derlemeden üretilecek. Mevcut contents:read CI korunur; contents:write Releases otomasyonu etkinleştirilmedi. GitHub Releases yayını yapıldığı iddia edilmez.
+
+## Önceki sürümlerin ayrıntılı kayıtları
+
+## 26.59 tarihsel devir notu
 
 Güncelleme: 5 Ekim 2026. Bu belge başka sohbet veya hesap üzerinden çalışmaya devam edecek kişinin **uygulamayı ve son değişiklikleri** devralması içindir. Anlık Actions durumu ve yeniden deneme kayıtları [BUILD_STATUS.md](BUILD_STATUS.md) içindedir.
 

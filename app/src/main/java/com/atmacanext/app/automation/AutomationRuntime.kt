@@ -188,6 +188,10 @@ object AutomationController {
     private val depthHandles = LinkedHashSet<String>()
     private val unfollowBeforeAnchorHandles = LinkedHashSet<String>()
     private val sourceHandles = LinkedHashSet<String>()
+    private var navigationRecoveryReturning = false
+    private var navigationRecoveryStartedAt = 0L
+    private var navigationRecoveryGeneration = 0L
+    private var navigationRestartAttempts = 0
     private var unfollowRecoveryReturning = false
     private var unfollowNoConfirmationSince = 0L
     private var queueOwnsCycleWait = false
@@ -200,6 +204,16 @@ object AutomationController {
     private var unfollowNeedForwardScroll = false
     private var unfollowReverseMode = false
     private var unfollowFollowObservedAt = 0L
+
+    private var nonFollowerFollowingRun = NonFollowerFollowingRun()
+    private val nonFollowerViewportGate = NonFollowerViewportGate()
+    private val nonFollowerScrollBoundary = NonFollowerScrollBoundary()
+    private var nonFollowerAtTop = false
+    private var nonFollowerViewport = ""
+    private var nonFollowerProbeHandle: String? = null
+    private var nonFollowerProbeSince = 0L
+    private var nonFollowerProbeSignature = ""
+    private var nonFollowerUnknownViewports = 0
 
     private var discoverySearchStep = 0
     private var discoverySearchSubmitted = false
@@ -290,6 +304,7 @@ object AutomationController {
     }
 
     fun pause(reason: String = "Görev duraklatıldı") {
+        navigationRecoveryReturning = false
         unfollowRecoveryReturning = false
         val current = _state.value
         if (current.taskId == null || current.status in terminalStatuses()) return
@@ -343,8 +358,8 @@ object AutomationController {
     fun onOutsideXSnapshot(service: AtmacaAccessibilityService, packageName: String?) {
         attach(service)
         val current = _state.value
-        if (!isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
-        if (unfollowRecoveryReturning) return
+        if (navigationRecoveryReturning || !isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
+        if (unfollowRecoveryReturning || navigationRecoveryReturning) return
         if (service.isOutsideSuppressed()) {
             service.requestAutomationTick(TICK_MS)
             return
@@ -373,7 +388,7 @@ object AutomationController {
 
     fun onSnapshotReadFailure(service: AtmacaAccessibilityService) {
         val current = _state.value
-        if (!isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
+        if (navigationRecoveryReturning || !isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
         // Preserve pendingAction and every navigation checkpoint. Only its result is re-read.
         _state.value = current.copy(status = if (pendingAction == null) RuntimeStatus.RECOVERING else RuntimeStatus.VERIFYING,
             message = "Geçici ekran okuma hatası; aynı aşama taze ekrandan yeniden okunuyor")
@@ -385,18 +400,25 @@ object AutomationController {
         return service.runOnAutomationThread {
             val current = _state.value
             if (current.taskId == taskId && current.sessionId == sessionId && !unfollowRecoveryReturning && AutomationStallPolicy.shouldWatch(current)) {
+                if (navigationRecoveryReturning) {
+                    if (NavigationRestartPolicy.returnExpired(navigationRecoveryStartedAt, System.currentTimeMillis())) {
+                        navigationRecoveryReturning = false
+                        restartNavigationThroughAtmaca(service, "Atmaca'ya dönüş yanıtı 10 saniyede gelmedi")
+                    }
+                    return@runOnAutomationThread
+                }
                 val signature = AutomationStallPolicy.signature(current)
                 if (signature != stallRecoverySignature) { stallRecoverySignature = signature; stallRecoveryAttempts = 0 }
                 stallRecoveryAttempts++
                 run {
                     nextActionNotBefore = 0L
                     loopGuard.clear()
-                    if (pendingAction == null && current.taskType == TaskType.VERIFIED_FOLLOW &&
-                        current.flowStage == XFlowStage.PROCESS_VERIFIED_FOLLOW) {
-                        nextVerifiedSource(service, "Bu onaylı listede ilerleme yok")
+                    if (pendingAction == null && current.quotePendingKey == null) {
+                        restartNavigationThroughAtmaca(service, "10 saniye gerçek ilerleme yok")
                     } else {
-                        _state.value = current.copy(status = if (pendingAction == null) RuntimeStatus.RECOVERING else RuntimeStatus.VERIFYING,
-                            message = "10 saniye hareketsizlik: motor aynı görev/ilerleme ve bekleyen işlemle yeniden başlatıldı")
+                        // A submitted action is only re-read. Never discard it and issue it twice.
+                        _state.value = current.copy(status = RuntimeStatus.VERIFYING,
+                            message = "10 saniye hareketsizlik: bekleyen işlem sonucu yeniden doğrulanıyor; aynı eylem tekrarlanmadı")
                         service.requestAutomationTick(250L)
                     }
                 }
@@ -412,8 +434,8 @@ object AutomationController {
     ) {
         attach(service)
         var current = _state.value
-        if (unfollowRecoveryReturning) return
-        if (!isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
+        if (unfollowRecoveryReturning || navigationRecoveryReturning) return
+        if (navigationRecoveryReturning || !isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
         if (current.activeScreen != screen) {
             current = current.copy(activeScreen = screen)
             _state.value = current
@@ -433,13 +455,13 @@ object AutomationController {
         if (popup == PopupType.NONE && NavigationSurfaceEvidence.loading(AccessibilityTree.snapshots(root))) {
             if (loadingSince == 0L) loadingSince = now
             if (current.taskType == TaskType.COMMENTER_FOLLOW && current.flowStage == XFlowStage.OPEN_ENGAGER_PROFILE) {
-                if (now - loadingSince >= 8_000L) pause("Yorumcu ekranı yüklenmedi; kullanıcı atlanmadı, ilerleme korundu")
+                if (now - loadingSince >= 8_000L) retryNavigationWithDeadline(service, "Yorumcu ekranı yüklenmedi; kullanıcı atlanmadı, ilerleme korundu", System.currentTimeMillis())
                 else service.requestAutomationTick(450L)
                 return
             }
             if (now - loadingSince < 1_800L) { service.requestAutomationTick(450L); return }
             if (loadingRecoveries >= 2) {
-                pause("X yükleme ekranı iki geri denemesinden sonra kapanmadı; ilerleme korundu")
+                retryNavigationWithDeadline(service, "X yükleme ekranı iki geri denemesinden sonra kapanmadı; ilerleme korundu", System.currentTimeMillis())
                 return
             }
             val backed = XUiActions.clickVisibleBack(service, root)
@@ -461,7 +483,7 @@ object AutomationController {
                 else -> Unit
             }
             OperationLog.w("LOADING_RECOVERY", "stage=${current.flowStage} back=$backed attempt=$loadingRecoveries progress=${current.verifiedCount}")
-            nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
+            nextActionNotBefore = now + taskDelay(900L)
             service.requestAutomationTick(900L)
             return
         }
@@ -520,7 +542,7 @@ object AutomationController {
         }
 
         when (current.taskType) {
-            TaskType.UNFOLLOW -> handleUnfollow(service, root, screen, now)
+            TaskType.UNFOLLOW, TaskType.UNFOLLOW_NON_FOLLOWERS -> handleUnfollow(service, root, screen, now)
             TaskType.VERIFIED_FOLLOW -> handleVerifiedFollow(service, root, screen, now)
             TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW, TaskType.COMMENT_QUOTE_TARGETS -> handleDiscoveryFollow(service, root, screen, now)
             TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET -> handlePost(service, root, screen, now)
@@ -554,7 +576,7 @@ object AutomationController {
             // Continue through the visible drawer/profile flow after switching.
             if (screen == XScreen.ACCOUNT_SWITCHER) {
                 service.closeAccountSwitcher()
-                accountSettleUntil = now + AutomationTuning.scaleDelay(450L)
+                accountSettleUntil = now + taskDelay(450L)
                 _state.value = current.copy(
                     status = RuntimeStatus.SWITCHING_ACCOUNT,
                     message = "X hesap seçicisi kapatılıyor; hedef profil ardından doğrulanacak",
@@ -628,7 +650,7 @@ object AutomationController {
                             message = "@$target aktif; çekmecedeki Profil satırı açıldı ve kimlik doğrulanacak",
                         )
                         service.requestAutomationTick(650L)
-                        nextActionNotBefore = now + AutomationTuning.scaleDelay(1_200L)
+                        nextActionNotBefore = now + taskDelay(1_200L)
                     } else {
                         retryOrRecover(service, "Doğrulanan hesabın Profil satırı açılamadı")
                     }
@@ -670,7 +692,7 @@ object AutomationController {
                 _state.value = _state.value.copy(status = RuntimeStatus.NAVIGATING,
                     message = "Önceki X ekranından hesap menüsüne dönülüyor (${accountReturnAttempts}/6)")
                 OperationLog.i("ACCOUNT_RETURN", "screen=$screen back=$accepted attempt=$accountReturnAttempts; görev hesabı henüz doğrulanmadı")
-                nextActionNotBefore = now + AutomationTuning.scaleDelay(1_000L)
+                nextActionNotBefore = now + taskDelay(1_000L)
                 service.requestAutomationTick(1_000L)
             }
             AccountVerificationReturnPolicy.Decision.WAIT -> service.requestAutomationTick(350L)
@@ -685,7 +707,7 @@ object AutomationController {
 
     private fun waitForAccountNavigation(service: AtmacaAccessibilityService, now: Long, expected: XScreen) {
         accountNavigationGate.issued(_state.value.activeScreen, now, expected)
-        nextActionNotBefore = now + AutomationTuning.scaleDelay(1_200L)
+        nextActionNotBefore = now + taskDelay(1_200L)
         service.requestAutomationTick(1_200L)
     }
 
@@ -710,7 +732,7 @@ object AutomationController {
         val current = _state.value
         resetOperationNavigation()
         when (current.taskType) {
-            TaskType.UNFOLLOW -> {
+            TaskType.UNFOLLOW, TaskType.UNFOLLOW_NON_FOLLOWERS -> {
                 moveStage(XFlowStage.OPEN_REQUIRED_SURFACE, "Kendi profilindeki Takip ediliyor sayacı aranıyor")
                 if (!service.launchXProfile(current.username.orEmpty())) fail("Kendi X profili açılamadı")
             }
@@ -735,6 +757,11 @@ object AutomationController {
 
     private fun handleUnfollow(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
         val current = _state.value
+        if (current.taskType == TaskType.UNFOLLOW_NON_FOLLOWERS &&
+            current.flowStage in setOf(XFlowStage.SEEK_UNFOLLOW_DEPTH, XFlowStage.PROCESS_UNFOLLOW)) {
+            handleNonFollowers(service, root, screen, now)
+            return
+        }
         when (current.flowStage) {
             XFlowStage.OPEN_REQUIRED_SURFACE -> {
                 val selectedRelationshipTab = RelationshipTabInspector.selectedTab(root)
@@ -749,7 +776,10 @@ object AutomationController {
                     unfollowReverseMode = false
                     listEndStable = 0
                     lastListSignature = ""
-                    moveStage(XFlowStage.PROCESS_UNFOLLOW, "Takip edilenler doğrulandı; görünür kullanıcılardan başlanıyor")
+                    if (current.taskType == TaskType.UNFOLLOW_NON_FOLLOWERS) {
+                        resetNonFollowerNavigation()
+                        moveStage(XFlowStage.SEEK_UNFOLLOW_DEPTH, "Takip edilenler doğrulandı; ilk 100 kişi korunacak")
+                    } else moveStage(XFlowStage.PROCESS_UNFOLLOW, "Takip edilenler doğrulandı; görünür kullanıcılardan başlanıyor")
                     service.requestAutomationTick(150L)
                 } else if (selectedRelationshipTab == RelationshipTabInspector.FOLLOWING) {
                     // Doğru sekme seçildi fakat satırlar henüz yüklenmedi. Profil
@@ -909,6 +939,138 @@ object AutomationController {
         }
     }
 
+    private fun handleNonFollowers(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
+        val current = _state.value
+        if (screen != XScreen.FOLLOWING_LIST) {
+            if (restoreFollowingTabWithoutAccountRecovery(service, root, now)) return
+            recoverOperation(service, "Seni takip etmeyenler taranırken Takip ediliyor listesi kayboldu")
+            return
+        }
+        val reading = NonFollowerFollowingInspector.read(root)
+        val rows = reading.rows
+        val signature = rows.joinToString("|") { "${it.evidence.handle}:${it.bounds.top}:${it.bounds.bottom}" }
+        // Events can arrive while X is still moving or recycling its rows. Do not count,
+        // pause for an apparent gap, or issue another drag until fresh geometry is stable.
+        val settled = nonFollowerViewportGate.observe(
+            signature.takeIf { rows.isNotEmpty() && rows.all { it.evidence.treeComplete } }, now)
+        if (settled == NonFollowerViewportGate.Decision.WAIT) {
+            service.requestAutomationTickExact(NonFollowerViewportGate.POLL_MS)
+            return
+        }
+        if (settled == NonFollowerViewportGate.Decision.TIMED_OUT) {
+            retryNavigationWithDeadline(service, "Kaydırmadan sonra X listesi sabitlenmedi; kişi sayımı korunarak duraklatıldı", System.currentTimeMillis())
+            return
+        }
+        if (rows.any { !it.evidence.treeComplete }) {
+            retryNavigationWithDeadline(service, "X ekran ağacı eksik okundu; 100 kişi sınırı tahmin edilmedi", System.currentTimeMillis())
+            return
+        }
+        if (rows.isEmpty()) {
+            if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Kişi satırları tam okunamadı; ilk 100 kişi korunarak görev duraklatıldı", System.currentTimeMillis())
+            else service.requestAutomationTickExact(20L)
+            return
+        }
+        val changed = signature != nonFollowerViewport
+        val reachedBoundary = nonFollowerScrollBoundary.observe(signature)
+        if (changed) {
+            nonFollowerViewport = signature
+            listEndStable = 0
+            listScrolls++
+        }
+        if (!nonFollowerAtTop) {
+            // A previously opened X list may restore an old scroll position. Count only from a stable top.
+            if (reachedBoundary) {
+                nonFollowerAtTop = true
+                nonFollowerScrollBoundary.reset()
+                nonFollowerViewport = ""
+                moveStage(XFlowStage.SEEK_UNFOLLOW_DEPTH, "Liste başı doğrulandı; ilk 100 farklı kişi atlanıyor")
+                service.requestAutomationTickExact(20L)
+                return
+            }
+            if (!NonFollowerFollowingScroller.scroll(service, root, rows, forward = false, snapshots = reading.snapshots)) {
+                retryNavigationWithDeadline(service, "Liste başına kaydırma tamamlanamadı; başlangıç sırası tahmin edilmedi", System.currentTimeMillis())
+                return
+            }
+            nonFollowerViewportGate.afterScroll(System.currentTimeMillis())
+            nonFollowerScrollBoundary.afterScroll(signature)
+            service.requestAutomationTickExact(NonFollowerViewportGate.POLL_MS)
+            return
+        }
+        if (!nonFollowerFollowingRun.observe(rows.map { it.evidence.handle })) {
+            retryNavigationWithDeadline(service, "Kaydırmada kişi sırası kesildi; 100 kişi sınırı doğrulanamadı. Görevi yeniden başlat.", System.currentTimeMillis())
+            return
+        }
+        _state.value = current.copy(depthUniqueUsers = nonFollowerFollowingRun.seenCount, listScrolls = listScrolls,
+            message = if (!nonFollowerFollowingRun.ready) "İlk 100 kişi korunuyor: ${nonFollowerFollowingRun.protectedHandles.size}/100"
+                else "İlk 100 kişi korunuyor; daha eski kişiler kontrol ediliyor")
+        if (nonFollowerFollowingRun.ready && current.flowStage == XFlowStage.SEEK_UNFOLLOW_DEPTH) {
+            moveStage(XFlowStage.PROCESS_UNFOLLOW, "101. kişiden aşağıya; seni takip edenler korunuyor")
+        }
+        if (cycleTargetReached()) {
+            finishCycleOrTask(service, "Seni takip etmeyenlerden belirlenen sayıda çıkıldı")
+            return
+        }
+        val excluded = processedHandles + skippedHandles
+        val candidate = rows.firstOrNull { nonFollowerFollowingRun.mayUnfollow(it.evidence, current.username.orEmpty(), excluded) }
+        if (candidate != null) {
+            nonFollowerScrollBoundary.reset()
+            val handle = candidate.evidence.handle
+            val proof = "$handle:${candidate.bounds.top}:${candidate.bounds.bottom}:${candidate.evidence.labels.joinToString("|")}"
+            if (nonFollowerProbeHandle != handle || proof != nonFollowerProbeSignature) {
+                nonFollowerProbeHandle = handle
+                nonFollowerProbeSignature = proof
+                nonFollowerProbeSince = now
+                service.requestAutomationTickExact(20L)
+                return
+            }
+            // Read the same complete row twice; an absent badge during loading is not enough.
+            if (now - nonFollowerProbeSince < 20L) { service.requestAutomationTickExact(20L); return }
+            val target = XUiActions.findRelationshipTarget(root, XUiVocabulary.followingActions,
+                excluded + rows.filter { it.evidence.handle != handle }.map { it.evidence.handle }, fromBottom = false)
+            if (target?.handle != handle) {
+                retryNavigationWithDeadline(service, "@$handle için kişi ve Takip ediliyor düğmesi eşleşmedi; işlem yapılmadı", System.currentTimeMillis())
+                return
+            }
+            if (!UnfollowAttemptBudget.mayIssue(unfollowIssuedCount, current.limit, current.cycleIndex, current.perCycleLimit)) {
+                pause("Takipten çıkma deneme sınırına ulaşıldı; belirsiz sonuç yerine yeni kişiye basılmadı")
+                return
+            }
+            if (performStep(service, root, screen, "unfollow-non-follower", handle) { XUiActions.clickRelationship(service, target) }) {
+                unfollowIssuedCount++
+                unfollowFollowObservedAt = 0L
+                unfollowNoConfirmationSince = 0L
+                pendingAction = PendingAction(PendingKind.UNFOLLOW, handle)
+                nonFollowerProbeHandle = null
+                nonFollowerProbeSince = 0L
+                _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now,
+                    message = "@$handle seni takip etmiyor; takipten çıkma sonucu doğrulanıyor")
+                service.requestAutomationTick(450L)
+            }
+            return
+        }
+        nonFollowerProbeHandle = null
+        nonFollowerProbeSince = 0L
+        val uncertain = rows.count { it.evidence.handle !in nonFollowerFollowingRun.protectedHandles &&
+            it.evidence.handle !in excluded && NonFollowerPolicy.relationship(it.evidence) == NonFollowerRelationship.UNKNOWN }
+        if (reachedBoundary) {
+            val reason = if (!nonFollowerFollowingRun.ready) "Liste 100 kişiden önce bitti; herkes korundu"
+                else "Listenin eski ucuna ulaşıldı; ${current.verifiedCount} işlem doğrulandı"
+            // A partial scan ends with its actual count; the requested limit is never fabricated.
+            finishCycleOrTask(service, "$reason; belirsiz satırlar işlenmedi")
+            return
+        }
+        if (listScrolls >= 10000) { pause("Tarama kaydırma sınırında duraklatıldı; ilerleme korundu"); return }
+        if (uncertain > 0) nonFollowerUnknownViewports++
+        if (!NonFollowerFollowingScroller.scroll(service, root, rows, forward = true, snapshots = reading.snapshots)) {
+            retryNavigationWithDeadline(service, "Daha eski kişilere kaydırma tamamlanamadı; yeni kişilere dönülmedi", System.currentTimeMillis())
+            return
+        }
+        // Forward only: no reverse pass can touch the protected recent users.
+        nonFollowerViewportGate.afterScroll(System.currentTimeMillis())
+        nonFollowerScrollBoundary.afterScroll(signature)
+        service.requestAutomationTickExact(NonFollowerViewportGate.POLL_MS)
+    }
+
     private fun handleVerifiedFollow(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
         val current = _state.value
         when (current.flowStage) {
@@ -917,7 +1079,7 @@ object AutomationController {
                 if (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == own) {
                     if (XUiActions.clickProfileFollowers(service, root)) {
                         moveStage(XFlowStage.OPEN_MY_FOLLOWERS, "Kendi takipçiler listenin başı aranıyor")
-                        nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
+                        nextActionNotBefore = now + taskDelay(700L)
                     } else if (stageTimedOut(now)) return fail("Kendi profilinde takipçiler sayacı bulunamadı")
                 } else {
                     if (now - stageStartedAt >= 30_000L || stageAttempts >= 10)
@@ -929,7 +1091,7 @@ object AutomationController {
                             else -> service.pressBack()
                         }
                         stageAttempts++
-                        nextActionNotBefore = now + AutomationTuning.scaleDelay(1_200L)
+                        nextActionNotBefore = now + taskDelay(1_200L)
                     }
                 }
                 service.requestAutomationTick(700L)
@@ -956,19 +1118,19 @@ object AutomationController {
                     }
                     val scroll = ListViewportController.tryScrollUserRowsBackward(root)
                     if (scroll == ScrollAttemptResult.NO_SCROLL_CONTAINER)
-                        return pause("Takipçiler listesinin dikey kapsayıcısı okunamadı; yenileme hareketi yapılmadı")
+                        return retryNavigationWithDeadline(service, "Takipçiler listesinin dikey kapsayıcısı okunamadı; yenileme hareketi yapılmadı", System.currentTimeMillis())
                     if (scroll == ScrollAttemptResult.SCROLLED) listScrolls++
-                    nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
+                    nextActionNotBefore = now + taskDelay(700L)
                     service.requestAutomationTick(700L)
                 } else {
                     if (XUiActions.clickFollowersTab(service, root)) {
-                        nextActionNotBefore = now + AutomationTuning.scaleDelay(600L)
+                        nextActionNotBefore = now + taskDelay(600L)
                         service.requestAutomationTick(600L)
                     }
                     else if (stageTimedOut(now)) fail("Kendi Followers sekmesi açılamadı")
                     else {
                         ListGesture.left(service, root)
-                        nextActionNotBefore = now + AutomationTuning.scaleDelay(600L)
+                        nextActionNotBefore = now + taskDelay(600L)
                         service.requestAutomationTick(600L)
                     }
                 }
@@ -1001,9 +1163,9 @@ object AutomationController {
                 } else if (!fallbackFollowersOpened && screen in setOf(XScreen.PROFILE, XScreen.FOLLOWERS_LIST, XScreen.VERIFIED_FOLLOWERS_LIST)) {
                     if (!XUiActions.clickVisibleBack(service, root)) service.pressBack()
                 } else if (now - stageStartedAt >= 15_000L) {
-                    return pause("Kaynak profilin takipçi listesine dönüş doğrulanamadı; ilerleme korundu")
+                    return retryNavigationWithDeadline(service, "Kaynak profilin takipçi listesine dönüş doğrulanamadı; ilerleme korundu", System.currentTimeMillis())
                 }
-                nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
+                nextActionNotBefore = now + taskDelay(700L)
                 service.requestAutomationTick(700L)
             }
             XFlowStage.LOCATE_SOURCE_ROW -> {
@@ -1015,7 +1177,7 @@ object AutomationController {
                         service.requestAutomationTick(150L)
                         return
                     }
-                    if (now - stageStartedAt >= 8_000L) return pause("Yeni kaynak için ekran kimliği doğrulanamadı; ilerleme korundu")
+                    if (now - stageStartedAt >= 8_000L) return retryNavigationWithDeadline(service, "Yeni kaynak için ekran kimliği doğrulanamadı; ilerleme korundu", System.currentTimeMillis())
                     service.requestAutomationTick(500L)
                     return
                 }
@@ -1029,7 +1191,7 @@ object AutomationController {
                     sourceHandle = source
                     verifiedSourceCandidates.clear()
                     moveStage(XFlowStage.OPEN_SOURCE_PROFILE, "Onaylı listedeki @$source adına dokunuldu; profil doğrulanıyor")
-                    nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
+                    nextActionNotBefore = now + taskDelay(900L)
                 } else {
                     if (visible.isEmpty() && now - stageStartedAt >= 2_000L) {
                         fallbackFollowersOpened = false
@@ -1053,7 +1215,7 @@ object AutomationController {
                         listEndStable++
                         if (listEndStable >= 4) return pause("Onaylı listede yeni kaynak kalmadı; ${current.verifiedCount}/${current.limit} korundu")
                     }
-                    nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
+                    nextActionNotBefore = now + taskDelay(700L)
                 }
                 service.requestAutomationTick(700L)
             }
@@ -1065,7 +1227,7 @@ object AutomationController {
                         moveStage(XFlowStage.OPEN_SOURCE_FOLLOWERS, "@$source takipçileri açılıyor")
                         service.requestAutomationTick(500L)
                     } else if (stageTimedOut(now)) {
-                        pause("@$source profili doğrulandı fakat takipçiler sayacı tıklanamadı")
+                        retryNavigationWithDeadline(service, "@$source profili doğrulandı fakat takipçiler sayacı tıklanamadı", System.currentTimeMillis())
                     } else service.requestAutomationTick(500L)
                 } else {
                     val elapsed = now - stageStartedAt
@@ -1073,14 +1235,14 @@ object AutomationController {
                         val nodes = AccessibilityTree.snapshots(root)
                         val profile = ProfileSurfaceEvidence.read(nodes)
                         OperationLog.w("PROFILE_EVIDENCE", "screen=$screen nodes=${nodes.size} header=${XIdentityDetector.detectProfileHandle(root)} pairedCounters=${profile != null} selectedTab=${RelationshipTabInspector.selectedTab(root)}")
-                        return pause("@$source profil kimliği doğrulanamadı; PROFILE_EVIDENCE teşhisi kaydedildi, takip yapılmadı")
+                        return retryNavigationWithDeadline(service, "@$source profil kimliği doğrulanamadı; PROFILE_EVIDENCE teşhisi kaydedildi, takip yapılmadı", System.currentTimeMillis())
                     }
                     // Retry once only when the same username is still on a verified list surface.
                     if (elapsed >= 2_000L && stageAttempts == 0 &&
                         screen in setOf(XScreen.FOLLOWERS_LIST, XScreen.VERIFIED_FOLLOWERS_LIST)) {
                         stageAttempts++
                         XUiActions.clickSourceProfile(service, root, source)
-                        nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
+                        nextActionNotBefore = now + taskDelay(900L)
                     }
                     service.requestAutomationTick(TICK_MS)
                 }
@@ -1102,17 +1264,17 @@ object AutomationController {
                 } else {
                     stageAttempts++
                     if (!XUiActions.clickVerifiedTab(service, root)) ListGesture.right(service, root)
-                    nextActionNotBefore = now + AutomationTuning.scaleDelay(650L)
+                    nextActionNotBefore = now + taskDelay(650L)
                     service.requestAutomationTick(650L)
                 }
             }
             XFlowStage.PROCESS_VERIFIED_FOLLOW -> {
                 if (screen != XScreen.VERIFIED_FOLLOWERS_LIST) {
                     stageAttempts++
-                    if (stageAttempts >= 6) pauseVerifiedTab(root, screen, "Onaylı Takipçiler listesi doğrulanamadı")
+                    if (stageAttempts >= 6) recoverVerifiedTab(service, root, screen, "Onaylı Takipçiler listesi doğrulanamadı")
                     else {
                         XUiActions.clickVerifiedTab(service, root)
-                        nextActionNotBefore = now + AutomationTuning.scaleDelay(650L)
+                        nextActionNotBefore = now + taskDelay(650L)
                         service.requestAutomationTick(650L)
                     }
                     return
@@ -1294,7 +1456,7 @@ object AutomationController {
                 if (ReplyComposerEvidence.ready(nodes, screen)) {
                     moveStage(XFlowStage.FILL_COMPOSER, "Görünür yorum alanı bulundu; metin yazılıyor")
                 } else if (stageTimedOut(now)) {
-                    pause("Hedef gönderi açıldı fakat yorum alanı iki denemede açılamadı; QUOTE_REPLY kaydını kontrol et")
+                    retryNavigationWithDeadline(service, "Hedef gönderi açıldı fakat yorum alanı iki denemede açılamadı; QUOTE_REPLY kaydını kontrol et", System.currentTimeMillis())
                     return
                 } else if (screen == XScreen.TWEET_DETAIL && expected != null && ReplyComposerEvidence.matchesPost(nodes, expected) &&
                     stageAttempts < 2 && (stageAttempts == 0 || now - stageStartedAt >= 1_500L)) {
@@ -1306,13 +1468,13 @@ object AutomationController {
             }
             XFlowStage.FILL_COMPOSER -> {
                 if (!ReplyComposerEvidence.ready(nodes, screen)) {
-                    if (stageTimedOut(now)) pause("Yorum yazılırken görünür alan kayboldu; gönderim yapılmadı")
+                    if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Yorum yazılırken görünür alan kayboldu; gönderim yapılmadı", System.currentTimeMillis())
                     else service.requestAutomationTick(350L)
                 } else if (ReplyComposerEvidence.contains(nodes, content)) {
                     moveStage(XFlowStage.SUBMIT_COMPOSER, "Yorum metni taze ekranda okundu; gönderim hazırlanıyor")
                     service.requestAutomationTick(300L)
                 } else if (stageTimedOut(now)) {
-                    pause("Yorum metni ekranda doğrulanamadı; gönderim yapılmadı")
+                    retryNavigationWithDeadline(service, "Yorum metni ekranda doğrulanamadı; gönderim yapılmadı", System.currentTimeMillis())
                 } else {
                     if (stageAttempts++ < 3) {
                         val accepted = XUiActions.setReplyText(service, root, content)
@@ -1323,12 +1485,12 @@ object AutomationController {
             }
             XFlowStage.SUBMIT_COMPOSER -> {
                 if (!ReplyComposerEvidence.ready(nodes, screen) || !ReplyComposerEvidence.contains(nodes, content)) {
-                    pause("Gönderimden önce yorum metni/alanı değişti; gönderim yapılmadı")
+                    retryNavigationWithDeadline(service, "Gönderimden önce yorum metni/alanı değişti; gönderim yapılmadı", System.currentTimeMillis())
                     return
                 }
-                val key = expected?.key ?: return pause("Hedef gönderi kimliği kayboldu; yorum gönderilmedi")
+                val key = expected?.key ?: return retryNavigationWithDeadline(service, "Hedef gönderi kimliği kayboldu; yorum gönderilmedi", System.currentTimeMillis())
                 if (ReplyComposerEvidence.submitIndex(nodes) == null) {
-                    if (stageTimedOut(now)) pause("Yorum yazıldı fakat etkin Yanıtla/Gönder düğmesi bulunamadı")
+                    if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Yorum yazıldı fakat etkin Yanıtla/Gönder düğmesi bulunamadı", System.currentTimeMillis())
                     else service.requestAutomationTick(350L)
                     return
                 }
@@ -1417,7 +1579,7 @@ object AutomationController {
                             if (!service.launchDiscoveryProfile(target, attempt)) {
                                 beginDiscoverySearch(service, target)
                             } else {
-                                nextActionNotBefore = now + AutomationTuning.scaleDelay(DiscoveryTargetLaunchPolicy.SETTLE_MS)
+                                nextActionNotBefore = now + taskDelay(DiscoveryTargetLaunchPolicy.SETTLE_MS)
                                 service.requestAutomationTick(DiscoveryTargetLaunchPolicy.SETTLE_MS)
                             }
                         }
@@ -1430,7 +1592,7 @@ object AutomationController {
             XFlowStage.SEARCH_DISCOVERY_TARGET -> handleDiscoverySearch(service, root, screen, now, target)
             XFlowStage.SCAN_LATEST_TWEETS -> {
                 if (screen !in setOf(XScreen.PROFILE, XScreen.UNKNOWN)) {
-                    if (stageTimedOut(now)) pause("@$target gönderi listesi doğrulanamadı; görev tamamlanmadı") else service.requestAutomationTick(TICK_MS)
+                    if (stageTimedOut(now)) retryNavigationWithDeadline(service, "@$target gönderi listesi doğrulanamadı; görev tamamlanmadı", System.currentTimeMillis()) else service.requestAutomationTick(TICK_MS)
                     return
                 }
                 val seen = discoverySeenTweets.getOrPut(target) { LinkedHashMap() }
@@ -1442,7 +1604,7 @@ object AutomationController {
                     OperationLog.w("DISCOVERY_READ", "Gönderi okunamadı; ekran kanıtı=$evidence")
                 }
                 if (now - stageStartedAt > 180_000L) {
-                    pause("Üç dakikada yeni uygun gönderi açılamadı; tarama kanıtı DISCOVERY_READ kaydında")
+                    retryNavigationWithDeadline(service, "Üç dakikada yeni uygun gönderi açılamadı; tarama kanıtı DISCOVERY_READ kaydında", System.currentTimeMillis())
                     return
                 }
                 rows.forEach { row -> seen.putIfAbsent(row.key, row.ageMinutes) }
@@ -1462,7 +1624,7 @@ object AutomationController {
                     discoveryTweetKey = eligible.key
                     OperationLog.i("DISCOVERY_TWEET", "target=@$target age=${eligible.ageMinutes} text=${eligible.textTarget != null} key=${eligible.key}")
                     if (eligible.textTarget == null) {
-                        pause("Uygun gönderi bulundu fakat metin alanı okunamadı; yanlış yere basılmadı")
+                        retryNavigationWithDeadline(service, "Uygun gönderi bulundu fakat metin alanı okunamadı; yanlış yere basılmadı", System.currentTimeMillis())
                         return
                     }
                     if (performStep(service, root, screen, "open_discovery_tweet", eligible.key) { XTweetInspector.click(service, eligible) }) {
@@ -1506,7 +1668,7 @@ object AutomationController {
                             discoveryTweetKey = row.key
                             discoveryOpenAttempt = attempt.copy(count = attempt.count + 1, at = now)
                             OperationLog.i("DISCOVERY_OPEN_RETRY", "key=${attempt.key} freshKey=${row.key} attempt=${attempt.count + 1} accepted=$accepted; aynı gönderi profilde kaldı")
-                            nextActionNotBefore = now + AutomationTuning.scaleDelay(1_500L)
+                            nextActionNotBefore = now + taskDelay(1_500L)
                             service.requestAutomationTick(1_500L)
                         }
                         DiscoveryTweetOpenRecovery.Decision.RESCAN -> {
@@ -1531,7 +1693,7 @@ object AutomationController {
                     return
                 }
                 if (screen != XScreen.TWEET_DETAIL) {
-                    if (stageTimedOut(now)) pause("Gönderi metnine dokunuldu fakat detay açılmadı; gönderi işlenmiş sayılmadı") else service.requestAutomationTick(TICK_MS)
+                    if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Gönderi metnine dokunuldu fakat detay açılmadı; gönderi işlenmiş sayılmadı", System.currentTimeMillis()) else service.requestAutomationTick(TICK_MS)
                     return
                 }
                 discoveryTweetKey?.let(discoveryProcessedTweets::add)
@@ -1551,7 +1713,7 @@ object AutomationController {
                     TaskType.COMMENT_QUOTE_TARGETS -> {
                         val expected = quoteReplyPost
                         if (expected == null || !ReplyComposerEvidence.matchesPost(AccessibilityTree.snapshots(root), expected)) {
-                            if (stageTimedOut(now)) pause("Açılan gönderinin yazarı ve metni hedefle eşleşmedi; yorum yazılmadı")
+                            if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Açılan gönderinin yazarı ve metni hedefle eşleşmedi; yorum yazılmadı", System.currentTimeMillis())
                             else service.requestAutomationTick(350L)
                             return
                         }
@@ -1562,12 +1724,12 @@ object AutomationController {
                         val quotes = current.taskType == TaskType.QUOTER_FOLLOW
                         if (XUiActions.clickEngagementList(service, root, quotes)) {
                             // Count accepted taps too: dispatch success is not proof of navigation.
-                            if (++engagementOpenAttempts >= 12) return pause("Alıntıları görüntüle dokunuşu listeyi açmadı")
+                            if (++engagementOpenAttempts >= 12) return retryNavigationWithDeadline(service, "Alıntıları görüntüle dokunuşu listeyi açmadı", System.currentTimeMillis())
                             // Searching below media must not consume the next screen's tab retries.
                             stageAttempts = 0
                             listEndStable = 0
                             lastListSignature = ""
-                            nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
+                            nextActionNotBefore = now + taskDelay(700L)
                             service.requestAutomationTick(500L)
                         } else if (DiscoveryViewportEvidence.quotesExhausted(stageAttempts++, listEndStable)) nextDiscoveryTweet(service, "Bu gönderide Alıntıları görüntüle/etkileşim listesi yok")
                         else {
@@ -1607,7 +1769,7 @@ object AutomationController {
                         engagementRestoreAttempts < 2 && now - stageStartedAt >= 1_500L) {
                         engagementRestoreAttempts++
                         ListGesture.backward(service, root)
-                        nextActionNotBefore = now + AutomationTuning.scaleDelay(900L)
+                        nextActionNotBefore = now + taskDelay(900L)
                         service.requestAutomationTick(900L)
                     } else if (stageTimedOut(now)) nextDiscoveryTweet(service, "Etkileşim listesi doğrulanamadı") else service.requestAutomationTick(TICK_MS)
                     return
@@ -1661,7 +1823,7 @@ object AutomationController {
                             return
                         }
                         if (reply.authorTruncated) {
-                            pause("Yorumcu kullanıcı adı eksik okunuyor; metin yorumu atlanmadı, ilerleme korundu")
+                            retryNavigationWithDeadline(service, "Yorumcu kullanıcı adı eksik okunuyor; metin yorumu atlanmadı, ilerleme korundu", System.currentTimeMillis())
                             return
                         }
                         val parentSignature = DiscoveryViewportEvidence.signature(nodes)
@@ -1674,15 +1836,15 @@ object AutomationController {
                             engagerParentKeys = parentKeys
                             engagerParentAuthor = CommentDetailEvidence.header(nodes)?.handle
                             moveStage(XFlowStage.OPEN_ENGAGER_PROFILE, "Yorumcu @$author gönderisi veya profili doğrulanıyor")
-                            nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
+                            nextActionNotBefore = now + taskDelay(700L)
                             service.requestAutomationTick(700L)
                         } else {
                             val attempts = (replyOpenAttempts[reply.key] ?: 0) + 1
                             replyOpenAttempts[reply.key] = attempts
                             OperationLog.w("COMMENT_OPEN_RETRY", "@$author attempt=$attempts; metin yorumu atlanmadı")
-                            if (attempts >= 3) pause("@$author yorumu açılamadı; kullanıcı atlanmadı, ilerleme korundu")
+                            if (attempts >= 3) retryNavigationWithDeadline(service, "@$author yorumu açılamadı; kullanıcı atlanmadı, ilerleme korundu", System.currentTimeMillis())
                             else {
-                                nextActionNotBefore = now + AutomationTuning.scaleDelay(650L)
+                                nextActionNotBefore = now + taskDelay(650L)
                                 service.requestAutomationTick(650L)
                             }
                         }
@@ -1702,9 +1864,9 @@ object AutomationController {
                 service.requestAutomationTick(500L)
             }
             XFlowStage.OPEN_ENGAGER_PROFILE -> {
-                val handle = engagerHandle ?: return pause("Yorumcu kimliği okunamadı; kullanıcı atlanmadı, ilerleme korundu")
+                val handle = engagerHandle ?: return retryNavigationWithDeadline(service, "Yorumcu kimliği okunamadı; kullanıcı atlanmadı, ilerleme korundu", System.currentTimeMillis())
                 if (screen == XScreen.TWEET_DETAIL && isEngagerParent(root)) {
-                    if (stageTimedOut(now)) pause("@$handle yorumu açılmadı; kullanıcı atlanmadı, ilerleme korundu")
+                    if (stageTimedOut(now)) retryNavigationWithDeadline(service, "@$handle yorumu açılmadı; kullanıcı atlanmadı, ilerleme korundu", System.currentTimeMillis())
                     else {
                         if (now - stageStartedAt >= 1_500L && stageAttempts < 2) {
                             val retry = ++stageAttempts
@@ -1712,7 +1874,7 @@ object AutomationController {
                             val accepted = row != null && !XTweetInspector.replyHasMedia(root, row) &&
                                 XTweetInspector.click(service, row, retryAttempt = retry)
                             OperationLog.i("COMMENT_OPEN_RETRY", "@$handle bodyAttempt=$retry accepted=$accepted; aynı ana yorum görünümü")
-                            nextActionNotBefore = now + AutomationTuning.scaleDelay(850L)
+                            nextActionNotBefore = now + taskDelay(850L)
                         }
                         service.requestAutomationTick(350L)
                     }
@@ -1781,14 +1943,15 @@ object AutomationController {
 
     private fun continueEngagerReturn(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long, target: String) {
         val nodes = AccessibilityTree.snapshots(root)
-        val parent = screen == XScreen.TWEET_DETAIL && isEngagerParent(root)
+        val headerAuthor = CommentDetailEvidence.header(nodes)?.handle
+        val parent = screen == XScreen.TWEET_DETAIL && isEngagerParent(root, nodes)
         val targetVisible = DiscoveryProfileEvidence.matches(nodes, XIdentityDetector.detectProfileHandle(root), target)
-        val child = screen == XScreen.TWEET_DETAIL ||
-            (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == engagerHandle) ||
-            (screen == XScreen.UNKNOWN && nodes.any { it.visible && listOfNotNull(it.text, it.contentDescription).any(CommentDetailEvidence::isTitle) })
+        val child = (screen in setOf(XScreen.TWEET_DETAIL, XScreen.UNKNOWN) &&
+            CommenterReturnPolicy.provenChildDetail(headerAuthor, engagerHandle, engagerParentAuthor)) ||
+            (screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == engagerHandle)
         val decision = CommenterReturnPolicy.decide(parent, targetVisible, child, stageAttempts, now - stageStartedAt,
             if (engagerReturnLastBackAt == 0L) Long.MAX_VALUE else now - engagerReturnLastBackAt)
-        OperationLog.i("COMMENT_RETURN", "decision=$decision screen=$screen attempt=$stageAttempts")
+        OperationLog.i("COMMENT_RETURN", "decision=$decision screen=$screen attempt=$stageAttempts header=@$headerAuthor child=@$engagerHandle parent=@$engagerParentAuthor elapsed=${now - stageStartedAt}")
         when (decision) {
             CommenterReturnPolicy.Decision.PARENT -> {
                 engagerHandle = null
@@ -1802,16 +1965,16 @@ object AutomationController {
                 stageAttempts++
                 engagerReturnLastBackAt = now
                 service.pressBack()
-                nextActionNotBefore = now + AutomationTuning.scaleDelay(1_000L)
+                nextActionNotBefore = now + taskDelay(1_000L)
                 service.requestAutomationTick(1_000L)
             }
             CommenterReturnPolicy.Decision.WAIT -> service.requestAutomationTick(350L)
-            CommenterReturnPolicy.Decision.PAUSE -> pause("Ana yorumlara dönüş doğrulanamadı; hedef terk edilmedi, ilerleme korundu")
+            CommenterReturnPolicy.Decision.RESTART -> restartNavigationThroughAtmaca(service,
+                "Ana yorumlara dönüş 10 saniyede doğrulanamadı; screen=$screen; backAttempts=$stageAttempts")
         }
     }
 
-    private fun isEngagerParent(root: AccessibilityNodeInfo?): Boolean {
-        val nodes = AccessibilityTree.snapshots(root)
+    private fun isEngagerParent(root: AccessibilityNodeInfo?, nodes: List<NodeSnapshot>): Boolean {
         return DiscoveryViewportEvidence.returnedToParent(engagerParentSignature,
             DiscoveryViewportEvidence.signature(nodes), engagerParentKeys, XTweetInspector.visibleTweets(root).map { it.key },
             CommentDetailEvidence.header(nodes)?.handle, engagerHandle, engagerReplyKey, engagerParentAuthor)
@@ -1842,7 +2005,7 @@ object AutomationController {
                             pendingAction = null
                             pause("@$handle yeniden Takip ediliyor göründü; işlem doğrulanamadı. X durumunu kontrol et.")
                         }
-                        rowShowsFollow && !rowStillFollowing && now - unfollowFollowObservedAt >= AutomationTuning.scaleDelay(UNFOLLOW_RESULT_STABLE_MS) -> recordSuccess(service, "@$handle")
+                        rowShowsFollow && !rowStillFollowing && now - unfollowFollowObservedAt >= taskDelay(UNFOLLOW_RESULT_STABLE_MS) -> recordSuccess(service, "@$handle")
                         elapsed >= ACTION_TIMEOUT_MS * 2L -> skipUnfollowTarget(service, handle, "İlişki sonucu kararsız; başarı sayılmadan kullanıcı atlandı")
                         else -> service.requestAutomationTick(350L)
                     }
@@ -1979,7 +2142,7 @@ object AutomationController {
         } else verifiedFollowingStableAt = 0L
         val outcome = VerifiedFollowPolicy.outcome(verifiedFollowingObservedAt > 0L, following, plainFollow,
             if (verifiedFollowingStableAt > 0L) now - verifiedFollowingStableAt else 0L, now - pending.startedAt, requested,
-            AutomationTuning.scaleDelay(2_000L).coerceIn(250L, 2_000L),
+            taskDelay(2_000L).coerceIn(250L, 2_000L),
             unchangedSince?.let { now - it } ?: 0L)
         verifiedRevertStreak = VerifiedFollowPolicy.nextStreak(verifiedRevertStreak, outcome)
         when (outcome) {
@@ -2026,9 +2189,11 @@ object AutomationController {
             discoveryTweetKey?.let(quotePostedKeys::add)
         }
         pendingAction = null
+        navigationRestartAttempts = 0
         unfollowFollowObservedAt = 0L
         target?.removePrefix("@")?.let(processedHandles::add)
         if (current.taskType == TaskType.UNFOLLOW) afterUnfollowTargetHandled()
+        if (current.taskType == TaskType.UNFOLLOW_NON_FOLLOWERS) nonFollowerScrollBoundary.reset()
         val next = (current.verifiedCount + 1).coerceAtMost(current.limit)
         _state.value = current.copy(
             status = RuntimeStatus.RUNNING,
@@ -2048,8 +2213,82 @@ object AutomationController {
                 return
             }
             if (current.flowStage == XFlowStage.OPEN_ENGAGER_PROFILE) returnFromEngager(service)
-            nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.betweenActionsMs
-            service.requestAutomationTickExact(AutomationTuning.betweenActionsMs)
+            val actionGap = if (current.taskType == TaskType.UNFOLLOW_NON_FOLLOWERS) NonFollowerTiming.ACTION_MS else AutomationTuning.betweenActionsMs
+            nextActionNotBefore = System.currentTimeMillis() + actionGap
+            service.requestAutomationTickExact(actionGap)
+        }
+    }
+
+    /** Keep transient navigation failures visible to the common ten-second watchdog. */
+    private fun retryNavigationWithDeadline(service: AtmacaAccessibilityService, reason: String, now: Long) {
+        val current = _state.value
+        if (!isSessionActive(current) || current.status == RuntimeStatus.PAUSED || current.status in terminalStatuses()) return
+        if (pendingAction != null || current.quotePendingKey != null) {
+            _state.value = current.copy(status = RuntimeStatus.VERIFYING, message = "$reason; bekleyen işlem yalnız yeniden doğrulanıyor")
+            service.requestAutomationTickExact(250L)
+            return
+        }
+        if (stageStartedAt == 0L) stageStartedAt = now
+        if (NavigationRestartPolicy.deadlineReached(now - stageStartedAt)) {
+            restartNavigationThroughAtmaca(service, reason)
+        } else {
+            _state.value = current.copy(status = RuntimeStatus.RECOVERING,
+                message = "$reason; 10 saniye içinde düzelmezse Atmaca'ya dönülüp yeniden başlatılacak")
+            service.requestAutomationTickExact(250L)
+        }
+    }
+
+    /** Reset navigation, never the task/session, confirmed count, cycle or completed people. */
+    private fun prepareNavigationRestart(reason: String): Pair<String?, String?>? {
+        val current = _state.value
+        if (!isSessionActive(current) || !NavigationRestartPolicy.mayPrepare(current, pendingAction != null, navigationRecoveryReturning)) return null
+        if (++navigationRestartAttempts > NavigationRestartPolicy.MAX_ATTEMPTS) {
+            pause("$reason; ${NavigationRestartPolicy.MAX_ATTEMPTS} yeniden başlatmada sonuç alınamadı, ilerleme korundu")
+            return null
+        }
+        resetOperationNavigation()
+        accountNavigationGate.clear()
+        accountSelectionMade = false
+        accountSettleUntil = 0L
+        accountReturnStartedAt = 0L
+        accountReturnLastBackAt = 0L
+        accountReturnAttempts = 0
+        discoverySearchStep = 0
+        discoverySearchSubmitted = false
+        discoveryResultAttempts = 0
+        nextActionNotBefore = 0L
+        loopGuard.clear()
+        navigationRecoveryReturning = true
+        navigationRecoveryStartedAt = System.currentTimeMillis()
+        navigationRecoveryGeneration++
+        _state.value = current.copy(status = RuntimeStatus.RECOVERING, accountVerified = false,
+            flowStage = XFlowStage.VERIFY_ACCOUNT,
+            message = "$reason; Atmaca'ya dönülüp aynı görev ${current.verifiedCount}/${current.limit} ilerlemesiyle yeniden başlatılıyor")
+        return current.taskId to current.sessionId
+    }
+
+    private fun restartNavigationThroughAtmaca(service: AtmacaAccessibilityService, reason: String) {
+        val token = prepareNavigationRestart(reason) ?: return
+        val generation = navigationRecoveryGeneration
+        OperationLog.w("TASK_RESTART", "task=${token.first} attempt=$navigationRestartAttempts reason=$reason; progress=${_state.value.verifiedCount}")
+        val accepted = service.launchAtmaca { returned ->
+            service.runOnAutomationThread {
+                val live = _state.value
+                if (NavigationRestartPolicy.acceptsCallback(live, token.first, token.second, navigationRecoveryReturning,
+                    generation, navigationRecoveryGeneration) && isSessionActive(live)) {
+                    navigationRecoveryReturning = false
+                    navigationRecoveryStartedAt = 0L
+                    OperationLog.i("TASK_RESTART_RETURN", "returned=$returned task=${live.taskId} progress=${live.verifiedCount}/${live.limit} cycle=${live.cycleIndex + 1}")
+                    _state.value = live.copy(status = RuntimeStatus.PREPARING, activeScreen = XScreen.UNKNOWN,
+                        message = "Aynı görev kaldığı ilerlemeden başlatılıyor; aktif hesap yeniden doğrulanacak")
+                    if (!service.launchXHome()) fail("10 saniye kurtarmasında X yeniden açılamadı")
+                    else service.requestAutomationTick(TICK_MS)
+                }
+            }
+        }
+        if (!accepted) {
+            navigationRecoveryReturning = false
+            pause("Atmaca'ya dönüş başlatılamadı; görev ilerlemesi korundu")
         }
     }
 
@@ -2092,7 +2331,7 @@ object AutomationController {
         val current = _state.value
         pendingAction = null
         unfollowFollowObservedAt = 0L
-        if (current.taskType == TaskType.UNFOLLOW) {
+        if (current.taskType?.isUnfollowAction == true) {
             pause("$reason: @$handle. Sonuç belirsiz; yerine başka kullanıcı işlenmedi.")
             return
         }
@@ -2110,7 +2349,7 @@ object AutomationController {
 
     private fun finishCycleOrTask(service: AtmacaAccessibilityService, reason: String) {
         val current = _state.value
-        if ((current.taskType?.isDiscoveryFollow == true || current.taskType == TaskType.COMMENT_QUOTE_TARGETS) && !cycleTargetReached()) {
+        if ((current.taskType?.isUnfollowAction == true || current.taskType?.isDiscoveryFollow == true || current.taskType == TaskType.COMMENT_QUOTE_TARGETS) && !cycleTargetReached()) {
             pause("$reason. ${current.verifiedCount}/${current.limit}; limit tamamlanmadı, ilerleme korundu")
             return
         }
@@ -2172,14 +2411,14 @@ object AutomationController {
         service.requestAutomationTick(650L)
     }
 
-    private fun pauseVerifiedTab(root: AccessibilityNodeInfo?, screen: XScreen, reason: String) {
+    private fun recoverVerifiedTab(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, reason: String) {
         val headers = AccessibilityTree.snapshots(root).filter { it.visible }.mapNotNull { node ->
             val labels = listOfNotNull(node.text, node.contentDescription)
             if (RelationshipTabInspector.classifySelectedLabels(labels) == RelationshipTabInspector.NONE) null
             else "${labels.joinToString("/").take(120)} selected=${node.selected} checked=${node.checked} bounds=${node.bounds}"
         }.distinct().take(24).joinToString(" | ")
         OperationLog.w("VERIFIED_TAB", "screen=$screen selected=${RelationshipTabInspector.selectedTab(root)} headers=$headers")
-        pause("$reason; ekran teşhisi kaydedildi, sayfa yeniden açılmadı")
+        retryNavigationWithDeadline(service, "$reason; ekran teşhisi kaydedildi", System.currentTimeMillis())
     }
 
     private fun beginDiscoverySearch(service: AtmacaAccessibilityService, target: String) {
@@ -2201,7 +2440,7 @@ object AutomationController {
             return
         }
         if (now - stageStartedAt >= 45_000L) {
-            pause("@$target X içi aramada açılamadı; hedef doğrulanmadığı için görev tamamlanmadı")
+            retryNavigationWithDeadline(service, "@$target X içi aramada açılamadı; hedef doğrulanmadığı için görev tamamlanmadı", System.currentTimeMillis())
             return
         }
         val nodes = AccessibilityTree.nodes(root)
@@ -2246,7 +2485,7 @@ object AutomationController {
                     val people = DiscoverySearchSelector.peopleTab(snapshots)
                     if (discoverySearchSubmitted && (people == null || !snapshots[people].selected)) {
                         if (people != null) GestureClick.gestureTap(service, nodes[people])
-                        nextActionNotBefore = now + AutomationTuning.scaleDelay(1_000L)
+                        nextActionNotBefore = now + taskDelay(1_000L)
                         service.requestAutomationTick(1_000L)
                         return
                     }
@@ -2274,13 +2513,13 @@ object AutomationController {
                         discoverySearchStep = 2
                         action = "retry-unopened-exact-result"
                     }
-                    SearchRecovery.PAUSE -> return pause("@$target arama sonucu üç dokunuşta açılmadı; başka hesaba dokunulmadı")
+                    SearchRecovery.PAUSE -> return retryNavigationWithDeadline(service, "@$target arama sonucu üç dokunuşta açılmadı; başka hesaba dokunulmadı", System.currentTimeMillis())
                     SearchRecovery.WAIT -> Unit
                 }
             }
         }
         if (action != "wait") OperationLog.i("DISCOVERY_SEARCH", "target=@$target step=$discoverySearchStep action=$action accepted=$accepted screen=$screen")
-        nextActionNotBefore = now + AutomationTuning.scaleDelay(1_000L)
+        nextActionNotBefore = now + taskDelay(1_000L)
         service.requestAutomationTick(1_000L)
     }
 
@@ -2333,11 +2572,11 @@ object AutomationController {
                 stageAttempts++
                 discoveryReturnLastBackAt = now
                 XUiActions.clickVisibleBack(service, root)
-                nextActionNotBefore = now + AutomationTuning.scaleDelay(700L)
+                nextActionNotBefore = now + taskDelay(700L)
                 service.requestAutomationTick(700L)
             }
             DiscoveryReturnPolicy.Decision.WAIT -> service.requestAutomationTick(350L)
-            DiscoveryReturnPolicy.Decision.PAUSE -> pause("@$target profiline dönüş doğrulanamadı; ilerleme korundu")
+            DiscoveryReturnPolicy.Decision.PAUSE -> retryNavigationWithDeadline(service, "@$target profiline dönüş doğrulanamadı; ilerleme korundu", System.currentTimeMillis())
         }
     }
 
@@ -2457,12 +2696,12 @@ object AutomationController {
             _state.value = _state.value.copy(listScrolls = listScrolls)
         }
         if (dispatched) {
-            if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.scaleDelay(850L)
+            if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) nextActionNotBefore = System.currentTimeMillis() + taskDelay(850L)
             if (_state.value.taskType == TaskType.UNFOLLOW) {
-                nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(UNFOLLOW_SCROLL_SETTLE_MS))
+                nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + taskDelay(UNFOLLOW_SCROLL_SETTLE_MS))
             }
             if (_state.value.taskType == TaskType.VERIFIED_FOLLOW) {
-                nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(900L).coerceAtLeast(180L))
+                nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + taskDelay(900L).coerceAtLeast(180L))
             }
         }
         if (changed) listEndStable = 0
@@ -2482,12 +2721,12 @@ object AutomationController {
             _state.value = _state.value.copy(listScrolls = listScrolls)
         }
         if (dispatched) {
-            if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) nextActionNotBefore = System.currentTimeMillis() + AutomationTuning.scaleDelay(850L)
+            if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) nextActionNotBefore = System.currentTimeMillis() + taskDelay(850L)
             if (_state.value.taskType == TaskType.UNFOLLOW) {
-                nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(UNFOLLOW_SCROLL_SETTLE_MS))
+                nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + taskDelay(UNFOLLOW_SCROLL_SETTLE_MS))
             }
             if (_state.value.taskType == TaskType.VERIFIED_FOLLOW) {
-                nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + AutomationTuning.scaleDelay(900L).coerceAtLeast(180L))
+                nextActionNotBefore = maxOf(nextActionNotBefore, System.currentTimeMillis() + taskDelay(900L).coerceAtLeast(180L))
             }
         }
         if (changed) listEndStable = 0
@@ -2552,6 +2791,9 @@ object AutomationController {
         return true
     }
 
+    private fun taskDelay(nominalMs: Long): Long =
+        NonFollowerTiming.scaleDelay(nominalMs, _state.value.taskType == TaskType.UNFOLLOW_NON_FOLLOWERS)
+
     private fun stageTimedOut(now: Long): Boolean = stageStartedAt > 0L && now - stageStartedAt >= UI_TIMEOUT_MS
 
     private fun cycleTargetReached(progress: Int = _state.value.verifiedCount): Boolean =
@@ -2564,7 +2806,20 @@ object AutomationController {
             ?: activeTask?.contentText.orEmpty()
     }
 
+    private fun resetNonFollowerNavigation() {
+        nonFollowerFollowingRun = NonFollowerFollowingRun()
+        nonFollowerViewportGate.reset()
+        nonFollowerScrollBoundary.reset()
+        nonFollowerAtTop = false
+        nonFollowerViewport = ""
+        nonFollowerProbeHandle = null
+        nonFollowerProbeSince = 0L
+        nonFollowerProbeSignature = ""
+        nonFollowerUnknownViewports = 0
+    }
+
     private fun resetOperationNavigation() {
+        resetNonFollowerNavigation()
         quoteReplyPost = null
         quoteCheckpointToken = null
         quoteCheckpointSaving = null
@@ -2637,6 +2892,8 @@ object AutomationController {
     }
 
     private fun resetTransient(clearSession: Boolean) {
+        navigationRecoveryReturning = false
+        navigationRestartAttempts = 0
         unfollowRecoveryReturning = false
         unfollowNoConfirmationSince = 0L
         pendingAction = null
@@ -2693,7 +2950,7 @@ object AutomationController {
         TaskType.COMMENT -> AutomationAction.COMMENT
         TaskType.QUOTE -> AutomationAction.QUOTE
         TaskType.COMMENT_QUOTE_TARGETS -> AutomationAction.COMMENT
-        TaskType.UNFOLLOW -> AutomationAction.UNFOLLOW
+        TaskType.UNFOLLOW, TaskType.UNFOLLOW_NON_FOLLOWERS -> AutomationAction.UNFOLLOW
         TaskType.VERIFIED_FOLLOW -> AutomationAction.FOLLOW_VERIFIED
         TaskType.COMMENTER_FOLLOW -> AutomationAction.FOLLOW_COMMENTER
         TaskType.RETWEETER_FOLLOW -> AutomationAction.FOLLOW_RETWEETER

@@ -133,6 +133,7 @@ private enum class TaskGroup(val title: String, val shortTitle: String) {
 private val TASK_TYPES_BY_GROUP = mapOf(
     TaskGroup.FOLLOW to listOf(
         TaskType.UNFOLLOW,
+        TaskType.UNFOLLOW_NON_FOLLOWERS,
         TaskType.VERIFIED_FOLLOW,
         TaskType.COMMENTER_FOLLOW,
         TaskType.RETWEETER_FOLLOW,
@@ -148,6 +149,7 @@ private val TASK_TYPES_BY_GROUP = mapOf(
 
 private val SCALABLE_TYPES = setOf(
     TaskType.UNFOLLOW,
+    TaskType.UNFOLLOW_NON_FOLLOWERS,
     TaskType.VERIFIED_FOLLOW,
     TaskType.COMMENTER_FOLLOW,
     TaskType.RETWEETER_FOLLOW,
@@ -886,7 +888,7 @@ private fun TaskEditorDialog(
     var selectedTypes by remember(original) { mutableStateOf(setOf(original?.type ?: TaskType.UNFOLLOW)) }
     var limitText by remember(original) {
         mutableStateOf(
-            (original?.limit ?: if (original?.type == TaskType.UNFOLLOW) defaultUnfollowLimit else defaultFollowLimit).toString(),
+            (original?.limit ?: if (original?.type?.isUnfollowAction == true) defaultUnfollowLimit else defaultFollowLimit).toString(),
         )
     }
     var repeatText by remember(original) { mutableStateOf((original?.repeatCount ?: 1).toString()) }
@@ -1034,6 +1036,12 @@ private fun TaskEditorDialog(
                                 if (checked) Icon(Icons.Filled.CheckCircle, null, Modifier.size(17.dp), tint = taskColor(type))
                             }
                         }
+                    }
+                }
+
+                if (TaskType.UNFOLLOW_NON_FOLLOWERS in selectedTypes) {
+                    item(key = "non-followers-help") {
+                        Text("İlk 100 kişi korunur. 101. kişiden aşağıya doğru yalnız seni takip etmeyenler çıkarılır.", color = TextSecondary, fontSize = 10.sp)
                     }
                 }
 
@@ -1247,6 +1255,7 @@ private fun successfulCycleCount(task: ScheduledTask): Int {
 
 private fun taskGroup(type: TaskType): TaskGroup = when (type) {
     TaskType.UNFOLLOW,
+    TaskType.UNFOLLOW_NON_FOLLOWERS,
     TaskType.VERIFIED_FOLLOW,
     TaskType.COMMENTER_FOLLOW,
     TaskType.RETWEETER_FOLLOW,
@@ -1277,7 +1286,7 @@ private fun taskGroupSoftColor(group: TaskGroup): Color = when (group) {
 }
 
 private fun taskSoftColor(type: TaskType): Color = when (taskGroup(type)) {
-    TaskGroup.FOLLOW -> if (type == TaskType.UNFOLLOW) SoftOrange else SoftGreen
+    TaskGroup.FOLLOW -> if (type.isUnfollowAction) SoftOrange else SoftGreen
     TaskGroup.ENGAGEMENT -> if (type == TaskType.LIKE) Color(0xFF352431) else SoftBlue
 }
 
@@ -1310,13 +1319,13 @@ private fun taskIcon(type: TaskType): ImageVector = when (type) {
     TaskType.RETWEET, TaskType.QUOTE -> Icons.Filled.Repeat
     TaskType.BOOKMARK -> Icons.Filled.Bookmark
     TaskType.COMMENT -> Icons.Filled.ChatBubble
-    TaskType.UNFOLLOW -> Icons.Filled.PersonRemove
+    TaskType.UNFOLLOW, TaskType.UNFOLLOW_NON_FOLLOWERS -> Icons.Filled.PersonRemove
     TaskType.VERIFIED_FOLLOW -> Icons.Filled.Verified
     else -> Icons.Filled.AutoAwesome
 }
 
 private fun taskColor(type: TaskType): Color = when (type) {
-    TaskType.UNFOLLOW -> Warning
+    TaskType.UNFOLLOW, TaskType.UNFOLLOW_NON_FOLLOWERS -> Warning
     TaskType.VERIFIED_FOLLOW -> Teal
     TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW -> Purple
     TaskType.LIKE -> Color(0xFFE34883)

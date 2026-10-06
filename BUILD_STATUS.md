@@ -1,3 +1,7 @@
+# Atmaca Next 26.60
+
+DOĞRULAMA_BEKLIYOR. Fiziksel yeni APK/X testi yapılmadı. Kaynak/test yeni görev ve ortak gezinme kurtarmasıyla güncellendi; öncekiler aşağıda tarihsel kayıttır.
+
 ## 26.59 — yerel doğrulama tamamlandı (5 Ekim 2026, 23:10 Türkiye)
 
 - **482 birim test geçti; 0 başarısız/hata/atlanan.** `UnfollowRecovery26_59Test` içindeki 10 yeni regresyonun tamamı geçti. Lint **0 hata / 0 fatal / 16 uyarı**. `testDebugUnitTest lintDebug :app:assembleDebug` birlikte başarılı; 55 Gradle işi, 7 dakika 2 saniye. SQLite 5→6 kontrolü iki tarihsel v5 düzeninde geçti.
