@@ -191,7 +191,7 @@ object XUiActions {
         return ReplyTextTransfer.matches(ReplyInputConnection.bind(service, node)?.readFullText(), value)
     }
 
-    fun writeReplyText(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, value: String,
+    internal fun writeReplyText(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, value: String,
         capturedNodes: List<AccessibilityNodeInfo>? = null, attempt: Int = 1): ReplyTextTransfer.Result {
         val nodes = capturedNodes ?: AccessibilityTree.nodes(root, maxNodes = 2_000)
         val index = ReplyComposerEvidence.editorIndex(nodes.map { it.toSnapshot() }) ?: return ReplyTextTransfer.Result.WAIT
