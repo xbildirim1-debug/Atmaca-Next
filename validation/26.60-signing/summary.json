@@ -1,0 +1,120 @@
+{
+  "version": "26.60-nonfollowers-recovery",
+  "version_code": 108,
+  "application_id": "com.atmacanext.v258",
+  "build_kind": "github_ci_with_local_compatible_signing",
+  "source_commit": "6aaa71ab25886a7e06c432c90203be9ca17b3490",
+  "device_tested": false,
+  "run_url": "https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37450117619",
+  "tests": {
+    "tests": 580,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "new_suites": {
+    "com.atmacanext.app.automation.NavigationRestart26_60Test": {
+      "tests": 23,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerFollowingInspectorTest": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerPolicyTest": {
+      "tests": 37,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerScrollProgressTest": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerTimingTest": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerUnfollowCompletionTest": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerViewportGateTest": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.domain.engine.NonFollowerBatch26_60Test": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "Fatal": 0,
+    "Error": 0,
+    "Warning": 21,
+    "Information": 0
+  },
+  "migration": "PASS: both historical v5 layouts preserved",
+  "signing_cert_sha256": "9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5",
+  "matches_26_59_local_certificate": true,
+  "apk": {
+    "filename": "AtmacaNext-26.60-Guncelleme.apk",
+    "bytes": 20883042,
+    "sha256": "e1722e6b0e042a32d0dcce7a301d13fa6e59512e1d400f4b158726a782ef1211",
+    "crc": "PASS"
+  },
+  "verified_at_utc": "2026-10-06T15:07:03.742755+00:00",
+  "documentation_base_commit": "b68b7871add4bc2147b095100d5f81bfc90c9a16",
+  "local_compilation_performed": false,
+  "tests_origin": "successful main CI 37450117619; downloaded JUnit XML counted locally",
+  "original_ci_apk": {
+    "filename": "AtmacaNext-26.60.apk",
+    "bytes": 20868832,
+    "sha256": "7dba9deba91cc4384ab3ae5ad0f39dff22cebb6ee7d86848b8c96decc2ea66d4",
+    "crc": "PASS"
+  },
+  "original_ci_signing_cert_sha256": "bbbe7bcb56a580e24221a3370cdb413bdc39e0c0fe64001099ac346579be541a",
+  "matches_26_58_ci_certificate": false,
+  "signing_schemes_verified": [
+    "v2",
+    "v3"
+  ],
+  "non_signature_zip_entries_identical_to_main_ci": 151,
+  "all_264_source_files_match_tested_git_blob_sha": true,
+  "source_archive": {
+    "filename": "AtmacaNext-26.60-Kaynak.zip",
+    "sha256": "21b27e9ed1514c43c3fcaee9b2ac2f77f5366520bc3db2a55a3b27421b9ba3eb"
+  },
+  "zip_alignment_16kb": "PASS",
+  "buse_modified": false,
+  "private_key_in_public_package": false,
+  "github_releases_published": false,
+  "bundle": {
+    "filename": "AtmacaNext-26.60-Guncelleme-TAM-PAKET.zip",
+    "bytes": 21197445,
+    "sha256": "769896f0bd398f1253b4b5f90270998bd8160a4008ea4dd19df629a8156f4606",
+    "crc": "PASS",
+    "inner_apk_byte_equality": "PASS"
+  },
+  "prepared_for_persistent_delivery": true,
+  "update_compatible_apk_delivered": true,
+  "persistent_delivery_saved": true,
+  "delivery_filenames": [
+    "AtmacaNext-26.60-Guncelleme.apk",
+    "AtmacaNext-26.60-Guncelleme-TAM-PAKET.zip"
+  ]
+}

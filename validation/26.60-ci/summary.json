@@ -128,8 +128,8 @@
       }
     }
   ],
-  "update_compatible_apk_delivered": false,
-  "signing_blocker": "Local execution workspace is unavailable. CI certificate differs from the local 26.59 key; no upgrade-compatible APK delivered.",
+  "update_compatible_apk_delivered": true,
+  "signing_blocker": null,
   "github_releases_published": false,
   "main_validation": {
     "version": "26.60-nonfollowers-recovery",
@@ -258,5 +258,26 @@
         }
       }
     ]
+  },
+  "historical_signing_blocker": "Local execution workspace is unavailable. CI certificate differs from the local 26.59 key; no upgrade-compatible APK delivered.",
+  "ci_apk_is_update_compatible_with_26_59_local": false,
+  "compatible_delivery": {
+    "summary_path": "validation/26.60-signing/summary.json",
+    "apk": {
+      "filename": "AtmacaNext-26.60-Guncelleme.apk",
+      "bytes": 20883042,
+      "sha256": "e1722e6b0e042a32d0dcce7a301d13fa6e59512e1d400f4b158726a782ef1211",
+      "crc": "PASS"
+    },
+    "bundle": {
+      "filename": "AtmacaNext-26.60-Guncelleme-TAM-PAKET.zip",
+      "bytes": 21197445,
+      "sha256": "769896f0bd398f1253b4b5f90270998bd8160a4008ea4dd19df629a8156f4606",
+      "crc": "PASS",
+      "inner_apk_byte_equality": "PASS"
+    },
+    "signing_cert_sha256": "9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5",
+    "persistent_delivery_saved": true,
+    "device_tested": false
   }
 }

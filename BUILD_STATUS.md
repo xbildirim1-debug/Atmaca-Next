@@ -1,3 +1,15 @@
+## 26.60 — aynı imzalı güncelleme APK'sı hazır (6 Ekim 2026)
+
+İmza engeli çözüldü. Başarılı main CI 37450117619 çıktısı, önceki yerel 26.59'un özel yedekteki anahtarıyla yeniden imzalandı; uygulama kodu yeniden derlenmedi veya değiştirilmedi. Sertifika SHA256 `9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5` iki sürümde aynıdır. `AtmacaNext-26.60-Guncelleme.apk` önceki `AtmacaNext-26.59-Yerel-Test.apk` üzerine güncelleme olarak kurulabilir. Eski CI APK'ların farklı sertifikalarıyla uyum iddia edilmez. Buse değiştirilmedi. Uygulama kimliği com.atmacanext.v258, versionCode108, Room6 korunur.
+
+APK: 20883042 bayt; SHA256 `e1722e6b0e042a32d0dcce7a301d13fa6e59512e1d400f4b158726a782ef1211`. Tam paket: `AtmacaNext-26.60-Guncelleme-TAM-PAKET.zip`. Paket, doğru imzalı tek APK, test edilen kaynak ZIP, 580 testin JUnit/lint raporları, gerçek main CI logu, güncel notlar, cihaz protokolü, manifest, imza ve checksumları içerir. Kaynak ZIP doğrudan test edilen `6aaa71ab25886a7e06c432c90203be9ca17b3490` commit'inden gelir; içindeki tarihsel hazırlık notlarından sonra bu dış güncel teslim kaydı esas alınır. Son doğrulama [validation/26.60-signing/summary.json](validation/26.60-signing/summary.json) içindedir.
+
+580 test / 0 başarısız-hata-atlanan, lint 0 hata / 21 uyarı main CI sonucudur; yerelde XML toplamı yeniden doğrulandı. 264 kaynak dosyasının Git blob SHA'ları eşleşti. İmzalama sonrasında APK'nın imza dışındaki 151 ZIP girdisi main CI ile birebir aynı; v2/v3 imza, sertifika eşleşmesi, manifest, 16KB zip hizalaması ve ZIP CRC geçti. Fiziksel yeni Atmaca/X testi yapılmadı. Takip Etmeyenleri Çık toplu görevi, ilk 100 kişiyi koruma ve 10 saniyede aynı ilerlemeyle Atmaca'ya dönüp yeniden başlatma bu APK'dadır.
+
+Kaynak/testler main ve feature/26.60-nonfollowers-recovery dalında; bu son kayıt sadece doğrulama/not dosyalarını günceller. İki teslim dosyası ayrı Guncelleme adıyla saklanır; eski CI/yerel APK'lar değiştirilmez. GitHub Releases yayını hâlâ yapılmadı; AGENTS.md'deki önceki otomatik onay reddi nedeniyle contents:write yayın workflow'u etkinleştirilmedi. Özel anahtar depo veya teslim paketine eklenmedi.
+
+## 26.60 CI doğrulaması ve imza çözümünden önceki hazırlık kaydı
+
 # Atmaca Next 26.60
 
 **26.60 CI doğrulaması tamamlandı: 580 test geçti; 0 başarısız/hata/atlanan.** Yeni 98 regresyonun (23 ortak kurtarma + 75 yeni görev/tarama/kuyruk/zamanlama) tamamı geçti. Lint 0 hata / 0 fatal / 21 uyarı. SQLite 5→6 koruma kontrolü, APK imza geçerliliği, uygulama kimliği/version108, manifest INTERNET/Startup sağlayıcısı yokluğu, APK/tam paket CRC ve paket içindeki APK byte eşitliği geçti. Fiziksel yeni Atmaca/X testi yapılmadı.
@@ -121,3 +133,4 @@ Temel main 2a4976816cf22f26ab9d1acee9a1707b372c193c. Yerel diff ve SQLite geçi�
 - Actions artifact 11341930167, rapor 11341835247; 3 Ocak 2027'de sona erer. GitHub Releases yayını tamamlanmadı; docs/archive-release.proposed.yml etkin değildir.
 - 1000033391.mp4 önceki çalışma kanıtıdır; sürüm numarası görünmez. Yeni 26.53 APK ile fiziksel X testi yapılmadı.
 - Ayrıntılar DEVIR_NOTU.md içinde. Kalıcı debug imza ve Releases workflow onay koşulu değişmedi.
+

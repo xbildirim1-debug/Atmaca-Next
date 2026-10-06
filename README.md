@@ -6,7 +6,7 @@ Yorumdan dönüş ve diğer geçici gezinme hataları artık 10 saniye kuralınd
 
 **580 test geçti**, lint 0 hata / 21 uyarı; CI APK ve tam paket doğrulandı. [Gerçek doğrulama](validation/26.60-ci/summary.json). Fiziksel yeni Atmaca/X testi yapılmadı. Kod main'de, Buse değiştirilmedi.
 
-**Kurulum APK'sı açık:** CI imzası önceki yerel 26.59'dan farklıdır; bu CI paketi onun üzerine güncelleme olarak kurulamaz. Aynı imzalı APK, yerel derleme ortamı erişilemediği için henüz teslim edilmedi. GitHub Releases kalıcı yayını yapılmadı.
+**Aynı imzalı güncelleme APK'sı hazır:** `AtmacaNext-26.60-Guncelleme.apk`, önceki yerel `AtmacaNext-26.59-Yerel-Test.apk` ile aynı sertifikayı taşır ve onun üzerine kurulabilir. 580 testten geçen main CI uygulaması aynı anahtarla yeniden imzalandı; 151 imza dışı APK girdisi değişmedi. APK ve kaynak/rapor/not içeren tam paket ayrı Guncelleme adıyla teslim edilir. [İmza ve paket doğrulaması](validation/26.60-signing/summary.json). Fiziksel yeni cihaz testi ve GitHub Releases yayını yapılmadı.
 
 ---
 Önceki sürümlerin tarihsel notları:
@@ -237,3 +237,4 @@ Doğrulanmış 26.16 derlemesi: [GitHub Actions çalışması](https://github.co
 - DISCOVERY_SCAN görünür gönderi/saat/kaydırma; DISCOVERY_TWEET seçilen gönderi/metin kanıtını kaydeder.
 - Yeni 9 regresyon testi: TR/EN birleşik başlık, yaş sınırı, gövde bahsetmesi reddi, metin/medya seçimi, gizli düğüm, kaydırılmış yorum ekranı ve 66 değişken sekme etiketi.
 - code66 / 26.18-vertical-discovery-feed. CI sonucu henüz bekleniyor; fiziksel yeni sürüm testi yapılmadı. Kullanıcının main gönderimi ve APK derleme onayı geçerlidir. Kalıcı imza ve GitHub Releases workflow yetkisi değiştirilmedi.
+

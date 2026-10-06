@@ -1,3 +1,15 @@
+## 26.60 — aynı imzalı güncelleme APK'sı hazır (6 Ekim 2026)
+
+İmza engeli çözüldü. Başarılı main CI 37450117619 çıktısı, önceki yerel 26.59'un özel yedekteki anahtarıyla yeniden imzalandı; uygulama kodu yeniden derlenmedi veya değiştirilmedi. Sertifika SHA256 `9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5` iki sürümde aynıdır. `AtmacaNext-26.60-Guncelleme.apk` önceki `AtmacaNext-26.59-Yerel-Test.apk` üzerine güncelleme olarak kurulabilir. Eski CI APK'ların farklı sertifikalarıyla uyum iddia edilmez. Buse değiştirilmedi. Uygulama kimliği com.atmacanext.v258, versionCode108, Room6 korunur.
+
+APK: 20883042 bayt; SHA256 `e1722e6b0e042a32d0dcce7a301d13fa6e59512e1d400f4b158726a782ef1211`. Tam paket: `AtmacaNext-26.60-Guncelleme-TAM-PAKET.zip`. Paket, doğru imzalı tek APK, test edilen kaynak ZIP, 580 testin JUnit/lint raporları, gerçek main CI logu, güncel notlar, cihaz protokolü, manifest, imza ve checksumları içerir. Kaynak ZIP doğrudan test edilen `6aaa71ab25886a7e06c432c90203be9ca17b3490` commit'inden gelir; içindeki tarihsel hazırlık notlarından sonra bu dış güncel teslim kaydı esas alınır. Son doğrulama [validation/26.60-signing/summary.json](validation/26.60-signing/summary.json) içindedir.
+
+580 test / 0 başarısız-hata-atlanan, lint 0 hata / 21 uyarı main CI sonucudur; yerelde XML toplamı yeniden doğrulandı. 264 kaynak dosyasının Git blob SHA'ları eşleşti. İmzalama sonrasında APK'nın imza dışındaki 151 ZIP girdisi main CI ile birebir aynı; v2/v3 imza, sertifika eşleşmesi, manifest, 16KB zip hizalaması ve ZIP CRC geçti. Fiziksel yeni Atmaca/X testi yapılmadı. Takip Etmeyenleri Çık toplu görevi, ilk 100 kişiyi koruma ve 10 saniyede aynı ilerlemeyle Atmaca'ya dönüp yeniden başlatma bu APK'dadır.
+
+Kaynak/testler main ve feature/26.60-nonfollowers-recovery dalında; bu son kayıt sadece doğrulama/not dosyalarını günceller. İki teslim dosyası ayrı Guncelleme adıyla saklanır; eski CI/yerel APK'lar değiştirilmez. GitHub Releases yayını hâlâ yapılmadı; AGENTS.md'deki önceki otomatik onay reddi nedeniyle contents:write yayın workflow'u etkinleştirilmedi. Özel anahtar depo veya teslim paketine eklenmedi.
+
+## 26.60 CI doğrulaması ve imza çözümünden önceki hazırlık kaydı
+
 # Atmaca Next — 26.60: takip etmeyenleri çık ve ortak kurtarma
 
 6 Ekim 2026. Temel GitHub main: 8b467a3baaa991abaa3202dca78ff9299ad1c2c0 (26.59). Uygulama kimliği com.atmacanext.v258; versionCode 108; versionName 26.60-nonfollowers-recovery; Room şeması 6.
@@ -879,3 +891,4 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 - Kişiye özel düz takip açıklamaları, Takip ediliyor/Beklemede ile çelişmediği sürece kabul edilir. Seçilen gerçek düğümde önce ACTION_CLICK denenir; yalnız bu düğüm başarısızsa aynı düğüm sınırına gesture gönderilir, yorum kartı atasına çıkılmaz.
 - Retweetçi görevinde sonraki hedefin profil üst kullanıcı adı geçici olarak erişilemez olduğunda motor bekliyordu. Gönderiler yüzeyi ve hedefin kendi yazar satırı birlikte görünüyorsa hedef doğrulanır; hedef değişiminde yorum/etkileşim/gezinme sayaçları sıfırlanır. Yanlış hedefin tweeti doğrulama sayılmaz.
 - İki cihaz regresyon testi eklendi. versionCode73 / 26.25-comment-follow-click-target-handoff. CI ve fiziksel 26.25 cihaz testi henüz yapılmadı.
+
