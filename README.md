@@ -1,3 +1,19 @@
+## 26.61 — Yorum Alıntısı tamamlandı, aynı imzalı APK hazır (6 Ekim 2026)
+
+Yorum Alıntısı, Yeni Görev Akışı'nın üçüncü kategorisinde ve toplu görevlerde çalışacak şekilde motora bağlandı. Her hesap kendi aktif Alıntı Hedeflerini kullanır; görevde yazılacak yorum ve hedef başına 1–20 gönderi limiti seçilir. Hedefi olmayan hesap için görev oluşturulamaz. Görev düzenlemesinde ilerleme ve gönderilmiş yorum anahtarları korunur; yeni eklenen hesap başka hesabın kayıtlarını devralmaz. Bu özellik hedef profillerin son gönderilerine belirlenen yorum metnini yazar.
+
+Hedef gönderiyi açıp orada kalma nedeni, yanıt alanı/etiket seçiminin dar olması ve gönderinin daha yorum gönderilmeden işlenmiş sayılmasıydı. Motor aynı taze ağaçta hedef yazar/metnini doğrular, yanıt alanını açar, metni aktarır ve tam metni yeniden okuduktan sonra bir kez gönderir. Eski bildirim, eski yorum veya yalnız alanın boşalması başarı sayılmaz. Gönderim öncesi gezinme 10 saniyede aynı hedef/ilerlemeyle Atmaca üzerinden kurtarılır. Gönderim sonucu belirsizse ilerleme ve bekleyen anahtar korunur; yorum ikinci kez körlemesine gönderilmez. Yeni kendi yorumunun veya yeni gönderildi bildiriminin kanıtı aranır.
+
+PR #10 main'e alındı: `0041a460175396944ceddda1de35d714c3215e25`. PR CI 37498333393 ve main CI 37498898230 başarılı: 622 test, 0 başarısız/hata/atlanan; 29 yorum akışı + 13 görev bağlantısı yeni regresyonu geçti. Lint 0 hata/fatal, 21 uyarı. İki tarihsel SQLite 5→6 veri koruma kontrolü geçti. PR checkout/feature/main aynı `99c3be11424b4791f6bd141eec81703c2b6afae6` ağacını taşır. Test edilen kaynak ZIP'in 274 dosyası main Git blob SHA'larıyla eşleşti. [Gerçek main iş logu](validation/26.61-ci/main-job-log.txt) ve [teslim doğrulaması](validation/26.61-signing/summary.json) kaydedildi.
+
+`AtmacaNext-26.61-Yorum-Alintisi.apk` önceki yerel26.59 ve teslim26.60-Guncelleme ile aynı `9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5` sertifikasıyla imzalandı. Mevcut Atmaca kaldırılmadan üzerine kurulabilir. com.atmacanext.v258 / versionCode109 / 26.61-quote-task-flow / Room6 korunur. APK 20903522 bayt, SHA256 `1e93ca711c439dc61a3bb56eaa8196e6df43c3c24e77ee45492b6fb65f0fb4d5`. Tam paket `AtmacaNext-26.61-Yorum-Alintisi-TAM-PAKET.zip`; doğru imzalı tek APK, tam test edilmiş kaynak, JUnit/lint raporları, gerçek CI logu, güncel notlar, kurulum/cihaz protokolü, manifest, imza ve checksum içerir. Tarihsel hazırlık notları kaynak ZIP'te kalır; bu dış son teslim kaydı esas alınır.
+
+Derleme GitHub CI'da yapıldı; APK yerelde mevcut özel yedekle yeniden imzalandı. İmza dışındaki 151 APK ZIP girdisi CI APK'sıyla byte olarak aynı. v2/v3 imza, önceki26.60 sertifika eşleşmesi, manifest109, 16KB ZIP hizalaması, APK/tam paket CRC ve iç/dış APK eşitliği doğrulandı. Özel anahtar depoya veya teslim paketine eklenmedi. Buse değiştirilmedi. Fiziksel yeni Android/X testi yapılmadı; cihaz kabul adımları DEVICE_TEST_PROTOCOL.md'de. Hatasızlık veya her X sürümünde garanti iddia edilmez.
+
+GitHub Releases yayını yapılmadı; AGENTS.md'deki önceki otomatik onay reddi nedeniyle contents:write yayın workflow'u etkinleştirilmedi. contents:read derleme CI'sı korunur. APK ve tam paket ayrı 26.61 adlarıyla kaydedildi ve bu sohbette teslim edilir; eski sürüm dosyaları değiştirilmez. Tam paket SHA256 `19faef4a3c924746131328bfe1c6c5c467028ca7e61da5b968b62156483722e2`; 21298942 bayt. İki dosyanın kayıt sonucu ve yerel kimlik aktarımı başarılıdır.
+
+## 26.61 hazırlık kaydı ve önceki sürümler
+
 # Atmaca Next — 26.61
 
 Yorum Alıntısı, Yeni Görev Akışı ekranına eklendi; her seçili hesabın Hesaplar > Alıntı Hedefleri listesini kullanır. Limit hedef başına 1–20 son gönderidir. Üç görev sekmesi telefon ekranında görünür.
