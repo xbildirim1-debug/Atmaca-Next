@@ -166,42 +166,60 @@ object XUiActions {
         val nodes = capturedNodes ?: AccessibilityTree.nodes(root, maxNodes = 2_000)
         val index = ReplyComposerEvidence.openIndex(nodes.map { it.toSnapshot() }, retry) ?: return false
         val node = nodes[index]
+        if (listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).any(ReplyComposerEvidence::isEntry))
+            return GestureClick.gestureTapLeading(service, node)
         return (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) || GestureClick.gestureTap(service, node)
     }
 
     fun focusReplyEditor(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?,
         capturedNodes: List<AccessibilityNodeInfo>? = null): Boolean {
         val nodes = capturedNodes ?: AccessibilityTree.nodes(root, maxNodes = 2_000)
-        val node = ReplyComposerEvidence.editorIndex(nodes.map { it.toSnapshot() })?.let(nodes::get) ?: return false
-        return node.isFocused || node.performAction(AccessibilityNodeInfo.ACTION_FOCUS) || GestureClick.gestureTap(service, node)
+        val node = ReplyComposerEvidence.focusIndex(nodes.map { it.toSnapshot() })?.let(nodes::get) ?: return false
+        // ACTION_FOCUS can return true without opening Compose's real input connection.
+        return node.isFocused || GestureClick.gestureTapLeading(service, node)
     }
 
     fun setReplyText(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, value: String,
-        capturedNodes: List<AccessibilityNodeInfo>? = null): Boolean {
+        capturedNodes: List<AccessibilityNodeInfo>? = null): Boolean =
+        writeReplyText(service, root, value, capturedNodes) in setOf(ReplyTextTransfer.Result.ALREADY_PRESENT,
+            ReplyTextTransfer.Result.INPUT_CONNECTION, ReplyTextTransfer.Result.SET_TEXT, ReplyTextTransfer.Result.PASTE)
+
+    fun replyTextVerified(service: AtmacaAccessibilityService, captured: List<AccessibilityNodeInfo>, value: String): Boolean {
+        val snapshots = captured.map { it.toSnapshot() }
+        if (ReplyComposerEvidence.contains(snapshots, value)) return true
+        val node = ReplyComposerEvidence.editorIndex(snapshots)?.let(captured::get) ?: return false
+        return ReplyTextTransfer.matches(ReplyInputConnection.bind(service, node)?.readFullText(), value)
+    }
+
+    fun writeReplyText(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, value: String,
+        capturedNodes: List<AccessibilityNodeInfo>? = null, attempt: Int = 1): ReplyTextTransfer.Result {
         val nodes = capturedNodes ?: AccessibilityTree.nodes(root, maxNodes = 2_000)
-        val index = ReplyComposerEvidence.editorIndex(nodes.map { it.toSnapshot() }) ?: return false
+        val index = ReplyComposerEvidence.editorIndex(nodes.map { it.toSnapshot() }) ?: return ReplyTextTransfer.Result.WAIT
         val node = nodes[index]
-        node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
-        val args = Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value) }
-        if (node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) return true
-        if (node.actionList.any { it.id == AccessibilityNodeInfo.ACTION_PASTE }) {
-            val previous = node.text?.toString().orEmpty()
-            val placeholder = XUiVocabulary.normalize(previous) in XUiVocabulary.composerSignals
-            val selected = previous.isEmpty() || placeholder || node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION,
-                Bundle().apply {
-                    putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, 0)
-                    putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, previous.length)
-                })
-            if (selected) {
-                val clipboard = service.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                if (clipboard != null) {
+        val editor = object : ReplyTextTransfer.Editor {
+            override val focused get() = node.isFocused
+            override val text get() = node.text?.toString().orEmpty()
+            override val connection get() = ReplyInputConnection.bind(service, node)
+            override fun focus() = GestureClick.gestureTapLeading(service, node)
+            override fun setText(value: String) = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,
+                Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value) })
+            override fun pasteReplacing(value: String): Boolean {
+                val previous = node.text?.toString().orEmpty()
+                val selected = previous.isEmpty() || ReplyComposerEvidence.isEntry(previous) ||
+                    node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, Bundle().apply {
+                        putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, 0)
+                        putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, previous.length)
+                    })
+                if (!selected || !node.isFocused) return false
+                return runCatching {
+                    val clipboard = service.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return@runCatching false
                     clipboard.setPrimaryClip(ClipData.newPlainText("Yorum", value))
-                    if (node.performAction(AccessibilityNodeInfo.ACTION_PASTE)) return true
-                }
+                    // Some X/Compose versions handle paste without advertising the action.
+                    node.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+                }.getOrDefault(false)
             }
         }
-        GestureClick.gestureTap(service, node)
-        return false
+        return ReplyTextTransfer.write(editor, value, attempt)
     }
 
     fun submitReply(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?,

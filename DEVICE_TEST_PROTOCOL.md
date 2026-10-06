@@ -1,3 +1,16 @@
+# 26.62 — alt yorum alanı cihaz kabulü (yeni sürüm henüz denenmedi)
+
+1.26.61 üzerine aynı imzalı APK kurulur; hesap/görevler korunmalı.26.61'de gerçek başarısızlık: @pushholder gönderisi açıldı ama Yanıtını gönder alanı boş kaldı.
+2.Aynı görevde alt alan kendiliğinden fiziksel dokunuşla odaklanmalı; klavye açılmalı; seçilen yorum bütünüyle görünmeli. GIF/resim veya alt yorum Yanıtla seçilmemeli.
+3.SDK33'te REPLY_INPUT etkin ve QUOTE_REPLY_WRITE result=INPUT_CONNECTION /focused=true veya doğrulanan SET_TEXT/PASTE yolu görülmeli. Yorumun tamamı taze okununca üst sağ Yanıtla veya gerçek inline gönderim düğmesi bir kez kullanılmalı.
+4.Metni SET_TEXT eylemi kabul etmesine rağmen boş bırakan durumda sonraki kare PASTE/native bağlantıyla yazmalı. Kısa klavye açılma gecikmesi yazma hakkını bitirmemeli. Eski taslak yerine tam yeni yorum, tek kopya olmalı.
+5.Yeni yorumun doğru gönderide/doğru hesaptan göründüğü ve 1/5 sonrası kalan4 işin sürmesi kontrol edilir. Önceki bildirim/boşalan alan başarı sayılmaz. Duraklat/durdur ve belirsiz gönderim ikinci yorum oluşturmamalı.
+6.Android26–32 native API'ye girmeden mevcut odak/SET_TEXT/PASTE yolu; diğer görevler ve ilk100 koruması yeniden kontrol edilir.
+
+21 yeni otomatik test cihaz kabulü olarak sunulmaz. Tam runtime logunda QUOTE_REPLY_TARGET/QUOTE_REPLY_OPEN/QUOTE_REPLY_WRITE/QUOTE_REPLY_SUBMIT aşamaları gözlenmelidir.
+
+## Önceki cihaz protokolleri
+
 # 26.61 — Yorum Alıntısı cihaz kabulü (henüz yapılmadı)
 
 1. Önceki yerel26.59 veya Guncelleme26.60 üzerine aynı sertifikalı APK kurulur; kaldırma yapılmaz. Hesaplar, görevler ve hedeflerin korunması kontrol edilir.

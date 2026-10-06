@@ -47,7 +47,7 @@ object ScreenDetector {
         // That field is not the full-screen composer: the detail title/back button and
         // the post action toolbar remain visible. 26.19 classified this real device
         // layout as COMPOSER and therefore waited forever instead of reading replies.
-        val inlineReplyEntry = labels.any { it == "yanıtını gönder" || it == "post your reply" || it == "yanıt gönder" }
+        val inlineReplyEntry = labels.any(ReplyComposerEvidence::isEntry)
         val detailTitleAtTop = labels.any(CommentDetailEvidence::isTitle)
         val detailBack = labels.any { it in XUiVocabulary.backSignals } || nodes.any { node ->
             val id = node.viewId.orEmpty().lowercase()
@@ -188,7 +188,7 @@ object ScreenDetector {
             id.endsWith("/back") || id.contains("toolbar_back") || id.contains("navigate_up")
         }
         val hasDetailTitle = labels.any { it in XUiVocabulary.tweetDetailSignals }
-        val detailReplyEntry = labels.any { it == "yanıtını gönder" || it == "post your reply" || it == "yanıt gönder" }
+        val detailReplyEntry = labels.any(ReplyComposerEvidence::isEntry)
         val numberedActions = labels.count { label ->
             label.length < 100 && label.any(Char::isDigit) &&
                 listOf("yanıt", "replies", "beğeni", "likes", "yeniden gönder", "reposts").any(label::contains)

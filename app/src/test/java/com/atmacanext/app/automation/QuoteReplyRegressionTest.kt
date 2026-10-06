@@ -29,10 +29,10 @@ class QuoteReplyRegressionTest {
         val nodes = listOf(n("Gönderi", 0), n("Yanıtını gönder", 850), n("Yanıtın alt metni", 400, "reply_container"))
         assertEquals(1, ReplyComposerEvidence.openIndex(nodes))
     }
-    @Test fun originalToolbarIsPreferredOverLowerReplyToolbarAndRetryUsesInlineEntry() {
+    @Test fun inlineEntryIsPreferredAndRetryUsesTheOriginalRatherThanLowerReplyToolbar() {
         val nodes = detail() + n("Reply", 500, "toolbar_reply") + n("Yanıtını gönder", 850)
-        assertEquals(3, ReplyComposerEvidence.openIndex(nodes))
-        assertEquals(5, ReplyComposerEvidence.openIndex(nodes, retry = true))
+        assertEquals(5, ReplyComposerEvidence.openIndex(nodes))
+        assertEquals(3, ReplyComposerEvidence.openIndex(nodes, retry = true))
     }
     @Test fun hiddenCachedEditorCannotReceiveText() {
         val nodes = listOf(n("old", 50, "tweet_box", edit = true, visible = false), editor())

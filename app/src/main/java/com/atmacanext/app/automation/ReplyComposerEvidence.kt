@@ -13,12 +13,46 @@ internal object ReplyComposerEvidence {
         id(node) in setOf("tweet_box", "reply_text", "composer_edit_text")
     private fun normal(text: String) = text.replace(Regex("\\s+"), " ").trim()
 
+    fun isEntry(raw: String): Boolean {
+        val text = XUiVocabulary.normalize(raw).replace(Regex("\\s+"), " ")
+        return entries.any { entry -> text == entry || Regex("^" + Regex.escape(entry) +
+            "(?:[,.]\\s*(?:düzenleme kutusu|metin alanı|edit box|text field|düğme|button))+$").matches(text) }
+    }
+
+    private fun inlineIndex(nodes: List<NodeSnapshot>): Int? = nodes.indices.filter { i ->
+        val node = nodes[i]
+        val width = nodes.filter(::visible).maxOfOrNull { it.bounds.right } ?: 0
+        usable(node) && labels(node).any(::isEntry) && node.bounds.bottom - node.bounds.top <= maxOf(120, width / 3)
+    }.sortedWith(compareByDescending<Int> { nodes[it].bounds.top }
+        .thenBy { (nodes[it].bounds.right - nodes[it].bounds.left).toLong() * (nodes[it].bounds.bottom - nodes[it].bounds.top) })
+        .firstOrNull()
+
+    fun focusIndex(nodes: List<NodeSnapshot>): Int? = editorIndex(nodes) ?: inlineIndex(nodes)
+
+    /** A merged author parent can cover the whole post. Prefer its compact handle child. */
+    fun postHeader(nodes: List<NodeSnapshot>): CommentDetailEvidence.Header? {
+        val first = CommentDetailEvidence.header(nodes) ?: return null
+        val origin = nodes[first.index].bounds
+        val width = nodes.filter(::visible).maxOfOrNull { it.bounds.right } ?: return first
+        val compact = nodes.indices.filter { i ->
+            val n = nodes[i]
+            usable(n) && !editable(n) && n.bounds.top >= origin.top && n.bounds.top <= origin.top + maxOf(100, width / 3) &&
+                n.bounds.bottom - n.bounds.top < origin.bottom - origin.top &&
+                listOfNotNull(n.text, n.contentDescription).any { AccountSwitcherInspector.dedicatedHandle(it) == first.handle }
+        }.minByOrNull { (nodes[it].bounds.right - nodes[it].bounds.left).toLong() * (nodes[it].bounds.bottom - nodes[it].bounds.top) }
+        return compact?.let { CommentDetailEvidence.Header(first.handle, it) } ?: first
+    }
+
     fun editorIndex(nodes: List<NodeSnapshot>): Int? {
         val editors = nodes.indices.filter { i ->
             val node = nodes[i]
             usable(node) && editable(node) && !listOf("search", "password", "login", "username").any(id(node)::contains)
         }
-        return editors.filter { id(nodes[it]) in editorIds || labels(nodes[it]).any(entries::contains) }.singleOrNull()
+        val strong = editors.filter { id(nodes[it]) in editorIds || labels(nodes[it]).any(::isEntry) }
+        return strong.singleOrNull()
+            ?: strong.groupBy { i -> nodes[i].let { n ->
+                listOf(n.bounds.left, n.bounds.top, n.bounds.right, n.bounds.bottom) to normal(n.text.orEmpty()) }
+            }.values.singleOrNull()?.maxByOrNull { if (nodes[it].editable) 2 else if (nodes[it].className.orEmpty().contains("EditText", true)) 1 else 0 }
             ?: editors.singleOrNull()
     }
 
@@ -32,8 +66,7 @@ internal object ReplyComposerEvidence {
     }
 
     fun openIndex(nodes: List<NodeSnapshot>, retry: Boolean = false): Int? {
-        val inline = nodes.indices.filter { usable(nodes[it]) && labels(nodes[it]).any(entries::contains) }
-            .maxByOrNull { nodes[it].bounds.top }
+        val inline = inlineIndex(nodes)
         val toolbar = nodes.indices.filter { i ->
             val n = nodes[i]
             usable(n) && !editable(n) && (id(n) == "toolbar_reply" ||
@@ -42,13 +75,13 @@ internal object ReplyComposerEvidence {
                 }))
         }.minByOrNull { nodes[it].bounds.top }
         // Retry the alternate control if an accepted toolbar click did not open a form.
-        return if (retry) inline ?: toolbar else toolbar ?: inline
+        return if (retry) toolbar ?: inline else inline ?: toolbar
     }
 
     fun submitIndex(nodes: List<NodeSnapshot>): Int? {
         val editor = editorIndex(nodes)?.let(nodes::get) ?: return null
         val rightEdge = nodes.filter(::visible).maxOfOrNull { it.bounds.right } ?: return null
-        val postHeader = CommentDetailEvidence.header(nodes)?.let { nodes[it.index] }
+        val postHeader = postHeader(nodes)?.let { nodes[it.index] }
         val hasReplyRows = FeedRowEvidence.rows(nodes).isNotEmpty()
         return nodes.indices.filter { i ->
             val node = nodes[i]
@@ -71,7 +104,7 @@ internal object ReplyComposerEvidence {
 
     fun matchesPost(nodes: List<NodeSnapshot>, expected: DiscoveryTweetOpenRecovery.Attempt): Boolean {
         val rows = FeedRowEvidence.rows(nodes)
-        val header = CommentDetailEvidence.header(nodes)
+        val header = postHeader(nodes)
         if (header != null) {
             if (header.handle != expected.author) return false
             val end = rows.firstOrNull { nodes[it.headerIndex].bounds.top > nodes[header.index].bounds.top }
@@ -119,8 +152,8 @@ internal object ReplyComposerEvidence {
     fun inlineCleared(nodes: List<NodeSnapshot>, content: String): Boolean {
         if (contains(nodes, content)) return false
         val editor = editorIndex(nodes)?.let(nodes::get)
-        val emptyEntry = editor?.let { it.text.isNullOrBlank() || XUiVocabulary.normalize(it.text) in entries } == true ||
-            nodes.any { visible(it) && labels(it).any(entries::contains) }
+        val emptyEntry = editor?.let { it.text.isNullOrBlank() || isEntry(it.text.orEmpty()) } == true ||
+            nodes.any { visible(it) && labels(it).any(::isEntry) }
         return emptyEntry && submitIndex(nodes) == null
     }
 }

@@ -1,6 +1,7 @@
 package com.atmacanext.app.automation
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.ActivityManager
 import android.content.ClipData
 import android.content.Intent
@@ -45,6 +46,10 @@ class AtmacaAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        if (Build.VERSION.SDK_INT >= 33) {
+            serviceInfo = serviceInfo.apply { flags = flags or AccessibilityServiceInfo.FLAG_INPUT_METHOD_EDITOR }
+            OperationLog.i("REPLY_INPUT", "Android ${Build.VERSION.SDK_INT}: erişilebilirlik metin giriş bağlantısı etkin")
+        }
         if (workerThread == null) {
             workerThread = HandlerThread("atmaca-accessibility").also { thread ->
                 thread.start()
@@ -67,6 +72,9 @@ class AtmacaAccessibilityService : AccessibilityService() {
                 AccessibilityEvent.TYPE_VIEW_SCROLLED,
                 AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
                 AccessibilityEvent.TYPE_VIEW_SELECTED,
+                AccessibilityEvent.TYPE_VIEW_FOCUSED,
+                AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
+                AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED,
             )
         ) return
 
