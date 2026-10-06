@@ -113,6 +113,22 @@ class NavigationRestart26_60Test {
             assertEquals(0,field("cycleStartProgress").getInt(AutomationController))
         } finally {AutomationController.stop()}
     }
+    @Test fun exactReportedSingleCycleFourOf35StaysFourOf35() {
+        try {
+            install()
+            field("activeTask").set(AutomationController,
+                ScheduledTask("task","account","@saresirinnn",type=TaskType.COMMENTER_FOLLOW,limit=35,repeatCount=1))
+            @Suppress("UNCHECKED_CAST")
+            val state=field("_state").get(AutomationController) as MutableStateFlow<AutomationRuntimeState>
+            state.value=current().copy(limit=35,repeatCount=1)
+            assertNotNull(prepare())
+            assertEquals(4,AutomationController.state.value.verifiedCount)
+            assertEquals(35,AutomationController.state.value.limit)
+            assertEquals(1,AutomationController.state.value.repeatCount)
+            assertEquals(0,AutomationController.state.value.cycleIndex)
+            assertEquals(RuntimeStatus.RECOVERING,AutomationController.state.value.status)
+        } finally {AutomationController.stop()}
+    }
     @Test fun actualRestartKeepsCompletedPeopleSkippedRepliesAndCurrentTarget() {
         try {
             install();prepare()

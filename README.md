@@ -4,7 +4,7 @@
 
 Yorumdan dönüş ve diğer geçici gezinme hataları artık 10 saniye kuralından çıkmaz. Atmaca'ya dönülüp aynı görev, ilerleme ve döngüyle hesap yeniden doğrulanır; manuel durdurma ve bekleyen eylem tekrar edilmez. Ayrıntılar [DEVIR_NOTU.md](DEVIR_NOTU.md), test/derleme durumu [BUILD_STATUS.md](BUILD_STATUS.md).
 
-Doğrulama: DOĞRULAMA_BEKLIYOR. Yeni Atmaca APK'sı fiziksel X cihazında henüz denenmedi. Yerel 26.59 APK ile aynı imza; eski CI 26.58 farklı imzalıdır. Buse bağımsız uygulaması ve dalı değiştirilmedi.
+Doğrulama: DOĞRULAMA_BEKLIYOR. Yeni Atmaca APK'sı fiziksel X cihazında henüz denenmedi. Yeni APK imzası henüz doğrulanmadı. Yerel 26.59 imza anahtarı özel yedektedir; GitHub CI debug imzası ile üzerine kurulum uyumu ayrıca kontrol edilmelidir. Buse bağımsız uygulaması ve dalı değiştirilmedi.
 
 ---
 Önceki sürümlerin tarihsel notları:

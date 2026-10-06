@@ -119,8 +119,8 @@ class AutomationForegroundService : Service() {
 
     /**
      * Unattended self-healing watchdog. It watches semantic progress, not event volume.
-     * A task that sits on the same meaningful progress for 20 seconds requests a fresh
-     * read on the accessibility actor, preserving its queue item, account and pending action.
+     * After ten seconds without meaningful progress, navigation returns through Atmaca
+     * and restarts the same item. An outstanding action is only re-read, never reissued.
      * User-configured cycle waits and rate-limit cooldowns are intentionally excluded.
      */
     private fun startStallWatchdog() {

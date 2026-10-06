@@ -36,17 +36,19 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           APK=app/build/outputs/apk/debug/app-debug.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$APK" > dist/SIGNATURE.txt
           apkanalyzer manifest print "$APK" > dist/manifest.xml
           if rg -q 'android.permission.INTERNET|androidx.startup.InitializationProvider' dist/manifest.xml; then exit 1; fi
           cp "$APK" dist/AtmacaNext-26.60.apk
           sha256sum dist/AtmacaNext-26.60.apk > dist/AtmacaNext-26.60.apk.sha256
           cp NOT_DEFTERI.txt dist/NOT_DEFTERI.txt
           python3 scripts/package_build_notes.py
+          python3 scripts/verify_delivery.py
           git archive --format=zip --output=dist/AtmacaNext-26.60-Kaynak.zip HEAD
-          (cd dist && sha256sum *.apk *-Kaynak.zip *-Testler.zip NOT_DEFTERI.txt manifest.xml > SHA256SUMS.txt)
-          (cd dist && zip AtmacaNext-26.60-TAM-PAKET.zip *.apk *.sha256 *.xml *.txt *-Kaynak.zip *-Testler.zip)
+          (cd dist && sha256sum *.apk *-Kaynak.zip *-Testler.zip *.txt manifest.xml *.json > SHA256SUMS.txt)
+          (cd dist && zip AtmacaNext-26.60-TAM-PAKET.zip *.apk *.sha256 *.xml *.txt *.json *-Kaynak.zip *-Testler.zip)
           (cd dist && sha256sum AtmacaNext-26.60-TAM-PAKET.zip >> SHA256SUMS.txt)
+          python3 scripts/verify_delivery.py --bundle dist/AtmacaNext-26.60-TAM-PAKET.zip
       - uses: actions/upload-artifact@v4
         with:
           name: AtmacaNext-26.60-APK

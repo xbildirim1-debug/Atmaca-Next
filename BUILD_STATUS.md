@@ -1,6 +1,12 @@
 # Atmaca Next 26.60
 
-DOĞRULAMA_BEKLIYOR. Fiziksel yeni APK/X testi yapılmadı. Kaynak/test yeni görev ve ortak gezinme kurtarmasıyla güncellendi; öncekiler aşağıda tarihsel kayıttır.
+DOĞRULAMA_BEKLIYOR.
+
+6 Ekim 2026 devam durumu: kaynak checkpoint'i a21dbc390497500affd476edc4b291c019d2a82d, çalışma dalı feature/26.60-nonfollowers-recovery. Yerel ilk Gradle denemesi JAVA_COMPILER eksikliğiyle sonlandı; bu bir uygulama test sonucu değildir. Tam Corretto JDK 17.0.20.1 resmî SHA256 b852a8bc8890149c71141e784cde160d7ecb09bfa82b71209179b25902a0ebe3 ile doğrulandı ve testDebugUnitTest/lintDebug/assembleDebug yeniden başlatıldı. Çalışma ortamı daha sonra unavailable olduğundan ikinci denemenin sonucu okunamadı. Birim test sayısı/başarısı ve yeni APK bu aşamada doğrulanmış değildir. GitHub CI ile doğrulama başlatılacak. Ana dal hâlen 8b467a3 (26.59); doğrulanmamış entegrasyon çalışma dalında tutuluyor. Yeni tek tur 4/35 regresyonu ve gönderimden önceki geçici oluşturucu/bağlantı/takipçiler gezinme hataları da ortak 10 saniye yoluna bağlandı. Gönderilmiş/belirsiz eylem tekrar gönderilmez.
+
+İmza: özel yerel 26.59 anahtarı GitHub'a veya workflow'a aktarılmadı. Yerel anahtarın sertifikası doğrulanmış olsa da yeni APK'nın aynı sertifikayla üretildiği henüz doğrulanmadı. GitHub CI kendi debug imzasını kullanır; 26.59 yerel APK ile güncelleme uyumu CI sertifikası gerçekten karşılaştırılmadan iddia edilmez. Anahtarın kendisi hiçbir kaynak/test/not paketine eklenmez. Fiziksel yeni Atmaca/X testi yapılmadı. Buse kaynak/uygulaması değiştirilmedi. Releases yayın otomasyonu etkinleştirilmedi.
+
+Öncekiler aşağıda tarihsel kayıttır.
 
 ## 26.59 — yerel doğrulama tamamlandı (5 Ekim 2026, 23:10 Türkiye)
 

@@ -359,7 +359,7 @@ object AutomationController {
         attach(service)
         val current = _state.value
         if (navigationRecoveryReturning || !isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
-        if (unfollowRecoveryReturning || navigationRecoveryReturning) return
+        if (unfollowRecoveryReturning) return
         if (service.isOutsideSuppressed()) {
             service.requestAutomationTick(TICK_MS)
             return
@@ -435,7 +435,7 @@ object AutomationController {
         attach(service)
         var current = _state.value
         if (unfollowRecoveryReturning || navigationRecoveryReturning) return
-        if (navigationRecoveryReturning || !isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
+        if (!isSessionActive(current) || current.status in terminalStatuses() || current.status == RuntimeStatus.PAUSED) return
         if (current.activeScreen != screen) {
             current = current.copy(activeScreen = screen)
             _state.value = current
@@ -1080,10 +1080,10 @@ object AutomationController {
                     if (XUiActions.clickProfileFollowers(service, root)) {
                         moveStage(XFlowStage.OPEN_MY_FOLLOWERS, "Kendi takipçiler listenin başı aranıyor")
                         nextActionNotBefore = now + taskDelay(700L)
-                    } else if (stageTimedOut(now)) return fail("Kendi profilinde takipçiler sayacı bulunamadı")
+                    } else if (stageTimedOut(now)) return retryNavigationWithDeadline(service, "Kendi profilinde takipçiler sayacı bulunamadı", now)
                 } else {
                     if (now - stageStartedAt >= 30_000L || stageAttempts >= 10)
-                        return fail("X içinde geri gezinmeyle kendi profil kimliği doğrulanamadı")
+                        return retryNavigationWithDeadline(service, "X içinde geri gezinmeyle kendi profil kimliği doğrulanamadı", now)
                     if (root != null && screen != XScreen.UNKNOWN) {
                         when (screen) {
                             XScreen.HOME -> XNavigator.execute(service, root, NavigationCommand.OPEN_ACCOUNT_DRAWER, own, null)
@@ -1097,7 +1097,7 @@ object AutomationController {
                 service.requestAutomationTick(700L)
             }
             XFlowStage.OPEN_MY_FOLLOWERS -> {
-                if (now - stageStartedAt > 30_000L) return fail("Kendi takipçiler listesinin başı 30 saniyede doğrulanamadı")
+                if (now - stageStartedAt > 30_000L) return retryNavigationWithDeadline(service, "Kendi takipçiler listesinin başı doğrulanamadı", now)
                 if (screen == XScreen.FOLLOWERS_LIST) {
                     val followerNodes = AccessibilityTree.snapshots(root)
                     // A source can already be followed or have no exposed follow button.
@@ -1127,7 +1127,7 @@ object AutomationController {
                         nextActionNotBefore = now + taskDelay(600L)
                         service.requestAutomationTick(600L)
                     }
-                    else if (stageTimedOut(now)) fail("Kendi Followers sekmesi açılamadı")
+                    else if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Kendi Followers sekmesi açılamadı", now)
                     else {
                         ListGesture.left(service, root)
                         nextActionNotBefore = now + taskDelay(600L)
@@ -1322,18 +1322,18 @@ object AutomationController {
                 if (screen == XScreen.COMPOSER) {
                     moveStage(XFlowStage.FILL_COMPOSER, "Gönderi metni X oluşturucusunda doğrulanıyor")
                     service.requestAutomationTick(120L)
-                } else if (stageTimedOut(now)) fail("X gönderi oluşturucu açılmadı")
+                } else if (stageTimedOut(now)) retryNavigationWithDeadline(service, "X gönderi oluşturucu açılmadı", now)
                 else service.requestAutomationTick(TICK_MS)
             }
             XFlowStage.FILL_COMPOSER -> {
                 if (screen != XScreen.COMPOSER) {
-                    fail("Metin girilirken X oluşturucu kayboldu")
+                    retryNavigationWithDeadline(service, "Metin girilirken X oluşturucu kayboldu; gönderim yapılmadı", now)
                     return
                 }
                 if (XUiActions.composerContains(root, content) || XUiActions.setComposerText(root, content)) {
                     moveStage(XFlowStage.SUBMIT_COMPOSER, "Gönderi metni doğrulandı; Gönder düğmesi aranıyor")
                     service.requestAutomationTick(300L)
-                } else if (stageTimedOut(now)) fail("Gönderi metni oluşturucuya güvenle yazılamadı")
+                } else if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Gönderi metni oluşturucuya güvenle yazılamadı; gönderim yapılmadı", now)
                 else service.requestAutomationTick(TICK_MS)
             }
             XFlowStage.SUBMIT_COMPOSER -> submitComposer(service, root, screen, now)
@@ -1353,7 +1353,7 @@ object AutomationController {
                 if (expected) {
                     moveStage(XFlowStage.PERFORM_LINK_ACTION, "Bağlantı hedefi doğrulandı; ${type.title} işlemi hazırlanıyor")
                     service.requestAutomationTick(120L)
-                } else if (stageTimedOut(now)) fail("Bağlantı X içinde beklenen ekrana açılmadı")
+                } else if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Bağlantı X içinde beklenen ekrana açılmadı", now)
                 else service.requestAutomationTick(TICK_MS)
             }
             XFlowStage.PERFORM_LINK_ACTION -> when (type) {
@@ -1411,16 +1411,16 @@ object AutomationController {
                     service.requestAutomationTick(120L)
                 } else if (type == TaskType.QUOTE && XUiActions.clickQuote(service, root)) {
                     service.requestAutomationTick(450L)
-                } else if (stageTimedOut(now)) fail("Yorum/alıntı oluşturucu açılmadı")
+                } else if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Yorum/alıntı oluşturucu açılmadı", now)
                 else service.requestAutomationTick(TICK_MS)
             }
             XFlowStage.FILL_COMPOSER -> {
                 val content = currentCycleContent()
-                if (screen != XScreen.COMPOSER) fail("Metin yazılırken oluşturucu kayboldu")
+                if (screen != XScreen.COMPOSER) retryNavigationWithDeadline(service, "Metin yazılırken oluşturucu kayboldu; gönderim yapılmadı", now)
                 else if (XUiActions.composerContains(root, content) || XUiActions.setComposerText(root, content)) {
                     moveStage(XFlowStage.SUBMIT_COMPOSER, "Metin doğrulandı; gönderiliyor")
                     service.requestAutomationTick(300L)
-                } else if (stageTimedOut(now)) fail("Yorum/alıntı metni yazılamadı")
+                } else if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Yorum/alıntı metni yazılamadı; gönderim yapılmadı", now)
             }
             XFlowStage.SUBMIT_COMPOSER -> submitComposer(service, root, screen, now)
             else -> recoverOperation(service, "Bağlantılı görev state'i tutarsızlaştı")
@@ -1430,14 +1430,14 @@ object AutomationController {
     private fun submitComposer(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
         val current = _state.value
         if (screen != XScreen.COMPOSER) {
-            if (stageTimedOut(now)) fail("Gönder düğmesi bulunmadan oluşturucu kapandı") else service.requestAutomationTick(TICK_MS)
+            if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Gönder düğmesi bulunmadan oluşturucu kapandı", now) else service.requestAutomationTick(TICK_MS)
             return
         }
         if (performStep(service, root, screen, "submit_post", current.taskType?.title) { XUiActions.clickSubmit(service, root) }) {
             pendingAction = PendingAction(PendingKind.POST, activeTask?.targetUrl)
             _state.value = current.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now, message = "Gönderim sonucu X ekranında doğrulanıyor")
             service.requestAutomationTick(700L)
-        } else if (stageTimedOut(now)) fail("X Gönder/Yanıtla düğmesi bulunamadı")
+        } else if (stageTimedOut(now)) retryNavigationWithDeadline(service, "X Gönder/Yanıtla düğmesi bulunamadı; gönderim yapılmadı", now)
     }
 
     private fun handleQuoteReply(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
