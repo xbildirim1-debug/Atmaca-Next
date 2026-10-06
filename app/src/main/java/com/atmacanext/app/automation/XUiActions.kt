@@ -1,5 +1,9 @@
 package com.atmacanext.app.automation
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+
 import android.os.Bundle
 import android.view.accessibility.AccessibilityNodeInfo
 import java.util.Locale
@@ -157,28 +161,55 @@ object XUiActions {
     fun clickReply(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         clickByIdOrLabel(service, root, listOf("toolbar_reply", "reply"), XUiVocabulary.replyActions)
 
-    fun openReplyComposer(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, retry: Boolean = false): Boolean {
-        val nodes = AccessibilityTree.nodes(root, maxNodes = 1_000)
+    fun openReplyComposer(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, retry: Boolean = false,
+        capturedNodes: List<AccessibilityNodeInfo>? = null): Boolean {
+        val nodes = capturedNodes ?: AccessibilityTree.nodes(root, maxNodes = 2_000)
         val index = ReplyComposerEvidence.openIndex(nodes.map { it.toSnapshot() }, retry) ?: return false
         val node = nodes[index]
         return (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) || GestureClick.gestureTap(service, node)
     }
 
-    fun setReplyText(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, value: String): Boolean {
-        val nodes = AccessibilityTree.nodes(root, maxNodes = 1_000)
+    fun focusReplyEditor(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?,
+        capturedNodes: List<AccessibilityNodeInfo>? = null): Boolean {
+        val nodes = capturedNodes ?: AccessibilityTree.nodes(root, maxNodes = 2_000)
+        val node = ReplyComposerEvidence.editorIndex(nodes.map { it.toSnapshot() })?.let(nodes::get) ?: return false
+        return node.isFocused || node.performAction(AccessibilityNodeInfo.ACTION_FOCUS) || GestureClick.gestureTap(service, node)
+    }
+
+    fun setReplyText(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, value: String,
+        capturedNodes: List<AccessibilityNodeInfo>? = null): Boolean {
+        val nodes = capturedNodes ?: AccessibilityTree.nodes(root, maxNodes = 2_000)
         val index = ReplyComposerEvidence.editorIndex(nodes.map { it.toSnapshot() }) ?: return false
         val node = nodes[index]
+        node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
         val args = Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value) }
         if (node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) return true
+        if (node.actionList.any { it.id == AccessibilityNodeInfo.ACTION_PASTE }) {
+            val previous = node.text?.toString().orEmpty()
+            val placeholder = XUiVocabulary.normalize(previous) in XUiVocabulary.composerSignals
+            val selected = previous.isEmpty() || placeholder || node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION,
+                Bundle().apply {
+                    putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, 0)
+                    putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, previous.length)
+                })
+            if (selected) {
+                val clipboard = service.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                if (clipboard != null) {
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Yorum", value))
+                    if (node.performAction(AccessibilityNodeInfo.ACTION_PASTE)) return true
+                }
+            }
+        }
         GestureClick.gestureTap(service, node)
         return false
     }
 
-    fun submitReply(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
-        val nodes = AccessibilityTree.nodes(root, maxNodes = 1_000)
+    fun submitReply(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?,
+        capturedNodes: List<AccessibilityNodeInfo>? = null): Boolean {
+        val nodes = capturedNodes ?: AccessibilityTree.nodes(root, maxNodes = 2_000)
         val index = ReplyComposerEvidence.submitIndex(nodes.map { it.toSnapshot() }) ?: return false
         val node = nodes[index]
-        return (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) || GestureClick.gestureTap(service, node)
+        return GestureClick.gestureTap(service, node)
     }
 
     fun clickQuote(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {

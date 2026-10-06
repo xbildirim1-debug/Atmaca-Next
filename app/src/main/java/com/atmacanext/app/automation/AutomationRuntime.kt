@@ -149,6 +149,11 @@ object AutomationController {
     private var discoveryCandidateSince = 0L
     private var discoveryOpenAttempt: DiscoveryTweetOpenRecovery.Attempt? = null
     private var quoteReplyPost: DiscoveryTweetOpenRecovery.Attempt? = null
+    private var quoteEditorScrolls = 0
+    private var quoteResultScrolls = 0
+    private var quoteSubmitIssued = false
+    private var quoteSendNoticeBefore = false
+    private var quoteSendNoticeReset = true
     private val quotePostedKeys = LinkedHashSet<String>()
     private val quoteCheckpointScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     @Volatile private var quoteCheckpointToken: String? = null
@@ -317,6 +322,12 @@ object AutomationController {
         if (current.status != RuntimeStatus.PAUSED || activeTask == null) return
         if (current.taskType == TaskType.COMMENT_QUOTE_TARGETS && current.quotePendingKey != null) {
             if (pendingAction == null) {
+                if (quoteCheckpointToken == current.sessionId + ":" + current.quotePendingKey &&
+                    !quoteSubmitIssued && quoteReplyPost?.key == current.quotePendingKey && current.flowStage == XFlowStage.SUBMIT_COMPOSER) {
+                    _state.value = current.copy(status = RuntimeStatus.RUNNING, message = "Kaydedilmiş yorum gönderim hazırlığı sürdürülüyor")
+                    serviceRef?.get()?.requestAutomationTickExact(150L)
+                    return
+                }
                 _state.value = current.copy(message = "Önceki yorumun sonucu belirsiz; X'te kontrol etmeden görev tekrar başlatılamaz")
                 return
             }
@@ -453,6 +464,10 @@ object AutomationController {
         }
 
         if (popup == PopupType.NONE && NavigationSurfaceEvidence.loading(AccessibilityTree.snapshots(root))) {
+            if (current.taskType == TaskType.COMMENT_QUOTE_TARGETS && pendingAction?.kind == PendingKind.POST) {
+                verifyPendingAction(service, root, screen, now, pendingAction!!)
+                return
+            }
             if (loadingSince == 0L) loadingSince = now
             if (current.taskType == TaskType.COMMENTER_FOLLOW && current.flowStage == XFlowStage.OPEN_ENGAGER_PROFILE) {
                 if (now - loadingSince >= 8_000L) retryNavigationWithDeadline(service, "Yorumcu ekranı yüklenmedi; kullanıcı atlanmadı, ilerleme korundu", System.currentTimeMillis())
@@ -476,7 +491,7 @@ object AutomationController {
                     moveStage(XFlowStage.RETURN_ENGAGEMENT, "Yorumcu yüklenmedi; ana yorumlara dönülüyor")
                 }
                 XFlowStage.OPEN_ENGAGEMENT -> {
-                    discoveryTweetKey?.let(discoveryProcessedTweets::add)
+                    if (QuoteReplyFlowPolicy.openedIsProcessed(current.taskType)) discoveryTweetKey?.let(discoveryProcessedTweets::add)
                     moveStage(XFlowStage.RETURN_DISCOVERY_TARGET, "Gönderi yüklenmedi; sıradaki gönderi aranıyor")
                 }
                 XFlowStage.SEARCH_DISCOVERY_TARGET -> discoverySearchStep = 0
@@ -1442,91 +1457,96 @@ object AutomationController {
 
     private fun handleQuoteReply(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
         val current = _state.value
-        val nodes = AccessibilityTree.snapshots(root)
+        val captured = AccessibilityTree.nodes(root, maxNodes = 2_000)
+        val nodes = captured.map { it.toSnapshot() }
+        val liveScreen = ScreenDetector.detect(nodes)
         val content = currentCycleContent()
         val expected = quoteReplyPost
+        val author = CommentDetailEvidence.header(nodes)?.handle
+        val conflict = expected == null || (liveScreen != XScreen.COMPOSER && author != null && author != expected.author)
+        val openAvailable = liveScreen in setOf(XScreen.TWEET_DETAIL, XScreen.COMPOSER, XScreen.UNKNOWN) &&
+            ReplyComposerEvidence.openIndex(nodes, retry = true) != null
+        val decision = QuoteReplyFlowPolicy.decide(current.flowStage,
+            ReplyComposerEvidence.ready(nodes, liveScreen), ReplyComposerEvidence.contains(nodes, content),
+            openAvailable, ReplyComposerEvidence.submitIndex(nodes) != null, stageAttempts,
+            now - stageStartedAt, targetConflict = conflict)
         if (now - lastDiscoveryDiagnosticAt >= 2_000L) {
             lastDiscoveryDiagnosticAt = now
-            OperationLog.i("QUOTE_REPLY", "stage=" + current.flowStage + " screen=" + screen +
-                " editor=" + ReplyComposerEvidence.editorIndex(nodes) + " submit=" + ReplyComposerEvidence.submitIndex(nodes) +
-                " textVerified=" + ReplyComposerEvidence.contains(nodes, content) + " attempts=" + stageAttempts)
+            OperationLog.i("QUOTE_REPLY", "stage=${current.flowStage} screen=$liveScreen decision=$decision " +
+                "editor=${ReplyComposerEvidence.editorIndex(nodes)} submit=${ReplyComposerEvidence.submitIndex(nodes)} " +
+                "textVerified=${ReplyComposerEvidence.contains(nodes, content)} attempts=$stageAttempts")
         }
-        when (current.flowStage) {
-            XFlowStage.OPEN_COMPOSER -> {
-                if (ReplyComposerEvidence.ready(nodes, screen)) {
-                    moveStage(XFlowStage.FILL_COMPOSER, "Görünür yorum alanı bulundu; metin yazılıyor")
-                } else if (stageTimedOut(now)) {
-                    retryNavigationWithDeadline(service, "Hedef gönderi açıldı fakat yorum alanı iki denemede açılamadı; QUOTE_REPLY kaydını kontrol et", System.currentTimeMillis())
-                    return
-                } else if (screen == XScreen.TWEET_DETAIL && expected != null && ReplyComposerEvidence.matchesPost(nodes, expected) &&
-                    stageAttempts < 2 && (stageAttempts == 0 || now - stageStartedAt >= 1_500L)) {
-                    val attempt = stageAttempts++
-                    val accepted = XUiActions.openReplyComposer(service, root, retry = attempt > 0)
-                    OperationLog.i("QUOTE_REPLY_OPEN", "key=" + expected.key + " attempt=" + (attempt + 1) + " accepted=" + accepted)
-                }
-                service.requestAutomationTick(400L)
+        when (decision) {
+            QuoteReplyFlowPolicy.Decision.OPEN -> {
+                stageAttempts++
+                val accepted = XUiActions.openReplyComposer(service, root, retry = stageAttempts % 2 == 1, capturedNodes = captured)
+                OperationLog.i("QUOTE_REPLY_OPEN", "key=${expected?.key} attempt=$stageAttempts accepted=$accepted")
+                service.requestAutomationTickExact(300L)
             }
-            XFlowStage.FILL_COMPOSER -> {
-                if (!ReplyComposerEvidence.ready(nodes, screen)) {
-                    if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Yorum yazılırken görünür alan kayboldu; gönderim yapılmadı", System.currentTimeMillis())
-                    else service.requestAutomationTick(350L)
-                } else if (ReplyComposerEvidence.contains(nodes, content)) {
-                    moveStage(XFlowStage.SUBMIT_COMPOSER, "Yorum metni taze ekranda okundu; gönderim hazırlanıyor")
-                    service.requestAutomationTick(300L)
-                } else if (stageTimedOut(now)) {
-                    retryNavigationWithDeadline(service, "Yorum metni ekranda doğrulanamadı; gönderim yapılmadı", System.currentTimeMillis())
-                } else {
-                    if (stageAttempts++ < 3) {
-                        val accepted = XUiActions.setReplyText(service, root, content)
-                        OperationLog.i("QUOTE_REPLY_WRITE", "setTextAccepted=" + accepted + "; sonraki okumada metin doğrulanacak")
-                    }
-                    service.requestAutomationTick(450L)
-                }
+            QuoteReplyFlowPolicy.Decision.FILL -> {
+                XUiActions.focusReplyEditor(service, root, captured)
+                moveStage(XFlowStage.FILL_COMPOSER, "Yorum alanı açıldı; metin aktarılıyor")
+                service.requestAutomationTickExact(250L)
             }
-            XFlowStage.SUBMIT_COMPOSER -> {
-                if (!ReplyComposerEvidence.ready(nodes, screen) || !ReplyComposerEvidence.contains(nodes, content)) {
-                    retryNavigationWithDeadline(service, "Gönderimden önce yorum metni/alanı değişti; gönderim yapılmadı", System.currentTimeMillis())
-                    return
-                }
-                val key = expected?.key ?: return retryNavigationWithDeadline(service, "Hedef gönderi kimliği kayboldu; yorum gönderilmedi", System.currentTimeMillis())
-                if (ReplyComposerEvidence.submitIndex(nodes) == null) {
-                    if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Yorum yazıldı fakat etkin Yanıtla/Gönder düğmesi bulunamadı", System.currentTimeMillis())
-                    else service.requestAutomationTick(350L)
-                    return
-                }
+            QuoteReplyFlowPolicy.Decision.WRITE -> {
+                stageAttempts++
+                val accepted = XUiActions.setReplyText(service, root, content, captured)
+                OperationLog.i("QUOTE_REPLY_WRITE", "attempt=$stageAttempts accepted=$accepted; taze okumada metin doğrulanacak")
+                service.requestAutomationTickExact(350L)
+            }
+            QuoteReplyFlowPolicy.Decision.PREPARE_SUBMIT -> {
+                moveStage(XFlowStage.SUBMIT_COMPOSER, "Yorum metni ekranda doğrulandı; Yanıtla hazırlanıyor")
+                service.requestAutomationTickExact(150L)
+            }
+            QuoteReplyFlowPolicy.Decision.SUBMIT -> {
+                if (quoteSubmitIssued) return pause("Önceki yorumun sonucu bekleniyor; aynı gönderim tekrar uygulanmadı")
+                val key = expected?.key ?: return
                 val token = current.sessionId + ":" + key
                 if (quoteCheckpointToken != token) {
                     if (quoteCheckpointSaving != token) {
                         quoteCheckpointSaving = token
-                        val checkpoint = current.copy(quotePendingKey = key, message = "Yorum gönderimi için ilerleme kaydediliyor")
+                        val checkpoint = current.copy(quotePendingKey = key, message = "Gönderim öncesi görev ilerlemesi kaydediliyor")
                         _state.value = checkpoint
                         quoteCheckpointScope.launch {
                             val saved = runCatching { com.atmacanext.app.core.AppServices.repository.persistRuntime(checkpoint) }.isSuccess
-                            if (_state.value.sessionId == checkpoint.sessionId && _state.value.quotePendingKey == key) {
-                                if (saved) quoteCheckpointToken = token
-                                else pause("Gönderim öncesi ilerleme kaydedilemedi; yorum gönderilmedi")
-                                service.requestAutomationTick(150L)
+                            service.runOnAutomationThread {
+                                val live = _state.value
+                                if (live.sessionId == checkpoint.sessionId && live.taskId == checkpoint.taskId &&
+                                    live.quotePendingKey == key && live.status !in terminalStatuses()) {
+                                    if (saved) quoteCheckpointToken = token
+                                    else pause("Gönderim öncesi ilerleme kaydedilemedi; yorum gönderilmedi")
+                                    if (live.status != RuntimeStatus.PAUSED) service.requestAutomationTickExact(150L)
+                                }
                             }
                         }
                     }
-                    service.requestAutomationTick(350L)
+                    service.requestAutomationTickExact(250L)
                     return
                 }
-                if (XUiActions.submitReply(service, root)) {
-                    pendingAction = PendingAction(PendingKind.POST, key, postText = content,
-                        inlineReply = screen == XScreen.TWEET_DETAIL,
-                        ownRepliesBefore = ReplyComposerEvidence.ownReplyKeys(nodes, current.username.orEmpty(), content))
-                    _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now,
-                        message = "Yorum gönderimi X ekranında doğrulanıyor")
-                    OperationLog.i("QUOTE_REPLY_SUBMIT", "key=" + key + " inline=" + (screen == XScreen.TWEET_DETAIL))
-                    service.requestAutomationTick(700L)
-                } else {
-                    // Dispatch failure is still treated as uncertain after reserving
-                    // the post; a restart must not silently duplicate a reply.
-                    pause("Yanıtla düğmesi gönderimi kabul etmedi; sonuç kontrol edilmeden tekrar gönderilmez")
-                }
+                // Reserve before the single tap. Even an unacknowledged tap is only verified, never repeated.
+                quoteSendNoticeBefore = ReplyComposerEvidence.hasSentNotice(nodes)
+                quoteSendNoticeReset = !quoteSendNoticeBefore
+                quoteSubmitIssued = true
+                pendingAction = PendingAction(PendingKind.POST, key, startedAt = now, postText = content,
+                    inlineReply = liveScreen == XScreen.TWEET_DETAIL,
+                    ownRepliesBefore = ReplyComposerEvidence.ownReplyKeys(nodes, current.username.orEmpty(), content))
+                val accepted = XUiActions.submitReply(service, root, captured)
+                _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now,
+                    message = "Yorum gönderim sonucu doğrulanıyor")
+                OperationLog.i("QUOTE_REPLY_SUBMIT", "key=$key accepted=$accepted; yalnız sonuç okunacak")
+                service.requestAutomationTickExact(150L)
             }
-            else -> Unit
+            QuoteReplyFlowPolicy.Decision.RESTART ->
+                retryNavigationWithDeadline(service, "Yorum adımı 10 saniyede ilerlemedi; aynı hedef yeniden açılacak", now)
+            QuoteReplyFlowPolicy.Decision.WAIT -> {
+                if (!conflict && current.flowStage == XFlowStage.OPEN_COMPOSER && !openAvailable &&
+                    liveScreen == XScreen.TWEET_DETAIL && quoteEditorScrolls < 3 &&
+                    now - stageStartedAt >= (quoteEditorScrolls + 1) * 1_000L) {
+                    quoteEditorScrolls++
+                    scrollForwardAndTrack(service, root)
+                }
+                service.requestAutomationTickExact(250L)
+            }
         }
     }
 
@@ -1648,6 +1668,17 @@ object AutomationController {
                 service.requestAutomationTick(550L)
             }
             XFlowStage.OPEN_ENGAGEMENT -> {
+                if (current.taskType == TaskType.COMMENT_QUOTE_TARGETS) {
+                    val quoteNodes = AccessibilityTree.snapshots(root, maxNodes = 2_000)
+                    if (QuoteReplyFlowPolicy.detailReady(quoteNodes, ScreenDetector.detect(quoteNodes), quoteReplyPost)) {
+                        discoveryOpenAttempt = null
+                        quoteEditorScrolls = 0
+                        quoteResultScrolls = 0
+                        moveStage(XFlowStage.OPEN_COMPOSER, "Hedef gönderi doğrulandı; yorum alanı açılıyor")
+                        service.requestAutomationTickExact(150L)
+                        return
+                    }
+                }
                 if (screen == XScreen.PROFILE && DiscoveryProfileEvidence.matches(
                         AccessibilityTree.snapshots(root), XIdentityDetector.detectProfileHandle(root), target)) {
                     val attempt = discoveryOpenAttempt
@@ -1672,6 +1703,10 @@ object AutomationController {
                             service.requestAutomationTick(1_500L)
                         }
                         DiscoveryTweetOpenRecovery.Decision.RESCAN -> {
+                            if (current.taskType == TaskType.COMMENT_QUOTE_TARGETS) {
+                                retryNavigationWithDeadline(service, "Yorum hedefi açılması yeniden deneniyor; gönderi işlenmiş sayılmadı", now)
+                                return
+                            }
                             // No navigation occurred: Back here would leave the target.
                             discoveryProcessedTweets += attempt.key
                             same?.let { discoveryProcessedTweets += it.key }
@@ -1696,9 +1731,11 @@ object AutomationController {
                     if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Gönderi metnine dokunuldu fakat detay açılmadı; gönderi işlenmiş sayılmadı", System.currentTimeMillis()) else service.requestAutomationTick(TICK_MS)
                     return
                 }
-                discoveryTweetKey?.let(discoveryProcessedTweets::add)
-                discoveryOpenAttempt?.key?.let(discoveryProcessedTweets::add)
-                discoveryOpenAttempt = null
+                if (QuoteReplyFlowPolicy.openedIsProcessed(current.taskType)) {
+                    discoveryTweetKey?.let(discoveryProcessedTweets::add)
+                    discoveryOpenAttempt?.key?.let(discoveryProcessedTweets::add)
+                    discoveryOpenAttempt = null
+                }
                 val detailAge = TweetAgeEvidence.detailMinutes(AccessibilityTree.snapshots(root), now)
                 if (current.taskType != TaskType.COMMENT_QUOTE_TARGETS && detailAge != null && !XTweetInspector.eligibleAge(detailAge)) {
                     OperationLog.w("DISCOVERY_AGE", "Gönderinin tam zamanı $detailAge dk; 120 dk sınırı nedeniyle atlandı")
@@ -2101,26 +2138,26 @@ object AutomationController {
             }
             PendingKind.POST -> {
                 if (_state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS) {
-                    val nodes = AccessibilityTree.snapshots(root)
+                    val nodes = AccessibilityTree.snapshots(root, maxNodes = 2_000)
                     val content = pending.postText.orEmpty()
-                    val samePost = quoteReplyPost?.let { ReplyComposerEvidence.matchesPost(nodes, it) } == true
-                    val newReply = samePost && (ReplyComposerEvidence.ownReplyKeys(nodes, _state.value.username.orEmpty(), content) - pending.ownRepliesBefore).isNotEmpty()
-                    val transitioned = samePost && screen == XScreen.TWEET_DETAIL &&
-                        (if (pending.inlineReply) ReplyComposerEvidence.inlineCleared(nodes, content) else !ReplyComposerEvidence.contains(nodes, content))
-                    if (elapsed >= 700L && (ReplyComposerEvidence.hasSentNotice(nodes) || newReply)) {
+                    val liveScreen = ScreenDetector.detect(nodes)
+                    val sameThread = QuoteReplyFlowPolicy.sameThread(nodes, liveScreen, quoteReplyPost, pending.target)
+                    val newReply = QuoteReplyFlowPolicy.newReplyVisible(nodes, liveScreen, quoteReplyPost, pending.target,
+                        _state.value.username.orEmpty(), content, pending.ownRepliesBefore)
+                    val notice = ReplyComposerEvidence.hasSentNotice(nodes)
+                    if (!notice) quoteSendNoticeReset = true
+                    if ((notice && quoteSendNoticeReset) || newReply) {
                         recordSuccess(service, pending.target)
-                    } else if (elapsed >= 1_000L && transitioned) {
-                        val clearedAt = pending.formClearedAt
-                        if (clearedAt != null && now - clearedAt >= 650L) recordSuccess(service, pending.target)
-                        else {
-                            pendingAction = pending.copy(formClearedAt = clearedAt ?: now)
-                            service.requestAutomationTick(400L)
-                        }
                     } else if (elapsed >= 10_000L) {
                         pause("Yorum gönderimine dokunuldu fakat sonuç doğrulanamadı; başarı sayılmadı ve tekrar gönderilmedi")
                     } else {
-                        pendingAction = pending.copy(formClearedAt = null)
-                        service.requestAutomationTick(450L)
+                        // Search the same thread for the new reply without leaving it or sending twice.
+                        if (sameThread && liveScreen == XScreen.TWEET_DETAIL && quoteResultScrolls < 3 &&
+                            elapsed >= (quoteResultScrolls + 1) * 1_500L && ReplyComposerEvidence.inlineCleared(nodes, content)) {
+                            quoteResultScrolls++
+                            scrollForwardAndTrack(service, root)
+                        }
+                        service.requestAutomationTickExact(250L)
                     }
                 } else if (screen in setOf(XScreen.HOME, XScreen.TWEET_DETAIL, XScreen.PROFILE) && elapsed >= 700L) recordSuccess(service, pending.target)
                 else if (elapsed >= ACTION_TIMEOUT_MS + 2_000L) fail("Gönderim sonrası oluşturucu kapanmadı; gönderim doğrulanamadı")
@@ -2535,6 +2572,7 @@ object AutomationController {
 
     private fun nextDiscoveryTweet(service: AtmacaAccessibilityService, reason: String) {
         quoteReplyPost = null
+        quoteSubmitIssued = false
         quoteCheckpointToken = null
         quoteCheckpointSaving = null
         discoveryOpenAttempt = null
@@ -2588,6 +2626,7 @@ object AutomationController {
             return
         }
         quoteReplyPost = null
+        quoteSubmitIssued = false
         quoteCheckpointToken = null
         quoteCheckpointSaving = null
         discoveryOpenAttempt = null
@@ -2821,6 +2860,11 @@ object AutomationController {
     private fun resetOperationNavigation() {
         resetNonFollowerNavigation()
         quoteReplyPost = null
+        quoteEditorScrolls = 0
+        quoteResultScrolls = 0
+        quoteSubmitIssued = false
+        quoteSendNoticeBefore = false
+        quoteSendNoticeReset = true
         quoteCheckpointToken = null
         quoteCheckpointSaving = null
         pendingAction = null

@@ -1,3 +1,18 @@
+# 26.61 — Yorum Alıntısı cihaz kabulü (henüz yapılmadı)
+
+1. Önceki yerel26.59 veya Guncelleme26.60 üzerine aynı sertifikalı APK kurulur; kaldırma yapılmaz. Hesaplar, görevler ve hedeflerin korunması kontrol edilir.
+2. Görevler ve Yeni Görev Akışı içinde Takip / Etkileşim / Yorum Alıntısı görünür. Yorum Alıntısı seçildiğinde yorum metni ve her hesabın hedef sayısı görünür; hedefi olmayan hesapla kayıt engellenir.
+3. İki hesapta farklı aktif Alıntı Hedefleri tanımlanır. Limit1 / iki hedef / tekrar1 ile her hesap kendi iki hedefinin birer son gönderisine yorum bırakır. 1/2 tamamlandı sayılmaz; hesap ve yorum doğru olmalıdır.
+4. Hedefin uzun gönderisi, ayrı paragraf metni, çok kısa gönderisi ve inline yanıt alanı denenir. Metin tamamı ile alana aktarılır; üst veya inline Yanıtla tek kez kullanılır; alt yorumun Yanıtla düğmesine basılmaz.
+5. Ekranı geç yükleten koşulda yorum gönderilmeden10 saniye geçerse Atmaca'ya dönüş ve aynı ilerleme/hedefe devam kontrol edilir. Gönderilmeyen seçili twit yeniden taramada atlanmamalıdır.
+6. Gönderimden sonra yükleme/okuma gecikmesi oluşturulur: otomatik tekrar gönderim ve Back yoktur. Aynı metin bir kez yayımlanır; başarı yalnız yeni yorum veya taze gönderildi bildirimiyle sayılır. Eski bildirim ve boşalan alan tek başına sayılmaz.
+7. Gönderim öncesi ve sonrası manuel Duraklat/Durdur denenir; eski callback gönderim yapmamalıdır. Mevcut göreve yeni hesap eklenince diğer hesabın işlenen/pending anahtarları taşınmamalıdır.
+8. Takip Etmeyenleri Çık ilk100 koruması,20 limit,10 saniye kurtarma, diğer takip görevleri ve toplu döngü sırası korunmalıdır.
+
+Fiziksel sonuç henüz yok; CI birim testleri cihaz başarısı olarak gösterilmez.
+
+## Önceki cihaz protokolleri
+
 # 26.60 cihaz kabul adımları
 
 - Yeni Görev Akışı > Takip: Takip Etmeyenleri Çık, Takipten çık'ın hemen altında görünmeli. Aynı ekranda birden çok hesap, limit 20, tekrar 2 ve aralık seçilebilmeli.

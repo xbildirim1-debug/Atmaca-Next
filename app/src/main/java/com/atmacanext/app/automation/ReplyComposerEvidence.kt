@@ -9,7 +9,8 @@ internal object ReplyComposerEvidence {
     private fun labels(node: NodeSnapshot) = listOfNotNull(node.text, node.contentDescription).map(XUiVocabulary::normalize)
     private fun visible(node: NodeSnapshot) = node.visible && node.bounds.right > node.bounds.left && node.bounds.bottom > node.bounds.top
     private fun usable(node: NodeSnapshot) = visible(node) && node.enabled
-    private fun editable(node: NodeSnapshot) = node.editable || node.className.orEmpty().contains("EditText", true)
+    private fun editable(node: NodeSnapshot) = node.editable || node.className.orEmpty().contains("EditText", true) ||
+        id(node) in setOf("tweet_box", "reply_text", "composer_edit_text")
     private fun normal(text: String) = text.replace(Regex("\\s+"), " ").trim()
 
     fun editorIndex(nodes: List<NodeSnapshot>): Int? {
@@ -22,7 +23,8 @@ internal object ReplyComposerEvidence {
     }
 
     fun ready(nodes: List<NodeSnapshot>, screen: XScreen): Boolean =
-        screen in setOf(XScreen.COMPOSER, XScreen.TWEET_DETAIL) && editorIndex(nodes) != null
+        (screen in setOf(XScreen.COMPOSER, XScreen.TWEET_DETAIL) ||
+            (screen == XScreen.UNKNOWN && CommentDetailEvidence.header(nodes) != null)) && editorIndex(nodes) != null
 
     fun contains(nodes: List<NodeSnapshot>, content: String): Boolean {
         val index = editorIndex(nodes) ?: return false
@@ -46,14 +48,21 @@ internal object ReplyComposerEvidence {
     fun submitIndex(nodes: List<NodeSnapshot>): Int? {
         val editor = editorIndex(nodes)?.let(nodes::get) ?: return null
         val rightEdge = nodes.filter(::visible).maxOfOrNull { it.bounds.right } ?: return null
+        val postHeader = CommentDetailEvidence.header(nodes)?.let { nodes[it.index] }
+        val hasReplyRows = FeedRowEvidence.rows(nodes).isNotEmpty()
         return nodes.indices.filter { i ->
             val node = nodes[i]
             if (!usable(node) || editable(node) || id(node).startsWith("toolbar_")) return@filter false
             val knownId = id(node) in submitIds
-            val namedButton = (node.clickable || node.className.orEmpty().contains("Button", true)) &&
-                labels(node).any(XUiVocabulary.postActions::contains)
+            // Compose can put the label on a non-clickable child of the button.
+            // A tap on that child's live rectangle reaches its owning button.
+            val namedButton = labels(node).any { label ->
+                XUiVocabulary.postActions.any { action -> label == action ||
+                    Regex("^" + Regex.escape(action) + "(?:[,.]\\s*(?:düğme|button|etkin|enabled))+$").matches(label) }
+            }
             // Submit is above the form at its right edge, or beside an inline editor.
-            val topAction = node.bounds.bottom <= editor.bounds.top && node.bounds.left >= rightEdge / 2
+            val topAction = node.bounds.bottom <= editor.bounds.top && node.bounds.left >= rightEdge / 2 &&
+                (postHeader?.let { node.bounds.bottom <= it.bounds.top } ?: !hasReplyRows)
             val inlineAction = node.bounds.left >= (editor.bounds.left + editor.bounds.right) / 2 &&
                 node.bounds.top <= editor.bounds.bottom && node.bounds.bottom >= editor.bounds.top
             (knownId || namedButton) && (topAction || inlineAction)
@@ -67,8 +76,15 @@ internal object ReplyComposerEvidence {
             if (header.handle != expected.author) return false
             val end = rows.firstOrNull { nodes[it.headerIndex].bounds.top > nodes[header.index].bounds.top }
                 ?.let { nodes[it.headerIndex].bounds.top } ?: Int.MAX_VALUE
-            return nodes.any { visible(it) && !editable(it) && it.bounds.top >= nodes[header.index].bounds.bottom &&
-                it.bounds.bottom <= end && listOfNotNull(it.text, it.contentDescription).any { text -> sameText(expected.text, text) } }
+            val body = nodes.filter { visible(it) && !editable(it) && it.bounds.top >= nodes[header.index].bounds.bottom &&
+                it.bounds.bottom <= end && !id(it).startsWith("toolbar_") &&
+                labels(it).none { label -> label in XUiVocabulary.structuralLabels } }
+            if (body.any { listOfNotNull(it.text, it.contentDescription).any { text -> sameText(expected.text, text) } }) return true
+            // Long posts may expose each paragraph as a separate visible text node.
+            // Join only this post's band, stopping before the first reply header.
+            val pieces = body.sortedWith(compareBy<NodeSnapshot> { it.bounds.top }.thenBy { it.bounds.left })
+                .mapNotNull { (it.text ?: it.contentDescription)?.takeIf(String::isNotBlank) }.distinct()
+            return pieces.size > 1 && sameText(expected.text, pieces.joinToString(" "))
         }
         val first = rows.firstOrNull()
         if (first != null) {
@@ -86,10 +102,11 @@ internal object ReplyComposerEvidence {
     }
 
     fun hasSentNotice(nodes: List<NodeSnapshot>): Boolean = nodes.any { node ->
-        visible(node) && !editable(node) && labels(node).any { it in setOf(
+        visible(node) && !editable(node) && !listOf("tweet_text", "tweet_content", "status_text").any(id(node)::contains) &&
+            labels(node).any { label -> setOf(
             "yanıtın gönderildi", "yanıtınız gönderildi", "gönderin gönderildi", "gönderiniz gönderildi",
-            "your reply was sent", "your post was sent", "your tweet was sent", "reply sent", "post sent",
-        ) }
+            "gönderi gönderildi", "your reply was sent", "your post was sent", "your tweet was sent", "reply sent", "post sent",
+        ).any { notice -> label == notice || Regex("^" + Regex.escape(notice) + "(?:[,.]?\\s*(?:görüntüle|view|göster))?[.!]?$" ).matches(label) } }
     }
 
     fun ownReplyKeys(nodes: List<NodeSnapshot>, username: String, content: String): Set<String> =

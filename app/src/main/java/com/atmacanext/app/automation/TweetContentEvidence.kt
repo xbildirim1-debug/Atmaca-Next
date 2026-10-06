@@ -38,7 +38,8 @@ internal object TweetContentEvidence {
             val id = n.viewId.orEmpty().lowercase()
             n.visible && n.enabled && n.bounds.top >= headerBottom &&
                 n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
-                t.length >= 4 && t.any(Char::isLetter) && !n.editable &&
+                (t.length >= 4 || (t.isNotBlank() && listOf("tweet_text", "tweet_content", "status_text").any(id::contains))) &&
+                t.any(Char::isLetter) && !n.editable &&
                 !n.className.orEmpty().contains("button", true) &&
                 listOf("avatar", "media", "video", "image", "toolbar", "follow", "reply", "retweet", "like", "bookmark").none(id::contains) &&
                 header(t) == null && XTweetInspector.parseAgeMinutes(t) == null &&
