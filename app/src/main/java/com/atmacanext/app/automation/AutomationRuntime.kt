@@ -1865,7 +1865,7 @@ object AutomationController {
             }
             XFlowStage.OPEN_ENGAGER_PROFILE -> {
                 val handle = engagerHandle ?: return retryNavigationWithDeadline(service, "Yorumcu kimliği okunamadı; kullanıcı atlanmadı, ilerleme korundu", System.currentTimeMillis())
-                if (screen == XScreen.TWEET_DETAIL && isEngagerParent(root)) {
+                if (screen == XScreen.TWEET_DETAIL && isEngagerParent(root, AccessibilityTree.snapshots(root))) {
                     if (stageTimedOut(now)) retryNavigationWithDeadline(service, "@$handle yorumu açılmadı; kullanıcı atlanmadı, ilerleme korundu", System.currentTimeMillis())
                     else {
                         if (now - stageStartedAt >= 1_500L && stageAttempts < 2) {
@@ -2065,7 +2065,7 @@ object AutomationController {
                 val nodes = AccessibilityTree.snapshots(root)
                 val handle = pending.target.orEmpty()
                 val detailConfirmed = screen in setOf(XScreen.TWEET_DETAIL, XScreen.UNKNOWN) &&
-                    !isEngagerParent(root) &&
+                    !isEngagerParent(root, nodes) &&
                     CommentDetailEvidence.relationshipActionIndex(nodes, handle, XUiVocabulary.followingActions + XUiVocabulary.requestedActions) != null &&
                     CommentDetailEvidence.relationshipActionIndex(nodes, handle, VerifiedFollowPolicy.plainFollowLabels) == null
                 val profileConfirmed = screen == XScreen.PROFILE && XIdentityDetector.detectProfileHandle(root) == pending.target &&
