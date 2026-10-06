@@ -106,6 +106,7 @@ import com.atmacanext.app.domain.model.QueueStatus
 import com.atmacanext.app.domain.model.ScheduledTask
 import com.atmacanext.app.domain.model.TaskStatus
 import com.atmacanext.app.domain.model.TaskType
+import com.atmacanext.app.domain.engine.QuoteTaskSetupPolicy
 import com.atmacanext.app.service.AutomationForegroundService
 import com.atmacanext.app.ui.components.AtmacaWindowClass
 import com.atmacanext.app.ui.components.StatusPill
@@ -125,12 +126,13 @@ import com.atmacanext.app.ui.theme.Warning
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-private enum class TaskGroup(val title: String, val shortTitle: String) {
+internal enum class TaskGroup(val title: String, val shortTitle: String) {
     FOLLOW("Takip İşlemleri", "Takip"),
     ENGAGEMENT("Etkileşim", "Etkileşim"),
+    QUOTE_COMMENT("Yorum Alıntısı", "Yorum Alıntısı"),
 }
 
-private val TASK_TYPES_BY_GROUP = mapOf(
+internal val TASK_TYPES_BY_GROUP = mapOf(
     TaskGroup.FOLLOW to listOf(
         TaskType.UNFOLLOW,
         TaskType.UNFOLLOW_NON_FOLLOWERS,
@@ -145,6 +147,7 @@ private val TASK_TYPES_BY_GROUP = mapOf(
         TaskType.BOOKMARK,
         TaskType.COMMENT,
     ),
+    TaskGroup.QUOTE_COMMENT to listOf(TaskType.COMMENT_QUOTE_TARGETS),
 )
 
 private val SCALABLE_TYPES = setOf(
@@ -154,6 +157,7 @@ private val SCALABLE_TYPES = setOf(
     TaskType.COMMENTER_FOLLOW,
     TaskType.RETWEETER_FOLLOW,
     TaskType.QUOTER_FOLLOW,
+    TaskType.COMMENT_QUOTE_TARGETS,
 )
 private val ScreenBackground = AppBackground
 private val SoftBlue = Color(0xFF1B2B35)
@@ -214,6 +218,7 @@ fun TasksScreen(modifier: Modifier = Modifier, initialGroup: String? = null) {
     var selectedKeys by remember { mutableStateOf(emptySet<String>()) }
     var activeFilter by remember(initialGroup) { mutableStateOf(TaskGroup.entries.firstOrNull { it.name == initialGroup }) }
     var showCreate by remember { mutableStateOf(false) }
+    var saveError by remember { mutableStateOf<String?>(null) }
     var editing by remember { mutableStateOf<LogicalTask?>(null) }
     var deleteRequest by remember { mutableStateOf<DeleteRequest?>(null) }
     val sync by AccountSyncController.state.collectAsStateWithLifecycle()
@@ -352,13 +357,18 @@ fun TasksScreen(modifier: Modifier = Modifier, initialGroup: String? = null) {
     if (showCreate) {
         TaskEditorDialog(
             originals = null,
+            initialGroup = activeFilter,
+            errorMessage = saveError,
             accounts = accounts.filter { it.active },
             defaultFollowLimit = settings.defaultFollowLimit,
             defaultUnfollowLimit = settings.defaultUnfollowLimit,
             onDismiss = { showCreate = false },
             onSave = { created ->
-                scope.launch { created.forEach { AppServices.repository.upsertTask(it) } }
-                showCreate = false
+                scope.launch {
+                    runCatching { AppServices.repository.upsertTasks(created) }
+                        .onSuccess { showCreate = false; saveError = null }
+                        .onFailure { saveError = it.message ?: "Görevler kaydedilemedi" }
+                }
             },
         )
     }
@@ -366,6 +376,7 @@ fun TasksScreen(modifier: Modifier = Modifier, initialGroup: String? = null) {
     editing?.let { logicalTask ->
         TaskEditorDialog(
             originals = logicalTask.tasks,
+            errorMessage = saveError,
             accounts = accounts,
             defaultFollowLimit = settings.defaultFollowLimit,
             defaultUnfollowLimit = settings.defaultUnfollowLimit,
@@ -373,10 +384,12 @@ fun TasksScreen(modifier: Modifier = Modifier, initialGroup: String? = null) {
             onSave = { updated ->
                 val removed = logicalTask.taskIds - updated.mapTo(linkedSetOf(), ScheduledTask::id)
                 scope.launch {
-                    if (removed.isNotEmpty()) AppServices.repository.deleteTasks(removed)
-                    updated.forEach { AppServices.repository.upsertTask(it) }
+                    runCatching {
+                        AppServices.repository.upsertTasks(updated)
+                        if (removed.isNotEmpty()) AppServices.repository.deleteTasks(removed)
+                    }.onSuccess { editing = null; saveError = null }
+                        .onFailure { saveError = it.message ?: "Görevler kaydedilemedi" }
                 }
-                editing = null
             },
         )
     }
@@ -868,6 +881,8 @@ private fun TaskMetric(label: String, value: String, icon: ImageVector, modifier
 @Composable
 private fun TaskEditorDialog(
     originals: List<ScheduledTask>?,
+    initialGroup: TaskGroup? = null,
+    errorMessage: String? = null,
     accounts: List<Account>,
     defaultFollowLimit: Int,
     defaultUnfollowLimit: Int,
@@ -881,14 +896,15 @@ private fun TaskEditorDialog(
     val editorListState = rememberLazyListState()
     val editorMaxHeight = (configuration.screenHeightDp * if (windowClass == AtmacaWindowClass.COMPACT) 0.68f else 0.74f).dp
     val availableAccounts = accounts.distinctBy { it.username.lowercase() }.take(10)
+    val quoteTargets by AppServices.repository.targetAccounts.collectAsStateWithLifecycle(initialValue = emptyList())
     var selectedAccountIds by remember(originals, availableAccounts) {
         mutableStateOf(originals?.mapTo(linkedSetOf(), ScheduledTask::accountId) ?: setOfNotNull(availableAccounts.firstOrNull { it.isCurrent }?.id ?: availableAccounts.firstOrNull()?.id))
     }
-    var editorGroup by remember(original) { mutableStateOf(original?.type?.let(::taskGroup) ?: TaskGroup.FOLLOW) }
-    var selectedTypes by remember(original) { mutableStateOf(setOf(original?.type ?: TaskType.UNFOLLOW)) }
+    var editorGroup by remember(original) { mutableStateOf(original?.type?.let(::taskGroup) ?: initialGroup ?: TaskGroup.FOLLOW) }
+    var selectedTypes by remember(original) { mutableStateOf(setOf(original?.type ?: TASK_TYPES_BY_GROUP.getValue(editorGroup).first())) }
     var limitText by remember(original) {
         mutableStateOf(
-            (original?.limit ?: if (original?.type?.isUnfollowAction == true) defaultUnfollowLimit else defaultFollowLimit).toString(),
+            (original?.limit ?: if (editorGroup == TaskGroup.QUOTE_COMMENT) 1 else if (selectedTypes.any { it.isUnfollowAction }) defaultUnfollowLimit else defaultFollowLimit).toString(),
         )
     }
     var repeatText by remember(original) { mutableStateOf((original?.repeatCount ?: 1).toString()) }
@@ -909,6 +925,12 @@ private fun TaskEditorDialog(
     val needsContent = selectedTypes.any(TaskType::supportsGemini)
     val needsImage = TaskType.IMAGE_TWEET in selectedTypes
     val scalable = selectedTypes.any { it in SCALABLE_TYPES }
+    val needsQuoteTargets = TaskType.COMMENT_QUOTE_TARGETS in selectedTypes
+    val quoteHandlesByAccount = availableAccounts.associate { account ->
+        val existing = originals?.firstOrNull { it.accountId == account.id && it.type == TaskType.COMMENT_QUOTE_TARGETS }
+        account.id to (existing?.quoteTargetHandles?.takeIf { it.isNotEmpty() }
+            ?: QuoteTaskSetupPolicy.activeHandles(account.id, quoteTargets))
+    }
     val limit = limitText.toIntOrNull()
     val repeats = repeatText.toIntOrNull()
     val interval = intervalText.toIntOrNull()
@@ -916,6 +938,8 @@ private fun TaskEditorDialog(
         limit != null && limit in 1..100 && repeats != null && repeats in 1..100 && interval != null && interval in 1..1_440 &&
         (!needsLink || validXUrl(targetUrl)) &&
         (!needsContent || if (useGemini) prompt.isNotBlank() else content.isNotBlank()) &&
+        (!needsQuoteTargets || (limit in 1..QuoteTaskSetupPolicy.MAX_POSTS_PER_TARGET &&
+            selectedAccountIds.all { quoteHandlesByAccount[it].orEmpty().isNotEmpty() })) &&
         (!needsImage || !mediaUri.isNullOrBlank())
 
     AlertDialog(
@@ -944,6 +968,7 @@ private fun TaskEditorDialog(
                 modifier = Modifier.fillMaxWidth().heightIn(max = editorMaxHeight),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                errorMessage?.let { message -> item(key = "save-error") { Text(message, color = MaterialTheme.colorScheme.error) } }
                 item(key = "accounts-title") { Text("Hesaplar", fontWeight = FontWeight.Bold) }
                 items(availableAccounts, key = { it.id }) { account ->
                     val checked = account.id in selectedAccountIds
@@ -961,6 +986,10 @@ private fun TaskEditorDialog(
                             enabled = account.active,
                         )
                         Text(account.username, modifier = Modifier.weight(1f))
+                        if (needsQuoteTargets) {
+                            val count = quoteHandlesByAccount[account.id].orEmpty().size
+                            Text(if (count == 0) "Hedef ekle" else "$count hedef", color = if (count == 0) MaterialTheme.colorScheme.error else Success, fontSize = 10.sp)
+                        }
                         if (account.isCurrent) Text("X'te açık", color = Success, fontSize = 9.sp)
                     }
                 }
@@ -969,17 +998,20 @@ private fun TaskEditorDialog(
                     HorizontalDivider()
                     Spacer(Modifier.height(5.dp))
                     Text("Görev türleri", fontWeight = FontWeight.Bold)
-                    Text("2 kategori • ${selectedTypes.size} tür seçili", color = TextSecondary, fontSize = 9.sp)
+                    Text("${TaskGroup.entries.size} kategori • ${selectedTypes.size} tür seçili", color = TextSecondary, fontSize = 9.sp)
                 }
                 item(key = "category-tabs") {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         TaskGroup.entries.forEach { group ->
                             FilterChip(selected = editorGroup == group,
                                 onClick = {
-                                    if (editorGroup != group && original == null) selectedTypes = emptySet()
+                                    if (editorGroup != group && original == null) {
+                                        selectedTypes = if (group == TaskGroup.QUOTE_COMMENT) setOf(TaskType.COMMENT_QUOTE_TARGETS) else emptySet()
+                                        if (group == TaskGroup.QUOTE_COMMENT) limitText = "1"
+                                    }
                                     editorGroup = group
                                 },
-                                label = { Text(group.shortTitle) })
+                                modifier = Modifier.weight(1f), label = { Text(group.shortTitle, fontSize = 10.sp, maxLines = 2) })
                         }
                     }
                 }
@@ -999,6 +1031,7 @@ private fun TaskEditorDialog(
                                         when (group) {
                                             TaskGroup.FOLLOW -> "Kitle büyütme ve takip temizliği"
                                             TaskGroup.ENGAGEMENT -> "Bağlantı üzerinden tekil X işlemleri"
+                                            TaskGroup.QUOTE_COMMENT -> "Her hesabın Alıntı Hedeflerine yorum"
                                         },
                                         color = TextSecondary,
                                         fontSize = 8.sp,
@@ -1045,6 +1078,12 @@ private fun TaskEditorDialog(
                     }
                 }
 
+                if (needsQuoteTargets) {
+                    item(key = "quote-targets-help") {
+                        Text("Hesaplar > Alıntı Hedefleri listesini kullanır. Limit, her hedefin son kaç gönderisine yorum yazılacağıdır (1–20).", color = TextSecondary, fontSize = 10.sp)
+                    }
+                }
+
                 if (needsLink) {
                     item(key = "target-link") {
                         OutlinedTextField(
@@ -1073,7 +1112,7 @@ private fun TaskEditorDialog(
                             OutlinedTextField(
                                 value = content,
                                 onValueChange = { content = it.take(280) },
-                                label = { Text("Yayınlanacak metin") },
+                                label = { Text(if (needsQuoteTargets) "Yazılacak yorum" else "Yayınlanacak metin") },
                                 supportingText = { Text("${content.length}/280") },
                                 modifier = Modifier.fillMaxWidth(),
                                 minLines = 3,
@@ -1176,7 +1215,7 @@ private fun TaskEditorDialog(
                             ?: "$LOGICAL_TASK_PREFIX${UUID.randomUUID()}:${original.type.name}"
                         selectedAccounts.map { account ->
                             val existing = existingByAccount[account.id]
-                            (existing ?: original.copy(id = UUID.randomUUID().toString(), accountId = account.id, username = account.username, progress = 0)).copy(
+                            val updated = (existing ?: original.copy(id = UUID.randomUUID().toString(), accountId = account.id, username = account.username, progress = 0)).copy(
                                 accountId = account.id,
                                 username = account.username,
                                 time = groupKey,
@@ -1190,6 +1229,7 @@ private fun TaskEditorDialog(
                                 useGemini = useGemini,
                                 progress = (existing?.progress ?: 0).coerceAtMost(perCycle * repeats!!),
                             )
+                            QuoteTaskSetupPolicy.bindAccount(updated, quoteTargets, existing)
                         }
                     } else {
                         val batchId = UUID.randomUUID().toString()
@@ -1199,7 +1239,7 @@ private fun TaskEditorDialog(
                                 selectedAccounts.forEach { account ->
                                     val perCycle = if (type in SCALABLE_TYPES) limit!! else 1
                                     add(
-                                        ScheduledTask(
+                                        QuoteTaskSetupPolicy.bindAccount(ScheduledTask(
                                             id = UUID.randomUUID().toString(),
                                             accountId = account.id,
                                             username = account.username,
@@ -1215,7 +1255,7 @@ private fun TaskEditorDialog(
                                             contentText = content.takeIf { type.supportsGemini && it.isNotBlank() },
                                             mediaUri = mediaUri.takeIf { type == TaskType.IMAGE_TWEET },
                                             useGemini = type.supportsGemini && useGemini,
-                                        )
+                                        ), quoteTargets)
                                     )
                                 }
                             }
@@ -1267,27 +1307,33 @@ private fun taskGroup(type: TaskType): TaskGroup = when (type) {
     TaskType.BOOKMARK,
     TaskType.COMMENT -> TaskGroup.ENGAGEMENT
 
+    TaskType.COMMENT_QUOTE_TARGETS -> TaskGroup.QUOTE_COMMENT
+
     else -> TaskGroup.ENGAGEMENT
 }
 
 private fun groupIcon(group: TaskGroup): ImageVector = when (group) {
     TaskGroup.FOLLOW -> Icons.Filled.Groups
     TaskGroup.ENGAGEMENT -> Icons.Filled.Bolt
+    TaskGroup.QUOTE_COMMENT -> Icons.Filled.ChatBubble
 }
 
 private fun taskGroupColor(group: TaskGroup): Color = when (group) {
     TaskGroup.FOLLOW -> Teal
     TaskGroup.ENGAGEMENT -> AtmacaBlue
+    TaskGroup.QUOTE_COMMENT -> Purple
 }
 
 private fun taskGroupSoftColor(group: TaskGroup): Color = when (group) {
     TaskGroup.FOLLOW -> SoftGreen
     TaskGroup.ENGAGEMENT -> SoftBlue
+    TaskGroup.QUOTE_COMMENT -> SoftPurple
 }
 
 private fun taskSoftColor(type: TaskType): Color = when (taskGroup(type)) {
     TaskGroup.FOLLOW -> if (type.isUnfollowAction) SoftOrange else SoftGreen
     TaskGroup.ENGAGEMENT -> if (type == TaskType.LIKE) Color(0xFF352431) else SoftBlue
+    TaskGroup.QUOTE_COMMENT -> SoftPurple
 }
 
 private fun statusLabel(status: TaskStatus): String = when (status) {

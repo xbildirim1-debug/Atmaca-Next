@@ -1,3 +1,13 @@
+# Atmaca Next — 26.61
+
+Yorum Alıntısı, Yeni Görev Akışı ekranına eklendi; her seçili hesabın Hesaplar > Alıntı Hedefleri listesini kullanır. Limit hedef başına 1–20 son gönderidir. Üç görev sekmesi telefon ekranında görünür.
+
+Hedef twitten yanıt alanına geçiş, ayrı paragraf metni, Compose düğmesi ve odak/yapıştırma yolu düzeltildi. Tam yorum metni taze ekranda okunmadan gönderilmez. Gönderi açılması başarı değildir; gönderim tek kez yapılır ve yeni yorum/bildirim doğrulanır. Gönderim öncesi takılma, aynı hedef korunarak 10 saniye kurtarmasına girer.
+
+42 yeni regresyon / toplam622 bekleniyor. Yeni CI ve aynı imzalı APK hazırlanıyor; fiziksel yeni cihaz testi yapılmadı. Buse ve26.60 özellikleri korunur. [Devir notu](DEVIR_NOTU.md) / [derleme durumu](BUILD_STATUS.md).
+
+## Önceki sürümlerin tarihsel kayıtları
+
 # Atmaca Next — 26.60
 
 **Takip Etmeyenleri Çık**, Yeni Görev Akışı > Takip bölümünde **Takipten çık** seçeneğinin hemen altındadır. Birden çok hesapla, Limit/Tekrar/Aralık ayarlarıyla toplu çalışır. Buse 1.3'te doğrulanan tarama taşındı: ilk 100 kişi korunur, 101'den daha eski kişilere gidilir; seni takip edenler ve belirsiz satırlar korunur.

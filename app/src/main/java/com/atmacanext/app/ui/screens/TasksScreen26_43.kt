@@ -54,14 +54,15 @@ fun TasksScreen26_43(modifier: Modifier = Modifier) {
                 Text("Görev türünü seç ve çalıştır", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(9.dp))
                 Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     TaskTab43.entries.forEach { item ->
                         FilterChip(
+                            modifier = Modifier.weight(1f),
                             selected = tab == item,
                             onClick = { selected = item.name },
-                            label = { Text(item.title) },
+                            label = { Text(item.title, maxLines = 2, style = MaterialTheme.typography.labelMedium) },
                         )
                     }
                 }
