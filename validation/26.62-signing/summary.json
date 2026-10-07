@@ -1,0 +1,138 @@
+{
+  "version": "26.62-inline-reply-input",
+  "version_code": 110,
+  "application_id": "com.atmacanext.v258",
+  "build_kind": "github_ci_with_local_compatible_signing",
+  "source_commit": "f26d76c1c8676e2613fe8326d9d3442652f7cf01",
+  "device_tested": false,
+  "run_url": "https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/37576469307",
+  "tests": {
+    "tests": 643,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "new_suites": {
+    "com.atmacanext.app.automation.NavigationRestart26_60Test": {
+      "tests": 23,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerFollowingInspectorTest": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerPolicyTest": {
+      "tests": 37,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerScrollProgressTest": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerTimingTest": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerUnfollowCompletionTest": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerViewportGateTest": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.QuoteReply26_61Test": {
+      "tests": 29,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.ReplyTextInput26_62Test": {
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.domain.engine.NonFollowerBatch26_60Test": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test": {
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "Fatal": 0,
+    "Error": 0,
+    "Warning": 22,
+    "Information": 0
+  },
+  "migration": "PASS: both historical v5 layouts preserved",
+  "signing_cert_sha256": "9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5",
+  "matches_26_59_local_certificate": true,
+  "apk": {
+    "filename": "AtmacaNext-26.62-Yorum-Duzeltmesi.apk",
+    "bytes": 20919906,
+    "sha256": "23f88022c648ff90b80a93f421ceadb0a93ee5e021ca377c95cb69fe93402559",
+    "crc": "PASS"
+  },
+  "source_tree": "10dac51fb14714a251e7268388dce3085fe0610f",
+  "feature_commit": "937ff8429112717e49a6ef42ea9466f41006fd5d",
+  "pr_checkout": "c06631d288d32a018bcce112978018b896eb26e4",
+  "pr_run_id": 37502501645,
+  "main_run_id": 37576469307,
+  "local_compilation_performed": false,
+  "tests_origin": "successful main CI; downloaded JUnit XML independently counted",
+  "original_ci_apk": {
+    "filename": "AtmacaNext-26.62.apk",
+    "bytes": 20903688,
+    "sha256": "78916a5648d0d844a3f32b2e2b0d1c6f6e50f80084d610f1bdf823e378799449",
+    "crc": "PASS"
+  },
+  "original_ci_signing_cert_sha256": "72137b0c9cc90c410fb0972995f3f4f810fa4951bfff96612d0c5f2197109223",
+  "matches_delivered_26_61_certificate": true,
+  "signing_schemes_verified": [
+    "v2",
+    "v3"
+  ],
+  "non_signature_zip_entries_identical_to_main_ci": 151,
+  "source_blob_count": 283,
+  "all_source_blobs_match_tested_main_tree": true,
+  "source_archive": {
+    "filename": "AtmacaNext-26.62-Kaynak.zip",
+    "sha256": "5f5f94d30bc1cf6a60ffa19a3279443859b02bc71cfb1224802525bf5fdd7228"
+  },
+  "zip_alignment_16kb": "PASS",
+  "buse_modified": false,
+  "private_key_in_public_package": false,
+  "github_releases_published": false,
+  "bundle": {
+    "filename": "AtmacaNext-26.62-Yorum-Duzeltmesi-TAM-PAKET.zip",
+    "bytes": 21371181,
+    "sha256": "5bf226c6bc189f45e35b9cc397f535fcf6ddde2ae1dd99bc385b312336e0e997",
+    "crc": "PASS",
+    "inner_apk_byte_equality": "PASS"
+  },
+  "prepared_for_persistent_delivery": true,
+  "persistent_delivery_saved": true,
+  "update_compatible_apk_delivered": true
+}

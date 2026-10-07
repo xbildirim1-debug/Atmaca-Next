@@ -1,0 +1,25 @@
+{
+  "tests": {
+    "tests": 643,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "new_suites": {
+    "com.atmacanext.app.automation.QuoteReply26_61Test": 29,
+    "com.atmacanext.app.automation.ReplyTextInput26_62Test": 21,
+    "com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test": 13
+  },
+  "lint": {
+    "Fatal": 0,
+    "Error": 0,
+    "Warning": 22,
+    "Information": 0
+  },
+  "source_blob_count": 283,
+  "all_source_blobs_match": true,
+  "source_commit": "f26d76c1c8676e2613fe8326d9d3442652f7cf01",
+  "source_tree": "10dac51fb14714a251e7268388dce3085fe0610f",
+  "run_id": 37576469307,
+  "device_tested": false
+}
