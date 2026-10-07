@@ -31,8 +31,10 @@ internal object ReplyTextTransfer {
         val connection = editor.connection
         val previous = connection?.readFullText()
         if (matches(previous, value)) return Result.ALREADY_PRESENT
-        if (previous != null && connection != null && connection.replaceAll(previous, value)) return Result.INPUT_CONNECTION
-        // A later frame still empty after an accepted SET_TEXT must exercise paste.
+        if (attempt <= 1 && previous != null && connection != null && connection.replaceAll(previous, value)) return Result.INPUT_CONNECTION
+        // Dispatch success is not text evidence. Later empty frames rotate through
+        // paste and SET_TEXT instead of repeatedly choosing an ineffective port.
+        if (attempt >= 3 && editor.setText(value)) return Result.SET_TEXT
         if (attempt <= 1 && editor.setText(value)) return Result.SET_TEXT
         if (editor.pasteReplacing(value)) return Result.PASTE
         if (attempt > 1 && editor.setText(value)) return Result.SET_TEXT

@@ -1932,7 +1932,8 @@ object AutomationController {
                     return
                 }
                 val detailNodes = AccessibilityTree.snapshots(root)
-                val detailAuthor = if (screen in setOf(XScreen.TWEET_DETAIL, XScreen.UNKNOWN)) CommentDetailEvidence.header(detailNodes)?.handle else null
+                val detailAuthor = if (screen in setOf(XScreen.TWEET_DETAIL, XScreen.UNKNOWN))
+                    CommentDetailEvidence.header(detailNodes, excludeFeedTimedHeaders = false)?.handle else null
                 val detailSurface = screen == XScreen.TWEET_DETAIL || (screen == XScreen.UNKNOWN &&
                     detailNodes.any { it.visible && listOfNotNull(it.text, it.contentDescription).any(CommentDetailEvidence::isTitle) })
                 if (detailSurface) {

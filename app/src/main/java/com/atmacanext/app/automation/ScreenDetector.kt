@@ -59,7 +59,7 @@ object ScreenDetector {
         } >= 2
         val visibleTweetRows = FeedRowEvidence.rows(nodes)
         val visibleTimedAuthors = labels.mapNotNull(TweetContentEvidence::header).map { it.handle }.distinct().size
-        val openedDetailAuthor = if (detailTitleAtTop) CommentDetailEvidence.header(nodes)?.handle else null
+        val openedDetailAuthor = if (detailTitleAtTop) ReplyComposerEvidence.postHeader(nodes)?.handle else null
         val inlineTweetDetail = inlineReplyEntry && (
             (detailBack && (detailTitleAtTop || detailToolbar || labels.any(EngagementListEvidence::openLabel))) ||
                 // While the detail settles or scrolls, Compose may temporarily omit

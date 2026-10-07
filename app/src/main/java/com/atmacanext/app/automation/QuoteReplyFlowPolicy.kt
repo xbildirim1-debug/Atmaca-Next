@@ -16,7 +16,7 @@ internal object QuoteReplyFlowPolicy {
     fun sameThread(nodes: List<NodeSnapshot>, screen: XScreen, expected: DiscoveryTweetOpenRecovery.Attempt?, pendingKey: String?): Boolean =
         expected != null && expected.key == pendingKey &&
             (detailReady(nodes, screen, expected) ||
-                (screen == XScreen.TWEET_DETAIL && CommentDetailEvidence.header(nodes) == null))
+                (screen == XScreen.TWEET_DETAIL && ReplyComposerEvidence.postHeader(nodes) == null))
 
     fun newReplyVisible(nodes: List<NodeSnapshot>, screen: XScreen, expected: DiscoveryTweetOpenRecovery.Attempt?,
         pendingKey: String?, username: String, content: String, before: Set<String>): Boolean =

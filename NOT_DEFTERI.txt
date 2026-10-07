@@ -1,3 +1,19 @@
+## 26.63 hazırlık — zamanlı ana gönderi yazarı ve yorum yazma alternatifleri (7 Ekim 2026)
+
+Kullanıcı 26.62'nin hedef gönderide kaldığını tekrar bildirdi; 09:18 Europe/Istanbul mesajında başka yapay zekânın timedHeaders teşhisini ve düzeltme isteğini iletti. Başlangıç main 5077fe7369969b05a7805f65d9f9028d89482f80 / ağaç 29fd317c0a4ef2108c7f3c9ba5e0c96f064ab47a. Ayrı çalışma kopyasının 295 Git blob SHA'sı main ile eşleştirildi. Çalışma dalı fix/26.63-detail-author; uygulama com.atmacanext.v258 / versionCode111 /26.63-detail-author-reply /Room6.
+
+CommentDetailEvidence.header parametresi excludeFeedTimedHeaders varsayılan true kalır. Yorum Alıntısı'nın postHeader okuması false kullanır; ana gönderi metni, mutlak saat/tarih satırı, gönderi araç çubuğu veya yorum ayıracı ölçülen başlık bandını sınırlar. Böylece ana yazarın ayrı zaman etiketi veya büyük semantik parent nedeniyle feed satırı sayılması yorum akışını kesmez. Bağımsız sınır yoksa zamanlı yorum dışlama korunur. Zamanlı birleşik tam yazar yalnız bu bantta okunur; kısaltılmış handle kesin kimlik kabul edilmez. Küçük @handle çocuğu ana metnin altından seçilmez; büyük parent'ın body alt sınırı gönderi metni sınırına indirilir. Ana yazar eksikse başlıklı ayrıntı ilk alt yorumu hedef gönderi gibi kullanamaz. Aynı yazarın farklı gönderisi ve farklı yazarın aynı metni reddedilir. Yorumcu takipte gerçek takip düğmesi seçimi varsayılan sıkı filtresini kullanır; detailAuthor tanı satırı kullanıcının istediği false çağrısına güncellendi.
+
+ReplyComposerEvidence ready, ScreenDetector ana yazar kanıtı ve QuoteReplyFlowPolicy sameThread aynı postHeader yolunu kullanır. Locale.ROOT, isTitle, FeedRowEvidence.rows ve yaş parser'ı değiştirilmedi. 08:30 ve tam detail tarih/görüntülenme satırı mevcut yaş parser'ında null verir; paylaşılan senaryonun kesin telefon teşhisi olduğu iddia edilmez. Doğrulanabilir çakışma temsili ayrı zaman/merged bounds testlerinde gösterilir; yeni cihaz logu henüz yok.
+
+Ayrıca önceki kaynak incelemesinde açık kalan native giriş hatası düzeltildi: true dönen fakat metni değiştirmeyen bağlantı ilk denemede kullanılır; taze okumada hâlâ metin yoksa ikinci deneme PASTE, üçüncü SET_TEXT alternatifini kullanır. Geç gelen doğru metin okunursa yeniden yazılmaz. Metnin tamamı taze kanıtla doğrulanmadan Yanıtla kullanılmaz; tek gönderim/pending,10 saniye kurtarma, toplu kuyruk, ilerleme ve ilk100 koruması korunur. Buse değiştirilmedi.
+
+14 yeni QuoteDetailAuthor26_63Test +4 ReplyFallback26_63Test; beklenen toplam661. Test/lint/APK CI sonucu henüz bekleniyor; yerel Android/Kotlin derlemesi yapılmadı. Eski643 başarı26.62'ye aittir. Yeni26.63 fiziksel X cihazında test edilmedi. AtmacaDetailHeader Log.d artık yeni kaynak derlemesine dahil edilecektir; uygulama dışa aktarma logundaki QUOTE_REPLY_TARGET/QUOTE_REPLY_WRITE de korunur.
+
+Başarılı CI sonrasında önceki26.62 ile aynı9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5 sertifikalı güncelleme APK'sı ve tam paket hazırlanacaktır; özel anahtar depoya/pakete eklenmez. contents:read derleme workflow'u korunur. AGENTS.md'deki önceki otomatik onay reddi olan Releases workflow'u etkinleştirilmedi. Önceki teslimler değiştirilmedi.
+
+## 26.62 ve önceki kayıtlar
+
 ## 7 Ekim 2026 — detail yazar tanısı için Log.d
 
 Kullanıcının09:01 isteğiyle CommentDetailEvidence.header() içine üç Log.d çağrı noktası eklendi: title bulundu mu, candidates/timedHeaders indeksleri, döngü çıkış nedeni/adımı/node indeksi. Tag AtmacaDetailHeader; yazar seçme ve parse kuralları korunur. [İstenen üç fonksiyon ve log eklenmiş header kodu](docs/Yazar-Tani-Kodlari.txt) / [tanı kapsamı ve kontrol sonucu](validation/26.62-device/AUTHOR_LOGGING.md).

@@ -32,12 +32,12 @@ for report in reports:
     for key in counts:
         counts[key] += values[key]
     name = suite.get("name", "")
-    if ".NonFollower" in name or name.endswith((".NavigationRestart26_60Test", ".QuoteReply26_61Test", ".QuoteTaskSetup26_61Test", ".ReplyTextInput26_62Test")):
+    if ".NonFollower" in name or name.endswith((".NavigationRestart26_60Test", ".QuoteReply26_61Test", ".QuoteTaskSetup26_61Test", ".ReplyTextInput26_62Test", ".QuoteDetailAuthor26_63Test", ".ReplyFallback26_63Test")):
         new_suites[name] = values
-assert counts["tests"] >= 643 and counts["failures"] == counts["errors"] == counts["skipped"] == 0, counts
+assert counts["tests"] >= 661 and counts["failures"] == counts["errors"] == counts["skipped"] == 0, counts
 for name in ("NavigationRestart26_60Test", "NonFollowerUnfollowCompletionTest", "NonFollowerFollowingInspectorTest",
              "NonFollowerPolicyTest", "NonFollowerScrollProgressTest", "NonFollowerViewportGateTest",
-             "NonFollowerTimingTest", "NonFollowerBatch26_60Test", "QuoteReply26_61Test", "QuoteTaskSetup26_61Test", "ReplyTextInput26_62Test"):
+             "NonFollowerTimingTest", "NonFollowerBatch26_60Test", "QuoteReply26_61Test", "QuoteTaskSetup26_61Test", "ReplyTextInput26_62Test", "QuoteDetailAuthor26_63Test", "ReplyFallback26_63Test"):
     assert any(suite.endswith("." + name) and values["tests"] > 0 for suite, values in new_suites.items()), name
 
 lint_file = Path("app/build/reports/lint-results-debug.xml")

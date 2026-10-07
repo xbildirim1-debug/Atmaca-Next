@@ -1,3 +1,16 @@
+## 26.63 — zamanlı ana gönderi yazarı ve yanıt akışı
+
+Yeni APK mevcut26.62 üzerine güncelleme olarak kurulmalıdır. Aynı hesap ve Yorum Alıntısı görevinde eski0/5 ilerlemesi korunmalıdır. Yeni kaynak birim testi gerçek X cihaz sonucu yerine geçmez.
+
+1. Hedef gönderi açıldığında QUOTE_REPLY_TARGET author doğru tam handle olmalı ve ready=true görülmelidir. Android Logcat AtmacaDetailHeader etiketi titleFound/candidates/headerEnd/exit=AUTHOR_FOUND kayıtlarını içerir; Log.d uygulamanın dışa aktarılan loguna otomatik eklenmez.
+2. Ana yazar ayrı zaman etiketiyle aynı satırda ve birleşik/büyük semantik parent ile geldiğinde de alt yorum yazarına geçilmemelidir. Yanlış gönderi veya yanlış yazar yazmayı açmamalıdır.
+3. Yanıtını gönder alanı odaklanmalı; tam yorum görünmeden Yanıtla kullanılmamalıdır. QUOTE_REPLY_WRITE ilk etkisiz INPUT_CONNECTION sonrasında PASTE, gerektiğinde SET_TEXT sonucunu göstermelidir.
+4. Yanıtla bir kez kullanıldıktan sonra yalnız yeni gönderim kanıtı sayılmalıdır.0/5 görev1/5 sonucunda tamamlanmış sayılmamalı; diğer hedef/hesaplar kendi limitleriyle devam etmelidir.
+5. Gönderim öncesi ilerleme yoksa10 saniye kurtarma aynı hedefi ve ilerlemeyi korumalıdır. Belirsiz gönderim tekrar edilmemelidir.
+6. Yorumcu takip görevinde ana takip düğmesi ve alt yorum ayrımı, Takip Etmeyenleri Çıkarma ilk100 koruması, Buse ve hesap kayıtları kontrol edilmelidir.
+
+Henüz yeni26.63 fiziksel cihaz testi yapılmadı. Başarısızlık olursa aşama ve gerçek ekran logu esas alınmalıdır; bu protokol başarı kaydı değildir.
+
 # 26.62 — alt yorum alanı cihaz kabulü (yeni sürüm henüz denenmedi)
 
 1.26.61 üzerine aynı imzalı APK kurulur; hesap/görevler korunmalı.26.61'de gerçek başarısızlık: @pushholder gönderisi açıldı ama Yanıtını gönder alanı boş kaldı.
