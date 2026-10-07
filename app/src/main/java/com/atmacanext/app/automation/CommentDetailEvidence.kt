@@ -13,7 +13,7 @@ internal object CommentDetailEvidence {
             Regex("^(gönderi|post|tweet),? (başlık|heading)$").matches(label)
     }
 
-    fun header(nodes: List<NodeSnapshot>): Header? {
+    fun header(nodes: List<NodeSnapshot>, excludeFeedTimedHeaders: Boolean = true): Header? {
         fun finish(result: Header?, reason: String, step: Int, index: Int?): Header? {
             val node = index?.let(nodes::get)
             Log.d("AtmacaDetailHeader", "exit=$reason step=$step nodeIndex=$index handle=${result?.handle} " +
@@ -28,28 +28,47 @@ internal object CommentDetailEvidence {
         Log.d("AtmacaDetailHeader", "titleFound=${title != null} titleIndex=${title?.let(nodes::indexOf)} " +
             "titleBounds=${title?.bounds} nodes=${nodes.size}")
         if (title == null) return finish(null, "NO_TITLE", 0, null)
+        // A detail author may have the same time semantics as a feed row. Only
+        // relax that exclusion above an independently measured main-post boundary.
+        val headerEnd = if (excludeFeedTimedHeaders) Int.MAX_VALUE else headerBandEnd(nodes, title.bounds.bottom)
         val candidates = nodes.indices.filter { i ->
             val n = nodes[i]
             n.visible && !n.editable && n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
-                n.bounds.top >= title.bounds.bottom
+                n.bounds.top >= title.bounds.bottom && n.bounds.top < headerEnd
         }.sortedBy { nodes[it].bounds.top }
-        val timedHeaders = FeedRowEvidence.rows(nodes).map { it.headerIndex }.toSet()
-        Log.d("AtmacaDetailHeader", "candidates=${candidates.size} timedHeaders=${timedHeaders.sorted()}")
+        val rejectTimed = excludeFeedTimedHeaders || headerEnd == Int.MAX_VALUE
+        val timedHeaders = if (rejectTimed) FeedRowEvidence.rows(nodes).map { it.headerIndex }.toSet() else emptySet()
+        Log.d("AtmacaDetailHeader", "candidates=${candidates.size} timedHeaders=${timedHeaders.sorted()} " +
+            "excludeFeedTimedHeaders=$excludeFeedTimedHeaders headerEnd=$headerEnd")
 
-        // The expanded post's own author is the first untimed identity below the
-        // detail title. A timed author belongs to a reply/feed row, so do not ever
-        // borrow a Follow control from that lower row.
+        // Commenter-follow keeps the strict feed exclusion. Reply composition can
+        // read a time-bearing main author within the measured header band.
         for ((position, i) in candidates.withIndex()) {
             val n = nodes[i]
             val rawLabels = labels(n)
             if (i in timedHeaders) return finish(null, "TIMED_INDEX", position + 1, i)
-            if (rawLabels.any { TweetContentEvidence.header(it) != null })
+            val timed = rawLabels.mapNotNull(TweetContentEvidence::header)
+            if (rejectTimed && timed.isNotEmpty())
                 return finish(null, "TIMED_LABEL", position + 1, i)
             val handle = rawLabels.firstNotNullOfOrNull(::headerHandle)
+                ?: timed.firstOrNull { !it.truncated }?.handle
             if (handle != null) return finish(Header(handle, i), "AUTHOR_FOUND", position + 1, i)
         }
         return finish(null, "NO_HANDLE", candidates.size, candidates.lastOrNull())
     }
+
+    fun headerBandEnd(nodes: List<NodeSnapshot>, titleBottom: Int): Int = nodes.asSequence()
+        .filter { n -> n.visible && !n.editable && n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
+            n.bounds.top >= titleBottom }
+        .filter { n ->
+            val id = n.viewId.orEmpty().substringAfterLast('/').lowercase()
+            id in setOf("tweet_text", "tweet_content", "status_text", "tweet_metadata", "tweet_stats") ||
+                id in setOf("toolbar_reply", "toolbar_like", "toolbar_retweet", "toolbar_bookmark", "toolbar_share") || labels(n).any { raw ->
+                    val label = XUiVocabulary.normalize(raw)
+                    label in setOf("alakalı", "relevant", "en yeni", "latest", "yanıtlar", "replies") ||
+                        Regex("^\\d{1,2}:\\d{2}\\s*[·•].+$").matches(label)
+                }
+        }.minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE
 
     fun actionIndex(nodes: List<NodeSnapshot>, expected: String, accepted: Set<String>): Int? {
         val header = header(nodes)?.takeIf { it.handle == XIdentityDetector.normalizeUsername(expected) } ?: return null

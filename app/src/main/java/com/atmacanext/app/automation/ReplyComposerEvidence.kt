@@ -31,12 +31,14 @@ internal object ReplyComposerEvidence {
 
     /** A merged author parent can cover the whole post. Prefer its compact handle child. */
     fun postHeader(nodes: List<NodeSnapshot>): CommentDetailEvidence.Header? {
-        val first = CommentDetailEvidence.header(nodes) ?: return null
+        val first = CommentDetailEvidence.header(nodes, excludeFeedTimedHeaders = false) ?: return null
         val origin = nodes[first.index].bounds
         val width = nodes.filter(::visible).maxOfOrNull { it.bounds.right } ?: return first
+        val headerEnd = CommentDetailEvidence.headerBandEnd(nodes, origin.top)
         val compact = nodes.indices.filter { i ->
             val n = nodes[i]
-            usable(n) && !editable(n) && n.bounds.top >= origin.top && n.bounds.top <= origin.top + maxOf(100, width / 3) &&
+            usable(n) && !editable(n) && n.bounds.top >= origin.top && n.bounds.top < headerEnd &&
+                n.bounds.top <= origin.top + maxOf(100, width / 3) &&
                 n.bounds.bottom - n.bounds.top < origin.bottom - origin.top &&
                 listOfNotNull(n.text, n.contentDescription).any { AccountSwitcherInspector.dedicatedHandle(it) == first.handle }
         }.minByOrNull { (nodes[it].bounds.right - nodes[it].bounds.left).toLong() * (nodes[it].bounds.bottom - nodes[it].bounds.top) }
@@ -58,7 +60,7 @@ internal object ReplyComposerEvidence {
 
     fun ready(nodes: List<NodeSnapshot>, screen: XScreen): Boolean =
         (screen in setOf(XScreen.COMPOSER, XScreen.TWEET_DETAIL) ||
-            (screen == XScreen.UNKNOWN && CommentDetailEvidence.header(nodes) != null)) && editorIndex(nodes) != null
+            (screen == XScreen.UNKNOWN && postHeader(nodes) != null)) && editorIndex(nodes) != null
 
     fun contains(nodes: List<NodeSnapshot>, content: String): Boolean {
         val index = editorIndex(nodes) ?: return false
@@ -107,9 +109,11 @@ internal object ReplyComposerEvidence {
         val header = postHeader(nodes)
         if (header != null) {
             if (header.handle != expected.author) return false
+            val h = nodes[header.index].bounds
+            val bodyTop = minOf(h.bottom, CommentDetailEvidence.headerBandEnd(nodes, h.top))
             val end = rows.firstOrNull { nodes[it.headerIndex].bounds.top > nodes[header.index].bounds.top }
                 ?.let { nodes[it.headerIndex].bounds.top } ?: Int.MAX_VALUE
-            val body = nodes.filter { visible(it) && !editable(it) && it.bounds.top >= nodes[header.index].bounds.bottom &&
+            val body = nodes.filter { visible(it) && !editable(it) && it.bounds.top >= bodyTop &&
                 it.bounds.bottom <= end && !id(it).startsWith("toolbar_") &&
                 labels(it).none { label -> label in XUiVocabulary.structuralLabels } }
             if (body.any { listOfNotNull(it.text, it.contentDescription).any { text -> sameText(expected.text, text) } }) return true
@@ -119,6 +123,8 @@ internal object ReplyComposerEvidence {
                 .mapNotNull { (it.text ?: it.contentDescription)?.takeIf(String::isNotBlank) }.distinct()
             return pieces.size > 1 && sameText(expected.text, pieces.joinToString(" "))
         }
+        // A titled detail with no main author must not borrow its first reply.
+        if (nodes.any { visible(it) && listOfNotNull(it.text, it.contentDescription).any(CommentDetailEvidence::isTitle) }) return false
         val first = rows.firstOrNull()
         if (first != null) {
             if (first.author != expected.author || first.authorTruncated) return false
