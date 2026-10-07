@@ -1,3 +1,11 @@
+## 26.62 güncel kullanıcı sonucu — takılma sürüyor (7 Ekim 2026)
+
+08:46 Europe/Istanbul: kullanıcı son APK sonrasında Yorum Alıntısı'nın aynı yerde kaldığını bildirdi ve mevcut kodları istedi. Cihazda çözüldüğü doğrulanmadı; güncel kullanıcı sonucu başarısız. Önceki 643 otomatik test ve paket/imza doğrulamaları fiziksel X akışının başarı kanıtı değildir. Son mesajda yeni runtime logu veya sürüm ekranı yok.
+
+[Mevcut yorum kodlarının dökümü](docs/Yorum-Alintisi-26.62-Kodlari.md) ve [kullanıcı sonucu / kaynak incelemesi](validation/26.62-device/USER_REPORT.md) kaydedildi. Native bağlantı metni değiştirmeden true döndürürse her yazma denemesinde ilk sırada seçilerek PASTE/SET_TEXT alternatiflerini engelleyebilir; kaynakta bu açık görülüyor. Gerçek takılma aşaması yeni log olmadan kesinleştirilemez. Bu tur uygulama kaynakları, APK ve sürüm değiştirilmedi; yeni test çalıştırılmadı. Kod dökümünün 14 kaynak dosyası teslim APK'sının f26d76c1c8676e2613fe8326d9d3442652f7cf01 ağacına blob SHA ile doğrulandı. Başlangıç main e74dc59a19f8805232cb926a23de9d60fed1ba0d; PR #11 birleşmiş, çalışma dalı fix/26.62-inline-reply / 937ff8429112717e49a6ef42ea9466f41006fd5d. Bu ek yalnız belgelerden oluşur; Buse değişmedi.
+
+## Önceki teslim anındaki kayıtlar
+
 ## 26.62 — alt yorum alanı düzeltmesi ve aynı imzalı APK (7 Ekim 2026)
 
 26.61'de kullanıcı cihaz testi başarısızdı: @pushholder gönderisi açıldı, alttaki Yanıtını gönder alanı boş kaldı. Görsel incelendi; paylaşılan log hesap seçme sırasında kesildiği için yorum aşamasının gerçek cihaz düğüm ağacı bilinmiyor.26.61'in622 birim test başarısı fiziksel çalışma kanıtı değildi. Bu sürüm özellikle odak ve metin giriş yolunu değiştirir;26.62 de henüz fiziksel cihazda denenmedi.
