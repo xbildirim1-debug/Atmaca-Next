@@ -1462,24 +1462,27 @@ object AutomationController {
         val liveScreen = ScreenDetector.detect(nodes)
         val content = currentCycleContent()
         val expected = quoteReplyPost
-        val author = CommentDetailEvidence.header(nodes)?.handle
+        val author = ReplyComposerEvidence.postHeader(nodes)?.handle
         val conflict = expected == null || (liveScreen != XScreen.COMPOSER && author != null && author != expected.author)
+        val textVerified = !conflict && (ReplyComposerEvidence.contains(nodes, content) ||
+            (current.flowStage in setOf(XFlowStage.FILL_COMPOSER, XFlowStage.SUBMIT_COMPOSER) &&
+                XUiActions.replyTextVerified(service, captured, content)))
         val openAvailable = liveScreen in setOf(XScreen.TWEET_DETAIL, XScreen.COMPOSER, XScreen.UNKNOWN) &&
             ReplyComposerEvidence.openIndex(nodes, retry = true) != null
         val decision = QuoteReplyFlowPolicy.decide(current.flowStage,
-            ReplyComposerEvidence.ready(nodes, liveScreen), ReplyComposerEvidence.contains(nodes, content),
+            ReplyComposerEvidence.ready(nodes, liveScreen), textVerified,
             openAvailable, ReplyComposerEvidence.submitIndex(nodes) != null, stageAttempts,
             now - stageStartedAt, targetConflict = conflict)
         if (now - lastDiscoveryDiagnosticAt >= 2_000L) {
             lastDiscoveryDiagnosticAt = now
             OperationLog.i("QUOTE_REPLY", "stage=${current.flowStage} screen=$liveScreen decision=$decision " +
                 "editor=${ReplyComposerEvidence.editorIndex(nodes)} submit=${ReplyComposerEvidence.submitIndex(nodes)} " +
-                "textVerified=${ReplyComposerEvidence.contains(nodes, content)} attempts=$stageAttempts")
+                "textVerified=$textVerified attempts=$stageAttempts")
         }
         when (decision) {
             QuoteReplyFlowPolicy.Decision.OPEN -> {
                 stageAttempts++
-                val accepted = XUiActions.openReplyComposer(service, root, retry = stageAttempts % 2 == 1, capturedNodes = captured)
+                val accepted = XUiActions.openReplyComposer(service, root, retry = stageAttempts % 2 == 0, capturedNodes = captured)
                 OperationLog.i("QUOTE_REPLY_OPEN", "key=${expected?.key} attempt=$stageAttempts accepted=$accepted")
                 service.requestAutomationTickExact(300L)
             }
@@ -1489,9 +1492,11 @@ object AutomationController {
                 service.requestAutomationTickExact(250L)
             }
             QuoteReplyFlowPolicy.Decision.WRITE -> {
-                stageAttempts++
-                val accepted = XUiActions.setReplyText(service, root, content, captured)
-                OperationLog.i("QUOTE_REPLY_WRITE", "attempt=$stageAttempts accepted=$accepted; taze okumada metin doğrulanacak")
+                val result = XUiActions.writeReplyText(service, root, content, captured, attempt = stageAttempts + 1)
+                if (result in setOf(ReplyTextTransfer.Result.INPUT_CONNECTION, ReplyTextTransfer.Result.SET_TEXT, ReplyTextTransfer.Result.PASTE)) stageAttempts++
+                val editor = ReplyComposerEvidence.editorIndex(nodes)?.let(captured::get)
+                OperationLog.i("QUOTE_REPLY_WRITE", "attempt=$stageAttempts result=$result focused=${editor?.isFocused} " +
+                    "id=${editor?.viewIdResourceName} class=${editor?.className}; taze okumada metin doğrulanacak")
                 service.requestAutomationTickExact(350L)
             }
             QuoteReplyFlowPolicy.Decision.PREPARE_SUBMIT -> {
@@ -1670,7 +1675,16 @@ object AutomationController {
             XFlowStage.OPEN_ENGAGEMENT -> {
                 if (current.taskType == TaskType.COMMENT_QUOTE_TARGETS) {
                     val quoteNodes = AccessibilityTree.snapshots(root, maxNodes = 2_000)
-                    if (QuoteReplyFlowPolicy.detailReady(quoteNodes, ScreenDetector.detect(quoteNodes), quoteReplyPost)) {
+                    val quoteScreen = ScreenDetector.detect(quoteNodes)
+                    val detailReady = QuoteReplyFlowPolicy.detailReady(quoteNodes, quoteScreen, quoteReplyPost)
+                    if (now - lastDiscoveryDiagnosticAt >= 2_000L) {
+                        lastDiscoveryDiagnosticAt = now
+                        val header = ReplyComposerEvidence.postHeader(quoteNodes)
+                        OperationLog.i("QUOTE_REPLY_TARGET", "screen=$quoteScreen ready=$detailReady expected=@${quoteReplyPost?.author} " +
+                            "author=@${header?.handle} header=${header?.index} expectedChars=${quoteReplyPost?.text?.length} " +
+                            "entry=${ReplyComposerEvidence.openIndex(quoteNodes)} nodes=${quoteNodes.size}")
+                    }
+                    if (detailReady) {
                         discoveryOpenAttempt = null
                         quoteEditorScrolls = 0
                         quoteResultScrolls = 0

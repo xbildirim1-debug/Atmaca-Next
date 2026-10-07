@@ -12,8 +12,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 109
-        versionName = "26.61-quote-task-flow"
+        versionCode = 110
+        versionName = "26.62-inline-reply-input"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

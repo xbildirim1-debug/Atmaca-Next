@@ -8,7 +8,7 @@ internal object QuoteReplyFlowPolicy {
 
     fun detailReady(nodes: List<NodeSnapshot>, screen: XScreen, expected: DiscoveryTweetOpenRecovery.Attempt?): Boolean =
         expected != null && screen in setOf(XScreen.TWEET_DETAIL, XScreen.UNKNOWN, XScreen.COMPOSER) &&
-            (screen == XScreen.TWEET_DETAIL || CommentDetailEvidence.header(nodes) != null) &&
+            (screen == XScreen.TWEET_DETAIL || ReplyComposerEvidence.postHeader(nodes) != null) &&
             ReplyComposerEvidence.matchesPost(nodes, expected)
 
     fun openedIsProcessed(type: TaskType?): Boolean = type != TaskType.COMMENT_QUOTE_TARGETS

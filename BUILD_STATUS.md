@@ -1,3 +1,21 @@
+# Atmaca Next 26.62 — boş kalan alt yorum alanı
+
+6 Ekim 2026. Kullanıcı26.61'i telefonda denedi: @pushholder gönderisi açıkken alt “Yanıtını gönder” alanı boş kaldı. 1000033708.jpg görseli incelendi. Paylaşılan log @xhesaplar1 / limit5 /20:03 hesabı seçme sırasında kesiliyor; yorum aşamasının kesin cihaz ağacı/logu yok.26.61'in622 test başarısı cihazda yorumun çalıştığı kanıtı değildi; bu gerçek başarısızlık düzeltme kapsamıdır.
+
+Temel main de920ec56a3d2052fb2d214cd66153bc77331c69;280 dosyanın Git blob SHA'sı yerelle eşleştirildi. Çalışma dalı fix/26.62-inline-reply. com.atmacanext.v258 / versionCode110 /26.62-inline-reply-input /Room6. Buse ve diğer görevler korunur.
+
+Alt yanıt alanı önce seçilir; tıklama/odak erişilebilirlik eyleminin kabul edilmesi gerçek klavye odağı sayılmaz. Alanın ölçülen metin bölgesine fiziksel dokunuş yapılır. Odak beklenirken üç yazma hakkı tüketilmez. İkinci alternatif, ana gönderinin Yanıt toolbar'ıdır; alt yorumun toolbar'ı değildir. Yerel TR/EN alan rolü ekleri ve aynı kutunun çakışan semantik kopyaları desteklenir. Büyük yazar üst düğümü tüm gönderiyi kaplıyorsa onun küçük gerçek @handle çocuğu metin bandı için seçilir.
+
+Android13+ erişilebilirlik FLAG_INPUT_METHOD_EDITOR etkinleştirilir; kullanıcının klavyesi değiştirilmez. Sadece odaklı, görünür, etkin X yorum kutusu ve X metin EditorInfo'suna bağlanılır; diğer paketler, sayısal/şifre alanları reddedilir. Tam giriş metni offset0 ve4096'dan kısa doğrulanır; eski taslak tümü seçilip commitText ile değiştirilir. Eski/sınırlı bağlantı yazma veya gönderim kanıtı değildir. Native yol yoksa SET_TEXT ve PASTE kullanılır; X'in PASTE işlem listesinde reklam vermemesi artık yapıştırmayı engellemez. SET_TEXT true döndüğü halde yeni karede metin boşsa ikinci deneme PASTE yolunu kullanır. Tam metin, yeni erişilebilirlik karesi veya aynı odaklı alanın canlı giriş bağlantısından okunmadan Yanıtla'ya basılmaz. Gönderim ve pozitif sonuç kanıtı, kalıcı pending/tek gönderim koruması26.61'den korunur.
+
+QUOTE_REPLY_TARGET, QUOTE_REPLY_WRITE ve REPLY_INPUT tanı kayıtları hedef kanıtını, gerçek giriş yolunu ve odağı kaydeder; yorum metni loga basılmaz. Metin/odak/seçim olayları da taze okumayı tetikler. Görselden kurulan test düzeni gerçek cihaz ağacı dökümü diye sunulmaz.
+
+21 yeni ReplyTextInput26_62Test regresyonu: gerçek odak öncesi yazmama; native boş alan/taslak değiştirme/Türkçe-emoji; etkisiz true SET_TEXT sonrası PASTE; eksik native okuma; çift eklememe; paket/şifre guard'ları; görselin alt alanı/medya/GIF ayrımı; büyük yazar bounds; alan rolü/kopyaları; yeni metin kanıtı ile gönderim. Önceki toolbar öncelik testi yeni alt-alan önceliğine güncellendi. Beklenen toplam643. git diff --check ve iki tarihsel SQLite5→6 veri koruma kontrolü geçti. Yeni CI/test/lint/APK sonucu henüz yok. Yeni26.62 fiziksel cihaz testi yapılmadı. Aynı9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5 sertifikalı güncelleme CI geçince hazırlanacak; özel anahtar depoya/pakete eklenmez. contents:read CI korunur; önceki otomatik onay reddi olan Releases workflow'u etkinleştirilmez.
+
+Android resmi API referansları: https://developer.android.com/reference/android/accessibilityservice/AccessibilityService#getInputMethod() ; https://developer.android.com/reference/android/accessibilityservice/InputMethod.AccessibilityInputConnection .
+
+## Önceki26.61 hazırlık/teslim ve daha eski kayıtlar
+
 ## 26.61 — Yorum Alıntısı tamamlandı, aynı imzalı APK hazır (6 Ekim 2026)
 
 Yorum Alıntısı, Yeni Görev Akışı'nın üçüncü kategorisinde ve toplu görevlerde çalışacak şekilde motora bağlandı. Her hesap kendi aktif Alıntı Hedeflerini kullanır; görevde yazılacak yorum ve hedef başına 1–20 gönderi limiti seçilir. Hedefi olmayan hesap için görev oluşturulamaz. Görev düzenlemesinde ilerleme ve gönderilmiş yorum anahtarları korunur; yeni eklenen hesap başka hesabın kayıtlarını devralmaz. Bu özellik hedef profillerin son gönderilerine belirlenen yorum metnini yazar.
