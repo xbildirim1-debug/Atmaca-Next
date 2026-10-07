@@ -1,5 +1,6 @@
 package com.atmacanext.app.automation
 
+import android.util.Log
 import kotlin.math.abs
 
 /** The opened reply's own header, never a Follow button belonging to its replies. */
@@ -13,30 +14,41 @@ internal object CommentDetailEvidence {
     }
 
     fun header(nodes: List<NodeSnapshot>): Header? {
+        fun finish(result: Header?, reason: String, step: Int, index: Int?): Header? {
+            val node = index?.let(nodes::get)
+            Log.d("AtmacaDetailHeader", "exit=$reason step=$step nodeIndex=$index handle=${result?.handle} " +
+                "viewId=${node?.viewId} bounds=${node?.bounds}")
+            return result
+        }
         // A parent can repeat the title with bounds covering the whole page.
         // Prefer its actual text/toolbar node, otherwise every author lies inside
         // the title and the old top >= title.bottom check rejects the whole page.
         val title = nodes.filter { it.visible && !it.editable && labels(it).any(::isTitle) }
             .minByOrNull { (it.bounds.bottom - it.bounds.top).toLong() * (it.bounds.right - it.bounds.left) }
-            ?: return null
+        Log.d("AtmacaDetailHeader", "titleFound=${title != null} titleIndex=${title?.let(nodes::indexOf)} " +
+            "titleBounds=${title?.bounds} nodes=${nodes.size}")
+        if (title == null) return finish(null, "NO_TITLE", 0, null)
         val candidates = nodes.indices.filter { i ->
             val n = nodes[i]
             n.visible && !n.editable && n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
                 n.bounds.top >= title.bounds.bottom
         }.sortedBy { nodes[it].bounds.top }
         val timedHeaders = FeedRowEvidence.rows(nodes).map { it.headerIndex }.toSet()
+        Log.d("AtmacaDetailHeader", "candidates=${candidates.size} timedHeaders=${timedHeaders.sorted()}")
 
         // The expanded post's own author is the first untimed identity below the
         // detail title. A timed author belongs to a reply/feed row, so do not ever
         // borrow a Follow control from that lower row.
-        for (i in candidates) {
+        for ((position, i) in candidates.withIndex()) {
             val n = nodes[i]
             val rawLabels = labels(n)
-            if (i in timedHeaders || rawLabels.any { TweetContentEvidence.header(it) != null }) return null
+            if (i in timedHeaders) return finish(null, "TIMED_INDEX", position + 1, i)
+            if (rawLabels.any { TweetContentEvidence.header(it) != null })
+                return finish(null, "TIMED_LABEL", position + 1, i)
             val handle = rawLabels.firstNotNullOfOrNull(::headerHandle)
-            if (handle != null) return Header(handle, i)
+            if (handle != null) return finish(Header(handle, i), "AUTHOR_FOUND", position + 1, i)
         }
-        return null
+        return finish(null, "NO_HANDLE", candidates.size, candidates.lastOrNull())
     }
 
     fun actionIndex(nodes: List<NodeSnapshot>, expected: String, accepted: Set<String>): Int? {

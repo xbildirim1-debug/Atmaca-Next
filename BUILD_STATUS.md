@@ -1,3 +1,11 @@
+## 7 Ekim 2026 — detail yazar tanısı için Log.d
+
+Kullanıcının09:01 isteğiyle CommentDetailEvidence.header() içine üç Log.d çağrı noktası eklendi: title bulundu mu, candidates/timedHeaders indeksleri, döngü çıkış nedeni/adımı/node indeksi. Tag AtmacaDetailHeader; yazar seçme ve parse kuralları korunur. [İstenen üç fonksiyon ve log eklenmiş header kodu](docs/Yazar-Tani-Kodlari.txt) / [tanı kapsamı ve kontrol sonucu](validation/26.62-device/AUTHOR_LOGGING.md).
+
+Locale.ROOT Türkçe büyük İ harfini i+U+0307 yapar; gerçek JVM17 çıktısı validation/26.62-device/NORMALIZE_ROOT.txt içinde kaydedildi. git diff --check geçti. Bu tanı kaynağı eklemesinde yeni APK derlenmedi/teslim edilmedi veya yeni CI/X cihaz testi yapılmadı. Önceki643 test ve mevcut26.62 APK aynı tarihsel derlemeye aittir; kullanıcıdaki takılma hâlâ açık. Yeni Log.d kayıtları bu kaynakla yeniden derlenmiş APK gerektirir. Başlangıç main4f752ad39faf0c21799f0ad839493322b71858d9; yalnız CommentDetailEvidence tanı kaynağı ve belgeler değişir. Sürüm ve Buse korunur.
+
+## Önceki durum kayıtları
+
 ## 26.62 güncel kullanıcı sonucu — takılma sürüyor (7 Ekim 2026)
 
 08:46 Europe/Istanbul: kullanıcı son APK sonrasında Yorum Alıntısı'nın aynı yerde kaldığını bildirdi ve mevcut kodları istedi. Cihazda çözüldüğü doğrulanmadı; güncel kullanıcı sonucu başarısız. Önceki 643 otomatik test ve paket/imza doğrulamaları fiziksel X akışının başarı kanıtı değildir. Son mesajda yeni runtime logu veya sürüm ekranı yok.
