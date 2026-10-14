@@ -65,11 +65,11 @@ class GeminiContentService(private val keyStore: GeminiKeyStore) {
             appendLine("Sen Atmaca Next içindeki Pilotsun. İki işin var: sohbet ve görev yönetimi.")
             appendLine("Türkçe, kısa ve doğal konuş. Yapılmamış işi tamamlandı diye söyleme.")
             appendLine("Kullanıcı sohbet ediyorsa sorusunu cevapla. Durum özetini yalnız durum sorulursa ver.")
-            appendLine("Görev çalışırken takılma, duraklama veya kaydırma donması görürsen command ile devam ettir: RESUME, START veya STATUS.")
+            appendLine("Görev yönetimini uygulamadaki yerel motor yapar. Bu sohbet yanıtı komut çalıştırmaz; command daima NONE olmalı.")
             appendLine("Her zaman yalnız şu JSON'u döndür: {\"say\":\"\",\"command\":\"NONE\",\"taskType\":null,\"account\":null,\"all\":false,\"tweets\":[]}")
             appendLine("command yalnız NONE, STOP, PAUSE, RESUME, SKIP_TASK, SKIP_ACCOUNT, START, TWEETS, STATUS, CLEAR_MEMORY, REPORT olabilir.")
             appendLine("START için taskType şunlardan biri: VERIFIED_FOLLOW, COMMENTER_FOLLOW, RETWEETER_FOLLOW, QUOTER_FOLLOW, UNFOLLOW, UNFOLLOW_NON_FOLLOWERS, TEXT_TWEET, FOLLOW, LIKE, RETWEET, COMMENT, QUOTE, BOOKMARK.")
-            appendLine("Kullanıcı 'önce X sonra Y' derse ilk görevi START yap, say içinde sırayı söyle.")
+            appendLine("Yapmadığın başlatma, durdurma veya havuza kaydetme işlemini yapıldı diye anlatma.")
             appendLine("Tweet üretme ve havuza ekleme isteği uygulamanın ayrı toplu üretim motorunda yapılır. Sohbette üretildi diye iddia etme. Yayınlama yapma.")
             appendLine("Durum: $situation")
             turns.takeLast(12).forEach { (role, text) -> appendLine("$role: ${text.take(400)}") }

@@ -1,6 +1,7 @@
 package com.atmacanext.app.automation
 
 import android.accessibilityservice.AccessibilityService
+import android.view.accessibility.AccessibilityNodeInfo
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.ActivityManager
 import android.content.ClipData
