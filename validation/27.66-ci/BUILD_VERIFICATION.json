@@ -1,0 +1,129 @@
+{
+  "version": "27.66",
+  "version_code": 214,
+  "application_id": "com.atmacanext.v258",
+  "build_kind": "github_ci",
+  "source_commit": "e805c5d041d2d6b49137118bb68d50bb8e63d219",
+  "device_tested": false,
+  "run_url": "https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38634197777",
+  "tests": {
+    "tests": 770,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "new_suites": {
+    "com.atmacanext.app.ai.FastPilot27_66Test": {
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.ai.TweetBatch27_66Test": {
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.AccountProfileReturn27_65Test": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NavigationRestart26_60Test": {
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerFollowingInspectorTest": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerGesture27_65Test": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerPolicyTest": {
+      "tests": 37,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerScrollProgressTest": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerTimingTest": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerUnfollowCompletionTest": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerVideo27_66Test": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerViewportGateTest": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.QuoteReply26_61Test": {
+      "tests": 33,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.ReplyTextInput26_62Test": {
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.domain.engine.NonFollowerBatch26_60Test": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test": {
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "Fatal": 0,
+    "Error": 0,
+    "Warning": 58,
+    "Information": 0,
+    "Hint": 8
+  },
+  "migration": "PASS: both historical v5 layouts preserved",
+  "signing_cert_sha256": "dbcafdab1bfeaf46cb01f3aa9acb381d7f4f4f992002ecacd43b5d606bd4569b",
+  "matches_uploaded_27_64_certificate": false,
+  "apk": {
+    "filename": "AtmacaNext-27.66.apk",
+    "bytes": 21231528,
+    "sha256": "e990629719146670e327346a8336b420d2c5c2a61cd33c32a0ac5c757b94040b",
+    "crc": "PASS"
+  }
+}

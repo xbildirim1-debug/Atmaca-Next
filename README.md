@@ -1,6 +1,6 @@
 # Atmaca Next 27.66 — takip etmeyenleri çıkarma ve Pilot
 
-Takip etmeyenleri çıkarma video düzeltmesi; saniyelik Hızlı Pilot, API ayarı, sohbet ve 500 metin üretimi. [Güncel uygulama devri](DEVIR.txt). Derleme doğrulaması sürüyor.
+Takip etmeyenleri çıkarma video düzeltmesi; saniyelik Hızlı Pilot, API ayarı, sohbet ve 500 metin üretimi. [Güncel uygulama devri](DEVIR.txt). **770 test geçti; lint 0 hata/fatal.** [CI](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38634197777), [doğrulama](validation/27.66-ci/RESULT.md). Teslim APK 27.64/27.65 ile aynı imzalıdır; yeni fiziksel cihaz/canlı API testi yapılmadı.
 
 # 27.65 teslim tamamlandı
 

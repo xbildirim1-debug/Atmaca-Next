@@ -1,0 +1,20 @@
+{
+  "version": "27.66",
+  "version_code": 214,
+  "application_id": "com.atmacanext.v258",
+  "source_commit": "e805c5d041d2d6b49137118bb68d50bb8e63d219",
+  "build_kind": "github_ci_original_key_resigned",
+  "ci_run": "https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38634197777",
+  "same_application_bytes_as_ci": true,
+  "matches_uploaded_certificate": true,
+  "signing_cert_sha256": "b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa",
+  "device_tested": false,
+  "live_api_tested": false,
+  "apk": {
+    "filename": "AtmacaNext-27.66.apk",
+    "bytes": 18609758,
+    "sha256": "c243a988b96c17d5780915b57735c8c3ff86a5132e9a93e5640d04649fd05bfa",
+    "crc": "PASS"
+  },
+  "zipalign_16kb": "PASS"
+}
