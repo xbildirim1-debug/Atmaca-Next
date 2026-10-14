@@ -185,9 +185,11 @@ class AtmacaRepository(private val db: AtmacaDatabase) {
     suspend fun deleteTarget(id: String) = db.targetAccountDao().deleteById(id)
     suspend fun getTodayVerifiedUsage(accountId: String, taskType: TaskType): Int = db.dailyAccountUsageDao().get(todayDateKey(), accountId, taskType.name)?.verifiedCount ?: 0
     suspend fun snapshotTodayUsage() = db.dailyAccountUsageDao().getForDate(todayDateKey())
-    suspend fun pruneDailyUsage(keepDays: Long = 45L) { db.dailyAccountUsageDao().deleteOlderThanDate(LocalDate.now().minusDays(keepDays.coerceIn(7L, 365L)).toString()) }
+    suspend fun snapshotUsageSince(fromDate: String) = db.dailyAccountUsageDao().getSince(fromDate)
+    suspend fun pruneDailyUsage(keepDays: Long = 400L) { db.dailyAccountUsageDao().deleteOlderThanDate(LocalDate.now().minusDays(keepDays.coerceIn(7L, 400L)).toString()) }
     suspend fun log(level: String, category: String, taskId: String?, username: String?, message: String, details: String? = null) { db.automationLogDao().insert(AutomationLogEntity(System.currentTimeMillis(), level, category, taskId, username, message, details)) }
     suspend fun clearLogs() = db.automationLogDao().clearAll()
+    suspend fun clearDailyUsage() = db.dailyAccountUsageDao().clearAll()
     suspend fun deleteLog(id: Long) = db.automationLogDao().deleteById(id)
     suspend fun pruneLogs(keepDays: Int) = db.automationLogDao().deleteOlderThan(System.currentTimeMillis() - keepDays.coerceIn(1, 365) * 86_400_000L)
     suspend fun snapshotAccountDomains(): List<Account> = db.accountDao().getAll().map { it.toDomain() }

@@ -11,6 +11,7 @@ class NonFollowerUnfollowCompletionTest {
         AutomationController.stop()
         field("cycleStartProgress").setInt(AutomationController, 0)
         field("queueOwnsCycleWait").setBoolean(AutomationController, true)
+        field("activeSessionToken").set(AutomationController, "test")
         @Suppress("UNCHECKED_CAST")
         val state = field("_state").get(AutomationController) as MutableStateFlow<AutomationRuntimeState>
         state.value = AutomationRuntimeState(sessionId = "test", taskId = "unfollow-20", username = "@own",

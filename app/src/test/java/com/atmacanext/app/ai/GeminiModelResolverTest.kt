@@ -31,4 +31,12 @@ class GeminiModelResolverTest {
             GeminiModelResolver.orderedCandidates(models, "models/gemini-2.0-flash").first(),
         )
     }
+
+    @Test fun autoPilotPrefersLiteSoTheFreeDayLasts() {
+        val models = listOf(
+            GeminiModelDescriptor("models/gemini-3-flash", setOf("generateContent")),
+            GeminiModelDescriptor("models/gemini-3.1-flash-lite", setOf("generateContent")),
+        )
+        assertEquals("gemini-3.1-flash-lite", GeminiModelResolver.pilotCandidates(models, "auto").first())
+    }
 }

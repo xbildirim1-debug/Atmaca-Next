@@ -12,12 +12,16 @@ import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.net.URL
 
-data class GeminiConnectionResult(val model: String, val message: String)
+data class PilotChatResult(val say: String? = null, val failure: String? = null)
 
 private class GeminiHttpException(val statusCode: Int, message: String) : IllegalStateException(message)
 
+data class GeminiConnectionResult(val model: String, val message: String)
+
 class GeminiContentService(private val keyStore: GeminiKeyStore) {
     fun hasApiKey(): Boolean = keyStore.hasKey()
+    private var cachedModels: List<GeminiModelDescriptor>? = null
+    private var cachedModelsAt = 0L
 
     suspend fun prepare(task: ScheduledTask, account: Account, model: String): List<String> = withContext(Dispatchers.IO) {
         val count = task.repeatCount.coerceIn(1, 100)
@@ -45,6 +49,56 @@ class GeminiContentService(private val keyStore: GeminiKeyStore) {
         val (resolvedModel, raw) = requestWithFallback(key, model, prompt)
         require(parseDrafts(raw).isNotEmpty()) { "Gemini yanıt verdi fakat beklenen metin alınamadı" }
         GeminiConnectionResult(resolvedModel, "Bağlantı başarılı: $resolvedModel")
+    }
+
+    /** Chat turn. Quota stays quiet so the on-device director can answer. Other failures are visible. */
+    suspend fun pilotChat(turns: List<Pair<String, String>>, situation: String, requestedModel: String): PilotChatResult = withContext(Dispatchers.IO) {
+        if (PilotQuota.blocked()) return@withContext PilotChatResult()
+        val key = keyStore.load()?.takeIf(String::isNotBlank)
+            ?: return@withContext PilotChatResult(failure = "Ayarlar'da Gemini anahtarı yok")
+        val models = runCatching { cachedModels(key) }.getOrElse {
+            return@withContext PilotChatResult(failure = "Gemini'ye ulaşılamadı")
+        }
+        val candidates = GeminiModelResolver.pilotCandidates(models, requestedModel)
+        if (candidates.isEmpty()) return@withContext PilotChatResult(failure = "Bu anahtara açık sohbet modeli yok")
+        val prompt = buildString {
+            appendLine("Sen Atmaca Next içindeki Pilotsun. İki işin var: sohbet ve görev yönetimi.")
+            appendLine("Türkçe, kısa ve doğal konuş. Kota, limit, quota, model adı yazma.")
+            appendLine("Kullanıcı sohbet ediyorsa sorusunu cevapla. Durum özetini yalnız durum sorulursa ver.")
+            appendLine("Görev çalışırken takılma, duraklama veya kaydırma donması görürsen command ile devam ettir: RESUME, START veya STATUS.")
+            appendLine("Her zaman yalnız şu JSON'u döndür: {\"say\":\"\",\"command\":\"NONE\",\"taskType\":null,\"account\":null,\"all\":false,\"tweets\":[]}")
+            appendLine("command yalnız NONE, STOP, PAUSE, RESUME, SKIP_TASK, SKIP_ACCOUNT, START, TWEETS, STATUS, CLEAR_MEMORY, REPORT olabilir.")
+            appendLine("START için taskType şunlardan biri: VERIFIED_FOLLOW, COMMENTER_FOLLOW, RETWEETER_FOLLOW, QUOTER_FOLLOW, UNFOLLOW, UNFOLLOW_NON_FOLLOWERS, TEXT_TWEET, FOLLOW, LIKE, RETWEET, COMMENT, QUOTE, BOOKMARK.")
+            appendLine("Kullanıcı 'önce X sonra Y' derse ilk görevi START yap, say içinde sırayı söyle.")
+            appendLine("TWEETS istenirse tweets dizisine en fazla 6 kısa, farklı taslak koy. Yayına sen alma.")
+            appendLine("Durum: $situation")
+            turns.takeLast(12).forEach { (role, text) -> appendLine("$role: ${text.take(400)}") }
+        }
+        var last = "Gemini cevap vermedi"
+        for (candidate in candidates.take(3)) {
+            try {
+                return@withContext PilotChatResult(say = request(key, candidate, prompt))
+            } catch (error: GeminiHttpException) {
+                last = error.message ?: last
+                if (error.statusCode == 429 || last.contains("quota", true) || last.contains("RESOURCE_EXHAUSTED", true)) {
+                    PilotQuota.block()
+                    return@withContext PilotChatResult()
+                }
+                if (error.statusCode !in setOf(400, 404)) return@withContext PilotChatResult(failure = last.take(180))
+            } catch (_: Exception) {
+                return@withContext PilotChatResult(failure = "Gemini'ye ulaşılamadı")
+            }
+        }
+        PilotChatResult(failure = last.take(180))
+    }
+
+    private fun cachedModels(apiKey: String): List<GeminiModelDescriptor> {
+        val now = System.currentTimeMillis()
+        cachedModels?.takeIf { now - cachedModelsAt < 10 * 60_000L }?.let { return it }
+        return discoverModels(apiKey).also {
+            cachedModels = it
+            cachedModelsAt = now
+        }
     }
 
     private fun requestWithFallback(apiKey: String, requestedModel: String, prompt: String): Pair<String, String> {
@@ -105,7 +159,7 @@ class GeminiContentService(private val keyStore: GeminiKeyStore) {
                 "generationConfig",
                 JSONObject()
                     .put("temperature", 0.9)
-                    .put("maxOutputTokens", 2_048)
+                    .put("maxOutputTokens", if (prompt.contains("Sen Atmaca Next içindeki Pilotsun")) 500 else 2_048)
                     .put("responseMimeType", "application/json"),
             )
         }

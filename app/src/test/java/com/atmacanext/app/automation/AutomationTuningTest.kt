@@ -8,11 +8,11 @@ class AutomationTuningTest {
         val before = AutomationTuning.betweenActionsMs
         try {
             AutomationTuning.betweenActionsMs = 500L
-            assertEquals(900L, AutomationTuning.scaleDelay(900L))
+            assertEquals(90L, AutomationTuning.scaleDelay(900L))
             AutomationTuning.betweenActionsMs = 250L
-            assertEquals(450L, AutomationTuning.scaleDelay(900L))
+            assertEquals(45L, AutomationTuning.scaleDelay(900L))
             AutomationTuning.betweenActionsMs = 100L
-            assertEquals(180L, AutomationTuning.scaleDelay(900L))
+            assertEquals(18L, AutomationTuning.scaleDelay(900L))
         } finally {
             AutomationTuning.betweenActionsMs = before
         }
@@ -22,7 +22,7 @@ class AutomationTuningTest {
         val before = AutomationTuning.betweenActionsMs
         try {
             AutomationTuning.betweenActionsMs = 100L
-            assertEquals(60L, AutomationTuning.scaleDelay(120L))
+            assertEquals(16L, AutomationTuning.scaleDelay(120L))
         } finally {
             AutomationTuning.betweenActionsMs = before
         }

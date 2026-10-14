@@ -4,11 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.graphics.Rect
-import android.os.Looper
 import android.view.accessibility.AccessibilityNodeInfo
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 /** ACTION_CLICK başarısızsa node'un gerçek ekran sınırlarının merkezine Accessibility gesture gönderir. */
 object GestureClick {
@@ -83,28 +79,16 @@ object GestureClick {
         if (!x.isFinite() || !y.isFinite() || x < 0f || y < 0f) return false
         val path = Path().apply { moveTo(x, y) }
         return try {
-            val stroke = GestureDescription.StrokeDescription(path, 0L, 60L)
-            val result = AtomicBoolean(false)
-            val latch = CountDownLatch(1)
+            val stroke = GestureDescription.StrokeDescription(path, 0L, 12L)
             val accepted = service.dispatchGesture(
                 GestureDescription.Builder().addStroke(stroke).build(),
-                object : AccessibilityService.GestureResultCallback() {
-                    override fun onCompleted(gestureDescription: GestureDescription?) {
-                        result.set(true)
-                        latch.countDown()
-                    }
-
-                    override fun onCancelled(gestureDescription: GestureDescription?) {
-                        latch.countDown()
-                    }
-                },
+                null,
                 null,
             )
             if (!accepted) return false
-            // The automation snapshot actor runs off the main looper, so it can safely wait for
-            // Android's real completion callback. Main-thread callers still rely on postcondition.
-            if (Looper.myLooper() == Looper.getMainLooper()) return true
-            latch.await(1_500L, TimeUnit.MILLISECONDS) && result.get()
+            // Do not wait for the main-looper callback. On this device that wait
+            // hits the timeout, so every follow and back sat still for 1.5s.
+            true
         } catch (_: Throwable) { false }
     }
 }

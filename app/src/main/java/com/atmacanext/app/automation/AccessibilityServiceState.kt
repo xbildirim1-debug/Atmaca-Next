@@ -14,6 +14,7 @@ data class AccessibilityHealth(
     val activePackage: String? = null,
     val activeScreen: XScreen = XScreen.UNKNOWN,
     val popup: PopupType = PopupType.NONE,
+    val revoked: Boolean = false,
 )
 
 object AccessibilityServiceState {
@@ -21,7 +22,7 @@ object AccessibilityServiceState {
     val health = _health.asStateFlow()
 
     fun onConnected() {
-        _health.update { it.copy(enabled = true, connected = true, operational = true) }
+        _health.update { it.copy(enabled = true, connected = true, operational = true, revoked = false) }
     }
 
     fun onDisconnected() {
@@ -43,12 +44,20 @@ object AccessibilityServiceState {
     /** Android ayarındaki kalıcı yetki ile proses içindeki canlı bağlantı aynı şey değildir. */
     fun refreshEnabled(context: Context) {
         val enabled = DeviceReadinessChecker.read(context.applicationContext).accessibilityEnabled
+        val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val wasEnabled = prefs.getBoolean(KEY_WAS_ENABLED, false)
+        if (enabled) prefs.edit().putBoolean(KEY_WAS_ENABLED, true).apply()
+        val alive = AtmacaAccessibilityService.peek() != null
         _health.update { current ->
             current.copy(
                 enabled = enabled,
-                connected = if (enabled) current.connected else false,
-                operational = enabled && current.connected,
+                connected = if (enabled) current.connected || alive else false,
+                operational = enabled && (current.connected || alive),
+                revoked = wasEnabled && !enabled,
             )
         }
     }
+
+    private const val PREFS = "atmaca_a11y"
+    private const val KEY_WAS_ENABLED = "was_enabled"
 }

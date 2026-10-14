@@ -1,0 +1,1 @@
+27.52 Hesap tarama kaydırır, takipten çıkma kaydırması bekler, erişilebilirlik bildirimle açık kalır, Pilot sohbeti silinmez, ayarlarda Gemini anahtarları, INTERNET izni.

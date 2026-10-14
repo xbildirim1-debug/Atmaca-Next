@@ -91,9 +91,10 @@ object ListViewportController {
                 ) {
                     OperationLog.w(
                         "NAV",
-                        "UNFOLLOW_SCROLL yatay kapsayıcı reddedildi class=$marker rows=$rows cols=$columns",
+                        "UNFOLLOW_SCROLL yatay kapsayıcı atlandı class=$marker rows=$rows cols=$columns",
                     )
-                    return ScrollAttemptResult.ACTION_REJECTED
+                    current = node.parent
+                    return@repeat
                 }
 
                 val directionalAction = if (forward) scrollDown else scrollUp
@@ -122,12 +123,8 @@ object ListViewportController {
                         return ScrollAttemptResult.SCROLLED
                     }
                 }
-
-                OperationLog.w(
-                    "NAV",
-                    "UNFOLLOW_SCROLL dikey kapsayıcı eylemi reddetti class=$marker rows=$rows cols=$columns",
-                )
-                return ScrollAttemptResult.ACTION_REJECTED
+                current = node.parent
+                return@repeat
             }
             current = node.parent
         }

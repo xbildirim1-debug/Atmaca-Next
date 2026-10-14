@@ -233,8 +233,14 @@ object XTweetInspector {
             return accepted
         }
 
-        val native = retryAttempt == 0 && node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        val accepted = native || if (retryAttempt == 0) GestureClick.gestureTapText(service, node)
+        val body = labels(node).joinToString(" ")
+        val expands = DiscoveryTweetOpenRecovery.inlineExpansion(body)
+        val native = !expands && retryAttempt == 0 && node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        val accepted = native || if (expands) {
+            val (xRatio, yRatio) = DiscoveryTweetOpenRecovery.expandTap(retryAttempt)
+            val bounds = Rect().also(node::getBoundsInScreen)
+            GestureClick.gestureTapAt(service, bounds.left + bounds.width() * xRatio, bounds.top + bounds.height() * yRatio)
+        } else if (retryAttempt == 0) GestureClick.gestureTapText(service, node)
             else GestureClick.gestureTapTextRetry(service, node, retryAttempt)
         OperationLog.i(
             "DISCOVERY_CLICK",

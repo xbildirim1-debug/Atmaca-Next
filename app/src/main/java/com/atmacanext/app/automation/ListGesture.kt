@@ -4,11 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.graphics.Rect
-import android.os.Looper
 import android.view.accessibility.AccessibilityNodeInfo
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * X bir listeyi scrollable olarak yayınlamadığında görünür gerçek kullanıcı
@@ -20,6 +16,9 @@ object ListGesture {
 
     fun backward(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         swipe(service, root, forward = false)
+
+    fun steady(service: AccessibilityService, root: AccessibilityNodeInfo?, forward: Boolean): Boolean =
+        swipe(service, root, forward = forward)
 
     fun discoveryForward(service: AccessibilityService, root: AccessibilityNodeInfo?, recoveryAttempt: Int = 0): Boolean =
         discoverySwipe(service, root, forward = true, recoveryAttempt = recoveryAttempt)
@@ -61,19 +60,21 @@ object ListGesture {
             // A settling wait must not be counted as an unchanged/end-of-list swipe.
         }
         val bounds = visibleViewport(service, root) ?: return false
-        val x = bounds.left + bounds.width() * DiscoveryScrollGesturePolicy.xRatio(recoveryAttempt)
-        val path = DiscoveryScrollGesturePolicy.verticalPath(
-            bounds,
-            AccessibilityTree.snapshots(root),
-            forward,
-        ) ?: return false
+        val nodes = AccessibilityTree.snapshots(root)
+        val xRatio = bounds.left + bounds.width() * DiscoveryScrollGesturePolicy.xRatio(recoveryAttempt)
+        // Tweet detail keeps the finger above the reply field, GIF row and Grok.
+        // Profile stays above the bottom navigation rail. The 0.88 constant is unchanged.
+        val maxStart = if (screen == XScreen.TWEET_DETAIL) 0.62f else 0.76f
+        val raw = DiscoveryScrollGesturePolicy.verticalPath(bounds, nodes, forward, maxStart) ?: return false
+        val x = DiscoveryScrollGesturePolicy.safeX(bounds, nodes, xRatio, raw.startY, raw.endY)
+        val path = DiscoveryScrollGesturePolicy.liftOffControls(bounds, nodes, x, raw) ?: return false
         return dispatchSwipe(
             service,
             x,
             path.startY,
             x,
             path.endY,
-            durationMs = 620L,
+            durationMs = 180L,
         )
     }
 
@@ -112,31 +113,19 @@ object ListGesture {
 
     private fun dispatch(service: AccessibilityService, path: Path, durationMs: Long = 420L): Boolean {
         return try {
-            val stroke = GestureDescription.StrokeDescription(path, 0L, durationMs)
-            val completed = AtomicBoolean(false)
-            val latch = CountDownLatch(1)
+            val stroke = GestureDescription.StrokeDescription(path, 0L, (durationMs / 5L).coerceAtLeast(24L))
             val accepted = service.dispatchGesture(
                 GestureDescription.Builder().addStroke(stroke).build(),
-                object : AccessibilityService.GestureResultCallback() {
-                    override fun onCompleted(gestureDescription: GestureDescription?) {
-                        completed.set(true)
-                        latch.countDown()
-                    }
-
-                    override fun onCancelled(gestureDescription: GestureDescription?) {
-                        latch.countDown()
-                    }
-                },
+                null,
                 null,
             )
             if (!accepted) return false
-            if (Looper.myLooper() == Looper.getMainLooper()) return true
-            latch.await(1_800L, TimeUnit.MILLISECONDS) && completed.get()
+            // Do not wait for the completion callback. It does not arrive before the
+            // 1.8s timeout, so every profile and comment swipe sat still. The next
+            // snapshot checks whether the list actually moved.
+            true
         } catch (error: RuntimeException) {
             OperationLog.w("GESTURE_RETRY", "Kaydırma oluşturulamadı/gönderilemedi: ${error.javaClass.simpleName}; yeni ekran okunacak")
-            false
-        } catch (_: InterruptedException) {
-            Thread.currentThread().interrupt()
             false
         }
     }

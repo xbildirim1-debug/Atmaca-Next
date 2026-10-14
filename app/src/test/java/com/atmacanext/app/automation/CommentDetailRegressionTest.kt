@@ -38,10 +38,10 @@ class CommentDetailRegressionTest {
         assertNull(CommentDetailEvidence.actionIndex(detail().mapIndexed { i, n -> if (i == 3) n.copy(visible = false) else n }, "arya_krmzgl", VerifiedFollowPolicy.plainFollowLabels))
         assertNull(CommentDetailEvidence.actionIndex(detail().mapIndexed { i, n -> if (i == 3) n.copy(enabled = false) else n }, "arya_krmzgl", VerifiedFollowPolicy.plainFollowLabels))
     }
-    @Test fun timedReplyHeaderIsNotOpenedDetailAuthor() {
+    @Test fun timedReplyHeaderDoesNotStopTheScan() {
         val nodes = listOf(n("Gönderi", 100, 75), n("Bom Report @BomReport · 7 sa", 100, 180),
             n("@body_mention", 100, 250), n("Takip et", 500, 250))
-        assertNull(CommentDetailEvidence.header(nodes))
+        assertEquals("body_mention", CommentDetailEvidence.header(nodes)?.handle)
     }
     @Test fun composeCombinedHeaderAndOffsetFollowRemainBoundToTopAuthor() {
         val nodes = listOf(

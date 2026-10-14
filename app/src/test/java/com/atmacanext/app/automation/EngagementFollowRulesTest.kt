@@ -23,6 +23,8 @@ class EngagementFollowRulesTest {
             "19 tarafından yeniden gönderildi, tab 2/2, selected",
             "45 reposts",
             "Reposts 900",
+            "Repostlar",
+            "12 repostlar",
         )) assertTrue(label, EngagementListEvidence.isReposts(label))
     }
     @Test fun quoteTabAndRepostActionAreNotThePeopleList() {

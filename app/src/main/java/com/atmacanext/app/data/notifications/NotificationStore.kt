@@ -18,6 +18,7 @@ internal object NotificationFeed {
     fun add(existing: List<AccountNotification>, event: AccountNotification): List<AccountNotification> =
         if (existing.any { it.id == event.id }) existing else (listOf(event) + existing).take(200)
     fun readAll(existing: List<AccountNotification>): List<AccountNotification> = existing.map { it.copy(read = true) }
+    fun clear(existing: List<AccountNotification>): List<AccountNotification> = emptyList()
 }
 
 /** In-app notification inbox. Separate from logs, with durable read state and event deduplication. */
@@ -28,6 +29,7 @@ class NotificationStore(context: Context) {
 
     @Synchronized fun add(event: AccountNotification): Boolean = save(NotificationFeed.add(mutable.value, event))
     @Synchronized fun markAllRead(): Boolean = save(NotificationFeed.readAll(mutable.value))
+    @Synchronized fun clearAll(): Boolean = save(NotificationFeed.clear(mutable.value))
 
     private fun load(): List<AccountNotification> = try {
         val json = JSONArray(prefs.getString("items", "[]"))

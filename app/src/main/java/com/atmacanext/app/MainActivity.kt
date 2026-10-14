@@ -12,13 +12,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import com.atmacanext.app.automation.AccessibilityServiceState
 import com.atmacanext.app.ui.AtmacaNextApp
+import com.atmacanext.app.ui.theme.AppThemeStore
 import com.atmacanext.app.ui.theme.AtmacaNextTheme
 
 class MainActivity : ComponentActivity() {
     private var connectionCheck: Job? = null
+    private var askedNotificationPermission = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AccessibilityServiceState.refreshEnabled(this)
+        AppThemeStore.load(this)
+        requestNotificationPermission()
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         setContent {
@@ -40,11 +44,20 @@ class MainActivity : ComponentActivity() {
         getSystemService(android.app.NotificationManager::class.java)?.cancel(1210)
         connectionCheck?.cancel()
         connectionCheck = lifecycleScope.launch {
-            repeat(20) {
+            repeat(40) {
                 AccessibilityServiceState.refreshEnabled(this@MainActivity)
                 if (AccessibilityServiceState.health.value.connected) return@launch
                 delay(500L)
             }
         }
+    }
+
+    private fun requestNotificationPermission() {
+        if (askedNotificationPermission || android.os.Build.VERSION.SDK_INT < 33) return
+        if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) return
+        askedNotificationPermission = true
+        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 41)
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atmacanext.app.automation.AutomationController
 import com.atmacanext.app.automation.AccountSyncController
@@ -34,53 +35,14 @@ import java.util.UUID
 private enum class TaskTab43(val title: String) {
     FOLLOW("Takip"),
     ENGAGEMENT("Etkileşim"),
-    QUOTE_COMMENT("Yorum Alıntısı"),
+    QUOTE_COMMENT("Yorum"),
+    TWEET("Tweet"),
+    BULK("Toplu"),
 }
 
 @Composable
 fun TasksScreen26_43(modifier: Modifier = Modifier) {
-    val tasks by AppServices.repository.tasks.collectAsStateWithLifecycle(initialValue = emptyList())
-    val accounts by AppServices.repository.accounts.collectAsStateWithLifecycle(initialValue = emptyList())
-    val queue by AppServices.orchestrator.state.collectAsStateWithLifecycle()
-    val runtime by AutomationController.state.collectAsStateWithLifecycle()
-    val sync by AccountSyncController.state.collectAsStateWithLifecycle()
-    var selected by rememberSaveable { mutableStateOf(TaskTab43.FOLLOW.name) }
-    val tab = TaskTab43.valueOf(selected)
-
-    Column(modifier.fillMaxSize()) {
-        Surface(color = AppBackground) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
-                Text("Görevler", style = MaterialTheme.typography.headlineSmall)
-                Text("Görev türünü seç ve çalıştır", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
-                Spacer(Modifier.height(9.dp))
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    TaskTab43.entries.forEach { item ->
-                        FilterChip(
-                            modifier = Modifier.weight(1f),
-                            selected = tab == item,
-                            onClick = { selected = item.name },
-                            label = { Text(item.title, maxLines = 2, style = MaterialTheme.typography.labelMedium) },
-                        )
-                    }
-                }
-            }
-        }
-
-        when (tab) {
-            TaskTab43.FOLLOW -> TasksScreen26_42(Modifier.fillMaxSize(), "FOLLOW")
-            TaskTab43.ENGAGEMENT -> TasksScreen26_42(Modifier.fillMaxSize(), "ENGAGEMENT")
-            TaskTab43.QUOTE_COMMENT -> QuoteCommentTaskSetup43(
-                modifier = Modifier.fillMaxSize(),
-                tasks = tasks.filter { it.type == TaskType.COMMENT_QUOTE_TARGETS },
-                accounts = accounts.filter { it.active },
-                locked = queue.isActive || sync.active,
-                active = runtime.taskType == TaskType.COMMENT_QUOTE_TARGETS,
-            )
-        }
-    }
+    TasksScreen(modifier)
 }
 
 @Composable

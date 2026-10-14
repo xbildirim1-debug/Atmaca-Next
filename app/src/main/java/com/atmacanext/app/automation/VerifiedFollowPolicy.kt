@@ -13,7 +13,8 @@ internal object VerifiedFollowPolicy {
         return expected.any {
             normalized == it || normalized.startsWith("$it @") || normalized.startsWith("$it, @") ||
                 (it == "follow" && normalized.startsWith("follow ")) ||
-                (it == "takip et" && normalized.endsWith(" takip et"))
+                (it == "takip et" && normalized.endsWith(" takip et") &&
+                    !normalized.startsWith("geri ") && !normalized.startsWith("sen de ") && !normalized.startsWith("sende "))
         }
     }
     fun isPlainFollow(labels: List<String>): Boolean =

@@ -10,49 +10,44 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Fast overlapping drags end with a stationary touch instead of launching an inertial fling. */
+/** A short flick was cancelled by the next read. Drag long enough for X to move the following list. */
 object NonFollowerFollowingScroller {
     fun scroll(service: AccessibilityService, root: AccessibilityNodeInfo?, rows: List<NonFollowerFollowingInspector.Row>, forward: Boolean,
                snapshots: List<NodeSnapshot>? = null): Boolean {
-        if (root == null || rows.isEmpty()) return false
+        if (root == null) return false
+        val access = if (forward) ListViewportController.tryScrollUserRowsForward(root)
+            else ListViewportController.tryScrollUserRowsBackward(root)
+        if (access == ScrollAttemptResult.SCROLLED) return true
+        if (rows.isEmpty()) return false
         val display = service.resources.displayMetrics
         val bounds = ListGestureGeometry.viewport(Rect().also(root::getBoundsInScreen), display.widthPixels, display.heightPixels) ?: return false
         val viewport = AdaptiveNavigationEvidence.contentViewport(snapshots ?: AccessibilityTree.snapshots(root), bounds)
         val visible = rows.filter { it.bounds.top >= viewport.top && it.bounds.bottom <= viewport.bottom }
-        if (visible.isEmpty()) return false
+        if (visible.isEmpty()) return ListGesture.steady(service, root, forward)
         val contentTop = maxOf(viewport.top, visible.first().bounds.top)
         val contentBottom = minOf(viewport.bottom, visible.last().bounds.bottom)
         val span = contentBottom - contentTop
-        if (span < 32) return false
+        if (span < 32) return ListGesture.steady(service, root, forward)
         val distance = NonFollowerScrollStride.distance(contentTop, contentBottom, visible.map { it.bounds.top })
-        if (distance <= 0f) return false
-        val x = viewport.left + viewport.width() * .12f
-        val start = if (forward) contentBottom - span * .10f else contentTop + span * .10f
+        if (distance <= 0f) return ListGesture.steady(service, root, forward)
+        val x = viewport.left + viewport.width() * .18f
+        val start = if (forward) contentBottom - span * .12f else contentTop + span * .12f
         val end = if (forward) start - distance else start + distance
-        if (!ListGestureGeometry.Stroke(x, start, x, end).valid()) return false
+        if (!ListGestureGeometry.Stroke(x, start, x, end).valid()) return ListGesture.steady(service, root, forward)
         return try {
             val path = Path().apply { moveTo(x, start); lineTo(x, end) }
             val completed = AtomicBoolean(false)
             val latch = CountDownLatch(1)
-            val drag = GestureDescription.StrokeDescription(path, 0, 22L, true)
-            val releasePath = Path().apply { moveTo(x, end) }
-            val release = drag.continueStroke(releasePath, 0L, 120L, false)
-            val releaseGesture = GestureDescription.Builder().addStroke(release).build()
-            val releaseCallback = object : AccessibilityService.GestureResultCallback() {
-                override fun onCompleted(gestureDescription: GestureDescription?) { completed.set(true); latch.countDown() }
-                override fun onCancelled(gestureDescription: GestureDescription?) { latch.countDown() }
-            }
+            val drag = GestureDescription.StrokeDescription(path, 0, 280L, false)
             val accepted = service.dispatchGesture(GestureDescription.Builder().addStroke(drag).build(),
                 object : AccessibilityService.GestureResultCallback() {
-                    override fun onCompleted(gestureDescription: GestureDescription?) {
-                        try {
-                            if (!service.dispatchGesture(releaseGesture, releaseCallback, null)) latch.countDown()
-                        } catch (_: RuntimeException) { latch.countDown() }
-                    }
+                    override fun onCompleted(gestureDescription: GestureDescription?) { completed.set(true); latch.countDown() }
                     override fun onCancelled(gestureDescription: GestureDescription?) { latch.countDown() }
                 }, null)
-            accepted && (Looper.myLooper() == Looper.getMainLooper() || (latch.await(1800, TimeUnit.MILLISECONDS) && completed.get()))
-        } catch (_: RuntimeException) { false }
+            if (!accepted) return ListGesture.steady(service, root, forward)
+            if (Looper.myLooper() == Looper.getMainLooper()) return true
+            (latch.await(1800, TimeUnit.MILLISECONDS) && completed.get()) || ListGesture.steady(service, root, forward)
+        } catch (_: RuntimeException) { ListGesture.steady(service, root, forward) }
         catch (_: InterruptedException) { Thread.currentThread().interrupt(); false }
     }
 }

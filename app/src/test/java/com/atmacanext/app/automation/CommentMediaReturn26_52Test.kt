@@ -12,6 +12,11 @@ class CommentMediaReturn26_52Test {
         NodeSnapshot(text, desc, id, clazz, false, true,
             Rect().apply { left = 120; this.top = top; right = left + width; bottom = top + height }, visible = true)
 
+    @Test fun aScrolledProfileFeedWithoutAHandleIsStillTheOpenedTarget() {
+        val feed = listOf(n("Gönderiler", 400), n("Yanıtlar", 400))
+        assertTrue(DiscoveryProfileEvidence.openedTarget(feed, null, "pusholder"))
+        assertFalse(DiscoveryProfileEvidence.openedTarget(feed + n("@baskasi", 80), null, "pusholder"))
+    }
     @Test fun textMentioningVideoPhotoOrGifIsStillText() {
         for (text in listOf("video paylaşımı hakkında bir yorum", "fotoğraf çok güzel", "gif yerine yazıyorum", "Bu image dosyasını konuştuk")) {
             assertFalse(ReplyMediaEvidence.hasMedia(listOf(n(text, 600, height = 240)), 500, 1000))

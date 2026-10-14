@@ -25,6 +25,15 @@ object GeminiModelResolver {
             .toList()
     }
 
+    /** Free-tier chat prefers Flash-Lite. It has the larger daily allowance. */
+    fun pilotCandidates(models: List<GeminiModelDescriptor>, requestedModel: String?): List<String> {
+        val ordered = orderedCandidates(models, requestedModel)
+        val requested = normalize(requestedModel).takeUnless { it.isBlank() || it == "auto" }
+        if (requested != null) return ordered
+        val lite = ordered.filter { it.contains("lite") }
+        return lite + ordered.filter { it !in lite }
+    }
+
     fun normalize(value: String?): String = value.orEmpty()
         .trim()
         .removePrefix("models/")

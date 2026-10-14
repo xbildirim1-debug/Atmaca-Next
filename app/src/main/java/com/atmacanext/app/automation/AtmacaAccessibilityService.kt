@@ -23,6 +23,8 @@ class AtmacaAccessibilityService : AccessibilityService() {
         private const val OUTSIDE_SUPPRESS_MS = 3_500L
         private const val EVENT_DEBOUNCE_MS = 220L
         private const val POST_PROCESS_DELAY_MS = 80L
+        @Volatile private var live: AtmacaAccessibilityService? = null
+        fun peek(): AtmacaAccessibilityService? = live
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -36,6 +38,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
     @Volatile private var pendingPackageName: String? = null
     private var lastLaunchAt = 0L
     private var lastLaunchKey = ""
+    private var homeFreshSerial = 0
     @Volatile private var suppressOutsideUntil: Long = 0L
     private var lastUiLogKey = ""
     private var lastFreshReadLogKey = ""
@@ -46,6 +49,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        live = this
         if (Build.VERSION.SDK_INT >= 33) {
             serviceInfo = serviceInfo.apply { flags = flags or AccessibilityServiceInfo.FLAG_INPUT_METHOD_EDITOR }
             OperationLog.i("REPLY_INPUT", "Android ${Build.VERSION.SDK_INT}: erişilebilirlik metin giriş bağlantısı etkin")
@@ -96,8 +100,9 @@ class AtmacaAccessibilityService : AccessibilityService() {
     }
 
     private fun scheduleAutomationTick(delayMillis: Long) {
+        val faster = (delayMillis / 5L).coerceIn(8L, 60_000L)
         synchronized(scheduleLock) {
-            val due = SystemClock.uptimeMillis() + delayMillis.coerceAtLeast(0L)
+            val due = SystemClock.uptimeMillis() + faster
             if (!AccountScanPolicy.replaceTick(scheduledDue, due)) return
             scheduledTick?.let(mainHandler::removeCallbacks)
             scheduledDue = due
@@ -106,7 +111,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
                 enqueueSnapshot()
             }
             scheduledTick = tick
-            mainHandler.postDelayed(tick, delayMillis.coerceAtLeast(0L))
+            mainHandler.postDelayed(tick, faster)
         }
     }
 
@@ -152,6 +157,82 @@ class AtmacaAccessibilityService : AccessibilityService() {
         val i=Intent(Intent.ACTION_VIEW,Uri.parse("https://x.com/home")).apply { setPackage(X_PACKAGE); addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT) }
         return if (startSafely(i,"home")) true else launchX()
     }
+    fun launchXHomeFresh(): Boolean {
+        homeFreshSerial++
+        // REORDER only. CLEAR_TOP on this X build finishes the task and shows the phone launcher.
+        val i = Intent(Intent.ACTION_VIEW, Uri.parse("https://x.com/home")).apply {
+            setPackage(X_PACKAGE)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        }
+        return startSafely(i, "home-fresh-$homeFreshSerial") || launchXHome()
+    }
+
+    private var handoffUnknownSince = 0L
+
+    /** One in-app step off a finished account's tweet or profile.
+     *  True only when Home, the drawer, or the switcher is already up.
+     *  Never loops and never fires a home intent: both left the next account unstarted
+     *  or flashed the phone launcher. */
+    fun openDiscoveryHome(): Boolean {
+        val root = freshNavigationRoot()
+        if (root?.packageName?.toString() != X_PACKAGE) {
+            OperationLog.w("NAV", "hesap devri X dışında; telefon ana ekranına çıkılmadı")
+            return false
+        }
+        val screen = ScreenDetector.detect(root)
+        val now = System.currentTimeMillis()
+        if (screen == XScreen.UNKNOWN) {
+            if (handoffUnknownSince == 0L) handoffUnknownSince = now
+        } else handoffUnknownSince = 0L
+        val unknownSettled = screen == XScreen.UNKNOWN && now - handoffUnknownSince >= 350L
+        val backVisible = NavigationSurfaceEvidence.backIndex(
+            AccessibilityTree.snapshots(root),
+            XFlowStage.VERIFY_ACCOUNT,
+            screen,
+        ) != null
+        when (DiscoveryHandoffPolicy.action(screen, XUiActions.bottomHomeVisible(this, root), backVisible, unknownSettled)) {
+            DiscoveryHandoffPolicy.Action.DONE -> return true
+            DiscoveryHandoffPolicy.Action.WAIT -> return false
+            DiscoveryHandoffPolicy.Action.TAP_BOTTOM_HOME -> {
+                val clicked = XUiActions.clickBottomHome(this, root)
+                OperationLog.i("NAV", "hesap devri alt ana sayfa screen=$screen clicked=$clicked")
+                return false
+            }
+            DiscoveryHandoffPolicy.Action.TAP_BACK -> {
+                val clicked = XUiActions.clickVisibleBack(this, root, XFlowStage.VERIFY_ACCOUNT, screen)
+                val up = if (!clicked) XUiActions.clickToolbarUp(this, root) else false
+                OperationLog.i("NAV", "hesap devri geri screen=$screen clicked=$clicked toolbar=$up")
+                return false
+            }
+            DiscoveryHandoffPolicy.Action.FAILED -> {
+                if (screen == XScreen.COMPOSER || screen == XScreen.DIALOG) {
+                    OperationLog.i("NAV", "hesap devri örtü screen=$screen")
+                    pressBack()
+                } else if (screen == XScreen.TWEET_DETAIL || screen == XScreen.PROFILE || screen == XScreen.ENGAGEMENT_LIST ||
+                    screen == XScreen.FOLLOWERS_LIST || screen == XScreen.FOLLOWING_LIST || screen == XScreen.VERIFIED_FOLLOWERS_LIST
+                ) {
+                    val list = screen == XScreen.FOLLOWERS_LIST || screen == XScreen.FOLLOWING_LIST ||
+                        screen == XScreen.VERIFIED_FOLLOWERS_LIST || screen == XScreen.ENGAGEMENT_LIST
+                    val up = if (list) false else XUiActions.clickToolbarUp(this, root)
+                    if (up) {
+                        OperationLog.i("NAV", "hesap devri araç çubuğu screen=$screen clicked=true")
+                    } else {
+                        val accepted = performGlobalAction(GLOBAL_ACTION_BACK)
+                        OperationLog.i("NAV", "hesap devri liste geri screen=$screen system=$accepted")
+                        val after = freshNavigationRoot()
+                        if (after?.packageName?.toString() != X_PACKAGE) {
+                            OperationLog.w("NAV", "liste geri X dışına çıktı; ana sayfa açılıyor")
+                            launchXHomeFresh()
+                        }
+                    }
+                } else {
+                    OperationLog.w("NAV", "hesap devri çıkış yok screen=$screen; hedeften ve X'ten çıkılmadı")
+                }
+                return false
+            }
+        }
+    }
+
     fun launchDiscoveryProfile(handle: String, attempt: Int = 1): Boolean {
         val clean = XIdentityDetector.normalizeUsername(handle)
         if (!clean.matches(Regex("[a-z0-9_]{1,15}"))) return false
@@ -260,6 +341,16 @@ class AtmacaAccessibilityService : AccessibilityService() {
         return mainHandler.post { attempt(0) }
     }
 
+    /** Only after every selected account is finished. Never from a mid-queue return. */
+    fun closeXAfterFullQueue() {
+        val am = getSystemService(ActivityManager::class.java)
+        val killed = runCatching {
+            am?.killBackgroundProcesses(X_PACKAGE)
+            true
+        }.getOrDefault(false)
+        OperationLog.i("NAV", "kuyruğun son hesabı bitti; X arka planda kapatıldı kill=$killed")
+    }
+
     private fun openOwnRecentTask(): Boolean {
         val root = rootInActiveWindow ?: return false
         val rootPackage = root.packageName?.toString() ?: return false
@@ -308,23 +399,208 @@ class AtmacaAccessibilityService : AccessibilityService() {
         return closed
     }
 
+    /** One screenshot, then a crop for every account row. */
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+    fun captureRegions(bounds: List<android.graphics.Rect>, onDone: (List<android.graphics.Bitmap?>) -> Unit) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || bounds.isEmpty()) {
+            onDone(List(bounds.size) { null })
+            return
+        }
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val started = runCatching {
+            takeScreenshot(android.view.Display.DEFAULT_DISPLAY, executor, object : TakeScreenshotCallback {
+                override fun onSuccess(screenshot: ScreenshotResult) {
+                    val full = runCatching { screenshotBitmap(screenshot) }.getOrNull()
+                    val crops = bounds.map { rect -> full?.let { cropBitmap(it, rect) } }
+                    full?.recycle()
+                    mainHandler.post { onDone(crops) }
+                    executor.shutdown()
+                }
+                override fun onFailure(errorCode: Int) {
+                    OperationLog.w("ACCOUNT_AVATAR", "ekran görüntüsü alınamadı kod=$errorCode")
+                    mainHandler.post { onDone(List(bounds.size) { null }) }
+                    executor.shutdown()
+                }
+            })
+        }
+        if (started.isFailure) {
+            executor.shutdown()
+            onDone(List(bounds.size) { null })
+        }
+    }
+
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+    private fun screenshotBitmap(screenshot: ScreenshotResult): android.graphics.Bitmap? {
+        val buffer = screenshot.hardwareBuffer
+        val hardware = android.graphics.Bitmap.wrapHardwareBuffer(buffer, screenshot.colorSpace) ?: run {
+            buffer.close()
+            return null
+        }
+        val software = hardware.copy(android.graphics.Bitmap.Config.ARGB_8888, false)
+        hardware.recycle()
+        buffer.close()
+        return software
+    }
+
+    private fun cropBitmap(source: android.graphics.Bitmap, bounds: android.graphics.Rect): android.graphics.Bitmap? {
+        val metrics = resources.displayMetrics
+        val scaleX = if (metrics.widthPixels > 0) source.width.toFloat() / metrics.widthPixels else 1f
+        val scaleY = if (metrics.heightPixels > 0) source.height.toFloat() / metrics.heightPixels else 1f
+        val left = (bounds.left * scaleX).toInt().coerceIn(0, source.width - 1)
+        val top = (bounds.top * scaleY).toInt().coerceIn(0, source.height - 1)
+        val width = (bounds.width() * scaleX).toInt().coerceAtLeast(1).coerceAtMost(source.width - left)
+        val height = (bounds.height() * scaleY).toInt().coerceAtLeast(1).coerceAtMost(source.height - top)
+        return android.graphics.Bitmap.createBitmap(source, left, top, width, height)
+    }
+
+    /** Crops the account photo out of the current screen. Never blocks the scan if it fails. */
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+    fun captureRegion(bounds: android.graphics.Rect, onDone: (android.graphics.Bitmap?) -> Unit) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            onDone(null)
+            return
+        }
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val started = runCatching {
+            takeScreenshot(android.view.Display.DEFAULT_DISPLAY, executor, object : TakeScreenshotCallback {
+                override fun onSuccess(screenshot: ScreenshotResult) {
+                    val bitmap = runCatching { cropScreenshot(screenshot, bounds) }.getOrNull()
+                    mainHandler.post { onDone(bitmap) }
+                    executor.shutdown()
+                }
+                override fun onFailure(errorCode: Int) {
+                    mainHandler.post { onDone(null) }
+                    executor.shutdown()
+                }
+            })
+        }
+        if (started.isFailure) {
+            executor.shutdown()
+            onDone(null)
+        }
+    }
+
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+    private fun cropScreenshot(screenshot: ScreenshotResult, bounds: android.graphics.Rect): android.graphics.Bitmap? {
+        val buffer = screenshot.hardwareBuffer
+        val hardware = android.graphics.Bitmap.wrapHardwareBuffer(buffer, screenshot.colorSpace) ?: run {
+            buffer.close()
+            return null
+        }
+        val software = hardware.copy(android.graphics.Bitmap.Config.ARGB_8888, false)
+        hardware.recycle()
+        buffer.close()
+        return cropBitmap(software, bounds)?.also { if (it !== software) software.recycle() }
+    }
+
+    /** Profile pages are often labeled HOME, so pressBack() refuses to leave. Tap the arrow anyway. */
+    fun popProfile(): Boolean {
+        val root = freshNavigationRoot()
+        val nodes = if (root != null) AccessibilityTree.nodes(root) else emptyList()
+        val labeled = nodes.firstOrNull { node ->
+            val text = listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(" ").lowercase()
+            node.isVisibleToUser && (
+                XUiVocabulary.backSignals.any { text.contains(it) } ||
+                    node.viewIdResourceName.orEmpty().lowercase().let {
+                        it.endsWith("/back") || it.contains("navigate_up") || it.contains("toolbar_back")
+                    }
+                )
+        }
+        if (labeled != null && (labeled.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK) || GestureClick.gestureTap(this, labeled))) {
+            OperationLog.i("NAV", "profil geri oku")
+            return true
+        }
+        val density = resources.displayMetrics.density
+        val corner = nodes.firstOrNull { node ->
+            if (!node.isVisibleToUser || !node.isClickable) return@firstOrNull false
+            val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+            val size = (72 * density).toInt()
+            bounds.width() in 24..size && bounds.left < size && bounds.top in (24 * density).toInt()..(130 * density).toInt()
+        }
+        if (corner != null && GestureClick.gestureTap(this, corner)) {
+            OperationLog.i("NAV", "profil sol üst geri")
+            return true
+        }
+        val onProfile = nodes.any { node ->
+            listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(" ").lowercase().let {
+                it.contains("profili düzenle") || it.contains("edit profile")
+            }
+        }
+        if (!onProfile) return false
+        val backed = performGlobalAction(GLOBAL_ACTION_BACK)
+        OperationLog.i("NAV", "profil sistem geri=$backed")
+        return backed
+    }
+
     /** Fresh root proof prevents a stale sheet snapshot from backing out of HOME. */
     fun pressBack(): Boolean {
         val root = freshNavigationRoot()
-        if (root?.packageName?.toString() == X_PACKAGE) {
-            val snapshots = AccessibilityTree.snapshots(root)
-            val screen = ScreenDetector.detect(root, snapshots)
-            if (screen == XScreen.HOME) {
-                OperationLog.w("NAV", "X HOME üzerinde GLOBAL_ACTION_BACK engellendi; launcher'a çıkılmadı")
-                return false
-            }
-            if (screen == XScreen.ACCOUNT_SWITCHER) {
-                return closeAccountSwitcher()
-            }
-            if (XUiActions.clickVisibleBack(this, root)) return true
+        if (root?.packageName?.toString() != X_PACKAGE) return false
+        val snapshots = AccessibilityTree.snapshots(root)
+        val screen = ScreenDetector.detect(root, snapshots)
+        if (screen == XScreen.HOME || screen == XScreen.UNKNOWN) {
+            OperationLog.w("NAV", "X $screen üzerinde geri engellendi; telefon ana ekranına çıkılmadı")
+            return false
         }
-        return root?.packageName?.toString() == X_PACKAGE &&
-            ScreenDetector.detect(root) != XScreen.UNKNOWN && performGlobalAction(GLOBAL_ACTION_BACK)
+        if (screen == XScreen.ACCOUNT_SWITCHER) return closeAccountSwitcher()
+        if (XUiActions.clickVisibleBack(this, root)) return true
+        // Verified/followers tabs have a small icon at the top left. Tapping it
+        // reselects the tab and never leaves the list. System back pops the screen.
+        val relationshipList = screen in setOf(
+            XScreen.VERIFIED_FOLLOWERS_LIST, XScreen.FOLLOWERS_LIST, XScreen.FOLLOWING_LIST, XScreen.ENGAGEMENT_LIST,
+        )
+        if (!relationshipList && XUiActions.clickToolbarUp(this, root)) {
+            OperationLog.i("NAV", "araç çubuğu geri screen=$screen")
+            return true
+        }
+        if (relationshipList) {
+            val accepted = performGlobalAction(GLOBAL_ACTION_BACK)
+            OperationLog.i("NAV", "liste geri screen=$screen system=$accepted")
+            val after = freshNavigationRoot()
+            if (after?.packageName?.toString() != X_PACKAGE) {
+                OperationLog.w("NAV", "liste geri X dışına çıktı; ana sayfa açılıyor")
+                launchXHomeFresh()
+            }
+            return accepted
+        }
+        if (screen !in setOf(XScreen.ACCOUNT_DRAWER, XScreen.COMPOSER, XScreen.DIALOG)) {
+            OperationLog.w("NAV", "görünür geri yok screen=$screen; telefon ana ekranına çıkılmadı")
+            return false
+        }
+        return performGlobalAction(GLOBAL_ACTION_BACK)
+    }
+
+    /** Close a drawer or sheet without tapping a node. A labeled control in the
+     *  account drawer can be the profile header, and tapping it opens the profile. */
+    fun dismissOverlay(): Boolean {
+        val root = freshNavigationRoot()
+        if (root?.packageName?.toString() != X_PACKAGE) return false
+        val screen = ScreenDetector.detect(root)
+        // One extra back after the drawer is already gone finishes X.
+        if (screen != XScreen.ACCOUNT_DRAWER && screen != XScreen.ACCOUNT_SWITCHER) {
+            OperationLog.w("NAV", "geri atlandı ekran=$screen; telefon ana ekranına çıkılmadı")
+            return false
+        }
+        if (screen == XScreen.ACCOUNT_SWITCHER) return closeAccountSwitcher()
+        val accepted = performGlobalAction(GLOBAL_ACTION_BACK)
+        OperationLog.i("NAV", "geri ekran=$screen accepted=$accepted")
+        return accepted
+    }
+
+    /** A switcher miss can open a photo sheet with almost no nodes. Close it and stay in X. */
+    fun dismissThinOverlay(): Boolean {
+        val root = freshNavigationRoot()
+        if (root?.packageName?.toString() != X_PACKAGE) return false
+        val screen = ScreenDetector.detect(root)
+        if (XUiActions.clickVisibleBack(this, root, XFlowStage.VERIFY_ACCOUNT, screen)) return true
+        if (XUiActions.clickToolbarUp(this, root)) return true
+        val accepted = performGlobalAction(GLOBAL_ACTION_BACK)
+        val after = freshNavigationRoot()
+        if (after?.packageName?.toString() != X_PACKAGE) {
+            OperationLog.w("NAV", "örtü X dışına çıktı; ana sayfa açılıyor")
+            launchXHomeFresh()
+        }
+        return accepted
     }
     fun isOutsideSuppressed(now:Long=System.currentTimeMillis()):Boolean=now<suppressOutsideUntil
 
@@ -408,6 +684,7 @@ class AtmacaAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt()=Unit
     override fun onDestroy() {
+        if (live === this) live = null
         synchronized(scheduleLock) {
             scheduledTick?.let(mainHandler::removeCallbacks)
             scheduledTick = null

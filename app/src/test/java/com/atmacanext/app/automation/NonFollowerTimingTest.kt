@@ -12,7 +12,7 @@ class NonFollowerTimingTest {
         val original=AutomationTuning.betweenActionsMs
         try {
             AutomationTuning.betweenActionsMs=500L
-            assertEquals(2000L,NonFollowerTiming.scaleDelay(2000L,false))
+            assertEquals(200L,NonFollowerTiming.scaleDelay(2000L,false))
             AutomationTuning.betweenActionsMs=71L
             assertEquals(AutomationTuning.scaleDelay(2000L),NonFollowerTiming.scaleDelay(2000L,false))
         } finally {AutomationTuning.betweenActionsMs=original}

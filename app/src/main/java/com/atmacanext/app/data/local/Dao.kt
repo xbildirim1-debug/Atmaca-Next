@@ -78,6 +78,8 @@ interface TargetAccountDao {
 @Dao interface DailyAccountUsageDao {
     @Query("SELECT * FROM daily_account_usage WHERE dateKey = :dateKey AND accountId = :accountId AND actionType = :actionType LIMIT 1") suspend fun get(dateKey: String, accountId: String, actionType: String): DailyAccountUsageEntity?
     @Query("SELECT * FROM daily_account_usage WHERE dateKey = :dateKey ORDER BY accountId, actionType") suspend fun getForDate(dateKey: String): List<DailyAccountUsageEntity>
+    @Query("SELECT * FROM daily_account_usage WHERE dateKey >= :fromDate") suspend fun getSince(fromDate: String): List<DailyAccountUsageEntity>
     @Upsert suspend fun upsert(item: DailyAccountUsageEntity)
     @Query("DELETE FROM daily_account_usage WHERE dateKey < :oldestDateKey") suspend fun deleteOlderThanDate(oldestDateKey: String)
+    @Query("DELETE FROM daily_account_usage") suspend fun clearAll()
 }

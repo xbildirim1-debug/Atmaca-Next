@@ -1,19 +1,36 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
 
+val keystoreProperties = Properties().apply {
+    load(rootProject.file("signing/keystore.properties").inputStream())
+}
+
 android {
     namespace = "com.atmacanext.app"
     compileSdk { version = release(37) { minorApiLevel = 1 } }
+
+    signingConfigs {
+        create("atmaca") {
+            storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+            storePassword = keystoreProperties.getProperty("storePassword")
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            enableV1Signing = true
+            enableV2Signing = true
+        }
+    }
 
     defaultConfig {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 111
-        versionName = "26.63-detail-author-reply"
+        versionCode = 212
+        versionName = "27.64"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -21,10 +38,12 @@ android {
 
     buildTypes {
         debug {
+            signingConfig = signingConfigs.getByName("atmaca")
             isMinifyEnabled = false
             isShrinkResources = false
         }
         release {
+            signingConfig = signingConfigs.getByName("atmaca")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

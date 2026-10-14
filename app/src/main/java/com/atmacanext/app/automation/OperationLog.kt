@@ -65,5 +65,6 @@ object OperationLog {
             else -> Log.i(TAG, "$category · $decorated")
         }
         persistence.trySend(PersistRecord(level, category, decorated))
+        if (level == "ERROR" || level == "WARN") TaskAlerts.onLog(level, category, decorated)
     }
 }

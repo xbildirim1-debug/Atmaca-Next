@@ -32,10 +32,12 @@ internal object EngagementListEvidence {
             "reposts",
             "reposted",
             "reposted by",
+            "repostlar",
         ) ||
             Regex("[0-9][0-9.,\\s]*[kmb]?\\s+(?:kişi\\s+)?tarafından yeniden gönderildi").matches(s) ||
             Regex("(?:yeniden gönderildi\\s+[0-9][0-9.,\\s]*[kmb]?|[0-9][0-9.,\\s]*[kmb]?\\s+yeniden gönderildi)").matches(s) ||
-            Regex("(?:reposts\\s+[0-9][0-9.,\\s]*[kmb]?|[0-9][0-9.,\\s]*[kmb]?\\s+reposts|reposted by\\s+[0-9][0-9.,\\s]*[kmb]?)").matches(s)
+            Regex("(?:reposts\\s+[0-9][0-9.,\\s]*[kmb]?|[0-9][0-9.,\\s]*[kmb]?\\s+reposts|reposted by\\s+[0-9][0-9.,\\s]*[kmb]?)").matches(s) ||
+            Regex("(?:repostlar\\s+[0-9][0-9.,\\s]*[kmb]?|[0-9][0-9.,\\s]*[kmb]?\\s+repostlar)").matches(s)
     }
 
     private fun isCompetingTab(raw: String): Boolean = competingTabPattern.matches(canonical(raw))

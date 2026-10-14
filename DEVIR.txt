@@ -1,0 +1,291 @@
+ATMACA NEXT — DEVİR NOTU
+Tarih: 14 Ekim 2026
+Eldeki kod sürümü: 27.64 (versionCode 212)
+Paket: com.atmacanext.app
+applicationId: com.atmacanext.v258
+Başlangıç noktası: kullanıcının verdiği AtmacaNext 27.51 kaynak kodu.
+Bu not, kodu başka bir modele (ChatGPT) devretmek içindir.
+Kullanıcı 27.64'ü denedi ve "düzeltmemişsin" dedi. Aşağıdaki işler BİTMİŞ SAYILMAZ.
+
+================================================================================
+1. UYGULAMA NE
+================================================================================
+
+Atmaca Next, Android erişilebilirlik servisiyle X (Twitter) uygulamasını kullanan
+bir otomasyon uygulamasıdır. Kullanıcı X'te açık oturumları tarar, hesapları
+kaydeder, sonra şu görevleri çalıştırır:
+
+- Onaylı kullanıcı takibi (başka hesapların onaylı takipçilerinde "Takip Et")
+- Takipten çıkma
+- Takip etmeyenleri takipten çıkarma (kendi "Takip edilenler" listesinde,
+  seni takip etmeyen eski hesaplardan çıkma; ilk 100 kişi korunur)
+- Beğeni, retweet, yer imi, yorum, alıntı, metin/görsel gönderi
+- Keşif takipleri (yorumcu, retweetleyen, alıntılayan)
+- Pilot: görev sırasında takılırsa toparlaması istenen yönetici + sohbet.
+  Gemini anahtarı ayarlardan bağlanır. Kullanıcı pilotun sonuçlarından memnun değil.
+  Pilot bu devirde yeniden yazılmadı.
+
+Arayüz sekmeleri: Ana, Hesap, Görev, Pilot, Ayar.
+Hedef telefon: Redmi / Android 13 (sdk 33), ekran yaklaşık 1080x2400, yoğunluk 2.75.
+Kullanıcı Türkçe konuşur. X arayüzü Türkçe: "Takip Et", "Geri Takip Et",
+"Takip ediliyor", "Profili düzenle", "Profil".
+
+Erişilebilirlik servisi: AtmacaAccessibilityService.
+Görev beyni: AutomationRuntime.kt (çok büyük, stage makinesi).
+Hesap tarama beyni: AccountSyncController.kt.
+
+================================================================================
+2. NASIL DERLENİR
+================================================================================
+
+Kaynak kökü bu zipin içidir. Android Gradle projesidir.
+
+  app/build.gradle.kts içinde:
+    namespace = com.atmacanext.app
+    applicationId = com.atmacanext.v258
+    versionName şu an "27.64"
+
+Derleme (bu ortamda kullanılan komut):
+
+  gradle :app:assembleDebug --offline --no-daemon
+
+Çıktı:
+  app/build/outputs/apk/debug/app-debug.apk
+
+Telefonda kurulum için sürüm kodunu her yeni APK'da artır.
+Eski sürümün üstüne kurulabilsin diye applicationId'yi değiştirme: com.atmacanext.v258.
+
+Kullanıcıya APK verirken ZIP verme. Kullanıcı zip ayıklayamıyor ve APK'nın
+doğrudan inmesini istiyor. Yeşil indirme sayfası işe yaramıştı
+(önizleme kartında Aç, sonra APK'yı indir). Sohbet eki ve dış linkler
+telefonda çoğu zaman inmiyor.
+
+Bu zip KAYNAK içindir, kurulacak APK değildir.
+
+================================================================================
+3. KLASÖR HARİTASI
+================================================================================
+
+app/src/main/java/com/atmacanext/app/
+
+  automation/     X ekranını okuyan ve tıklayan katman. Asıl iş burada.
+    AccountSyncController.kt     Hesap tara: çekmece, hesap seçici, profil, kayıt
+    AtmacaAccessibilityService.kt  Servis, ekran görüntüsü, geri, X'i açma
+    AutomationRuntime.kt         Görev state makinesi (takip, çıkma, gönderi)
+    XNavigator.kt                Menü, profil, sayaç tıklama
+    XUiActions.kt                Satırdaki Takip Et / Takip ediliyor düğmesi
+    XUiVocabulary.kt             Türkçe/İngilizce etiketler
+    VerifiedFollowPolicy.kt      Onaylı takipte hangi düğmeye basılır
+    ScreenDetector.kt            Ekran türü (HOME, PROFILE, FOLLOWING_LIST, ...)
+    ProfileAvatarEvidence.kt     Profildeki büyük fotoğrafın dikdörtgeni
+    AccountAvatarEvidence.kt     Çekmecedeki fotoğraf (kullanıcı bunu istemiyor)
+    AccountAvatarStore.kt        filesDir/avatars/<handle>.jpg
+    NonFollowerFollowingInspector.kt   Takip edilenler satırlarını okur
+    NonFollowerFollowingScroller.kt    O listede kaydırma
+    NonFollowerFollowingRun.kt         İlk 100 kişiyi korur
+    ListGesture.kt               Genel kaydırma
+    NavigationSurfaceEvidence.kt Geri oku. Bazı akışlarda geri bilerek kilitli.
+  ui/screens/AccountsScreen.kt   Hesap kartları. Resim yoksa iki harf gösterir.
+  data/settings/AccountAvatarStore.kt
+  ai/                          Pilot ve Gemini. Bu turda elden geçmedi.
+
+276 Kotlin dosyası var. Görev mantığının çoğu AutomationRuntime.kt içindedir.
+Orayı parçalamadan, sadece ilgili stage'e dokun.
+
+================================================================================
+4. HESAP TARAMA — NEREYE KADAR GELİNDİ
+================================================================================
+
+Akış (AccountSyncController):
+
+  HOME -> DRAWER (sol menü) -> SWITCHER (Hesaplar listesi) -> HARVEST
+  -> her hesap için SELECT -> SETTLE -> VERIFY_DRAWER
+  -> PROFILE_PHOTO (profili aç, resmi çek) -> SAVING -> sonraki hesap
+
+Kullanıcının hesapları (5 tane, hepsi bir ara kaydedildi):
+  @ebruca001, @xhesaplar1, @ezeldestan, @atmaca2025, @bildirimhaber1
+
+Bilinen tarama hataları ve denenen yamalar:
+
+a) Son hesap düşüyordu.
+   Liste dibe kaymadan "ekran değişmedi" diye tarama bitiyordu.
+   Harvest'e bir onay turu eklendi (harvestEndConfirmed). Kullanıcı bir ara
+   "tamam oldu" dedi, beş hesap da geldi. Bunu bozma.
+
+b) Profilde 20 saniye bekliyordu.
+   Profil ekranı çoğu zaman HOME sanılıyor (gönderi akışı var).
+   pressBack(), screen == HOME ise geri basmaz. Bu yüzden profilde kalıyordu.
+   27.63: "Profili düzenle" yazısı görülünce resmi al, sonra sol üst geri oku
+   veya sistem geri. Kullanıcı yine "profilden geri çıkmak mı zor" dedi.
+   Yani bu çıkış hâlâ güvenilir değil. Yeni model önce logla doğrulasın:
+   ekran gerçekten HOME mı görünüyor, popProfile() true dönüyor mu, basılan
+   düğüm geri oku mu yoksa tweet mi.
+
+c) Profil resimleri.
+   Kullanıcı resmi PROFİLDEN istiyor, hesap listesinden değil.
+   Liste denemesi (27.61) resimleri bir satır kaydırdı:
+     X'in logosu @atmaca2025'e, Ebru'nun resmi @bildirimhaber1'e yapıştı.
+     @ebruca001 ve @ezeldestan boş kaldı.
+   shootRowAvatars şu an boş (Unit). O yolu yeniden açma.
+   Kayıt: AccountAvatarStore.write. UI harf gösteriyorsa dosya yok
+   ya da dropCopies() kopya diye silmiştir (AccountsScreen, tarama bitince).
+   Ekran görüntüsü takeScreenshot. Android iki çekim arasında süre ister.
+   700 ms'den kısa "fotoğrafsız kaydet" zaman aşımı resmi yutuyordu.
+   Şu an zaman aşımı 1400 ms. Profilde bekleme hedefi: resim alınınca hemen çık.
+
+d) Hesap eklerken bir hesapta tweet açıldı.
+   OPEN_PROFILE_FROM_DRAWER eskiden "Profil" etiketini bulamazsa
+   ekrandaki İLK @kullanıcıyı tıklıyordu. Çekmece tam ekran değil;
+   sağda görünen akıştaki tweet yazarına basıp tweet açıyordu.
+   27.64'te bu yedek tıklama kaldırıldı. Sadece menüdeki "Profil" / "profile".
+   Kullanıcı 27.64'ü "düzeltmemişsin" diye geri çevirdi. Ya bu APK kurulmadı
+   ya da tweet başka yerden açılıyor. Bakılacak ikinci yer:
+   AtmacaAccessibilityService.popProfile(). Köşedeki küçük tıklanır düğüm
+   tweet olabilir. Kör koordinat tıklaması 27.64'te kaldırıldı; düğüm tıklaması duruyor.
+   Dosya: XNavigator.execute OPEN_PROFILE_FROM_DRAWER
+          AtmacaAccessibilityService.popProfile
+
+================================================================================
+5. ONAYLI TAKİP — GERİ TAKİP ET
+================================================================================
+
+Görev: TaskType.VERIFIED_FOLLOW
+Akış: AutomationRuntime.handleVerifiedFollow
+  kendi profil -> takipçiler -> Onaylı sekmesi -> PROCESS_VERIFIED_FOLLOW
+
+İstenen: düğmede "Geri Takip Et", "Sen de Takip Et" veya "Follow back" yazıyorsa BASMA.
+Sadece "Takip Et" / "Follow".
+
+27.64 değişikliği:
+  PROCESS_VERIFIED_FOLLOW içindeki findRelationshipTarget artık
+  VerifiedFollowPolicy.plainFollowLabels kullanıyor ("takip et", "follow").
+  VerifiedFollowPolicy.matchesAction içinde "geri takip et" artık
+  "takip et" ile eşleşmiyor (endsWith " takip et" tuzağı kapatıldı).
+
+availableFollowLabels hâlâ XUiVocabulary.followActions. O kümede
+"geri takip et" VAR. Başka bir çağrı hâlâ availableFollowLabels kullanıyorsa
+Geri Takip Et'e basar. Aranacak:
+  VerifiedFollowPolicy.availableFollowLabels
+  XUiVocabulary.followActions
+  findRelationshipTarget
+  verifyVerifiedFollow (satır ~2528) hâlâ availableFollowLabels ile okuyor.
+  220 ms sonra sonucu başarılı sayıyor. Bu, basılan Geri Takip Et'i de
+  başarı sanır. Düğmeye hiç basılmaması gerekir; başarı sayacı ayrı konu.
+
+Kullanıcı bunun düzelmediğini söylüyor. Yeni model önce gerçek APK'da
+hangi etikete basıldığını loglamalı, sonra plainFollowLabels yolunun
+o tıklamaya kadar geldiğini kanıtlamalı.
+
+================================================================================
+6. TAKİP ETMEYENLERİ ÇIKAR — LİSTEYE GİRİP BOŞ ÇIKIYOR
+================================================================================
+
+Görev: TaskType.UNFOLLOW_NON_FOLLOWERS
+Akış:
+  beginOperation -> launchXProfile (kendi profili)
+  OPEN_REQUIRED_SURFACE -> "Takip ediliyor" sayacına bas
+  FOLLOWING_LIST olunca SEEK_UNFOLLOW_DEPTH
+  handleNonFollowers:
+    liste başı, ilk 100 kişiyi koru, 101'den sonra seni takip etmeyeni çıkar
+
+Kullanıcının gördüğü: profile giriyor, takip edilenlere giriyor, işlem yapmadan geri çıkıyor.
+Ayrıca daha önce: görev sırasında kaydırma yapmıyor, duruyor.
+
+Neden böyle görünür:
+
+1) Ekran FOLLOWING_LIST sayılmazsa (sekme seçili görünmezse, ekran PROFILE
+   veya HOME sanılırsa) eski kod ANINDA recoverOperation çağırıyordu.
+   Bu, hesabı doğrulamaya geri atar. Kullanıcı "girdi ve çıktı" görür.
+   27.64: sekme FOLLOWING ise listede kal. Değilse 8 saniye boyunca
+   launchXFollowing ile listeyi yeniden aç, ancak sonra vazgeç.
+
+2) Kaydırma jesti 280 ms. Sonraki okuma 16 ms'de geliyordu
+   (NonFollowerViewportGate.POLL_MS). Okuma, jesti iptal eder, liste oynamaz.
+   Sonra scroll false döner, 10 saniyelik retryNavigationWithDeadline
+   Atmaca'ya döner. Yine "işlem yapmadan çıktı".
+   27.64: kaydırmadan sonra 450 ms bekle. Üst üste 4 başarısızlığa kadar
+   listeden çıkma. Sayaç: nonFollowerScrollMisses.
+
+Bu iki yama kullanıcının telefonunda işe yaramadı veya kurulmadı.
+Yeni model şunları loglasın ve loga göre gitsin, bir yama daha uydurmasın:
+
+  FLOW stage=...
+  screen=... selectedTab=...
+  NAV kaydırma kabul / iptal
+  "liste kayboldu" veya "kaydırma tamamlanamadı" satırı çıkıyor mu
+
+Kaydırma kodu: NonFollowerFollowingScroller.scroll
+Liste okuma: NonFollowerFollowingInspector.read
+  Satır "eksik ağaç" (treeComplete=false) ise görev duraklar, kimseyi çıkarmaz.
+  Kullanıcı bunu da "hiçbir şey yapmadan çıktı" diye görür.
+
+Normal takipten çıkma (TaskType.UNFOLLOW) ayrı stage.
+scrollForwardAndTrack içinde UNFOLLOW için pacedUnfollowScroll var.
+Kullanıcı ikisinde de kaydırmanın durduğunu söylemişti. UNFOLLOW tarafı
+27.64'te ayrıca değiştirilmedi.
+
+================================================================================
+7. GERİ TUŞU NEDEN KİLİTLİ
+================================================================================
+
+AtmacaAccessibilityService.pressBack():
+  screen HOME veya UNKNOWN ise geri BASMAZ.
+  Log: "X HOME üzerinde geri engellendi"
+Profil sayfası ScreenDetector'da sık sık HOME olur
+(HomeTimelineEvidence, gönderiler yüzünden). Bu yüzden pressBack profilde işe yaramaz.
+
+Profil sayfasından çıkmak için pressBack kullanma.
+Görünür geri okuna bas veya sadece profildeyken GLOBAL_ACTION_BACK.
+HOME'dayken GLOBAL_ACTION_BACK X'ten atar, onu yapma.
+
+================================================================================
+8. KULLANICININ NET İSTEKLERİ (YAPILMAYAN VEYA TUTMAYAN)
+================================================================================
+
+- 27.51 davranışını bozma. Son hesap taransın.
+- Profil resmi profildeki büyük fotoğraftan gelsin, doğru hesaba yazılsın, kaymasın.
+- Profil açılınca resim alınıp HEMEN geri çıkılsın. Akşama kadar beklenmesin.
+- Hesap eklerken tweet açılmasın.
+- Onaylı takipte "Geri Takip Et"e basılmasın.
+- Takip etmeyenleri çıkar: listeye gir, kaydır, çıkarma işlemini yap. Boş dönme.
+- Takipten çıkmada da kaydırma durmasın.
+- APK zip olmasın. Kullanıcı kaynak zip'ini BİLEREK istedi; kurulacak paket yine düz APK.
+- Pilot / Gemini bu notun kapsamında yarım kaldı. Ayarlarda anahtar, eski anahtarlar
+  görünsün, pilot internete çıkabilsin, görev kilitlenince devam ettirsin.
+  Kullanıcı pilotu kötü buluyor. ai/ klasörüne bak. Bu turda orası değişmedi.
+
+================================================================================
+9. YENİ MODELE İŞ SIRASI
+================================================================================
+
+Kodu tahminle yamama. Kullanıcıdan bir görev logu iste (uygulamadaki kayıt).
+Log satırındaki stage, screen ve NAV mesajı olmadan üçüncü bir "düzeltme" yazma.
+
+Önerilen sıra:
+
+1) Hesap tararken tweet açılmasını logla. OPEN_PROFILE_FROM_DRAWER sadece
+   "Profil" mi basıyor, yoksa popProfile veya başka bir tıklama mı tweet açıyor.
+2) Onaylı listede basılan düğmenin metnini logla. "Geri Takip Et" ise
+   findRelationshipTarget'a hiç girmemeli. plainFollowLabels yolunu test et.
+3) Takip etmeyenler görevinde ilk "geri çıkış" nedenini logla:
+   screen yanlış mı, scroll false mı, treeComplete false mı, recoverOperation mı.
+   Kaydırma jestinin onCancelled olup olmadığına bak.
+4) Ancak ondan sonra tek davranış değiştir.
+
+Sürümü 27.65 ve yukarısı yap. applicationId'yi değiştirme.
+
+================================================================================
+10. BU TURDA DEĞİŞEN DOSYALAR (27.51'den 27.64'e)
+================================================================================
+
+  app/build.gradle.kts                         sürüm 27.64 / versionCode 212
+  automation/AccountSyncController.kt          tarama, profil resmi, çıkış
+  automation/AtmacaAccessibilityService.kt     popProfile, ekran görüntüsü logu
+  automation/XNavigator.kt                     profil tıklaması artık sadece "Profil"
+  automation/VerifiedFollowPolicy.kt           "geri takip et" != "takip et"
+  automation/AutomationRuntime.kt              onaylı takip etiketleri,
+                                               takip etmeyenler listede kalma ve kaydırma bekleyişi
+
+Başka dosyalar 27.51 halindedir. ListGesture ve servisin eski hali bir ara
+geri yüklendi; üzerine sadece popProfile ve ekran görüntüsü hata logu geldi.
+shootRowAvatars bilinçli olarak kapalıdır.

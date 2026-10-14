@@ -78,6 +78,15 @@ class XScreenDetectorTest {
         assertEquals(XScreen.HOME, ScreenDetector.detect(nodes))
     }
 
+    @Test fun keyboardCoveredInlineReplyFieldStaysTweetDetail() {
+        val nodes = listOf(
+            n("gerçekten mi", editable = true, id = "com.twitter.android:id/post-detail-reply-text-field"),
+            n("GIF", clickable = true),
+            n("Yanıtla", clickable = true),
+        )
+        assertEquals(XScreen.TWEET_DETAIL, ScreenDetector.detect(nodes))
+    }
+
     @Test fun composerRequiresEditableEvidenceInsteadOfFloatingPostButton() {
         val home = listOf(n("Home"), n("Search"), n("Notifications"), n("Post", true, id = "post_button"))
         assertEquals(XScreen.HOME, ScreenDetector.detect(home))

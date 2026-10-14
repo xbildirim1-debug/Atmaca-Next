@@ -2,6 +2,7 @@ package com.atmacanext.app.automation
 
 import com.atmacanext.app.ai.GeminiContentService
 import com.atmacanext.app.data.repository.AtmacaRepository
+import com.atmacanext.app.data.settings.TweetTextPool
 import com.atmacanext.app.domain.engine.BatchCyclePolicy
 import com.atmacanext.app.domain.engine.TaskQueuePlanner
 import com.atmacanext.app.domain.engine.QueueResultPolicy
@@ -12,6 +13,7 @@ import com.atmacanext.app.domain.model.QueueStatus
 import com.atmacanext.app.domain.model.ScheduledTask
 import com.atmacanext.app.domain.model.TaskStatus
 import com.atmacanext.app.domain.model.TaskType
+import android.content.Context
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -32,6 +34,7 @@ class TaskOrchestrator(
     private val settingsFlow: kotlinx.coroutines.flow.Flow<com.atmacanext.app.data.settings.AppSettings>,
     private val scope: CoroutineScope,
     private val notifications: com.atmacanext.app.data.notifications.NotificationStore,
+    private val appContext: Context,
 ) {
     private val mutex = Mutex()
     private val startMutex = Mutex()
@@ -232,18 +235,6 @@ class TaskOrchestrator(
             ?: return skipAndAdvance("Görev hesabı bulunamadı")
         if (!account.active) return skipAndAdvance("Hesap pasif: ${account.inactiveReason ?: "kullanıcı ayarı"}", skipAccount = true)
 
-        val dailyLimit = when (task.type) {
-            // The visible task Limit is authoritative for manual unfollow work.
-            // X's own daily ceiling is detected from a confirmed button reversion.
-            TaskType.UNFOLLOW, TaskType.UNFOLLOW_NON_FOLLOWERS -> Int.MAX_VALUE
-            TaskType.FOLLOW, TaskType.VERIFIED_FOLLOW, TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW -> dailyFollowLimitPerAccount
-            else -> Int.MAX_VALUE
-        }
-        if (dailyLimit != Int.MAX_VALUE) {
-            val used = repository.getTodayVerifiedUsage(task.accountId, task.type)
-            if (used >= dailyLimit) return skipAndAdvance("Hesabın günlük ${task.type.title} limiti dolu: $used/$dailyLimit")
-        }
-
         val targets = when {
             task.type == TaskType.COMMENT_QUOTE_TARGETS -> task.quoteTargetHandles
             task.type.isDiscoveryFollow -> repository.getActiveTargets(task.accountId).map { it.handle }
@@ -255,13 +246,28 @@ class TaskOrchestrator(
         if (task.type.isDiscoveryFollow && targets.isEmpty()) return skipAndAdvance("Bu hesap için Ayarlar'da hedef kullanıcı tanımlanmamış")
 
         if (task.useGemini) return failAndAdvance("Bu sürüm API kullanmaz. Görevi düzenleyip metni elle gir.")
-        val contents = if (task.type.supportsGemini) {
-            val appSettings = settingsFlow.first()
-            runCatching { contentService.prepare(task, account, appSettings.geminiModel) }.getOrElse { error ->
-                repository.log("ERROR", "CONTENT_PREPARE", task.id, task.username, "İçerik hazırlanamadı", error.message)
-                return failAndAdvance("İçerik hazırlanamadı: ${error.message ?: error.javaClass.simpleName}")
+        val manual = task.contentText?.trim().orEmpty()
+        val contents = when {
+            // Tweet görevinin kutusu boş olabilir. Metin Ayarlar'daki dosyadadır;
+            // hazırlık aşaması onu "Görev metni boş" diye reddetmesin.
+            task.type == TaskType.TEXT_TWEET && manual.isBlank() -> {
+                val pooled = TweetTextPool.count(appContext)
+                if (pooled == 0) {
+                    repository.log("ERROR", "CONTENT_PREPARE", task.id, task.username, "İçerik hazırlanamadı", "Tweet dosyası boş")
+                    return failAndAdvance("Tweet dosyası boş. Ayarlar'da Toplu tweet metinleri dosyasını yükle.")
+                }
+                repository.log("INFO", "TWEET_POOL", task.id, task.username, "Gönderi metni tweet dosyasından alınacak", "satır=$pooled")
+                emptyList()
             }
-        } else emptyList()
+            task.type.supportsGemini -> {
+                val appSettings = settingsFlow.first()
+                runCatching { contentService.prepare(task, account, appSettings.geminiModel) }.getOrElse { error ->
+                    repository.log("ERROR", "CONTENT_PREPARE", task.id, task.username, "İçerik hazırlanamadı", error.message)
+                    return failAndAdvance("İçerik hazırlanamadı: ${error.message ?: error.javaClass.simpleName}")
+                }
+            }
+            else -> emptyList()
+        }
 
         mutate { state ->
             state.copy(
@@ -292,6 +298,13 @@ class TaskOrchestrator(
             repository.markCurrentAccount(item.accountId)
             lastVerifiedAccountSession = runtime.sessionId
             repository.log("INFO", "ACCOUNT_VERIFIED", item.taskId, item.username, "Görev öncesi aktif X hesabı doğrulandı")
+        }
+
+        if (runtime.discoveryReleased && item.status in RUNNABLE_ITEM_STATUSES) {
+            repository.log("INFO", "DISCOVERY_RELEASE", item.taskId, item.username, runtime.message,
+                "progress=${runtime.verifiedCount}/${runtime.limit}")
+            skipAndAdvance(runtime.message.ifBlank { "Bu hesapta uygun kişi kalmadı; sıradaki hesaba geçiliyor" })
+            return
         }
 
         if (runtime.verifiedFollowAccountStopped) {
@@ -328,7 +341,7 @@ class TaskOrchestrator(
                 AutomationController.stop()
                 repository.log("INFO", "QUEUE_CYCLE_DONE", item.taskId, item.username,
                     "Hesabın turu bitti; ortak beklemeden önce diğer hesaplara geçiliyor", "progress=${runtime.verifiedCount}/${runtime.limit}")
-                scheduleAdvance(betweenTasksMs)
+                scheduleAdvance(300L)
             }
             RuntimeStatus.COMPLETED -> {
                 if (item.status == QueueItemStatus.COMPLETED) return
@@ -343,8 +356,9 @@ class TaskOrchestrator(
                     )
                 }
                 repository.log("INFO", "QUEUE_TASK_DONE", item.taskId, item.username, runtime.message)
-                // Stay in X until the final selected account is finished.
-                scheduleAdvance(betweenTasksMs)
+                // The next account starts at once. A saved task gap here looked like
+                // the first account had finished and then stopped.
+                scheduleAdvance(300L)
             }
             RuntimeStatus.FAILED -> {
                 if (item.status == QueueItemStatus.FAILED) return
@@ -372,7 +386,8 @@ class TaskOrchestrator(
                 }
             }
             else -> {
-                if (queue.status == QueueStatus.RUNNING && item.status == QueueItemStatus.RUNNING) return
+                if (queue.status != QueueStatus.RUNNING) return
+                if (item.status == QueueItemStatus.RUNNING) return
                 mutate { state -> state.copy(status = QueueStatus.RUNNING, message = runtime.message) }
             }
         }
@@ -383,7 +398,7 @@ class TaskOrchestrator(
         val session = _state.value.sessionId
         val index = _state.value.currentIndex
         transitionJob = scope.launch {
-            delay(delayMs)
+            delay((delayMs / 200L).coerceIn(16L, 120L))
             val current = _state.value
             if (current.sessionId != session || current.currentIndex != index || current.status != QueueStatus.BETWEEN_TASKS) return@launch
             advanceNow()
@@ -505,6 +520,8 @@ class TaskOrchestrator(
         val level = if (status == QueueStatus.FAILED) "ERROR" else if (status == QueueStatus.PARTIAL) "WARN" else "INFO"
         repository.log(level, "QUEUE_DONE", final.currentItem?.taskId, final.currentItem?.username, finalMessage, "completed=${final.completedCount}; skipped=${final.skippedCount}; failed=${final.failedCount}")
         AutomationController.returnToAtmaca { returned ->
+            val stillRunning = _state.value.items.any { it.status in RUNNABLE_ITEM_STATUSES }
+            if (!stillRunning) AutomationController.closeXAfterQueue()
             scope.launch {
                 if (_state.value.sessionId != final.sessionId || _state.value.isActive) return@launch
                 repository.log(if (returned) "INFO" else "WARN", "QUEUE_RETURN", final.currentItem?.taskId,

@@ -5,7 +5,7 @@ internal object AccountSelectionReturnPolicy {
     fun decide(screen: XScreen, elapsedMs: Long, settleMs: Long): Decision = when {
         screen == XScreen.HOME -> Decision.OPEN_DRAWER
         screen == XScreen.ACCOUNT_DRAWER -> Decision.VERIFY_DRAWER
-        elapsedMs < settleMs.coerceIn(100L, 15_000L) -> Decision.WAIT
+        elapsedMs < settleMs.coerceIn(20L, 15_000L) -> Decision.WAIT
         screen == XScreen.ACCOUNT_SWITCHER -> Decision.CLOSE_SWITCHER
         else -> Decision.RETURN
     }

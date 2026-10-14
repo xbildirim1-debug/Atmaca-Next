@@ -2,16 +2,19 @@ package com.atmacanext.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val AtmacaBlue = Color(0xFFC6F369)
-val AtmacaNavy = Color(0xFF17230B)
-val AtmacaSky = Color(0xFF26331C)
-val AppBackground = Color(0xFF0C1016)
-val CardBackground = Color(0xFF151B24)
-val TextPrimary = Color(0xFFF2F5FA)
-val TextSecondary = Color(0xFF9DA9BA)
-val Divider = Color(0xFF2A3341)
-val Success = Color(0xFF80DBB2)
-val Warning = Color(0xFFFFCE80)
-val Purple = Color(0xFFB4A4FF)
-val Teal = Color(0xFF81D7DB)
-val ErrorRed = Color(0xFFFF9D9D)
+/** Logo mark. It stays green in every theme. */
+val BrandGreen = Color(0xFFC6F369)
+
+val AtmacaBlue: Color get() = AtmacaThemeState.palette.accent
+val AtmacaNavy: Color get() = AtmacaThemeState.palette.onAccent
+val AtmacaSky: Color get() = AtmacaThemeState.palette.sky
+val AppBackground: Color get() = AtmacaThemeState.palette.background
+val CardBackground: Color get() = AtmacaThemeState.palette.card
+val TextPrimary: Color get() = AtmacaThemeState.palette.text
+val TextSecondary: Color get() = AtmacaThemeState.palette.muted
+val Divider: Color get() = AtmacaThemeState.palette.line
+val Success: Color get() = AtmacaThemeState.palette.success
+val Warning: Color get() = AtmacaThemeState.palette.warning
+val Purple: Color get() = AtmacaThemeState.palette.purple
+val Teal: Color get() = AtmacaThemeState.palette.teal
+val ErrorRed: Color get() = AtmacaThemeState.palette.error

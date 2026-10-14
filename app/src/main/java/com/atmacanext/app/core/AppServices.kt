@@ -56,7 +56,8 @@ object AppServices {
         geminiKeyStore = GeminiKeyStore(appContext)
         contentService = GeminiContentService(geminiKeyStore)
         notifications = com.atmacanext.app.data.notifications.NotificationStore(appContext)
-        orchestrator = TaskOrchestrator(repository, contentService, settings.settings, scope, notifications)
+        com.atmacanext.app.automation.TaskAlerts.attach(appContext)
+        orchestrator = TaskOrchestrator(repository, contentService, settings.settings, scope, notifications, appContext)
         reportExporter = ErrorReportExporter(appContext, repository, settings)
         queueContinuityGuard = BatchQueueContinuityGuard(repository, orchestrator, scope).also { it.start() }
 

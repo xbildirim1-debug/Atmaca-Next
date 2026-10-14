@@ -2,6 +2,9 @@ package com.atmacanext.app.ui.screens
 
 import android.content.Intent
 import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +26,7 @@ import androidx.compose.material.icons.filled.SettingsSuggest
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -30,6 +34,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,14 +51,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atmacanext.app.automation.AccessibilityServiceState
 import com.atmacanext.app.automation.AccountSyncController
 import com.atmacanext.app.core.AppServices
+import com.atmacanext.app.data.settings.AccountPulse
+import com.atmacanext.app.data.settings.ActivityStats
 import com.atmacanext.app.data.settings.AppSettings
+import com.atmacanext.app.data.settings.ReplyTextPool
+import com.atmacanext.app.data.settings.TweetTextPool
+import com.atmacanext.app.ui.theme.AppThemeMode
+import com.atmacanext.app.ui.theme.AppThemeStore
+import com.atmacanext.app.ui.theme.AtmacaThemeState
 import com.atmacanext.app.ui.theme.AtmacaBlue
 import com.atmacanext.app.ui.theme.Teal
 import com.atmacanext.app.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
 
 @Composable
-fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
+fun AccountSettingsScreen26_42(modifier: Modifier = Modifier, tabReset: Int = 0) {
     val health by AccessibilityServiceState.health.collectAsStateWithLifecycle()
     val sync by AccountSyncController.state.collectAsStateWithLifecycle()
     val queue by AppServices.orchestrator.state.collectAsStateWithLifecycle()
@@ -62,6 +74,47 @@ fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var logs by remember { mutableStateOf(false) }
     var showWorkSettings by remember { mutableStateOf(false) }
+    var confirmStatsReset by remember { mutableStateOf(false) }
+    LaunchedEffect(tabReset) {
+        if (tabReset > 0) {
+            logs = false
+            showWorkSettings = false
+        }
+    }
+    var poolCount by remember { mutableStateOf(ReplyTextPool.count(context)) }
+    var poolCursor by remember { mutableStateOf(ReplyTextPool.cursor(context)) }
+    var poolSample by remember { mutableStateOf(ReplyTextPool.sample(context)) }
+    var tweetCount by remember { mutableStateOf(TweetTextPool.count(context)) }
+    var tweetCursor by remember { mutableStateOf(TweetTextPool.cursor(context)) }
+    var tweetSample by remember { mutableStateOf(TweetTextPool.sample(context)) }
+    val poolFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val raw = runCatching {
+            context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+        }.getOrNull().orEmpty()
+        poolCount = ReplyTextPool.replace(context, raw)
+        poolCursor = 0
+        poolSample = ReplyTextPool.sample(context)
+        Toast.makeText(
+            context,
+            if (poolCount == 0) "Dosyada satır yok" else "$poolCount hazır metin kaydedildi",
+            Toast.LENGTH_SHORT,
+        ).show()
+    }
+    val tweetFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val raw = runCatching {
+            context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+        }.getOrNull().orEmpty()
+        tweetCount = TweetTextPool.replace(context, raw)
+        tweetCursor = 0
+        tweetSample = TweetTextPool.sample(context)
+        Toast.makeText(
+            context,
+            if (tweetCount == 0) "Dosyada tweet yok" else "$tweetCount tweet kaydedildi",
+            Toast.LENGTH_SHORT,
+        ).show()
+    }
 
     if (logs) {
         Column(modifier) {
@@ -91,12 +144,126 @@ fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
         )
     }
 
+    if (confirmStatsReset) {
+        AlertDialog(
+            onDismissRequest = { confirmStatsReset = false },
+            title = { Text("İstatistikler sıfırlansın mı?") },
+            text = { Text("Takip, çıkış, tweet, yorum ve büyüme sayaçları sıfırlanır. Hesaplar ve görevler durur.") },
+            confirmButton = {
+                Button(onClick = {
+                    confirmStatsReset = false
+                    ActivityStats.clear(context)
+                    AccountPulse.resetDisplay(context)
+                    scope.launch { AppServices.repository.clearDailyUsage() }
+                    Toast.makeText(context, "İstatistikler sıfırlandı", Toast.LENGTH_SHORT).show()
+                }) { Text("Sıfırla") }
+            },
+            dismissButton = { TextButton(onClick = { confirmStatsReset = false }) { Text("Vazgeç") } },
+        )
+    }
+
     Column(
         modifier.verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
-        Text("Ayarlar", fontSize = 30.sp, fontWeight = FontWeight.Bold)
-        Text("Otomasyon davranışı, kayıtlar ve sistem bağlantısı", color = TextSecondary)
+        Text("Ayarlar", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Text("Hazır yorumlar, toplu tweetler, otomasyon ve sistem bağlantısı", color = TextSecondary)
+
+        Card {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Görünüm", fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                Text("Açık, koyu veya gri. Kartlar, ayarlar ve açılan pencereler birlikte değişir.", color = TextSecondary, fontSize = 12.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AppThemeMode.entries.forEach { item ->
+                        FilterChip(
+                            selected = AtmacaThemeState.mode == item,
+                            onClick = { AppThemeStore.select(context, item) },
+                            label = { Text(item.title) },
+                        )
+                    }
+                }
+            }
+        }
+
+        Card {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("İstatistik", fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "Ana sayfadaki büyüme grafiği, toplam artış, yorum ve tweet sayaçları. Sıfırlayınca grafik bugünden yeniden başlar.",
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                )
+                OutlinedButton(onClick = { confirmStatsReset = true }, enabled = !sync.active && !queue.isActive) {
+                    Text("İstatistikleri sıfırla")
+                }
+            }
+        }
+
+        GeminiKeyCard26_42(enabled = !sync.active && !queue.isActive)
+
+        Card {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Hazır yorum metinleri", fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "Metin dosyası yükle. Her satır bir hazır yorumdur, 500 satıra kadar telefonda kalır. Yorum atılırken hazır satırın yanına bir boşluk koyulur, sonra görev kutusuna yazdığın ek gelir. Hesaplar aynı sırayı kullanır, bitince 1. satıra döner.",
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                )
+                Text(
+                    if (poolCount == 0) "Henüz dosya yok." else "$poolCount satır kayıtlı. Sıradaki ${poolCursor + 1}.",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                )
+                if (poolSample.isNotBlank()) {
+                    Text("İlk satır: ${poolSample.take(80)}", color = TextSecondary, fontSize = 12.sp)
+                }
+                Button(onClick = { poolFile.launch(arrayOf("text/plain", "text/*", "*/*")) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (poolCount == 0) "Metin dosyası yükle" else "Metin dosyasını değiştir")
+                }
+                if (poolCount > 0) {
+                    OutlinedButton(
+                        onClick = {
+                            poolCount = ReplyTextPool.replace(context, "")
+                            poolCursor = 0
+                            poolSample = ""
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Havuzu sil") }
+                }
+            }
+        }
+
+        Card {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Toplu tweet metinleri", fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "Metin dosyası yükle. Her satır bir tweet, 500 satıra kadar. Görev sırayla atar, bitince 1. satıra döner. Hesaplar aynı sırayı kullanır.",
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                )
+                Text(
+                    if (tweetCount == 0) "Henüz dosya yok." else "$tweetCount tweet kayıtlı. Sıradaki ${tweetCursor + 1}.",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                )
+                if (tweetSample.isNotBlank()) {
+                    Text("İlk satır: ${tweetSample.take(80)}", color = TextSecondary, fontSize = 12.sp)
+                }
+                Button(onClick = { tweetFile.launch(arrayOf("text/plain", "text/*", "*/*")) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (tweetCount == 0) "Tweet dosyası yükle" else "Tweet dosyasını değiştir")
+                }
+                if (tweetCount > 0) {
+                    OutlinedButton(
+                        onClick = {
+                            tweetCount = TweetTextPool.replace(context, "")
+                            tweetCursor = 0
+                            tweetSample = ""
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Tweet havuzunu sil") }
+                }
+            }
+        }
 
         Card {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -147,7 +314,12 @@ fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
                 Column(Modifier.weight(1f)) {
                     Text("Ekran okuma", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                     ConnectionStatusLabel26_42(
-                        if (health.connected) "Bağlı ve hazır" else if (health.enabled) "İzin açık · bağlantı bekleniyor" else "İzin kapalı",
+                        when {
+                            health.connected -> "Bağlı ve hazır"
+                            health.revoked -> "Telefon servisi kapatmış · yeniden aç"
+                            health.enabled -> "İzin açık · bağlantı bekleniyor"
+                            else -> "İzin kapalı"
+                        },
                         health.connected,
                     )
                 }
@@ -156,6 +328,99 @@ fun AccountSettingsScreen26_42(modifier: Modifier = Modifier) {
                     enabled = !sync.active,
                 ) { Text("Ayar") }
             }
+        }
+        if (health.revoked || health.enabled) {
+            Text(
+                "Uygulamayı son uygulamalardan kaydırma. Bildirim durduğu sürece erişilebilirlik açık kalır. Kaydırınca bazı telefonlar servisi kapatır.",
+                color = TextSecondary,
+                fontSize = 11.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GeminiKeyCard26_42(enabled: Boolean) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val settings by AppServices.settings.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
+    var draft by remember { mutableStateOf("") }
+    var modelText by remember(settings.geminiModel) { mutableStateOf(settings.geminiModel) }
+    var keys by remember { mutableStateOf(AppServices.geminiKeyStore.history()) }
+    var current by remember { mutableStateOf(AppServices.geminiKeyStore.load()) }
+    fun refresh() {
+        keys = AppServices.geminiKeyStore.history()
+        current = AppServices.geminiKeyStore.load()
+    }
+    Card {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Gemini", fontSize = 19.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Pilot sohbeti ve görev metni bu anahtarla bağlanır. Önceki anahtarlar telefonda durur.",
+                color = TextSecondary,
+                fontSize = 12.sp,
+            )
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it.take(300) },
+                label = { Text(if (current == null) "Gemini API anahtarı" else "Yeni anahtar") },
+                singleLine = true,
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = modelText,
+                onValueChange = { modelText = it.take(80) },
+                label = { Text("Gemini modeli (auto önerilir)") },
+                singleLine = true,
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                onClick = {
+                    val error = runCatching { AppServices.geminiKeyStore.save(draft) }.exceptionOrNull()
+                    if (error != null) {
+                        Toast.makeText(context, error.message ?: "Anahtar kaydedilemedi", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    scope.launch { AppServices.settings.setGeminiModel(modelText) }
+                    draft = ""
+                    refresh()
+                    Toast.makeText(context, "Anahtar kaydedildi", Toast.LENGTH_SHORT).show()
+                },
+                enabled = enabled && draft.trim().length >= 20,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Anahtarı kaydet") }
+            if (keys.isEmpty()) {
+                Text("Kayıtlı anahtar yok.", color = TextSecondary, fontSize = 12.sp)
+            } else {
+                keys.forEach { key ->
+                    val active = key == current
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            if (active) "Kullanılan\n$key" else key,
+                            fontSize = 12.sp,
+                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (!active) {
+                                TextButton(onClick = {
+                                    runCatching { AppServices.geminiKeyStore.save(key) }
+                                    refresh()
+                                }, enabled = enabled) { Text("Kullan") }
+                            }
+                            TextButton(onClick = {
+                                AppServices.geminiKeyStore.remove(key)
+                                refresh()
+                            }, enabled = enabled) { Text("Sil") }
+                        }
+                    }
+                }
+            }
+            TextButton(
+                onClick = { scope.launch { AppServices.settings.setGeminiModel(modelText) } },
+                enabled = enabled,
+            ) { Text("Modeli kaydet") }
         }
     }
 }

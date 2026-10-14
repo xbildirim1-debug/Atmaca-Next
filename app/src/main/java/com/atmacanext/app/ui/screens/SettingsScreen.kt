@@ -1,6 +1,8 @@
 package com.atmacanext.app.ui.screens
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atmacanext.app.core.AppServices
 import com.atmacanext.app.data.settings.AppSettings
+import com.atmacanext.app.data.settings.ReplyTextPool
 import com.atmacanext.app.domain.model.TargetAccount
 import com.atmacanext.app.ui.components.AtmacaCard
 import com.atmacanext.app.ui.components.SectionTitle
@@ -97,6 +100,19 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     var taskGapMs by remember(settings.betweenTasksMs) { mutableStateOf(settings.betweenTasksMs.toString()) }
     var retention by remember(settings.keepLogDays) { mutableStateOf(settings.keepLogDays.toString()) }
     var reportMessage by remember { mutableStateOf<String?>(null) }
+    var poolCount by remember { mutableStateOf(ReplyTextPool.count(context)) }
+    var poolCursor by remember { mutableStateOf(ReplyTextPool.cursor(context)) }
+    var poolSample by remember { mutableStateOf(ReplyTextPool.sample(context)) }
+    val poolFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val raw = runCatching {
+            context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+        }.getOrNull().orEmpty()
+        poolCount = ReplyTextPool.replace(context, raw)
+        poolCursor = 0
+        poolSample = ReplyTextPool.sample(context)
+        Toast.makeText(context, if (poolCount == 0) "Dosyada satır yok" else "$poolCount hazır metin kaydedildi", Toast.LENGTH_SHORT).show()
+    }
 
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
@@ -106,7 +122,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         ) {
             item {
                 Text("Ayarlar", style = MaterialTheme.typography.headlineSmall)
-                Text("Hesap hedefleri, Gemini ve güvenli görev aralıkları", color = TextSecondary, fontSize = 12.sp)
+                Text("Hesap hedefleri, hazır yorum metinleri ve güvenli görev aralıkları", color = TextSecondary, fontSize = 12.sp)
             }
 
             item {
@@ -177,6 +193,38 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            item {
+                SectionTitle("Hazır yorum metinleri")
+                AtmacaCard {
+                    Text(
+                        "Metin dosyası yükle. Her satır bir hazır yorumdur ve telefonda kalır. Yorum atılırken hazır satırın yanına bir boşluk koyulur, sonra görev kutusuna yazdığın ek gelir. Hesaplar aynı sırayı kullanır; son satırdan sonra 1. satıra döner.",
+                        color = TextSecondary,
+                        fontSize = 12.sp,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        if (poolCount == 0) "Henüz dosya yok."
+                        else "$poolCount satır kayıtlı. Sıradaki ${poolCursor + 1}.",
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    if (poolSample.isNotBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text("İlk satır: ${poolSample.take(80)}", color = TextSecondary, fontSize = 12.sp)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(onClick = { poolFile.launch(arrayOf("text/plain", "text/*", "*/*")) }, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (poolCount == 0) "Metin dosyası yükle" else "Metin dosyasını değiştir")
+                    }
+                    if (poolCount > 0) {
+                        TextButton(onClick = {
+                            poolCount = ReplyTextPool.replace(context, "")
+                            poolCursor = 0
+                            poolSample = ""
+                        }) { Text("Havuzu sil") }
                     }
                 }
             }

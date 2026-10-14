@@ -15,9 +15,8 @@ object XNavigator {
     ): Boolean = when (command) {
         NavigationCommand.OPEN_X_HOME -> service.launchXHome()
         NavigationCommand.OPEN_ACCOUNT_DRAWER -> clickAccountMenu(service, root)
-        NavigationCommand.OPEN_PROFILE_FROM_DRAWER ->
-            clickExactLabel(service, root, XUiVocabulary.profileEntryLabels) || clickFirstDedicatedHandle(service, root)
-        NavigationCommand.OPEN_ACCOUNT_SWITCHER -> clickAccountSheetTrigger(service, root)
+        NavigationCommand.OPEN_PROFILE_FROM_DRAWER -> clickExactLabel(service, root, XUiVocabulary.profileEntryLabels)
+        NavigationCommand.OPEN_ACCOUNT_SWITCHER -> clickAccountSheetTrigger(service, root, targetUsername)
         NavigationCommand.SELECT_TARGET_ACCOUNT -> clickExactHandle(service, root, targetUsername)
         NavigationCommand.OPEN_FOLLOWERS -> clickProfileStat(service, root, followers = true) || service.launchXFollowers(targetUsername)
         NavigationCommand.OPEN_FOLLOWING -> clickProfileStat(service, root, followers = false) || service.launchXFollowing(targetUsername)
@@ -147,7 +146,11 @@ object XNavigator {
             rootBounds.top + rootBounds.height() * 0.065f)
     }
 
-    private fun clickAccountSheetTrigger(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+    private fun clickAccountSheetTrigger(
+        service: AtmacaAccessibilityService,
+        root: AccessibilityNodeInfo?,
+        targetUsername: String,
+    ): Boolean {
         if (root == null) return false
         val labeled = NodeSelector.best(root, NodeSelector.Query(
             viewIdContains = listOf("switch_account", "account_switch", "account_switcher", "accounts"),
@@ -155,39 +158,43 @@ object XNavigator {
             exactTexts = XUiVocabulary.accountSwitcherLabels,
             requireClickable = false,
         ))?.node
-        if (labeled != null && GestureClick.click(service,labeled)) {
+        if (labeled != null && GestureClick.click(service, labeled)) {
             OperationLog.i("NAV", "account switcher semantik tetikleyici tıklandı")
             return true
         }
         if (ScreenDetector.detect(root) != XScreen.ACCOUNT_DRAWER) return false
-        val rootBounds=accountDrawerBounds(root)
-        if (rootBounds.width()<=0 || rootBounds.height()<=0) return false
-        val candidates=AccessibilityTree.nodes(root,maxNodes=500).asSequence().map { it to Rect().also(it::getBoundsInScreen) }
-            .filter { (node,b) ->
-                val blob=listOfNotNull(node.text?.toString(),node.contentDescription?.toString()).joinToString(" ").trim()
-                val clazz=node.className?.toString()?.lowercase(Locale.ROOT).orEmpty()
-                b.centerY()<=rootBounds.top+rootBounds.height()*0.20f && b.centerX()>=rootBounds.left+rootBounds.width()*0.60f &&
-                    b.left>=rootBounds.left && b.right<=rootBounds.right && node.isVisibleToUser &&
-                    b.width()<=rootBounds.width()*0.25f && b.height()<=rootBounds.height()*0.15f && node.isEnabled &&
-                    (blob.isBlank() || XUiVocabulary.accountSwitcherLabels.any { blob.contains(it,true) }) &&
-                    (clazz.contains("image") || clazz.contains("button") || clazz.contains("view"))
-            }.sortedByDescending { it.second.centerX() }.toList()
-        // Do not guess if many unrelated top-right controls exist. Gesture fallback is allowed only
-        // on an independently verified account drawer and the caller validates the next screen.
-        for ((node,_) in candidates.take(2)) {
-            if (GestureClick.click(service,node)) {
-                OperationLog.i("NAV", "account switcher doğrulanmış avatar kümesiyle açıldı")
+        val wanted = XIdentityDetector.normalizeUsername(targetUsername)
+        val active = AccountSwitcherInspector.readActiveDrawerAccount(root).username
+        if (wanted.isNotBlank() && wanted != active) {
+            val row = AccessibilityTree.nodes(root, maxNodes = 500).firstOrNull { node ->
+                node.isVisibleToUser && listOfNotNull(node.text?.toString(), node.contentDescription?.toString())
+                    .any { AccountSwitcherInspector.dedicatedHandle(it) == wanted }
+            }
+            if (row != null && GestureClick.gestureTap(service, row)) {
+                OperationLog.i("NAV", "hesap çekmecesinde @$wanted satırı")
                 return true
             }
         }
-        // Konum yedeği yalnızca bağımsız olarak ACCOUNT_DRAWER olduğu kanıtlanan
-        // ekranda kullanılır; çağıran aşama bir sonraki snapshot'ta ACCOUNT_SWITCHER
-        // kanıtı arar ve başka bir yüzeyi başarı saymaz.
-        if (GestureClick.gestureTapAt(service, rootBounds.left + rootBounds.width() * 0.795f, rootBounds.top + rootBounds.height() * 0.10f)) {
-            OperationLog.i("NAV", "account switcher uyarlanabilir STEP-2 bölgesiyle açıldı")
+        val rootBounds = accountDrawerBounds(root)
+        if (rootBounds.width() <= 0 || rootBounds.height() <= 0) return false
+        val candidates = AccessibilityTree.nodes(root, maxNodes = 500).asSequence().map { it to Rect().also(it::getBoundsInScreen) }
+            .filter { (node, b) ->
+                val blob = listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(" ").trim()
+                val clazz = node.className?.toString()?.lowercase(Locale.ROOT).orEmpty()
+                b.centerY() <= rootBounds.top + rootBounds.height() * 0.20f &&
+                    b.centerX() >= rootBounds.left + rootBounds.width() * 0.60f &&
+                    b.left >= rootBounds.left && b.right <= rootBounds.right && node.isVisibleToUser &&
+                    b.width() in 1..(rootBounds.width() * 0.12f).toInt() &&
+                    b.height() in 1..(rootBounds.height() * 0.08f).toInt() && node.isEnabled &&
+                    blob.isBlank() &&
+                    (clazz.contains("image") || clazz.contains("button"))
+            }.sortedByDescending { it.second.centerX() }.toList()
+        val chevron = candidates.firstOrNull()?.first
+        if (chevron != null && GestureClick.gestureTap(service, chevron)) {
+            OperationLog.i("NAV", "account switcher ok işareti")
             return true
         }
-        OperationLog.w("NAV", "account switcher açılamadı: semantik, avatar kümesi ve STEP-2 başarısız")
+        OperationLog.w("NAV", "account switcher açılamadı: etiket, hedef satır ve ok yok")
         return false
     }
 

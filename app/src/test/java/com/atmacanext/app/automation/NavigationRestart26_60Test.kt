@@ -38,6 +38,20 @@ class NavigationRestart26_60Test {
     @Test fun ambiguousSharedParentAndChildAuthorCannotReceiveAnExtraBack() {
         assertFalse(CommenterReturnPolicy.provenChildDetail("same", "same", "same"))
     }
+    @Test fun unprovenCommenterDetailBacksBeforeRestartButHomeStillWaits() {
+        assertEquals(CommenterReturnPolicy.Decision.WAIT, CommenterReturnPolicy.decide(false, false, false, 0, 200, Long.MAX_VALUE, true))
+        assertEquals(CommenterReturnPolicy.Decision.BACK, CommenterReturnPolicy.decide(false, false, false, 0, 400, Long.MAX_VALUE, true))
+        assertEquals(CommenterReturnPolicy.Decision.BACK, CommenterReturnPolicy.decide(false, false, false, 0, 2000, Long.MAX_VALUE, true))
+        assertEquals(CommenterReturnPolicy.Decision.WAIT, CommenterReturnPolicy.decide(false, false, false, 1, 500, 500, true))
+        assertEquals(CommenterReturnPolicy.Decision.RESTART, CommenterReturnPolicy.decide(false, false, false, 3, 10000, 1000, true))
+        assertEquals(CommenterReturnPolicy.Decision.WAIT, CommenterReturnPolicy.decide(false, false, false, 0, 2000, Long.MAX_VALUE))
+        assertEquals(CommenterReturnPolicy.Decision.WAIT, CommenterReturnPolicy.decide(false, false, false, 0, 6000, Long.MAX_VALUE))
+    }
+    @Test fun queuedRunRestartsInsideXInsteadOfTheApp() {
+        assertTrue(NavigationRestartPolicy.staysInX(queueOwnsCycle = true))
+        assertFalse(NavigationRestartPolicy.staysInX(queueOwnsCycle = false))
+    }
+
     @Test fun transientNavigationFailureUsesTheFullTenSecondDeadline() {
         assertFalse(NavigationRestartPolicy.deadlineReached(6000L))
         assertFalse(NavigationRestartPolicy.deadlineReached(9999L))
@@ -150,9 +164,17 @@ class NavigationRestart26_60Test {
     @Test fun repeatedRestartWithoutProgressStopsAtItsBoundAndKeepsCount() {
         try {
             install()
-            repeat(3) {assertNotNull(prepare());field("navigationRecoveryReturning").setBoolean(AutomationController,false)}
-            assertNull(prepare());assertEquals(RuntimeStatus.PAUSED,AutomationController.state.value.status)
-            assertEquals(4,AutomationController.state.value.verifiedCount)
-        } finally {AutomationController.stop()}
+            @Suppress("UNCHECKED_CAST")
+            val state = field("_state").get(AutomationController) as MutableStateFlow<AutomationRuntimeState>
+            repeat(3) {
+                assertNotNull(prepare())
+                field("navigationRecoveryReturning").setBoolean(AutomationController, false)
+                // Account verification is not a stall. The bound counts restarts that are still on the watched return.
+                state.value = state.value.copy(status = RuntimeStatus.NAVIGATING, flowStage = XFlowStage.RETURN_ENGAGEMENT)
+            }
+            assertNull(prepare())
+            assertEquals(RuntimeStatus.PAUSED, AutomationController.state.value.status)
+            assertEquals(4, AutomationController.state.value.verifiedCount)
+        } finally { AutomationController.stop() }
     }
 }

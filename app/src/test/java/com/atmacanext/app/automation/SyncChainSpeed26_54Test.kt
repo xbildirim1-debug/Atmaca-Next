@@ -243,11 +243,11 @@ class SyncChainSpeed26_54Test {
         val before = AutomationTuning.betweenActionsMs
         try {
             AutomationTuning.betweenActionsMs = 71
-            assertEquals(100L, AutomationTuning.scaleDelay(700))
-            assertEquals(171L, AutomationTuning.scaleDelay(1200))
+            assertEquals(16L, AutomationTuning.scaleDelay(700))
+            assertEquals(17L, AutomationTuning.scaleDelay(1200))
             assertEquals(16L, AutomationTuning.scaleDelay(50))
             AutomationTuning.betweenActionsMs = 500
-            assertEquals(700L, AutomationTuning.scaleDelay(700))
+            assertEquals(70L, AutomationTuning.scaleDelay(700))
         } finally { AutomationTuning.betweenActionsMs = before }
     }
     @Test fun fastFollowStillNeedsStableResultAndRejectsRevertedFollow() {

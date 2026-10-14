@@ -8,13 +8,19 @@ import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.atmacanext.app.automation.AutomationController
 import com.atmacanext.app.automation.AutomationRuntimeState
 import com.atmacanext.app.automation.AutomationStallPolicy
 import com.atmacanext.app.automation.AutomationWatchdog
+import com.atmacanext.app.automation.InternetWatchPolicy
+import com.atmacanext.app.automation.NetworkStatus
 import com.atmacanext.app.automation.RuntimeStatus
+import com.atmacanext.app.automation.ScreenStayPolicy
+import com.atmacanext.app.automation.TaskAlertPolicy
+import com.atmacanext.app.automation.TaskAlerts
 import com.atmacanext.app.core.AppServices
 import com.atmacanext.app.domain.model.QueueStatus
 import kotlinx.coroutines.CoroutineScope
@@ -39,6 +45,23 @@ class AutomationForegroundService : Service() {
         const val ACTION_PAUSE = "com.atmacanext.app.action.AUTOMATION_PAUSE"
         const val ACTION_RESUME = "com.atmacanext.app.action.AUTOMATION_RESUME"
         const val ACTION_STOP = "com.atmacanext.app.action.AUTOMATION_STOP"
+        const val ACTION_HOLD = "com.atmacanext.app.action.ACCESSIBILITY_HOLD"
+        const val ACTION_RELEASE = "com.atmacanext.app.action.ACCESSIBILITY_RELEASE"
+
+        @Volatile var accessibilityHeld = false
+
+        fun hold(context: Context) {
+            accessibilityHeld = true
+            val intent = Intent(context, AutomationForegroundService::class.java).setAction(ACTION_HOLD)
+            ContextCompat.startForegroundService(context, intent)
+        }
+
+        fun release(context: Context) {
+            accessibilityHeld = false
+            runCatching {
+                context.startService(Intent(context, AutomationForegroundService::class.java).setAction(ACTION_RELEASE))
+            }
+        }
 
         fun start(context: Context) {
             val intent = Intent(context, AutomationForegroundService::class.java).setAction(ACTION_START)
@@ -56,10 +79,19 @@ class AutomationForegroundService : Service() {
     private var seenActive = false
     private var receiverRegistered = false
 
-    private val stallWatchdog = AutomationWatchdog(AutomationStallPolicy.TIMEOUT_MS)
+    private val stallWatchdog = AutomationWatchdog(3_000L)
+    private var selfPauseSince = 0L
     private var watchedTaskId: String? = null
     private var watchedSessionId: String? = null
     private var stallRecoveryInProgress = false
+    private var internetJob: Job? = null
+    private var wasOnline = true
+    private var pausedForInternet = false
+    private var blockedNoticeAt = 0L
+    private var resumeAttemptAt = 0L
+    private var reportedResumeProblem = false
+    private var userPaused = false
+    private var screenLock: PowerManager.WakeLock? = null
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -85,20 +117,29 @@ class AutomationForegroundService : Service() {
         registerScreenReceiver()
         observeRuntime()
         startStallWatchdog()
+        startInternetWatch()
         scope.launch {
             delay(15_000L)
-            if (!seenActive) stopSelf()
+            if (!seenActive && !accessibilityHeld) stopSelf()
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action ?: ACTION_START) {
+            ACTION_HOLD -> {
+                accessibilityHeld = true
+                updateNotification()
+            }
+            ACTION_RELEASE -> {
+                accessibilityHeld = false
+                if (!isTaskRunning()) stopSelf()
+            }
             ACTION_PAUSE -> pauseForDevice("Bildirimden duraklatıldı")
             ACTION_RESUME -> resumeSafely()
             ACTION_STOP -> stopAutomation()
             else -> updateNotification()
         }
-        return START_NOT_STICKY
+        return if (accessibilityHeld) START_STICKY else START_NOT_STICKY
     }
 
     private fun observeRuntime() {
@@ -108,10 +149,11 @@ class AutomationForegroundService : Service() {
                 .collect { (queue, runtime) ->
                     val active = queue.isActive || (runtime.taskId != null && runtime.status !in terminalRuntimeStatuses())
                     if (active) seenActive = true
+                    if (ScreenStayPolicy.hold(active, userPaused)) holdScreen() else releaseScreen()
                     updateNotification()
-                    if (seenActive && !active && queue.status in setOf(QueueStatus.IDLE, QueueStatus.COMPLETED, QueueStatus.PARTIAL, QueueStatus.FAILED, QueueStatus.STOPPED)) {
+                    if (seenActive && !active && !accessibilityHeld && queue.status in setOf(QueueStatus.IDLE, QueueStatus.COMPLETED, QueueStatus.PARTIAL, QueueStatus.FAILED, QueueStatus.STOPPED)) {
                         delay(1_000L)
-                        stopSelf()
+                        if (!accessibilityHeld) stopSelf()
                     }
                 }
         }
@@ -128,13 +170,14 @@ class AutomationForegroundService : Service() {
         stallJob = scope.launch {
             while (true) {
                 delay(1_000L)
+                if (!stallRecoveryInProgress) pilotContinuePaused()
                 if (stallRecoveryInProgress) continue
 
                 val queue = AppServices.orchestrator.state.value
                 val runtime = AutomationController.state.value
                 val sameRunningItem = queue.status == QueueStatus.RUNNING &&
                     queue.currentItem?.taskId == runtime.taskId
-                if (!sameRunningItem || !AutomationStallPolicy.shouldWatch(runtime)) {
+                if (!sameRunningItem || !AutomationStallPolicy.shouldWatch(runtime) || pausedForInternet) {
                     resetStallTracking()
                     continue
                 }
@@ -158,20 +201,48 @@ class AutomationForegroundService : Service() {
         if (queue.status != QueueStatus.RUNNING || item.taskId != runtime.taskId) return
         stallRecoveryInProgress = true
         try {
-            val reason = "10 saniye gerçek ilerleme yok; motor aynı ilerlemeden yeniden başlatılıyor"
+            val reason = "Pilot takılmayı gördü; aynı ilerlemeden devam ediyor"
             AppServices.repository.log("WARN", "STALL_RECOVERY", item.taskId, item.username, reason,
                 "ageMs=${stallWatchdog.ageMillis()}; stage=${runtime.flowStage}; screen=${runtime.activeScreen}; verified=${runtime.verifiedCount}/${runtime.limit}")
             updateNotification(reason)
             // The accessibility actor validates the same session and preserves pending actions.
             // Navigation stalls return through Atmaca and verify the account again.
             // Pending actions remain in result verification and cannot be issued twice.
-            if (!AutomationController.requestStallRecovery(runtime.taskId, runtime.sessionId)) {
+            if (!AutomationController.requestStallRecovery(runtime.taskId, runtime.sessionId, AutomationStallPolicy.signature(runtime))) {
                 AppServices.orchestrator.pauseForSafety("Ekran okuma bağlantısı olmadan kurtarma yapılamadı; ilerleme korundu")
             }
         } finally {
             resetStallTracking()
             stallRecoveryInProgress = false
         }
+    }
+
+    private fun pilotContinuePaused() {
+        if (userPaused || pausedForInternet) {
+            selfPauseSince = 0L
+            return
+        }
+        val queue = AppServices.orchestrator.state.value
+        val runtime = AutomationController.state.value
+        val paused = queue.status == QueueStatus.PAUSED || runtime.status == RuntimeStatus.PAUSED
+        if (!paused) {
+            selfPauseSince = 0L
+            return
+        }
+        val now = System.currentTimeMillis()
+        if (selfPauseSince == 0L) selfPauseSince = now
+        if (now - selfPauseSince < 2_000L) return
+        val message = runtime.message.ifBlank { queue.message }
+        if (!com.atmacanext.app.ai.PilotDuty.shouldAutoResume(message)) return
+        val readiness = com.atmacanext.app.scheduling.DeviceReadinessChecker.read(this)
+        if (!readiness.readyForUiAutomation) return
+        if (com.atmacanext.app.automation.AtmacaAccessibilityService.peek() == null &&
+            !com.atmacanext.app.automation.AccessibilityServiceState.health.value.connected
+        ) return
+        selfPauseSince = 0L
+        if (queue.status == QueueStatus.PAUSED) AppServices.orchestrator.resume()
+        else AutomationController.resume()
+        updateNotification("Pilot duraklamayı açtı ve göreve devam ediyor")
     }
 
     private fun resetStallTracking() {
@@ -181,6 +252,8 @@ class AutomationForegroundService : Service() {
     }
 
     private fun pauseForDevice(reason: String) {
+        userPaused = true
+        releaseScreen()
         val queue = AppServices.orchestrator.state.value
         if (queue.isActive && queue.status != QueueStatus.PAUSED) {
             AppServices.orchestrator.pauseForSafety(reason)
@@ -194,11 +267,20 @@ class AutomationForegroundService : Service() {
     }
 
     private fun resumeSafely() {
+        if (!NetworkStatus.online(this)) {
+            pausedForInternet = true
+            val alert = TaskAlertPolicy.internetResumeBlocked("İnternet hâlâ yok. Bağlantı gelince görev kendi devam edecek.")
+            TaskAlerts.show(alert, currentAccount())
+            updateNotification(alert.text)
+            return
+        }
+        pausedForInternet = false
         val readiness = com.atmacanext.app.scheduling.DeviceReadinessChecker.read(this)
         if (!readiness.readyForUiAutomation) {
             updateNotification("Devam ettirilemedi: ${readiness.blockingReason}")
             return
         }
+        userPaused = false
         val queue = AppServices.orchestrator.state.value
         if (queue.status == QueueStatus.PAUSED) AppServices.orchestrator.resume()
         else if (AutomationController.state.value.status == RuntimeStatus.PAUSED) AutomationController.resume()
@@ -206,20 +288,125 @@ class AutomationForegroundService : Service() {
     }
 
     private fun stopAutomation() {
+        userPaused = true
+        releaseScreen()
         val queue = AppServices.orchestrator.state.value
         if (queue.isActive) AppServices.orchestrator.stop() else AutomationController.stop()
         stopSelf()
     }
 
+    private fun startInternetWatch() {
+        wasOnline = NetworkStatus.online(this)
+        internetJob?.cancel()
+        internetJob = scope.launch {
+            while (true) {
+                delay(InternetWatchPolicy.CHECK_MS)
+                val online = NetworkStatus.online(this@AutomationForegroundService)
+                when (InternetWatchPolicy.decide(wasOnline, online, isTaskRunning(), pausedForInternet)) {
+                    InternetWatchPolicy.Event.LOST -> onInternetLost()
+                    InternetWatchPolicy.Event.RESTORED -> onInternetRestored()
+                    null -> Unit
+                }
+                noteResumeProblem(online)
+                wasOnline = online
+            }
+        }
+    }
+
+    private fun isTaskRunning(): Boolean {
+        val queue = AppServices.orchestrator.state.value
+        val runtime = AutomationController.state.value
+        return queue.status == QueueStatus.RUNNING ||
+            (runtime.taskId != null && runtime.status !in terminalRuntimeStatuses() && runtime.status != RuntimeStatus.PAUSED)
+    }
+
+    private fun onInternetLost() {
+        if (!isTaskRunning()) return
+        pausedForInternet = true
+        val alert = TaskAlertPolicy.internetLost()
+        TaskAlerts.show(alert, currentAccount())
+        AppServices.orchestrator.pauseForSafety("İnternet kesildi. Atmaca'ya dönüldü. Bağlantı gelince görev kaldığı yerden devam edecek.")
+        AutomationController.returnToAtmaca()
+        updateNotification(alert.text)
+    }
+
+    private fun onInternetRestored() {
+        val readiness = com.atmacanext.app.scheduling.DeviceReadinessChecker.read(this)
+        if (!readiness.readyForUiAutomation) {
+            val now = System.currentTimeMillis()
+            if (now - blockedNoticeAt > 5 * 60_000L) {
+                blockedNoticeAt = now
+                val alert = TaskAlertPolicy.internetResumeBlocked(readiness.blockingReason ?: "ekran hazır değil")
+                TaskAlerts.show(alert, currentAccount())
+                updateNotification(alert.text)
+            }
+            return
+        }
+        val queue = AppServices.orchestrator.state.value
+        val runtime = AutomationController.state.value
+        if (queue.status != QueueStatus.PAUSED && runtime.status != RuntimeStatus.PAUSED) {
+            pausedForInternet = false
+            return
+        }
+        pausedForInternet = false
+        blockedNoticeAt = 0L
+        resumeAttemptAt = System.currentTimeMillis()
+        reportedResumeProblem = false
+        val alert = TaskAlertPolicy.internetRestored()
+        TaskAlerts.show(alert, currentAccount())
+        if (queue.status == QueueStatus.PAUSED) AppServices.orchestrator.resume()
+        else AutomationController.resume()
+        updateNotification(alert.text)
+    }
+
+    private fun noteResumeProblem(online: Boolean) {
+        if (resumeAttemptAt == 0L || reportedResumeProblem || !online) return
+        val queue = AppServices.orchestrator.state.value
+        val runtime = AutomationController.state.value
+        val stillPaused = queue.status == QueueStatus.PAUSED || runtime.status == RuntimeStatus.PAUSED
+        if (!stillPaused) {
+            resumeAttemptAt = 0L
+            return
+        }
+        if (System.currentTimeMillis() - resumeAttemptAt < 15_000L) return
+        reportedResumeProblem = true
+        val reason = runtime.message.ifBlank { queue.message }.ifBlank { "görev duraklatılmış kaldı" }
+        TaskAlerts.show(TaskAlertPolicy.internetResumeBlocked(reason), currentAccount())
+    }
+
+    private fun currentAccount(): String =
+        AutomationController.state.value.username?.removePrefix("@").orEmpty().ifBlank { "Atmaca" }
+
+    @Suppress("DEPRECATION")
+    private fun holdScreen() {
+        val power = getSystemService(PowerManager::class.java) ?: return
+        val lock = screenLock ?: power.newWakeLock(
+            PowerManager.SCREEN_BRIGHT_WAKE_LOCK,
+            "AtmacaNext:task-screen",
+        ).also {
+            it.setReferenceCounted(false)
+            screenLock = it
+        }
+        if (!lock.isHeld) {
+            lock.acquire(ScreenStayPolicy.MAX_HOLD_MS)
+            com.atmacanext.app.automation.OperationLog.i("SCREEN", "Görev bitene kadar ekran açık kalacak")
+        }
+    }
+
+    private fun releaseScreen() {
+        screenLock?.let { lock -> if (lock.isHeld) lock.release() }
+    }
+
     private fun updateNotification(overrideText: String? = null) {
         val manager = getSystemService(android.app.NotificationManager::class.java) ?: return
+        val running = isTaskRunning()
+        val text = overrideText ?: if (!running && accessibilityHeld) {
+            "Erişilebilirlik açık. Uygulamayı son uygulamalardan kaydırma."
+        } else AutomationNotification.liveText()
+        val title = if (!running && accessibilityHeld) "Atmaca Next açık" else "Atmaca Next otomasyon"
         manager.notify(
             AutomationNotification.SERVICE_NOTIFICATION_ID,
-            AutomationNotification.build(
-                this,
-                "Atmaca Next otomasyon",
-                overrideText ?: AutomationNotification.liveText(),
-            ),
+            AutomationNotification.build(this, title, text, includeActions = running),
         )
     }
 
@@ -240,6 +427,8 @@ class AutomationForegroundService : Service() {
     override fun onDestroy() {
         observerJob?.cancel()
         stallJob?.cancel()
+        internetJob?.cancel()
+        releaseScreen()
         scope.coroutineContext[Job]?.cancel()
         if (receiverRegistered) runCatching { unregisterReceiver(screenReceiver) }
         super.onDestroy()

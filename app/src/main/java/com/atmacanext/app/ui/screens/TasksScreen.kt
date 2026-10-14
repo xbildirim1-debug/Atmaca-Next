@@ -112,6 +112,7 @@ import com.atmacanext.app.ui.components.AtmacaWindowClass
 import com.atmacanext.app.ui.components.StatusPill
 import com.atmacanext.app.ui.components.rememberAtmacaWindowClass
 import com.atmacanext.app.ui.theme.AtmacaBlue
+import com.atmacanext.app.ui.theme.BrandGreen
 import com.atmacanext.app.ui.theme.AtmacaNavy
 import com.atmacanext.app.ui.theme.AtmacaSky
 import com.atmacanext.app.ui.theme.Divider
@@ -129,7 +130,9 @@ import java.util.UUID
 internal enum class TaskGroup(val title: String, val shortTitle: String) {
     FOLLOW("Takip İşlemleri", "Takip"),
     ENGAGEMENT("Etkileşim", "Etkileşim"),
-    QUOTE_COMMENT("Yorum Alıntısı", "Yorum Alıntısı"),
+    TWEET("Tweet", "Tweet"),
+    QUOTE_COMMENT("Yorum Alıntısı", "Yorum"),
+    BULK("Toplu görev", "Toplu"),
 }
 
 internal val TASK_TYPES_BY_GROUP = mapOf(
@@ -147,7 +150,15 @@ internal val TASK_TYPES_BY_GROUP = mapOf(
         TaskType.BOOKMARK,
         TaskType.COMMENT,
     ),
+    TaskGroup.TWEET to listOf(TaskType.TEXT_TWEET),
     TaskGroup.QUOTE_COMMENT to listOf(TaskType.COMMENT_QUOTE_TARGETS),
+    TaskGroup.BULK to listOf(
+        TaskType.FOLLOW,
+        TaskType.TEXT_TWEET,
+        TaskType.COMMENT_QUOTE_TARGETS,
+        TaskType.LIKE,
+        TaskType.COMMENT,
+    ),
 )
 
 private val SCALABLE_TYPES = setOf(
@@ -159,9 +170,8 @@ private val SCALABLE_TYPES = setOf(
     TaskType.QUOTER_FOLLOW,
     TaskType.COMMENT_QUOTE_TARGETS,
 )
-private val ScreenBackground = AppBackground
-private val SoftBlue = Color(0xFF1B2B35)
-private val SoftPurple = Color(0xFF29233B)
+private val SoftBlue = Color(0xFFE8F3EC)
+private val SoftPurple = Color(0xFFF3EEF8)
 private val SoftGreen = Color(0xFF1B3029)
 private val SoftOrange = Color(0xFF332C20)
 private const val LOGICAL_TASK_PREFIX = "group:"
@@ -236,21 +246,24 @@ fun TasksScreen(modifier: Modifier = Modifier, initialGroup: String? = null) {
     val completedCycles = taskGroups.sumOf { group -> group.tasks.minOfOrNull(::successfulCycleCount) ?: 0 }
     val visibleTasks = taskGroups.filter { activeFilter == null || taskGroup(it.representative.type) == activeFilter }
 
-    Box(modifier.fillMaxSize().background(ScreenBackground), contentAlignment = Alignment.TopCenter) {
+    Box(modifier.fillMaxSize().background(AppBackground), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().widthIn(max = 1_000.dp),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item(key = "hero") {
-                TasksHero(
-                    taskCount = taskGroups.size,
-                    completedCycles = completedCycles,
-                    queueActive = queueLocked,
-                    activeAccountCount = accounts.count { it.active },
-                    canCreate = !queueLocked && accounts.any { it.active },
-                    onCreate = { showCreate = true },
-                )
+            item(key = "create") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Görevler", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text("$completedCycles tamamlanan döngü", color = TextSecondary, fontSize = 11.sp)
+                    }
+                    FilledIconButton(
+                        onClick = { showCreate = true },
+                        enabled = !queueLocked && accounts.any { it.active },
+                        modifier = Modifier.size(36.dp),
+                    ) { Icon(Icons.Filled.Add, "Yeni görev", modifier = Modifier.size(18.dp)) }
+                }
             }
 
             if (queue.items.isNotEmpty() && queue.status != QueueStatus.IDLE) {
@@ -331,23 +344,6 @@ fun TasksScreen(modifier: Modifier = Modifier, initialGroup: String? = null) {
                         onEdit = { editing = logicalTask },
                         onDelete = { deleteRequest = DeleteRequest(logicalTask.taskIds, 1) },
                         onReset = { scope.launch { logicalTask.tasks.forEach { AppServices.repository.resetTask(it.id) } } },
-                    )
-                }
-            }
-
-            item {
-                Button(
-                    onClick = { showCreate = true },
-                    enabled = !queueLocked && accounts.any { it.active },
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AtmacaBlue, contentColor = AtmacaNavy),
-                ) {
-                    Icon(Icons.Filled.Add, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        if (accounts.none { it.active }) "Önce aktif X hesabı ekle" else "Yeni Görev Oluştur",
-                        fontWeight = FontWeight.Bold,
                     )
                 }
             }
@@ -515,7 +511,7 @@ private fun TaskFilterBar(selected: TaskGroup?, tasks: List<ScheduledTask>, onSe
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 CategoryFilterChip("Tümü", tasks.size, selected == null) { onSelected(null) }
-                TaskGroup.entries.forEach { group ->
+                TaskGroup.entries.filter { it != TaskGroup.BULK }.forEach { group ->
                     CategoryFilterChip(
                         group.shortTitle,
                         tasks.count { taskGroup(it.type) == group },
@@ -594,9 +590,9 @@ private fun EmptyTasksCard(hasActiveAccount: Boolean, onCreate: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
-                Modifier.size(64.dp).clip(CircleShape).background(SoftBlue),
+                Modifier.size(40.dp).clip(CircleShape).background(SoftBlue),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.TaskAlt, null, tint = AtmacaBlue, modifier = Modifier.size(30.dp)) }
+            ) { Icon(Icons.Filled.TaskAlt, null, tint = AtmacaBlue, modifier = Modifier.size(18.dp)) }
             Spacer(Modifier.height(13.dp))
             Text("İlk görev akışını oluştur", fontWeight = FontWeight.Bold, fontSize = 17.sp)
             Spacer(Modifier.height(4.dp))
@@ -792,7 +788,7 @@ private fun TaskCard(
             }
             if (task.targetUrl?.isNotBlank() == true) {
                 Spacer(Modifier.height(9.dp))
-                Surface(shape = RoundedCornerShape(12.dp), color = ScreenBackground) {
+                Surface(shape = RoundedCornerShape(12.dp), color = AppBackground) {
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -865,7 +861,7 @@ private fun TaskCard(
 
 @Composable
 private fun TaskMetric(label: String, value: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier, shape = RoundedCornerShape(13.dp), color = ScreenBackground) {
+    Surface(modifier = modifier, shape = RoundedCornerShape(13.dp), color = AppBackground) {
         Column(Modifier.padding(horizontal = 9.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, null, tint = TextSecondary, modifier = Modifier.size(13.dp))
@@ -912,6 +908,9 @@ private fun TaskEditorDialog(
     var targetUrl by remember(original) { mutableStateOf(original?.targetUrl.orEmpty()) }
     var prompt by remember(original) { mutableStateOf(original?.contentPrompt.orEmpty()) }
     var content by remember(original) { mutableStateOf(original?.contentText.orEmpty()) }
+    var poolCount by remember { mutableStateOf(com.atmacanext.app.data.settings.ReplyTextPool.count(context)) }
+    var poolCursor by remember { mutableStateOf(com.atmacanext.app.data.settings.ReplyTextPool.cursor(context)) }
+    var poolSample by remember { mutableStateOf(com.atmacanext.app.data.settings.ReplyTextPool.sample(context)) }
     var mediaUri by remember(original) { mutableStateOf(original?.mediaUri) }
     var useGemini by remember(original) { mutableStateOf(false) }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -934,10 +933,14 @@ private fun TaskEditorDialog(
     val limit = limitText.toIntOrNull()
     val repeats = repeatText.toIntOrNull()
     val interval = intervalText.toIntOrNull()
+    val tweetPool = com.atmacanext.app.data.settings.TweetTextPool.count(context)
+    val poolCoversContent = (needsQuoteTargets && poolCount > 0) ||
+        (TaskType.TEXT_TWEET in selectedTypes && tweetPool > 0 &&
+            selectedTypes.none { it.supportsGemini && it != TaskType.TEXT_TWEET && it != TaskType.COMMENT_QUOTE_TARGETS })
     val valid = selectedAccountIds.isNotEmpty() && selectedTypes.isNotEmpty() &&
         limit != null && limit in 1..100 && repeats != null && repeats in 1..100 && interval != null && interval in 1..1_440 &&
         (!needsLink || validXUrl(targetUrl)) &&
-        (!needsContent || if (useGemini) prompt.isNotBlank() else content.isNotBlank()) &&
+        (!needsContent || if (useGemini) prompt.isNotBlank() else content.isNotBlank() || poolCoversContent) &&
         (!needsQuoteTargets || (limit in 1..QuoteTaskSetupPolicy.MAX_POSTS_PER_TARGET &&
             selectedAccountIds.all { quoteHandlesByAccount[it].orEmpty().isNotEmpty() })) &&
         (!needsImage || !mediaUri.isNullOrBlank())
@@ -1001,17 +1004,11 @@ private fun TaskEditorDialog(
                     Text("${TaskGroup.entries.size} kategori • ${selectedTypes.size} tür seçili", color = TextSecondary, fontSize = 9.sp)
                 }
                 item(key = "category-tabs") {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         TaskGroup.entries.forEach { group ->
                             FilterChip(selected = editorGroup == group,
-                                onClick = {
-                                    if (editorGroup != group && original == null) {
-                                        selectedTypes = if (group == TaskGroup.QUOTE_COMMENT) setOf(TaskType.COMMENT_QUOTE_TARGETS) else emptySet()
-                                        if (group == TaskGroup.QUOTE_COMMENT) limitText = "1"
-                                    }
-                                    editorGroup = group
-                                },
-                                modifier = Modifier.weight(1f), label = { Text(group.shortTitle, fontSize = 10.sp, maxLines = 2) })
+                                onClick = { editorGroup = group },
+                                label = { Text(group.shortTitle, fontSize = 11.sp, maxLines = 1) })
                         }
                     }
                 }
@@ -1031,13 +1028,17 @@ private fun TaskEditorDialog(
                                         when (group) {
                                             TaskGroup.FOLLOW -> "Kitle büyütme ve takip temizliği"
                                             TaskGroup.ENGAGEMENT -> "Bağlantı üzerinden tekil X işlemleri"
+                                            TaskGroup.TWEET -> "Hesaptan sıradaki hazır tweet"
                                             TaskGroup.QUOTE_COMMENT -> "Her hesabın Alıntı Hedeflerine yorum"
+                                            TaskGroup.BULK -> "Takip, tweet ve yorumu aynı akışta seç"
                                         },
                                         color = TextSecondary,
                                         fontSize = 8.sp,
                                     )
                                 }
-                                val count = selectedTypes.count { taskGroup(it) == group }
+                                val count = selectedTypes.count { type ->
+                                    if (group == TaskGroup.BULK) type in TASK_TYPES_BY_GROUP.getValue(TaskGroup.BULK) else taskGroup(type) == group
+                                }
                                 if (count > 0) Text("$count seçili", color = taskGroupColor(group), fontSize = 9.sp, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -1082,6 +1083,25 @@ private fun TaskEditorDialog(
                     item(key = "quote-targets-help") {
                         Text("Hesaplar > Alıntı Hedefleri listesini kullanır. Limit, her hedefin son kaç gönderisine yorum yazılacağıdır (1–20).", color = TextSecondary, fontSize = 10.sp)
                     }
+                    item(key = "reply-pool") {
+                        Text(
+                            if (poolCount == 0) "Hazır metinleri Ayarlar'dan metin dosyası olarak yükle. Yorum: hazır satır, bir boşluk, sonra bu kutudaki ek."
+                            else "$poolCount hazır metin Ayarlar'da duruyor. Sıradaki ${poolCursor + 1}. Yoruma hazır satır, boşluk ve bu kutudaki ek yazılır.",
+                            color = TextSecondary,
+                            fontSize = 10.sp,
+                        )
+                    }
+                }
+
+                if (TaskType.TEXT_TWEET in selectedTypes) {
+                    item(key = "tweet-pool") {
+                        Text(
+                            if (tweetPool == 0) "Tweet metinlerini Ayarlar'dan yükle, ya da aşağıya bir metin yaz."
+                            else "$tweetPool hazır tweet Ayarlar'da duruyor. Toplu seçimde takip, tweet ve yorum aynı akışta sırayla çalışır.",
+                            color = TextSecondary,
+                            fontSize = 10.sp,
+                        )
+                    }
                 }
 
                 if (needsLink) {
@@ -1111,11 +1131,13 @@ private fun TaskEditorDialog(
                         } else {
                             OutlinedTextField(
                                 value = content,
-                                onValueChange = { content = it.take(280) },
-                                label = { Text(if (needsQuoteTargets) "Yazılacak yorum" else "Yayınlanacak metin") },
-                                supportingText = { Text("${content.length}/280") },
+                                onValueChange = { content = it.take(if (needsQuoteTargets && poolCount > 0) 80 else 280) },
+                                label = { Text(if (needsQuoteTargets && poolCount > 0) "Hazır metnin yanına eklenecek" else if (needsQuoteTargets) "Yazılacak yorum" else "Yayınlanacak metin") },
+                                supportingText = {
+                                    Text(if (needsQuoteTargets && poolCount > 0) "Örnek: ${poolSample.take(40)} ${content}".trim() else "${content.length}/280")
+                                },
                                 modifier = Modifier.fillMaxWidth(),
-                                minLines = 3,
+                                minLines = 2,
                             )
                         }
                     }
@@ -1308,6 +1330,7 @@ private fun taskGroup(type: TaskType): TaskGroup = when (type) {
     TaskType.COMMENT -> TaskGroup.ENGAGEMENT
 
     TaskType.COMMENT_QUOTE_TARGETS -> TaskGroup.QUOTE_COMMENT
+    TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET, TaskType.PUBLISH -> TaskGroup.TWEET
 
     else -> TaskGroup.ENGAGEMENT
 }
@@ -1315,25 +1338,33 @@ private fun taskGroup(type: TaskType): TaskGroup = when (type) {
 private fun groupIcon(group: TaskGroup): ImageVector = when (group) {
     TaskGroup.FOLLOW -> Icons.Filled.Groups
     TaskGroup.ENGAGEMENT -> Icons.Filled.Bolt
+    TaskGroup.TWEET -> Icons.Filled.Send
     TaskGroup.QUOTE_COMMENT -> Icons.Filled.ChatBubble
+    TaskGroup.BULK -> Icons.Filled.AutoAwesome
 }
 
 private fun taskGroupColor(group: TaskGroup): Color = when (group) {
     TaskGroup.FOLLOW -> Teal
     TaskGroup.ENGAGEMENT -> AtmacaBlue
+    TaskGroup.TWEET -> Purple
     TaskGroup.QUOTE_COMMENT -> Purple
+    TaskGroup.BULK -> BrandGreen
 }
 
 private fun taskGroupSoftColor(group: TaskGroup): Color = when (group) {
     TaskGroup.FOLLOW -> SoftGreen
     TaskGroup.ENGAGEMENT -> SoftBlue
+    TaskGroup.TWEET -> SoftPurple
     TaskGroup.QUOTE_COMMENT -> SoftPurple
+    TaskGroup.BULK -> SoftGreen
 }
 
 private fun taskSoftColor(type: TaskType): Color = when (taskGroup(type)) {
     TaskGroup.FOLLOW -> if (type.isUnfollowAction) SoftOrange else SoftGreen
     TaskGroup.ENGAGEMENT -> if (type == TaskType.LIKE) Color(0xFF352431) else SoftBlue
+    TaskGroup.TWEET -> SoftPurple
     TaskGroup.QUOTE_COMMENT -> SoftPurple
+    TaskGroup.BULK -> SoftGreen
 }
 
 private fun statusLabel(status: TaskStatus): String = when (status) {

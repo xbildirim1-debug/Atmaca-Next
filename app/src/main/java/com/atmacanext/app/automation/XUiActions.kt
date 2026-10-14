@@ -29,12 +29,16 @@ object XUiActions {
         )
     }
 
-    fun clickAccountSwitcher(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+    fun clickAccountSwitcher(
+        service: AtmacaAccessibilityService,
+        root: AccessibilityNodeInfo?,
+        targetUsername: String = "",
+    ): Boolean {
         return XNavigator.execute(
             service = service,
             root = root,
             command = NavigationCommand.OPEN_ACCOUNT_SWITCHER,
-            targetUsername = "",
+            targetUsername = targetUsername,
             detectedUsername = null,
         )
     }
@@ -222,12 +226,71 @@ object XUiActions {
         return ReplyTextTransfer.write(editor, value, attempt)
     }
 
+    internal fun writeTweetText(service: AtmacaAccessibilityService, nodes: List<AccessibilityNodeInfo>, value: String, attempt: Int): ReplyTextTransfer.Result {
+        val node = tweetField(nodes) ?: return ReplyTextTransfer.Result.WAIT
+        val editor = object : ReplyTextTransfer.Editor {
+            override val focused get() = node.isFocused
+            override val text get() = node.text?.toString().orEmpty().let { raw ->
+                val plain = raw.trim().lowercase(Locale.ROOT)
+                if (plain == "neler oluyor?" || plain == "neler oluyor" || plain.startsWith("what is happening") ||
+                    plain.startsWith("what's happening")) "" else raw
+            }
+            override val connection get() = ReplyInputConnection.bind(service, node)
+            override fun focus() = node.performAction(AccessibilityNodeInfo.ACTION_FOCUS) ||
+                node.performAction(AccessibilityNodeInfo.ACTION_CLICK) || GestureClick.gestureTap(service, node)
+            override fun setText(value: String) = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,
+                Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value) })
+            override fun pasteReplacing(value: String): Boolean {
+                if (!node.isFocused) return false
+                return runCatching {
+                    val clipboard = service.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return@runCatching false
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Gönderi", value))
+                    node.performAction(AccessibilityNodeInfo.ACTION_PASTE) || node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,
+                        Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value) })
+                }.getOrDefault(false)
+            }
+        }
+        val result = ReplyTextTransfer.write(editor, value, attempt)
+        OperationLog.i("TWEET_WRITE", "result=$result focused=${node.isFocused} editable=${node.isEditable} " +
+            "id=${node.viewIdResourceName} class=${node.className} hint=${node.hintText} text=${node.text}")
+        return result
+    }
+
+    fun tweetTextPresent(service: AtmacaAccessibilityService, nodes: List<AccessibilityNodeInfo>, value: String): Boolean {
+        val node = tweetField(nodes) ?: return false
+        if (ReplyTextTransfer.matches(node.text?.toString(), value)) return true
+        return ReplyTextTransfer.matches(ReplyInputConnection.bind(service, node)?.readFullText(), value)
+    }
+
+    private fun tweetField(nodes: List<AccessibilityNodeInfo>): AccessibilityNodeInfo? {
+        fun blob(node: AccessibilityNodeInfo) = listOfNotNull(node.text, node.contentDescription, node.hintText)
+            .joinToString(" ").lowercase(Locale.ROOT)
+        val hinted = nodes.filter { node ->
+            node.isVisibleToUser && (blob(node).contains("neler oluyor") || blob(node).contains("what is happening") ||
+                blob(node).contains("what's happening"))
+        }
+        val editable = nodes.filter { node ->
+            node.isVisibleToUser && (node.isEditable || node.className?.toString()?.contains("EditText", true) == true)
+        }
+        return hinted.firstOrNull { it.isFocused }
+            ?: editable.firstOrNull { it.isFocused }
+            ?: nodes.firstOrNull { it.isFocused && it.isVisibleToUser && it.className?.toString()?.contains("Button", true) != true }
+            ?: hinted.maxByOrNull { android.graphics.Rect().also(it::getBoundsInScreen).height() }
+            ?: editable.firstOrNull()
+    }
+
     fun submitReply(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?,
         capturedNodes: List<AccessibilityNodeInfo>? = null): Boolean {
         val nodes = capturedNodes ?: AccessibilityTree.nodes(root, maxNodes = 2_000)
         val index = ReplyComposerEvidence.submitIndex(nodes.map { it.toSnapshot() }) ?: return false
         val node = nodes[index]
-        return GestureClick.gestureTap(service, node)
+        val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+        val wide = bounds.width() > 300
+        val tall = bounds.height() > 150
+        if (!wide && !tall) return GestureClick.gestureTap(service, node)
+        val x = bounds.left + bounds.width() * 0.86f
+        val y = bounds.top + bounds.height() * if (tall) 0.78f else 0.5f
+        return GestureClick.gestureTapAt(service, x, y)
     }
 
     fun clickQuote(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
@@ -271,6 +334,173 @@ object XUiActions {
         val result = native || GestureClick.gestureTapTrailing(service, node)
         OperationLog.i("COMMENT_CLICK", "@$handle mode=${if (exactIndex != null) "exact" else "top-right"} bounds=${n.bounds} clickable=${n.clickable} accepted=$result; sonuç ayrıca doğrulanacak")
         return result
+    }
+
+    fun clickNewPost(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        if (root == null) return false
+        val metrics = service.resources.displayMetrics
+        val nodes = AccessibilityTree.nodes(root, maxNodes = 1_200)
+        var screenRight = metrics.widthPixels
+        var screenBottom = metrics.heightPixels
+        nodes.forEach { node ->
+            val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+            if (bounds.right > screenRight) screenRight = bounds.right
+            if (bounds.bottom > screenBottom) screenBottom = bounds.bottom
+        }
+        val tabLabels = setOf(
+            "ana sayfa", "anasayfa", "home", "ara", "search", "keşfet", "explore",
+            "bildirimler", "notifications", "sohbet", "mesajlar", "messages", "grok",
+        )
+        val navTop = nodes.mapNotNull { node ->
+            val label = normalizedLabel(node) ?: return@mapNotNull null
+            if (label.length > 22 || label !in tabLabels) return@mapNotNull null
+            val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+            if (bounds.centerY() < screenBottom * 0.84 || bounds.height() > (96 * metrics.density)) return@mapNotNull null
+            bounds.top
+        }.minOrNull()
+        val min = (32 * metrics.density).toInt()
+        val max = (96 * metrics.density).toInt()
+        val fab = nodes.mapNotNull { node ->
+            if (!node.isVisibleToUser) return@mapNotNull null
+            val label = normalizedLabel(node).orEmpty()
+            if (tabLabels.any { label == it || label.startsWith("$it ") }) return@mapNotNull null
+            val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+            val width = bounds.width()
+            val height = bounds.height()
+            val square = width in min..max && height in min..max && kotlin.math.abs(width - height) <= width / 3
+            if (!square || bounds.centerX() < screenRight * 0.80) return@mapNotNull null
+            val aboveBar = if (navTop != null) {
+                val gap = navTop - bounds.bottom
+                gap in -12..(180)
+            } else bounds.centerY() > screenBottom * 0.80 && bounds.centerY() < screenBottom * 0.95
+            if (!aboveBar) null else node to bounds
+        }.maxByOrNull { it.second.centerX() }
+        if (fab == null) {
+            OperationLog.i("TWEET_OPEN", "+ bulunamadı navTop=${navTop ?: -1} ekran=${screenRight}x$screenBottom")
+            return false
+        }
+        val x = fab.second.exactCenterX()
+        val y = fab.second.exactCenterY()
+        val clicked = GestureClick.gestureTapAt(service, x, y)
+        OperationLog.i(
+            "TWEET_OPEN",
+            "+ =$clicked nokta=${x.toInt()},${y.toInt()} navTop=${navTop ?: -1} ekran=${screenRight}x$screenBottom kutu=${
+                fab?.second?.let { "${it.left},${it.top} ${it.width()}x${it.height()}" } ?: "koordinat"
+            }",
+        )
+        return clicked
+    }
+
+    fun messagesOpen(root: AccessibilityNodeInfo?): Boolean {
+        if (root == null) return false
+        val height = serviceHeight(root)
+        return AccessibilityTree.nodes(root, maxNodes = 400).any { node ->
+            val label = normalizedLabel(node).orEmpty()
+            val top = android.graphics.Rect().also(node::getBoundsInScreen).centerY() < height * 0.22
+            (top && (label == "sohbet" || label == "messages")) || label.contains("x sohbet") || label.contains("şifre oluştur")
+        }
+    }
+
+    private fun serviceHeight(root: AccessibilityNodeInfo): Int {
+        val bounds = android.graphics.Rect().also(root::getBoundsInScreen)
+        return bounds.height().takeIf { it > 0 } ?: 2000
+    }
+
+    fun clickComposerPost(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        if (root == null) return false
+        val metrics = service.resources.displayMetrics
+        val button = AccessibilityTree.nodes(root, maxNodes = 800).mapNotNull { node ->
+            if (!node.isVisibleToUser || !node.isEnabled) return@mapNotNull null
+            val label = normalizedLabel(node) ?: return@mapNotNull null
+            if (label != "gönderi" && label != "post") return@mapNotNull null
+            val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+            if (bounds.centerY() > metrics.heightPixels * 0.28 || bounds.centerX() < metrics.widthPixels * 0.5) return@mapNotNull null
+            node to bounds.centerX()
+        }.maxByOrNull { it.second }?.first ?: return false
+        val clicked = GestureClick.click(service, button)
+        OperationLog.i("TWEET_OPEN", "Gönderi =$clicked")
+        return clicked
+    }
+
+    fun clickBottomHome(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        val home = findBottomHome(service, root) ?: return false
+        val bounds = android.graphics.Rect().also(home::getBoundsInScreen)
+        val clicked = GestureClick.gestureTap(service, home)
+        OperationLog.i("TWEET_OPEN", "alt ana sayfa =$clicked kutu=${bounds.left},${bounds.top} ${bounds.width()}x${bounds.height()}")
+        return clicked
+    }
+
+    fun bottomHomeVisible(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
+        findBottomHome(service, root) != null
+
+    /** Toolbar up control on a list or tweet when it has no "Geri" label. Not used on Home. */
+    fun clickToolbarUp(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        if (root == null) return false
+        val window = android.graphics.Rect().also(root::getBoundsInScreen)
+        if (window.width() <= 0 || window.height() <= 0) return false
+        val topLimit = window.top + window.height() * 0.14f
+        val leftLimit = window.left + window.width() * 0.22f
+        val node = AccessibilityTree.nodes(root, maxNodes = 400).map { it to android.graphics.Rect().also(it::getBoundsInScreen) }
+            .filter { (candidate, bounds) ->
+                if (!candidate.isVisibleToUser) return@filter false
+                val raw = listOfNotNull(candidate.text?.toString(), candidate.contentDescription?.toString())
+                val blob = raw.joinToString(" ")
+                if (AccountSwitcherInspector.dedicatedHandle(blob) != null) return@filter false
+                if (RelationshipTabInspector.classifySelectedLabels(raw) != RelationshipTabInspector.NONE) return@filter false
+                val norm = raw.map { XUiVocabulary.normalize(it) }
+                val tabLabel = norm.any { label ->
+                    (XUiVocabulary.verifiedFollowersHeaders + XUiVocabulary.followersHeaders + XUiVocabulary.followingHeaders).any {
+                        label == it || label.startsWith("$it,") || label.startsWith("$it ") || label.startsWith("$it sekme")
+                    }
+                }
+                if (tabLabel) return@filter false
+                val clazz = candidate.className?.toString()?.lowercase(java.util.Locale.ROOT).orEmpty()
+                val generic = clazz == "android.view.view"
+                val control = clazz.contains("image") || clazz.contains("button") || generic
+                val xLimit = if (generic) window.left + window.width() * 0.12f else leftLimit
+                control && bounds.centerY() <= topLimit && bounds.centerX() <= xLimit &&
+                    bounds.width() in 1..(window.width() * 0.18f).toInt() &&
+                    bounds.height() in 1..(window.height() * 0.10f).toInt()
+            }
+            .minByOrNull { it.second.centerX() }
+            ?.first ?: return false
+        return GestureClick.gestureTap(service, node)
+    }
+
+    private fun findBottomHome(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+        if (root == null) return null
+        val metrics = service.resources.displayMetrics
+        val height = metrics.heightPixels
+        val maxSide = (96 * metrics.density).toInt()
+        return AccessibilityTree.nodes(root, maxNodes = 800).mapNotNull { node ->
+            if (!node.isVisibleToUser || !node.isEnabled) return@mapNotNull null
+            val label = normalizedLabel(node) ?: return@mapNotNull null
+            val homeLabel = label == "ana sayfa" || label == "anasayfa" || label == "home" ||
+                label.startsWith("ana sayfa") || label.startsWith("home ")
+            if (!homeLabel) return@mapNotNull null
+            val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+            if (bounds.centerY() < height * 0.84) return@mapNotNull null
+            if (bounds.height() <= 0 || bounds.height() > maxSide || bounds.width() > maxSide) return@mapNotNull null
+            node to bounds
+        }.minByOrNull { it.second.centerX() }?.first
+    }
+
+    fun composerOpen(root: AccessibilityNodeInfo?): Boolean {
+        if (root == null) return false
+        val nodes = AccessibilityTree.nodes(root, maxNodes = 600)
+        val screen = android.graphics.Rect().also { root.getBoundsInScreen(it) }
+        val hint = nodes.any { node ->
+            val label = listOfNotNull(node.text?.toString(), node.contentDescription?.toString(), node.hintText?.toString())
+                .joinToString(" ").lowercase(Locale.ROOT)
+            label.contains("neler oluyor") || label.contains("what is happening") || label.contains("what's happening")
+        }
+        val post = nodes.any { node ->
+            val label = normalizedLabel(node) ?: return@any false
+            if (label != "gönderi" && label != "post") return@any false
+            val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+            bounds.centerY() < screen.height() * 0.22 && bounds.centerX() > screen.width() * 0.5
+        }
+        return hint || post
     }
 
     fun setComposerText(root: AccessibilityNodeInfo?, value: String): Boolean {
@@ -355,9 +585,24 @@ object XUiActions {
             listOfNotNull(n.text, n.contentDescription).any { VerifiedFollowPolicy.matchesAction(it, accepted) } }
     }
 
-    fun clickVisibleBack(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+    fun clickVisibleBack(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
+        clickVisibleBack(
+            service,
+            root,
+            AutomationController.state.value.flowStage,
+            AutomationController.state.value.activeScreen,
+        )
+
+    /** [flowStage] and [screen] are explicit so account handoff can still see the arrow
+     *  after a discovery return has suppressed profile backs. */
+    fun clickVisibleBack(
+        service: AtmacaAccessibilityService,
+        root: AccessibilityNodeInfo?,
+        flowStage: XFlowStage,
+        screen: XScreen,
+    ): Boolean {
         val nodes = AccessibilityTree.nodes(root)
-        val index = NavigationSurfaceEvidence.backIndex(nodes.map { it.toSnapshot() }) ?: return false
+        val index = NavigationSurfaceEvidence.backIndex(nodes.map { it.toSnapshot() }, flowStage, screen) ?: return false
         val node = nodes[index]
         return (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) || GestureClick.gestureTap(service, node)
     }

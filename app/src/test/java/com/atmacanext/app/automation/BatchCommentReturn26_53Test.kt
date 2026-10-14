@@ -112,7 +112,8 @@ class BatchCommentReturn26_53Test {
         assertEquals(AccountVerificationReturnPolicy.Decision.RECOVER, AccountVerificationReturnPolicy.decide(XScreen.UNKNOWN, false, 0, 12_000, Long.MAX_VALUE))
     }
     @Test fun accountReturnWaitsForBackAndBoundsRepeatedAttempts() {
-        assertEquals(AccountVerificationReturnPolicy.Decision.WAIT, AccountVerificationReturnPolicy.decide(XScreen.TWEET_DETAIL, true, 1, 500, 500))
+        assertEquals(AccountVerificationReturnPolicy.Decision.WAIT, AccountVerificationReturnPolicy.decide(XScreen.TWEET_DETAIL, true, 1, 30, 30))
+        assertEquals(AccountVerificationReturnPolicy.Decision.BACK, AccountVerificationReturnPolicy.decide(XScreen.TWEET_DETAIL, true, 1, 500, 500))
         assertEquals(AccountVerificationReturnPolicy.Decision.BACK, AccountVerificationReturnPolicy.decide(XScreen.TWEET_DETAIL, true, 1, 1100, 1100))
         assertEquals(AccountVerificationReturnPolicy.Decision.RECOVER, AccountVerificationReturnPolicy.decide(XScreen.TWEET_DETAIL, true, 6, 7000, 1100))
     }

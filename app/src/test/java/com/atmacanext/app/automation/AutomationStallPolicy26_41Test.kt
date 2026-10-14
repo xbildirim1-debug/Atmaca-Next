@@ -1,5 +1,6 @@
 package com.atmacanext.app.automation
 
+import com.atmacanext.app.domain.model.TaskType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -49,5 +50,41 @@ class AutomationStallPolicy26_41Test {
     @Test fun ordinaryNavigationAndWaitingAreWatched() {
         assertTrue(AutomationStallPolicy.shouldWatch(runtime(status = RuntimeStatus.NAVIGATING)))
         assertTrue(AutomationStallPolicy.shouldWatch(runtime(status = RuntimeStatus.WAITING)))
+    }
+
+    @Test fun accountVerificationIsNotAStall() {
+        assertFalse(AutomationStallPolicy.shouldWatch(runtime(stage = XFlowStage.VERIFY_ACCOUNT)))
+    }
+
+    @Test fun verifiedFollowStuckOnPreviousAccountListIsAStall() {
+        val stuck = runtime(stage = XFlowStage.VERIFY_ACCOUNT, screen = XScreen.VERIFIED_FOLLOWERS_LIST)
+            .copy(taskType = TaskType.VERIFIED_FOLLOW)
+        assertTrue(AutomationStallPolicy.shouldWatch(stuck))
+        assertTrue(AutomationStallPolicy.shouldWatch(stuck.copy(activeScreen = XScreen.FOLLOWERS_LIST)))
+        assertFalse(AutomationStallPolicy.shouldWatch(stuck.copy(activeScreen = XScreen.HOME)))
+        assertFalse(AutomationStallPolicy.shouldWatch(stuck.copy(activeScreen = XScreen.ACCOUNT_DRAWER)))
+        assertFalse(AutomationStallPolicy.shouldWatch(stuck.copy(activeScreen = XScreen.ACCOUNT_SWITCHER)))
+    }
+
+    @Test fun verifiedFollowSetupWaitsAreNotStalls() {
+        val setup = listOf(
+            XFlowStage.OPEN_VERIFIED_OWN_PROFILE,
+            XFlowStage.OPEN_MY_FOLLOWERS,
+            XFlowStage.LOCATE_SOURCE_ROW,
+            XFlowStage.RETURN_VERIFIED_SOURCE,
+            XFlowStage.OPEN_SOURCE_PROFILE,
+        )
+        for (stage in setup) {
+            assertFalse(
+                AutomationStallPolicy.shouldWatch(
+                    runtime(stage = stage).copy(taskType = TaskType.VERIFIED_FOLLOW),
+                ),
+            )
+        }
+        assertTrue(
+            AutomationStallPolicy.shouldWatch(
+                runtime(stage = XFlowStage.PROCESS_VERIFIED_FOLLOW).copy(taskType = TaskType.VERIFIED_FOLLOW),
+            ),
+        )
     }
 }

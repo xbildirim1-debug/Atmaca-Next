@@ -9,10 +9,13 @@ internal object CommenterReturnPolicy {
         !headerAuthor.isNullOrBlank() && headerAuthor == childAuthor && headerAuthor != parentAuthor
 
     fun decide(parentVisible: Boolean, targetVisible: Boolean, childVisible: Boolean,
-               attempts: Int, elapsedMs: Long, sinceBackMs: Long): Decision = when {
+               attempts: Int, elapsedMs: Long, sinceBackMs: Long,
+               onForeignDetail: Boolean = false): Decision = when {
         parentVisible -> Decision.PARENT
         targetVisible -> Decision.TARGET
         sinceBackMs < 1_000L -> Decision.WAIT
+        onForeignDetail && !childVisible && attempts == 0 && elapsedMs < 250L -> Decision.WAIT
+        onForeignDetail && attempts < 3 -> Decision.BACK
         elapsedMs >= AutomationStallPolicy.TIMEOUT_MS -> Decision.RESTART
         childVisible && attempts < 3 -> Decision.BACK
         else -> Decision.WAIT

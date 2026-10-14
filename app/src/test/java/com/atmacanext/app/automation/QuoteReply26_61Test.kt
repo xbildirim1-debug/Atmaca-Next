@@ -69,6 +69,29 @@ class QuoteReply26_61Test {
     @Test fun anUnidentifiedLowerReplyButtonDoesNotBecomeTheTopSendButton() {
         assertNull(ReplyComposerEvidence.submitIndex(detail() + editor(comment) + n("Yanıtla", 400, x = 800)))
     }
+    @Test fun blueReplyUnderTheInlineFieldIsTheSubmitButton() {
+        val editor = editor(comment)
+        val send = n("Yanıtla", editor.bounds.bottom + 24, x = 760, right = 980)
+        assertEquals(1, ReplyComposerEvidence.submitIndex(listOf(editor, send)))
+    }
+    @Test fun verifiedTextOnAnUnknownKeyboardFrameStillPreparesSubmit() {
+        val field = n(comment, 640, "post-detail-reply-text-field", edit = true, x = 80, right = 700)
+        val nodes = listOf(field, n("GIF", 720, x = 150, right = 230), n("Yanıtla", 720, x = 760, right = 980))
+        assertEquals(XScreen.TWEET_DETAIL, ScreenDetector.detect(nodes))
+        assertTrue(ReplyComposerEvidence.ready(nodes, XScreen.UNKNOWN))
+        assertEquals(QuoteReplyFlowPolicy.Decision.PREPARE_SUBMIT, d(XFlowStage.FILL_COMPOSER, nodes))
+        assertEquals(QuoteReplyFlowPolicy.Decision.SUBMIT, d(XFlowStage.SUBMIT_COMPOSER, nodes))
+    }
+    @Test fun gifRowReplyIsSubmitEvenWhenTheFieldIsNotEditable() {
+        val nodes = listOf(
+            n("Gönderi", 0),
+            n("gerçekten mi", 640, x = 80, right = 420),
+            n("GIF", 720, x = 150, right = 230),
+            n("Yanıtla", 400, x = 30, right = 140),
+            n("Yanıtla", 720, x = 760, right = 980),
+        )
+        assertEquals(4, ReplyComposerEvidence.submitIndex(nodes))
+    }
     @Test fun aShortExplicitTweetBodyRemainsReadable() {
         val nodes = listOf(n("@target", 0), n("İyi", 60, "tweet_text"))
         assertEquals(1, TweetContentEvidence.bodyIndex(nodes, 40))
@@ -110,6 +133,12 @@ class QuoteReply26_61Test {
         assertTrue(ReplyComposerEvidence.hasSentNotice(listOf(n("Your post was sent. View", 900, "snackbar_text"))))
         assertTrue(ReplyComposerEvidence.hasSentNotice(listOf(n("Gönderin gönderildi. Görüntüle", 900, "snackbar_text"))))
         assertFalse(ReplyComposerEvidence.hasSentNotice(listOf(n("Gönderin gönderildi", 120, "tweet_text"))))
+    }
+    @Test fun aClearedDraftAfterSendCountsEvenWhenTheToolbarReplyStays() {
+        val sent = detail() + editor("Yanıtını gönder") + n("Yanıtla", 400, x = 40, right = 180)
+        assertTrue(ReplyComposerEvidence.replyLanded(sent, comment))
+        assertFalse(ReplyComposerEvidence.replyLanded(detail() + editor(comment) + n("Yanıtla", 400, x = 40, right = 180), comment))
+        assertTrue(ReplyComposerEvidence.hasSentNotice(listOf(n("Yanıtın gönderildi. Gönderiyi görüntüle", 900, "snackbar_text"))))
     }
     @Test fun clearingTheEditorAloneIsNotAConfirmedReply() {
         val nodes = detail() + editor()

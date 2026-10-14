@@ -134,7 +134,13 @@ object AccountSwitcherInspector {
     ): List<AccessibilityNodeInfo> {
         if (root == null) return emptyList()
         val all = AccessibilityTree.nodes(root, maxNodes = 900)
-        val candidates = all.filter { node -> node.isVisibleToUser && nodeLabels(node).any { dedicatedHandle(it) != null } }
+        val screen = android.graphics.Rect().also(root::getBoundsInScreen)
+        val candidates = all.filter { node ->
+            if (nodeLabels(node).none { dedicatedHandle(it) != null }) return@filter false
+            if (node.isVisibleToUser) return@filter true
+            val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+            !bounds.isEmpty && android.graphics.Rect.intersects(screen, bounds)
+        }
         if (titleNode == null) return candidates
 
         // Başlık bulunduğunda onun üstündeki durum çubuğu/arka plan etiketlerini dışarıda bırak.

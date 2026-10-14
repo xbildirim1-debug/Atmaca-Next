@@ -1,6 +1,5 @@
 package com.atmacanext.app.automation
 
-import android.util.Log
 import kotlin.math.abs
 
 /** The opened reply's own header, never a Follow button belonging to its replies. */
@@ -13,62 +12,38 @@ internal object CommentDetailEvidence {
             Regex("^(gönderi|post|tweet),? (başlık|heading)$").matches(label)
     }
 
-    fun header(nodes: List<NodeSnapshot>, excludeFeedTimedHeaders: Boolean = true): Header? {
-        fun finish(result: Header?, reason: String, step: Int, index: Int?): Header? {
-            val node = index?.let(nodes::get)
-            Log.d("AtmacaDetailHeader", "exit=$reason step=$step nodeIndex=$index handle=${result?.handle} " +
-                "viewId=${node?.viewId} bounds=${node?.bounds}")
-            return result
-        }
+    fun header(nodes: List<NodeSnapshot>): Header? {
         // A parent can repeat the title with bounds covering the whole page.
         // Prefer its actual text/toolbar node, otherwise every author lies inside
         // the title and the old top >= title.bottom check rejects the whole page.
         val title = nodes.filter { it.visible && !it.editable && labels(it).any(::isTitle) }
             .minByOrNull { (it.bounds.bottom - it.bounds.top).toLong() * (it.bounds.right - it.bounds.left) }
-        Log.d("AtmacaDetailHeader", "titleFound=${title != null} titleIndex=${title?.let(nodes::indexOf)} " +
-            "titleBounds=${title?.bounds} nodes=${nodes.size}")
-        if (title == null) return finish(null, "NO_TITLE", 0, null)
-        // A detail author may have the same time semantics as a feed row. Only
-        // relax that exclusion above an independently measured main-post boundary.
-        val headerEnd = if (excludeFeedTimedHeaders) Int.MAX_VALUE else headerBandEnd(nodes, title.bounds.bottom)
+            ?: return null
         val candidates = nodes.indices.filter { i ->
             val n = nodes[i]
             n.visible && !n.editable && n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
-                n.bounds.top >= title.bounds.bottom && n.bounds.top < headerEnd
+                n.bounds.top >= title.bounds.bottom
         }.sortedBy { nodes[it].bounds.top }
-        val rejectTimed = excludeFeedTimedHeaders || headerEnd == Int.MAX_VALUE
-        val timedHeaders = if (rejectTimed) FeedRowEvidence.rows(nodes).map { it.headerIndex }.toSet() else emptySet()
-        Log.d("AtmacaDetailHeader", "candidates=${candidates.size} timedHeaders=${timedHeaders.sorted()} " +
-            "excludeFeedTimedHeaders=$excludeFeedTimedHeaders headerEnd=$headerEnd")
+        val timedRows = FeedRowEvidence.rows(nodes)
+        val timedHeaders = timedRows.map { it.headerIndex }.toSet()
 
-        // Commenter-follow keeps the strict feed exclusion. Reply composition can
-        // read a time-bearing main author within the measured header band.
-        for ((position, i) in candidates.withIndex()) {
+        // Reply rows sit under Alakalı. They are not the opened post.
+        for (i in candidates) {
             val n = nodes[i]
             val rawLabels = labels(n)
-            if (i in timedHeaders) return finish(null, "TIMED_INDEX", position + 1, i)
-            val timed = rawLabels.mapNotNull(TweetContentEvidence::header)
-            if (rejectTimed && timed.isNotEmpty())
-                return finish(null, "TIMED_LABEL", position + 1, i)
+            if (rawLabels.any { XUiVocabulary.normalize(it) in replySectionLabels }) return null
+            val timedAuthor = rawLabels.firstNotNullOfOrNull { label ->
+                TweetContentEvidence.header(label)?.takeIf { !it.truncated }?.handle
+            } ?: timedRows.firstOrNull { it.headerIndex == i && !it.authorTruncated }?.author
+            if (i in timedHeaders || rawLabels.any { TweetContentEvidence.header(it) != null }) {
+                compactOpenedHandle(nodes, candidates, i, timedAuthor)?.let { return it }
+                continue
+            }
             val handle = rawLabels.firstNotNullOfOrNull(::headerHandle)
-                ?: timed.firstOrNull { !it.truncated }?.handle
-            if (handle != null) return finish(Header(handle, i), "AUTHOR_FOUND", position + 1, i)
+            if (handle != null) return Header(handle, i)
         }
-        return finish(null, "NO_HANDLE", candidates.size, candidates.lastOrNull())
+        return null
     }
-
-    fun headerBandEnd(nodes: List<NodeSnapshot>, titleBottom: Int): Int = nodes.asSequence()
-        .filter { n -> n.visible && !n.editable && n.bounds.right > n.bounds.left && n.bounds.bottom > n.bounds.top &&
-            n.bounds.top >= titleBottom }
-        .filter { n ->
-            val id = n.viewId.orEmpty().substringAfterLast('/').lowercase()
-            id in setOf("tweet_text", "tweet_content", "status_text", "tweet_metadata", "tweet_stats") ||
-                id in setOf("toolbar_reply", "toolbar_like", "toolbar_retweet", "toolbar_bookmark", "toolbar_share") || labels(n).any { raw ->
-                    val label = XUiVocabulary.normalize(raw)
-                    label in setOf("alakalı", "relevant", "en yeni", "latest", "yanıtlar", "replies") ||
-                        Regex("^\\d{1,2}:\\d{2}\\s*[·•].+$").matches(label)
-                }
-        }.minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE
 
     fun actionIndex(nodes: List<NodeSnapshot>, expected: String, accepted: Set<String>): Int? {
         val header = header(nodes)?.takeIf { it.handle == XIdentityDetector.normalizeUsername(expected) } ?: return null
@@ -148,16 +123,49 @@ internal object CommentDetailEvidence {
         return minOf(rowTop, separator)
     }
 
+    private fun compactOpenedHandle(
+        nodes: List<NodeSnapshot>,
+        candidates: List<Int>,
+        timedIndex: Int,
+        timedAuthor: String?,
+    ): Header? {
+        if (timedAuthor == null) return null
+        val timed = nodes[timedIndex]
+        val height = (timed.bounds.bottom - timed.bounds.top).coerceAtLeast(1)
+        // A merged parent can cover the whole post. Only the top of that parent
+        // is the author line; a later same-handle mention in the body is not.
+        val windowBottom = if (height > 280) timed.bounds.top + 280 else timed.bounds.bottom + height * 3
+        for (j in candidates) {
+            if (j == timedIndex) continue
+            val child = nodes[j]
+            val bounds = child.bounds
+            if (bounds.top < timed.bounds.top || bounds.top > windowBottom) continue
+            if (bounds.bottom - bounds.top > 160) continue
+            val raw = labels(child)
+            if (raw.any { TweetContentEvidence.header(it) != null }) continue
+            val handle = raw.firstNotNullOfOrNull(::headerHandle) ?: continue
+            if (handle == timedAuthor) return Header(handle, j)
+        }
+        return null
+    }
+
     private fun headerHandle(raw: String): String? {
-        AccountSwitcherInspector.dedicatedHandle(raw)?.let { return it }
-        val text = raw.trim()
-        // Expanded post headers can be exposed as "Name @handle", "Name, @handle"
-        // or on two semantic lines. Only accept a single trailing handle so a body
-        // mention can never become the detail author.
-        val match = Regex("^[^@\\n]{1,70}[,\\s]+@([A-Za-z0-9_]{1,15})$").matchEntire(text)
-            ?: Regex("^[^@\\n]{1,70}\\n+@([A-Za-z0-9_]{1,15})$").matchEntire(text)
+        val text = raw.trim().replace(Regex("[\\u200B-\\u200F\\u202A-\\u202E\\u2066-\\u2069\\uFEFF]"), "")
+        AccountSwitcherInspector.dedicatedHandle(text)?.let { return it }
+        val badge = "(?:doğrulandı|doğrulanmış(?:\\s+hesap)?|verified(?:\\s+account)?)"
+        val match = Regex("^[^@\\n]{1,70}[,\\s]+@([A-Za-z0-9_]{1,15})(?:[,\\s.]+$badge)?$", RegexOption.IGNORE_CASE).matchEntire(text)
+            ?: Regex("^[^@\\n]{1,70}\\n+@([A-Za-z0-9_]{1,15})(?:[,\\s.]+$badge)?$", RegexOption.IGNORE_CASE).matchEntire(text)
+            ?: Regex("^@([A-Za-z0-9_]{1,15})[,\\s.]+$badge$", RegexOption.IGNORE_CASE).matchEntire(text)
+        val prefix = Regex(
+            "^[^@\\n]{1,70}[,\\s\\n]+@([A-Za-z0-9_]{1,15})(?![A-Za-z0-9_])"
+        ).find(text)
+        if (prefix != null) return prefix.groupValues[1].lowercase()
         return match?.groupValues?.get(1)?.lowercase()
     }
 
     private fun labels(node: NodeSnapshot) = listOfNotNull(node.text, node.contentDescription)
+
+    private val replySectionLabels = setOf(
+        "alakalı", "relevant", "en yeni", "latest", "alıntıları görüntüle", "view quotes",
+    )
 }

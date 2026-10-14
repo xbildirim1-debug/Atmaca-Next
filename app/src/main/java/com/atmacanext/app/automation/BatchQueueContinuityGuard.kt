@@ -1,6 +1,7 @@
 package com.atmacanext.app.automation
 
 import com.atmacanext.app.data.repository.AtmacaRepository
+import com.atmacanext.app.domain.model.QueueItemStatus
 import com.atmacanext.app.domain.model.QueueStatus
 import com.atmacanext.app.domain.model.TaskStatus
 import kotlinx.coroutines.CoroutineScope
@@ -43,12 +44,15 @@ class BatchQueueContinuityGuard(
                 if (queue.isActive && queue.items.size > 1) {
                     val ids = queue.items.map { it.taskId }.distinct()
                     if (queue.sessionId != batchSessionId || ids != batchTaskIds) {
+                        val sameWork = ids.toSet() == batchTaskIds.toSet() && ids.isNotEmpty()
                         batchSessionId = queue.sessionId
                         batchTaskIds = ids
                         lastSignature = ""
                         unchangedSince = System.currentTimeMillis()
-                        recoveryFingerprint = ""
-                        consecutiveRecoveries = 0
+                        if (!sameWork) {
+                            recoveryFingerprint = ""
+                            consecutiveRecoveries = 0
+                        }
                     }
                 }
 
@@ -86,18 +90,27 @@ class BatchQueueContinuityGuard(
                 resetTransitionTimer()
 
                 // A queue must never silently report completion while one of the exact
-                // selected task rows is still unfinished. This covers the device case
-                // where account 1 finishes but account 2/3 remain at zero progress.
+                // selected task rows was never given a terminal result. A row that
+                // already failed (empty text, missing file) is finished: relaunching
+                // it only repeats the same error.
                 if (queue.sessionId == batchSessionId && queue.status in TERMINAL_QUEUE_EXCEPT_STOPPED) {
-                    val remaining = unfinishedBatchTasks()
-                    if (remaining.isNotEmpty()) {
-                        recoverBatch(
-                            "Toplu kuyruk erken sona erdi; ${remaining.size} alt iş hâlâ bekliyor",
-                            remaining.first().username,
-                            "terminal=${queue.status}; currentIndex=${queue.currentIndex}; remaining=${remaining.map { it.id }}",
-                        )
-                    } else {
+                    val openIds = queue.items
+                        .filter { it.status in OPEN_ITEM }
+                        .map { it.taskId }
+                        .toSet()
+                    if (openIds.isEmpty()) {
                         clearBatch()
+                    } else {
+                        val remaining = unfinishedBatchTasks().filter { it.id in openIds }
+                        if (remaining.isNotEmpty()) {
+                            recoverBatch(
+                                "Toplu kuyruk erken sona erdi; ${remaining.size} alt iş hâlâ bekliyor",
+                                remaining.first().username,
+                                "terminal=${queue.status}; currentIndex=${queue.currentIndex}; remaining=${remaining.map { it.id }}",
+                            )
+                        } else {
+                            clearBatch()
+                        }
                     }
                 } else if (queue.status == QueueStatus.STOPPED && !recoveryInProgress) {
                     // STOPPED is an explicit user-visible stop; never undo it automatically.
@@ -186,5 +199,6 @@ class BatchQueueContinuityGuard(
         const val MAX_CONSECUTIVE_RECOVERIES = 3
         val TERMINAL_RUNTIME = setOf(RuntimeStatus.IDLE, RuntimeStatus.COMPLETED, RuntimeStatus.FAILED)
         val TERMINAL_QUEUE_EXCEPT_STOPPED = setOf(QueueStatus.COMPLETED, QueueStatus.PARTIAL, QueueStatus.FAILED)
+        val OPEN_ITEM = setOf(QueueItemStatus.PENDING, QueueItemStatus.PAUSED, QueueItemStatus.RUNNING)
     }
 }

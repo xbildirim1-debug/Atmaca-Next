@@ -59,7 +59,7 @@ object ScreenDetector {
         } >= 2
         val visibleTweetRows = FeedRowEvidence.rows(nodes)
         val visibleTimedAuthors = labels.mapNotNull(TweetContentEvidence::header).map { it.handle }.distinct().size
-        val openedDetailAuthor = if (detailTitleAtTop) ReplyComposerEvidence.postHeader(nodes)?.handle else null
+        val openedDetailAuthor = if (detailTitleAtTop) CommentDetailEvidence.header(nodes)?.handle else null
         val inlineTweetDetail = inlineReplyEntry && (
             (detailBack && (detailTitleAtTop || detailToolbar || labels.any(EngagementListEvidence::openLabel))) ||
                 // While the detail settles or scrolls, Compose may temporarily omit
@@ -68,6 +68,13 @@ object ScreenDetector {
                 visibleTweetRows.isNotEmpty() || visibleTimedAuthors >= 2 || openedDetailAuthor != null
             )
         if (inlineTweetDetail) return XScreen.TWEET_DETAIL
+        // Keyboard covers the Gönderi title. The inline field id is still the detail composer.
+        val inlineDetailEditor = nodes.any { node ->
+            val id = node.viewId.orEmpty().lowercase()
+            (node.editable || node.className.orEmpty().contains("EditText", true)) &&
+                (id.contains("post-detail-reply") || id.contains("reply-text-field"))
+        }
+        if (inlineDetailEditor) return XScreen.TWEET_DETAIL
         if ((hasEditable && (hasComposerId || hasSubmitId || composerByText)) || (hasComposerId && composerByText)) {
             return XScreen.COMPOSER
         }
@@ -252,7 +259,10 @@ object ScreenDetector {
             it.visible && (it.className.orEmpty().contains("dialog", true) ||
                 it.viewId.orEmpty().substringAfterLast('/') in setOf("alertTitle", "parentPanel", "dialog_title", "dialog_message"))
         }
-        return control || container
+        if (container) return true
+        if (!control) return false
+        // The profile verification card has its own Kapat. The Posts tab is still visible.
+        return !ProfileUpsellEvidence.isInlineCard(nodes)
     }
 
     private fun containsToken(label: String, token: String): Boolean =

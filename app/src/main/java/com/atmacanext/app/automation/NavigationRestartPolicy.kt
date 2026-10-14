@@ -4,6 +4,9 @@ package com.atmacanext.app.automation
 internal object NavigationRestartPolicy {
     const val MAX_ATTEMPTS = 3
 
+    /** A running multi-account queue must recover inside X. Returning to the app between accounts only wastes time. */
+    fun staysInX(queueOwnsCycle: Boolean): Boolean = queueOwnsCycle
+
     fun deadlineReached(elapsedMs: Long): Boolean = elapsedMs >= AutomationStallPolicy.TIMEOUT_MS
 
     fun returnExpired(startedAt: Long, now: Long): Boolean = startedAt > 0L && deadlineReached(now - startedAt)

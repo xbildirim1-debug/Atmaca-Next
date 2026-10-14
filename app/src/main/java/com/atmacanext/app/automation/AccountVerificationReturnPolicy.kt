@@ -5,7 +5,7 @@ internal object AccountVerificationReturnPolicy {
     enum class Decision { BACK, WAIT, RECOVER }
 
     fun decide(screen: XScreen, hasBack: Boolean, attempts: Int, elapsedMs: Long, sinceBackMs: Long): Decision {
-        if (sinceBackMs < 1_000L) return Decision.WAIT
+        if (sinceBackMs < 50L) return Decision.WAIT
         if (attempts >= 6 || elapsedMs >= 12_000L) return Decision.RECOVER
         val childSurface = screen in setOf(XScreen.PROFILE, XScreen.TWEET_DETAIL,
             XScreen.FOLLOWERS_LIST, XScreen.FOLLOWING_LIST, XScreen.VERIFIED_FOLLOWERS_LIST,

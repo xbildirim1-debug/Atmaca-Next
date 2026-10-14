@@ -15,6 +15,7 @@ import com.atmacanext.app.core.AppServices
 
 object AutomationNotification {
     const val CHANNEL_ID = "atmaca_automation"
+    const val ALERT_CHANNEL_ID = "atmaca_alerts"
     const val SERVICE_NOTIFICATION_ID = 1208
     const val WORKER_NOTIFICATION_ID = 1209
 
@@ -30,6 +31,7 @@ object AutomationNotification {
             setShowBadge(false)
         }
         manager.createNotificationChannel(channel)
+        manager.deleteNotificationChannel(ALERT_CHANNEL_ID)
     }
 
     fun build(context: Context, title: String, text: String, includeActions: Boolean = true): Notification {
@@ -69,6 +71,12 @@ object AutomationNotification {
             )
         }
         return builder.build()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun alert(context: Context, title: String, text: String) {
+        // Task alerts stay on the in-app Bildirimler page. No heads-up banner.
+        ensureChannel(context)
     }
 
     private fun serviceAction(context: Context, action: String, requestCode: Int): PendingIntent =

@@ -20,6 +20,10 @@ class NotificationFeedTest {
         val result = NotificationFeed.add(read, event("new"))
         assertEquals(listOf("new"), result.filterNot { it.read }.map { it.id })
     }
+    @Test fun clearRemovesEveryEvent() {
+        val rows = NotificationFeed.add(NotificationFeed.add(emptyList(), event("a")), event("b"))
+        assertTrue(NotificationFeed.clear(rows).isEmpty())
+    }
     @Test fun inboxKeepsNewestTwoHundredEvents() {
         val rows = (0..200).fold(emptyList<AccountNotification>()) { rows, id -> NotificationFeed.add(rows, event("$id")) }
         assertEquals(200, rows.size)

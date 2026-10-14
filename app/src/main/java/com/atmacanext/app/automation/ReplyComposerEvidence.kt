@@ -31,14 +31,12 @@ internal object ReplyComposerEvidence {
 
     /** A merged author parent can cover the whole post. Prefer its compact handle child. */
     fun postHeader(nodes: List<NodeSnapshot>): CommentDetailEvidence.Header? {
-        val first = CommentDetailEvidence.header(nodes, excludeFeedTimedHeaders = false) ?: return null
+        val first = CommentDetailEvidence.header(nodes) ?: return null
         val origin = nodes[first.index].bounds
         val width = nodes.filter(::visible).maxOfOrNull { it.bounds.right } ?: return first
-        val headerEnd = CommentDetailEvidence.headerBandEnd(nodes, origin.top)
         val compact = nodes.indices.filter { i ->
             val n = nodes[i]
-            usable(n) && !editable(n) && n.bounds.top >= origin.top && n.bounds.top < headerEnd &&
-                n.bounds.top <= origin.top + maxOf(100, width / 3) &&
+            usable(n) && !editable(n) && n.bounds.top >= origin.top && n.bounds.top <= origin.top + maxOf(100, width / 3) &&
                 n.bounds.bottom - n.bounds.top < origin.bottom - origin.top &&
                 listOfNotNull(n.text, n.contentDescription).any { AccountSwitcherInspector.dedicatedHandle(it) == first.handle }
         }.minByOrNull { (nodes[it].bounds.right - nodes[it].bounds.left).toLong() * (nodes[it].bounds.bottom - nodes[it].bounds.top) }
@@ -58,9 +56,12 @@ internal object ReplyComposerEvidence {
             ?: editors.singleOrNull()
     }
 
-    fun ready(nodes: List<NodeSnapshot>, screen: XScreen): Boolean =
-        (screen in setOf(XScreen.COMPOSER, XScreen.TWEET_DETAIL) ||
-            (screen == XScreen.UNKNOWN && postHeader(nodes) != null)) && editorIndex(nodes) != null
+    fun ready(nodes: List<NodeSnapshot>, screen: XScreen): Boolean {
+        if (editorIndex(nodes) == null) return false
+        if (screen in setOf(XScreen.COMPOSER, XScreen.TWEET_DETAIL)) return true
+        // The keyboard hides Gönderi/back, so the frame is UNKNOWN while the send button is still there.
+        return screen == XScreen.UNKNOWN && submitIndex(nodes) != null
+    }
 
     fun contains(nodes: List<NodeSnapshot>, content: String): Boolean {
         val index = editorIndex(nodes) ?: return false
@@ -81,6 +82,7 @@ internal object ReplyComposerEvidence {
     }
 
     fun submitIndex(nodes: List<NodeSnapshot>): Int? {
+        composerSendIndex(nodes)?.let { return it }
         val editor = editorIndex(nodes)?.let(nodes::get) ?: return null
         val rightEdge = nodes.filter(::visible).maxOfOrNull { it.bounds.right } ?: return null
         val postHeader = postHeader(nodes)?.let { nodes[it.index] }
@@ -98,54 +100,157 @@ internal object ReplyComposerEvidence {
             // Submit is above the form at its right edge, or beside an inline editor.
             val topAction = node.bounds.bottom <= editor.bounds.top && node.bounds.left >= rightEdge / 2 &&
                 (postHeader?.let { node.bounds.bottom <= it.bounds.top } ?: !hasReplyRows)
+            // Beside the field, or on the row directly under it (X's blue Yanıtla).
             val inlineAction = node.bounds.left >= (editor.bounds.left + editor.bounds.right) / 2 &&
-                node.bounds.top <= editor.bounds.bottom && node.bounds.bottom >= editor.bounds.top
+                node.bounds.bottom >= editor.bounds.top &&
+                node.bounds.top <= editor.bounds.bottom + 220
             (knownId || namedButton) && (topAction || inlineAction)
         }.maxByOrNull { if (id(nodes[it]) in submitIds) 2 else 1 }
     }
 
-    fun matchesPost(nodes: List<NodeSnapshot>, expected: DiscoveryTweetOpenRecovery.Attempt): Boolean {
-        val rows = FeedRowEvidence.rows(nodes)
-        val header = postHeader(nodes)
-        if (header != null) {
-            if (header.handle != expected.author) return false
-            val h = nodes[header.index].bounds
-            val bodyTop = minOf(h.bottom, CommentDetailEvidence.headerBandEnd(nodes, h.top))
-            val end = rows.firstOrNull { nodes[it.headerIndex].bounds.top > nodes[header.index].bounds.top }
-                ?.let { nodes[it.headerIndex].bounds.top } ?: Int.MAX_VALUE
-            val body = nodes.filter { visible(it) && !editable(it) && it.bounds.top >= bodyTop &&
-                it.bounds.bottom <= end && !id(it).startsWith("toolbar_") &&
-                labels(it).none { label -> label in XUiVocabulary.structuralLabels } }
-            if (body.any { listOfNotNull(it.text, it.contentDescription).any { text -> sameText(expected.text, text) } }) return true
-            // Long posts may expose each paragraph as a separate visible text node.
-            // Join only this post's band, stopping before the first reply header.
-            val pieces = body.sortedWith(compareBy<NodeSnapshot> { it.bounds.top }.thenBy { it.bounds.left })
-                .mapNotNull { (it.text ?: it.contentDescription)?.takeIf(String::isNotBlank) }.distinct()
-            return pieces.size > 1 && sameText(expected.text, pieces.joinToString(" "))
+    /** Blue Yanıtla sits on the GIF row, under the text. The tweet's own Yanıtla does not. */
+    private fun composerSendIndex(nodes: List<NodeSnapshot>): Int? {
+        val gifs = nodes.filter { node -> usable(node) && !editable(node) && labels(node).any(::isGifTool) }
+        if (gifs.isEmpty()) return null
+        return nodes.indices.filter { i ->
+            val node = nodes[i]
+            if (!usable(node) || editable(node) || id(node).startsWith("toolbar_")) return@filter false
+            if (!labels(node).any(::isSubmitLabel)) return@filter false
+            gifs.any { gif -> sameRow(node, gif) && node.bounds.right > gif.bounds.right + 24 }
+        }.minByOrNull { i ->
+            val n = nodes[i]
+            (n.bounds.right - n.bounds.left).toLong() * (n.bounds.bottom - n.bounds.top)
         }
-        // A titled detail with no main author must not borrow its first reply.
-        if (nodes.any { visible(it) && listOfNotNull(it.text, it.contentDescription).any(CommentDetailEvidence::isTitle) }) return false
+    }
+
+    private fun isGifTool(label: String) = label == "gif" || label.startsWith("gif,") || label.startsWith("gif.")
+
+    private fun isSubmitLabel(label: String) = XUiVocabulary.postActions.any { action ->
+        label == action || Regex("^" + Regex.escape(action) + "(?:[,.]\\s*(?:düğme|button|etkin|enabled))+$").matches(label)
+    }
+
+    private fun sameRow(a: NodeSnapshot, b: NodeSnapshot): Boolean {
+        val overlap = minOf(a.bounds.bottom, b.bounds.bottom) - maxOf(a.bounds.top, b.bounds.top)
+        if (overlap > 0) return true
+        val dy = (a.bounds.top + a.bounds.bottom) / 2 - (b.bounds.top + b.bounds.bottom) / 2
+        return (if (dy < 0) -dy else dy) <= 140
+    }
+
+    fun matchesPost(nodes: List<NodeSnapshot>, expected: DiscoveryTweetOpenRecovery.Attempt): Boolean {
+        val replyTop = replySectionTop(nodes)
+        fun aboveReplies(top: Int) = replyTop == null || top < replyTop
+        val rows = FeedRowEvidence.rows(nodes).filter { aboveReplies(nodes[it.headerIndex].bounds.top) }
+        val header = postHeader(nodes)?.takeIf { aboveReplies(nodes[it.index].bounds.top) }
+        if (header != null && header.handle != expected.author) return false
+        if (header != null) {
+            val headerNode = nodes[header.index]
+            val textTop = if (headerNode.bounds.bottom - headerNode.bounds.top <= 220) headerNode.bounds.bottom
+                else headerNode.bounds.top
+            if (textInBand(nodes, textTop, bandEnd(nodes, rows, headerNode.bounds.top, header.handle), expected.text)) return true
+        }
         val first = rows.firstOrNull()
         if (first != null) {
             if (first.author != expected.author || first.authorTruncated) return false
-            val body = first.bodyIndex?.let { nodes[it].text ?: nodes[it].contentDescription }.orEmpty()
-            if (sameText(expected.text, body)) return true
+            val direct = first.bodyIndex?.let { nodes[it].text ?: nodes[it].contentDescription }.orEmpty()
+            if (sameText(expected.text, direct)) return true
+            val origin = nodes[first.headerIndex].bounds.top
+            if (textInBand(nodes, origin, bandEnd(nodes, rows, origin, first.author), expected.text)) return true
+            return false
         }
-        return false
+        if (header != null) return false
+        // X often draws the opened name and text without exposing them. Handles under
+        // Alakalı belong to replies, not the tweet that was just opened.
+        return unlabeledOpenedPost(nodes, expected, replyTop)
+    }
+
+    private fun replySectionTop(nodes: List<NodeSnapshot>): Int? = nodes.filter { node ->
+        visible(node) && !editable(node) && labels(node).any { label ->
+            label in setOf("alakalı", "relevant", "en yeni", "latest", "alıntıları görüntüle", "view quotes")
+        }
+    }.minOfOrNull { it.bounds.top }
+
+    private fun unlabeledOpenedPost(nodes: List<NodeSnapshot>, expected: DiscoveryTweetOpenRecovery.Attempt, replyTop: Int?): Boolean {
+        val titled = nodes.any { visible(it) && !editable(it) && labels(it).any(CommentDetailEvidence::isTitle) }
+        // The reply list and the composer are often still off this frame. The detail
+        // we just opened is still the profile row that was tapped.
+        if (replyTop == null && !titled) return false
+        val above = nodes.filter { visible(it) && !editable(it) && (replyTop == null || it.bounds.top < replyTop) }
+        val handles = above.flatMap { listOfNotNull(it.text, it.contentDescription) }.mapNotNull { raw ->
+            TweetContentEvidence.header(raw)?.handle ?: AccountSwitcherInspector.dedicatedHandle(raw)
+        }
+        if (handles.any { it != expected.author }) return false
+        val bodies = above.flatMap { listOfNotNull(it.text, it.contentDescription) }
+            .map { it.trim() }
+            .filter { text ->
+                text.length >= 40 && TweetContentEvidence.header(text) == null &&
+                    !Regex("^\\d{1,2}:\\d{2}\\b").containsMatchIn(text) &&
+                    !text.contains("görüntüleme", true) && !text.contains("views", true)
+            }
+        if (bodies.isEmpty()) return true
+        return bodies.any { sameText(expected.text, it) }
+    }
+
+    /** Text of this post only: after its author line, before the next other author or the reply chrome. */
+    private fun bandEnd(nodes: List<NodeSnapshot>, rows: List<FeedRowEvidence.Row>, originTop: Int, author: String): Int {
+        val nextAuthor = rows.firstOrNull { row ->
+            nodes[row.headerIndex].bounds.top > originTop && row.author != author
+        }?.let { nodes[it.headerIndex].bounds.top } ?: Int.MAX_VALUE
+        val chrome = nodes.filter { node ->
+            visible(node) && !editable(node) && node.bounds.top > originTop && labels(node).any { label ->
+                label in XUiVocabulary.structuralLabels || isEntry(label) ||
+                    label in setOf("alakalı", "relevant", "en yeni", "latest", "alıntıları görüntüle", "view quotes")
+            }
+        }.minOfOrNull { it.bounds.top } ?: Int.MAX_VALUE
+        return minOf(nextAuthor, chrome)
+    }
+
+    private fun textInBand(nodes: List<NodeSnapshot>, originTop: Int, end: Int, expected: String): Boolean {
+        val body = nodes.filter { node ->
+            visible(node) && !editable(node) && node.bounds.top >= originTop && node.bounds.top < end &&
+                node.bounds.bottom > originTop && !id(node).startsWith("toolbar_") &&
+                labels(node).none { label -> label in XUiVocabulary.structuralLabels || isEntry(label) }
+        }
+        if (body.any { listOfNotNull(it.text, it.contentDescription).any { text -> sameText(expected, text) } }) return true
+        val pieces = body.sortedWith(compareBy<NodeSnapshot> { it.bounds.top }.thenBy { it.bounds.left })
+            .mapNotNull { (it.text ?: it.contentDescription)?.takeIf(String::isNotBlank) }
+            .filter { TweetContentEvidence.header(it) == null }
+            .distinct()
+        return pieces.size > 1 && sameText(expected, pieces.joinToString(" "))
     }
 
     private fun sameText(before: String, after: String): Boolean {
         val a = normal(before).replace(Regex("(?i)\\s*(?:daha fazlasını göster|show more)\\s*$"), "").trimEnd('.', '…', ' ')
         val b = normal(after)
-        return a.isNotBlank() && (a == b || (a.length >= 40 && b.startsWith(a)))
+        return a.isNotBlank() && (a == b || (a.length >= 40 && (b.startsWith(a) || b.contains(a))))
     }
 
     fun hasSentNotice(nodes: List<NodeSnapshot>): Boolean = nodes.any { node ->
         visible(node) && !editable(node) && !listOf("tweet_text", "tweet_content", "status_text").any(id(node)::contains) &&
-            labels(node).any { label -> setOf(
-            "yanıtın gönderildi", "yanıtınız gönderildi", "gönderin gönderildi", "gönderiniz gönderildi",
-            "gönderi gönderildi", "your reply was sent", "your post was sent", "your tweet was sent", "reply sent", "post sent",
-        ).any { notice -> label == notice || Regex("^" + Regex.escape(notice) + "(?:[,.]?\\s*(?:görüntüle|view|göster))?[.!]?$" ).matches(label) } }
+            labels(node).any { label -> sentNotices.any { notice ->
+                label == notice || label.startsWith(notice) || (notice.length >= 12 && label.contains(notice))
+            } }
+    }
+
+    private val sentNotices = listOf(
+        "yanıtın gönderildi", "yanıtınız gönderildi", "yanıt gönderildi",
+        "gönderin gönderildi", "gönderiniz gönderildi", "gönderi gönderildi",
+        "your reply was sent", "your post was sent", "your tweet was sent", "reply sent", "post sent",
+    )
+
+    /**
+     * Yanıtla was tapped and the draft left the field. X keeps the tweet's own
+     * Yanıtla button, so a remaining toolbar is not proof the send failed.
+     */
+    fun replyLanded(nodes: List<NodeSnapshot>, content: String): Boolean {
+        if (content.isBlank() || contains(nodes, content) || nodes.none(::visible)) return false
+        val editor = editorIndex(nodes)?.let(nodes::get)
+        if (editor != null) {
+            val text = editor.text.orEmpty()
+            return text.isBlank() || isEntry(text)
+        }
+        return nodes.any { node ->
+            visible(node) && (labels(node).any(::isEntry) || labels(node).any(CommentDetailEvidence::isTitle))
+        }
     }
 
     fun ownReplyKeys(nodes: List<NodeSnapshot>, username: String, content: String): Set<String> =

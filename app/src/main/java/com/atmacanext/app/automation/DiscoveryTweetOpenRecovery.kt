@@ -28,6 +28,19 @@ internal object DiscoveryTweetOpenRecovery {
         return if (sameCandidateVisible) Decision.RETRY else Decision.WAIT
     }
 
+    /** "Daha fazlasını göster" is an inline span. ACTION_CLICK expands it and never opens the post. */
+    fun inlineExpansion(text: String): Boolean {
+        val value = text.lowercase()
+        return value.contains("daha fazlasını göster") || value.contains("show more")
+    }
+
+    /** Stay on the first lines, clear of the trailing expansion link. */
+    fun expandTap(attempt: Int): Pair<Float, Float> = when (attempt) {
+        0 -> 0.28f to 0.16f
+        1 -> 0.22f to 0.34f
+        else -> 0.40f to 0.28f
+    }
+
     /** Distinct text-only retry points handle different Compose layouts on later accounts. */
     fun tapPosition(attempt: Int): Pair<Float, Float> = when (attempt) {
         1 -> 0.50f to 0.50f
