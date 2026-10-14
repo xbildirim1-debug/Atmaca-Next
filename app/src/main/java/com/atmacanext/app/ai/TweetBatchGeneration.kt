@@ -29,7 +29,7 @@ object TweetPoolPolicy {
         .replace(Regex("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]"), "")
         .replace(Regex("\\s+"), " ").trim()
     fun valid(value: String): Boolean = value.isNotBlank() && value.codePointCount(0, value.length) <= 280
-    fun key(value: String): String = normalized(value).lowercase(Locale.ROOT)
+    fun key(value: String): String = normalized(value).lowercase(Locale.ROOT).replace("\u0307", "")
     fun merge(existing: List<String>, incoming: List<String>, capacity: Int = MAX_LINES): Merge {
         val kept = existing.take(capacity.coerceAtLeast(0))
         val keys = kept.map(::key).toMutableSet()
