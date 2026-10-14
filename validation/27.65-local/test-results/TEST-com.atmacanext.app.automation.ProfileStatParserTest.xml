@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.ProfileStatParserTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.785Z" hostname="7e4fa31aba91" time="0.004">
+  <properties/>
+  <testcase name="readsLabelFirstAndGroupedDigits" classname="com.atmacanext.app.automation.ProfileStatParserTest" time="0.003"/>
+  <testcase name="oneMissingCounterRemainsUnknown" classname="com.atmacanext.app.automation.ProfileStatParserTest" time="0.0"/>
+  <testcase name="splitNodesDoNotBorrowTheOtherValue" classname="com.atmacanext.app.automation.ProfileStatParserTest" time="0.001"/>
+  <testcase name="keepsDifferentCountersSeparateInOneRow" classname="com.atmacanext.app.automation.ProfileStatParserTest" time="0.0"/>
+  <testcase name="rejectsBioNumbersAndMissingCounts" classname="com.atmacanext.app.automation.ProfileStatParserTest" time="0.0"/>
+  <testcase name="preservesTurkishAbbreviationAndZero" classname="com.atmacanext.app.automation.ProfileStatParserTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

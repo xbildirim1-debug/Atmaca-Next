@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.CommenterViewportPolicyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.584Z" hostname="7e4fa31aba91" time="0.002">
+  <properties/>
+  <testcase name="changedViewportRestartsEmptyConfirmation" classname="com.atmacanext.app.automation.CommenterViewportPolicyTest" time="0.001"/>
+  <testcase name="oneEmptySnapshotAfterBackNeverScrollsImmediately" classname="com.atmacanext.app.automation.CommenterViewportPolicyTest" time="0.0"/>
+  <testcase name="handledTopCommenterDoesNotForceScrollPastOtherVisibleUsers" classname="com.atmacanext.app.automation.CommenterViewportPolicyTest" time="0.0"/>
+  <testcase name="ownAccountAndTargetCanBeExcludedWithoutSkippingOtherCommenters" classname="com.atmacanext.app.automation.CommenterViewportPolicyTest" time="0.0"/>
+  <testcase name="viewportScrollsOnlyAfterStableEmptyEvidence" classname="com.atmacanext.app.automation.CommenterViewportPolicyTest" time="0.0"/>
+  <testcase name="commenterAppearingDuringSettleCancelsScroll" classname="com.atmacanext.app.automation.CommenterViewportPolicyTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

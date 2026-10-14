@@ -16,7 +16,7 @@ import com.atmacanext.app.MainActivity
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Yalnızca X/Twitter paketini izler; V19 deeplink koruması ve hesap senkronizasyonu içerir. */
-class AtmacaAccessibilityService : AccessibilityService() {
+open class AtmacaAccessibilityService : AccessibilityService() {
     companion object {
         const val X_PACKAGE = "com.twitter.android"
         private const val RELAUNCH_GAP_MS = 2_800L
@@ -493,42 +493,51 @@ class AtmacaAccessibilityService : AccessibilityService() {
         return cropBitmap(software, bounds)?.also { if (it !== software) software.recycle() }
     }
 
-    /** Profile pages are often labeled HOME, so pressBack() refuses to leave. Tap the arrow anyway. */
-    fun popProfile(): Boolean {
-        val root = freshNavigationRoot()
-        val nodes = if (root != null) AccessibilityTree.nodes(root) else emptyList()
-        val labeled = nodes.firstOrNull { node ->
-            val text = listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(" ").lowercase()
-            node.isVisibleToUser && (
-                XUiVocabulary.backSignals.any { text.contains(it) } ||
-                    node.viewIdResourceName.orEmpty().lowercase().let {
-                        it.endsWith("/back") || it.contains("navigate_up") || it.contains("toolbar_back")
-                    }
-                )
+    fun closeAccountScanDetail(): Boolean {
+        val root = freshNavigationRoot() ?: return false
+        val snapshots = AccessibilityTree.snapshots(root)
+        if (root.packageName?.toString() != X_PACKAGE || ScreenDetector.detect(root, snapshots) != XScreen.TWEET_DETAIL ||
+            AccountProfileReturnPolicy.profilePresent(snapshots)) return false
+        val accepted = performGlobalAction(GLOBAL_ACTION_BACK)
+        OperationLog.i("ACCOUNT_PROFILE_RETURN", "Beklenmeyen gönderi detayından kontrollü geri=$accepted")
+        return accepted
+    }
+
+    fun captureProfileRegion(expectedHandle: String, bounds: android.graphics.Rect,
+                             onDone: (android.graphics.Bitmap?) -> Unit) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) { onDone(null); return }
+        fun matches(): Boolean {
+            val root = freshNavigationRoot() ?: return false
+            return root.packageName?.toString() == X_PACKAGE &&
+                AccountProfileReturnPolicy.ownProfile(AccessibilityTree.snapshots(root), expectedHandle)
         }
-        if (labeled != null && (labeled.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK) || GestureClick.gestureTap(this, labeled))) {
-            OperationLog.i("NAV", "profil geri oku")
+        if (!matches()) { onDone(null); return }
+        captureRegion(bounds) { bitmap ->
+            if (bitmap != null && !matches()) {
+                bitmap.recycle()
+                OperationLog.w("ACCOUNT_AVATAR", "@$expectedHandle profil kimliği değişti; başka ekranın resmi kaydedilmedi")
+                onDone(null)
+            } else onDone(bitmap)
+        }
+    }
+
+    /** The fresh account header is required even when the detector calls it HOME. */
+    fun popProfile(expectedHandle: String? = null, forceSystemBack: Boolean = false): Boolean {
+        val root = freshNavigationRoot() ?: return false
+        if (root.packageName?.toString() != X_PACKAGE) return false
+        val nodes = AccessibilityTree.nodes(root)
+        val snapshots = nodes.map { it.toSnapshot() }
+        if (!AccountProfileReturnPolicy.ownProfile(snapshots, expectedHandle)) return false
+        val back = AccountProfileReturnPolicy.backIndex(snapshots, expectedHandle)?.let(nodes::get)
+        if (!forceSystemBack && back != null && GestureClick.gestureTap(this, back)) {
+            OperationLog.i("ACCOUNT_PROFILE_RETURN", "@$expectedHandle doğrulanmış geri oku kabul edildi; sonraki ekran beklenecek")
             return true
         }
-        val density = resources.displayMetrics.density
-        val corner = nodes.firstOrNull { node ->
-            if (!node.isVisibleToUser || !node.isClickable) return@firstOrNull false
-            val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
-            val size = (72 * density).toInt()
-            bounds.width() in 24..size && bounds.left < size && bounds.top in (24 * density).toInt()..(130 * density).toInt()
-        }
-        if (corner != null && GestureClick.gestureTap(this, corner)) {
-            OperationLog.i("NAV", "profil sol üst geri")
-            return true
-        }
-        val onProfile = nodes.any { node ->
-            listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(" ").lowercase().let {
-                it.contains("profili düzenle") || it.contains("edit profile")
-            }
-        }
-        if (!onProfile) return false
+        val fresh = freshNavigationRoot() ?: return false
+        if (fresh.packageName?.toString() != X_PACKAGE ||
+            !AccountProfileReturnPolicy.ownProfile(AccessibilityTree.snapshots(fresh), expectedHandle)) return false
         val backed = performGlobalAction(GLOBAL_ACTION_BACK)
-        OperationLog.i("NAV", "profil sistem geri=$backed")
+        OperationLog.i("ACCOUNT_PROFILE_RETURN", "@$expectedHandle doğrulanmış profil sistem geri=$backed; sonraki ekran beklenecek")
         return backed
     }
 

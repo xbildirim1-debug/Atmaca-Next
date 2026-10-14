@@ -16,7 +16,7 @@ import java.util.UUID
 /** User-started screen navigation only. All state mutations share this object's monitor. */
 object AccountSyncController {
     enum class Mode { NONE, IMPORT, SWITCH }
-    private enum class Stage { IDLE, HOME, DRAWER, SWITCHER, HARVEST, SELECT, SETTLE, VERIFY_DRAWER, PROFILE_PHOTO, SAVING }
+    private enum class Stage { IDLE, HOME, DRAWER, SWITCHER, HARVEST, SELECT, SETTLE, VERIFY_DRAWER, PROFILE_PHOTO, SAVING, RETURN_PROFILE }
     data class State(
         val active: Boolean = false, val mode: Mode = Mode.NONE,
         val message: String = "Hazır", val discovered: Int = 0, val processed: Int = 0,
@@ -59,6 +59,7 @@ object AccountSyncController {
     private var pendingFollowing: String? = null
     private var profileTries = 0
     private var profileLeft = false
+    private var profileReturnAttempts = 0
     private val navigationGate = AccountNavigationGate()
 
     @Synchronized fun attach(service: AtmacaAccessibilityService) { serviceRef = WeakReference(service) }
@@ -91,7 +92,7 @@ object AccountSyncController {
         timedTarget = null; targetStartedAt = 0L
         recoveries = 0; harvestDone = false; harvestSignature = null; stableHarvests = 0; avatarPage = null; avatarBusy = false
         harvestEndConfirmed = false; harvestHoldUntil = 0L
-        pendingFollowers = null; pendingFollowing = null; profileTries = 0; profileLeft = false
+        pendingFollowers = null; pendingFollowing = null; profileTries = 0; profileLeft = false; profileReturnAttempts = 0
         if (mode == Mode.IMPORT) com.atmacanext.app.data.settings.AccountAvatarStore.clear(service)
         navigationGate.clear()
         startedAt = SystemClock.elapsedRealtime()
@@ -135,17 +136,17 @@ object AccountSyncController {
     @Synchronized fun onSnapshot(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, popup: PopupType) {
         if (!isActive || !checkDeadline(service)) return
         val now = SystemClock.elapsedRealtime()
-        if (target != null && target == timedTarget && now - targetStartedAt > 45_000L && stage != Stage.SAVING) {
+        if (target != null && target == timedTarget && now - targetStartedAt > 45_000L && stage !in setOf(Stage.SAVING, Stage.RETURN_PROFILE)) {
             skipTarget(service, "45 saniyede hesap doğrulanamadı")
             return
         }
         if (now - stageAt > 20_000L) {
             OperationLog.w("ACCOUNT_SYNC", "Zaman aşımı stage=$stage target=$target screen=$screen")
-            if (target != null && stage != Stage.SAVING) {
+            if (target != null && stage !in setOf(Stage.SAVING, Stage.RETURN_PROFILE)) {
                 skipTarget(service, "20 saniyede hesap doğrulanamadı")
                 return
             }
-            if (stage == Stage.SAVING || ++recoveries > 3) {
+            if (stage in setOf(Stage.SAVING, Stage.RETURN_PROFILE) || ++recoveries > 3) {
                 finish(false, "${_state.value.message}: ekran doğrulanamadı. Kaydedilen hesaplar korundu.")
                 return
             }
@@ -283,6 +284,7 @@ object AccountSyncController {
                         pendingFollowing = account.following
                         profileTries = 0
                         profileLeft = false
+                        profileReturnAttempts = 0
                         XNavigator.execute(service, root, NavigationCommand.OPEN_PROFILE_FROM_DRAWER, account.username.orEmpty(), null)
                         move(Stage.PROFILE_PHOTO, "@${account.username} profil resmi alınıyor")
                         tick(service, 350L); return
@@ -304,32 +306,48 @@ object AccountSyncController {
                 val waited = now - stageAt
                 val metrics = service.resources.displayMetrics
                 val nodes = AccessibilityTree.snapshots(root)
-                val ownProfile = nodes.any { node ->
-                    val label = listOfNotNull(node.text, node.contentDescription).joinToString(" ").lowercase()
-                    label.contains("profili düzenle") || label.contains("edit profile")
-                }
-                if ((screen == XScreen.PROFILE || ownProfile) && waited >= 280L) {
+                val ownProfile = AccountProfileReturnPolicy.ownProfile(nodes, target)
+                if (ownProfile && waited >= 280L) {
                     val minPx = (64 * metrics.density).toInt()
                     val maxPx = (160 * metrics.density).toInt()
                     val photo = ProfileAvatarEvidence.bounds(nodes, metrics.widthPixels, minPx, maxPx)
                     OperationLog.i("ACCOUNT_AVATAR", "@$target profil kare=${photo?.let { "${it.left},${it.top} ${it.width()}x${it.height()}" } ?: "yok"} beklenen=${waited}ms")
-                    save(service, AccountSwitcherInspector.ProfileStats(followers, following), photo, metrics)
+                    save(service, AccountSwitcherInspector.ProfileStats(followers, following), photo, metrics, profileVerified = true)
                     return
                 }
                 if (screen == XScreen.ACCOUNT_DRAWER && profileTries++ < 2) {
                     XNavigator.execute(service, root, NavigationCommand.OPEN_PROFILE_FROM_DRAWER, target.orEmpty(), null)
                     tick(service, 300L); return
                 }
-                if (waited < 900L) { tick(service, 150L); return }
+                // The supplied device log opens the profile in 1.9–2.4 seconds.
+                // A transient early frame must not save it without its picture.
+                if (waited < 3_500L) { tick(service, 150L); return }
                 OperationLog.w("ACCOUNT_AVATAR", "@$target profil ${waited}ms içinde açılmadı; fotoğrafsız çıkılıyor")
                 save(service, AccountSwitcherInspector.ProfileStats(followers, following), null, metrics)
             }
-            Stage.SAVING -> {
-                if (!profileLeft && now - stageAt >= 450L) {
+            Stage.SAVING -> Unit
+            Stage.RETURN_PROFILE -> {
+                val nodes = AccessibilityTree.snapshots(root)
+                val action = AccountProfileReturnPolicy.decide(screen,
+                    AccountProfileReturnPolicy.profilePresent(nodes), HomeTimelineEvidence.matches(nodes))
+                if (action == AccountProfileReturnPolicy.Action.READY) {
                     profileLeft = true
-                    val left = service.popProfile()
-                    OperationLog.i("ACCOUNT_SYNC", "profilden çıkış=$left")
+                    OperationLog.i("ACCOUNT_PROFILE_RETURN", "@$target profilden çıkış doğrulandı screen=$screen")
+                    nextAfterProfileReturn(service, screen)
+                    return
                 }
+                if (action == AccountProfileReturnPolicy.Action.POP_PROFILE) {
+                    val accepted = service.popProfile(target, forceSystemBack = profileReturnAttempts > 0)
+                    profileReturnAttempts++
+                    OperationLog.i("ACCOUNT_PROFILE_RETURN", "@$target deneme=$profileReturnAttempts kabul=$accepted screen=$screen; henüz çıkış sayılmadı")
+                } else if (action == AccountProfileReturnPolicy.Action.LEAVE_DETAIL) {
+                    // No corner taps: recover a confirmed detail surface within X.
+                    service.closeAccountScanDetail()
+                }
+                // This transition delay is not divided by the user's speed setting.
+                nextActionAt = now + 500L
+                service.requestAutomationTickExact(500L)
+                return
             }
             Stage.IDLE -> Unit
         }
@@ -405,6 +423,7 @@ object AccountSyncController {
         stats: AccountSwitcherInspector.ProfileStats,
         photo: android.graphics.Rect?,
         metrics: android.util.DisplayMetrics,
+        profileVerified: Boolean = false,
     ) {
         val handle = target ?: return
         val token = generation
@@ -423,49 +442,54 @@ object AccountSyncController {
             return true
         }
         fun persist(bitmap: android.graphics.Bitmap?) {
-            if (!done.compareAndSet(false, true)) return
-            if (bitmap != null) {
-                val kept = runCatching { com.atmacanext.app.data.settings.AccountAvatarStore.write(service, handle, bitmap) }.getOrDefault(false)
-                if (!kept) OperationLog.w("ACCOUNT_SYNC", "@$handle profil resmi kaydedilmedi")
-                bitmap.recycle()
-            }
-            saveJob = scope.launch {
-                try {
-                    val existing = AppServices.repository.snapshotAccountDomains().firstOrNull {
-                        XIdentityDetector.normalizeUsername(it.username) == handle
-                    }
-                    ensureActive()
-                    val account = existing?.copy(followers = stats.followers!!, following = stats.following!!)
-                        ?: Account(UUID.nameUUIDFromBytes("x:$handle".toByteArray()).toString(), "@$handle", "",
-                            stats.followers!!, stats.following!!, "—", 100, AccountAccent.BLUE)
-                    AppServices.repository.upsertSyncedAccount(account)
-                    com.atmacanext.app.data.settings.AccountPulse.noteScan(service, handle, stats.followers, stats.following)
-                    service.runOnAutomationThread { saved(token, handle) }
-                } catch (cancelled: CancellationException) { throw cancelled }
-                catch (error: Exception) {
-                    service.runOnAutomationThread {
-                        synchronized(this@AccountSyncController) {
-                            if (generation == token && isActive) finish(false,
-                                if (error is IllegalArgumentException) error.message ?: "Hesap sınırı doldu"
-                                else "@$handle kaydedilemedi. Yeniden dene.")
+            synchronized(this@AccountSyncController) {
+                if (generation != token || !isActive || stage != Stage.SAVING || target != handle || !done.compareAndSet(false, true)) {
+                    bitmap?.recycle()
+                    return
+                }
+                if (bitmap != null) {
+                    val kept = runCatching { com.atmacanext.app.data.settings.AccountAvatarStore.write(service, handle, bitmap) }.getOrDefault(false)
+                    if (!kept) OperationLog.w("ACCOUNT_SYNC", "@$handle profil resmi kaydedilmedi")
+                    bitmap.recycle()
+                }
+                saveJob = scope.launch {
+                    try {
+                        val existing = AppServices.repository.snapshotAccountDomains().firstOrNull {
+                            XIdentityDetector.normalizeUsername(it.username) == handle
+                        }
+                        ensureActive()
+                        val account = existing?.copy(followers = stats.followers!!, following = stats.following!!)
+                            ?: Account(UUID.nameUUIDFromBytes("x:$handle".toByteArray()).toString(), "@$handle", "",
+                                stats.followers!!, stats.following!!, "—", 100, AccountAccent.BLUE)
+                        AppServices.repository.upsertSyncedAccount(account)
+                        com.atmacanext.app.data.settings.AccountPulse.noteScan(service, handle, stats.followers, stats.following)
+                        service.runOnAutomationThread { saved(token, handle) }
+                    } catch (cancelled: CancellationException) { throw cancelled }
+                    catch (error: Exception) {
+                        service.runOnAutomationThread {
+                            synchronized(this@AccountSyncController) {
+                                if (generation == token && isActive) finish(false,
+                                    if (error is IllegalArgumentException) error.message ?: "Hesap sınırı doldu"
+                                    else "@$handle kaydedilemedi. Yeniden dene.")
+                            }
                         }
                     }
                 }
             }
         }
+        if (!profileVerified) { persist(null); return }
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            if (generation != token || !isActive || stage != Stage.SAVING || done.get()) return@postDelayed
             if (photo != null) {
-                service.captureRegion(photo) { bitmap ->
-                    if (!profileLeft) { profileLeft = true; service.popProfile() }
+                service.captureProfileRegion(handle, photo) { bitmap ->
                     if (usable(bitmap)) persist(bitmap) else { bitmap?.recycle(); persist(null) }
                 }
             } else {
                 val top = (90 * metrics.density).toInt()
                 val bottom = (420 * metrics.density).toInt().coerceAtMost(metrics.heightPixels - 1)
                 val header = android.graphics.Rect(0, top, metrics.widthPixels, bottom)
-                service.captureRegion(header) { bitmap ->
-                    if (!profileLeft) { profileLeft = true; service.popProfile() }
-                    if (bitmap == null) { persist(null); return@captureRegion }
+                service.captureProfileRegion(handle, header) { bitmap ->
+                    if (bitmap == null) { persist(null); return@captureProfileRegion }
                     val pixels = IntArray(bitmap.width * bitmap.height)
                     bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
                     val minSize = (56 * metrics.density).toInt()
@@ -490,14 +514,17 @@ object AccountSyncController {
         if (token != generation || !isActive || stage != Stage.SAVING) return
         processed += handle
         recoveries = 0
+        profileReturnAttempts = 0
+        move(Stage.RETURN_PROFILE, "@$handle kaydedildi; profilden çıkış doğrulanıyor")
+        serviceRef?.get()?.let { it.requestAutomationTickExact(40L) }
+    }
+    private fun nextAfterProfileReturn(service: AtmacaAccessibilityService, screen: XScreen) {
+        val handle = target ?: return
         if (_state.value.mode == Mode.SWITCH) { finish(true, "@$handle artık X'te etkin"); return }
         target = AccountScanPolicy.next(discovered, processed, skipped)
         if (target == null) { finish(skipped.isEmpty(), "${processed.size} hesap güncellendi, ${skipped.size} hesap okunamadı"); return }
-        move(Stage.HOME, "@$target için ana ekrana dönülüyor")
-        serviceRef?.get()?.let { service ->
-            service.launchXHome()
-            tick(service, 800L)
-        }
+        move(if (screen == XScreen.HOME) Stage.DRAWER else Stage.SWITCHER, "@$target için hesap menüsüne geçiliyor")
+        tick(service, 100L)
     }
     private fun move(next: Stage, message: String) {
         stage = next; stageAt = SystemClock.elapsedRealtime(); nextActionAt = 0L; publish(message)

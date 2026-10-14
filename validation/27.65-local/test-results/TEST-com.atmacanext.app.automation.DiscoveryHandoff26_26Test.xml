@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.600Z" hostname="7e4fa31aba91" time="0.013">
+  <properties/>
+  <testcase name="searchQueryOrBioMentionAloneIsNeverTargetConfirmation" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.0"/>
+  <testcase name="duplicateFullPageTitleCannotHideTheRealAuthor" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.002"/>
+  <testcase name="wrongAuthorIsRejectedEvenWithVisibleFollow" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.0"/>
+  <testcase name="nearbyReplyFollowIsNotTheOpenedAuthorsFollow" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.002"/>
+  <testcase name="searchResultTapWaitsThenRetriesOnlyTheStillOpenQuery" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.0"/>
+  <testcase name="secondAccountStartsWithItsOwnTargetAndFreshNavigation" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.001"/>
+  <testcase name="differentProfileCannotBeConfirmedByItsRepostOfTarget" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.0"/>
+  <testcase name="mergedLargeFollowContainerDoesNotBecomeTapTarget" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.001"/>
+  <testcase name="loadingProfileDoesNotRequireAVisiblePostOrCount" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.001"/>
+  <testcase name="hiddenPreviousAccountAndComposerCannotOverrideSecondProfile" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.001"/>
+  <testcase name="headingRoleSuffixStillAllowsExactAuthorFollow" classname="com.atmacanext.app.automation.DiscoveryHandoff26_26Test" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

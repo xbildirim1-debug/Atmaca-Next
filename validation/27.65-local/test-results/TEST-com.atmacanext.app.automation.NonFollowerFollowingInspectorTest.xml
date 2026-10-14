@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.NonFollowerFollowingInspectorTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.727Z" hostname="7e4fa31aba91" time="0.018">
+  <properties/>
+  <testcase name="siblingBadgeIsAssociatedOnlyWithItsActualPerson" classname="com.atmacanext.app.automation.NonFollowerFollowingInspectorTest" time="0.007"/>
+  <testcase name="clippedTopIsStillUnknown" classname="com.atmacanext.app.automation.NonFollowerFollowingInspectorTest" time="0.0"/>
+  <testcase name="ownBadgeStillProtectsTheCachedRow" classname="com.atmacanext.app.automation.NonFollowerFollowingInspectorTest" time="0.001"/>
+  <testcase name="missingNameStillCannotProveAnAbsentBadge" classname="com.atmacanext.app.automation.NonFollowerFollowingInspectorTest" time="0.0"/>
+  <testcase name="cachedCompleteSinglePersonRowStillProvesNonMutualStatus" classname="com.atmacanext.app.automation.NonFollowerFollowingInspectorTest" time="0.001"/>
+  <testcase name="truncatedCaptureStillCannotProveBadgeAbsence" classname="com.atmacanext.app.automation.NonFollowerFollowingInspectorTest" time="0.008"/>
+  <testcase name="invalidParentGraphCannotProduceAnAction" classname="com.atmacanext.app.automation.NonFollowerFollowingInspectorTest" time="0.0"/>
+  <testcase name="mergedPeopleCannotTurnBadgeAbsenceIntoAnAction" classname="com.atmacanext.app.automation.NonFollowerFollowingInspectorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

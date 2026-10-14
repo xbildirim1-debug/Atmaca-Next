@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.ReplyTextInput26_62Test" tests="21" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.933Z" hostname="7e4fa31aba91" time="0.009">
+  <properties/>
+  <testcase name="blankContentCannotFocusOrModifyAnEditor" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.001"/>
+  <testcase name="inputConnectionRequiresTheFocusedXTextEditor" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="aLowerSameAuthorReplyCannotBecomeTheCompactOpenedHeader" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.001"/>
+  <testcase name="nativeInputReplacesADraftRatherThanAppendingTheComment" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="acceptedButIneffectiveSetTextExercisesPasteOnTheNextAttempt" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="anExistingExactCommentDoesNotDispatchAnotherWrite" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="focusThenNativeInputTransfersTheWholeTurkishComment" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.001"/>
+  <testcase name="aSecondFreshFrameCannotAppendTheSameNativeTextTwice" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="duplicateSemanticsOfTheSameEditorDoNotBlockItsTextRead" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="thePhotoLayoutOpensTheBottomReplyFieldBeforeTheReplyCountToolbar" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.001"/>
+  <testcase name="aPhysicalFocusRequestDoesNotWriteIntoAnUnfocusedField" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="passwordEditorsNeverReceiveTheCommentThroughAnInputConnection" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="thePhotoLayoutWithAReplyFieldRoleStillWinsOverBackgroundProfileTabs" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.002"/>
+  <testcase name="roleSuffixesCannotTurnAnArbitrarySentenceIntoTheReplyField" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="anAcknowledgedWriteIsNotTextVerification" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="freshInputTextProofAllowsSubmissionWhileNoTextProofStillWaits" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="aRejectedNativeWriteCanUseTheFocusedAccessibilityFallback" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="anIncompleteNativeReadDoesNotAuthorizeNativeReplacement" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="aHiddenPlaceholderAndAnImageButtonCannotStealFocus" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="unsupportedSetTextCanPasteWithoutAnAdvertisedPasteAction" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.0"/>
+  <testcase name="aLargeMergedAuthorParentCannotHideTheActualPostText" classname="com.atmacanext.app.automation.ReplyTextInput26_62Test" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

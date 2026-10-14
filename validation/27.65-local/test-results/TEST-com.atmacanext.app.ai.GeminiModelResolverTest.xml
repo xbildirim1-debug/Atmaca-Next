@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.ai.GeminiModelResolverTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.095Z" hostname="7e4fa31aba91" time="0.03">
+  <properties/>
+  <testcase name="requestedUnavailableModelFallsBackToAvailableGenerateContentModel" classname="com.atmacanext.app.ai.GeminiModelResolverTest" time="0.028"/>
+  <testcase name="explicitlyAvailableRequestedModelIsFirst" classname="com.atmacanext.app.ai.GeminiModelResolverTest" time="0.0"/>
+  <testcase name="autoPilotPrefersLiteSoTheFreeDayLasts" classname="com.atmacanext.app.ai.GeminiModelResolverTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

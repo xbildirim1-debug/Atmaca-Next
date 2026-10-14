@@ -1,0 +1,912 @@
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -7,15 +7,16 @@
+ }
+ 
+ val keystoreProperties = Properties().apply {
+-    load(rootProject.file("signing/keystore.properties").inputStream())
++    rootProject.file("signing/keystore.properties").takeIf { it.isFile }?.inputStream()?.use { load(it) }
+ }
++val hasPrivateSigning = keystoreProperties.getProperty("storeFile")?.let { rootProject.file(it).isFile } == true
+ 
+ android {
+     namespace = "com.atmacanext.app"
+     compileSdk { version = release(37) { minorApiLevel = 1 } }
+ 
+     signingConfigs {
+-        create("atmaca") {
++        if (hasPrivateSigning) create("atmaca") {
+             storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+             storePassword = keystoreProperties.getProperty("storePassword")
+             keyAlias = keystoreProperties.getProperty("keyAlias")
+@@ -29,8 +30,8 @@
+         applicationId = "com.atmacanext.v258"
+         minSdk = 26
+         targetSdk = 36
+-        versionCode = 212
+-        versionName = "27.64"
++        versionCode = 213
++        versionName = "27.65"
+ 
+         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+         vectorDrawables.useSupportLibrary = true
+@@ -38,12 +39,12 @@
+ 
+     buildTypes {
+         debug {
+-            signingConfig = signingConfigs.getByName("atmaca")
++            if (hasPrivateSigning) signingConfig = signingConfigs.getByName("atmaca")
+             isMinifyEnabled = false
+             isShrinkResources = false
+         }
+         release {
+-            signingConfig = signingConfigs.getByName("atmaca")
++            if (hasPrivateSigning) signingConfig = signingConfigs.getByName("atmaca")
+             isMinifyEnabled = true
+             isShrinkResources = true
+             proguardFiles(
+--- /dev/null
++++ b/app/src/main/java/com/atmacanext/app/automation/AccountProfileReturnPolicy.kt
+@@ -0,0 +1,47 @@
++package com.atmacanext.app.automation
++
++/** A successful Back dispatch is not proof that the profile was left. */
++internal object AccountProfileReturnPolicy {
++    enum class Action { READY, POP_PROFILE, WAIT, LEAVE_DETAIL }
++
++    fun decide(screen: XScreen, profilePresent: Boolean, homePresent: Boolean): Action = when {
++        screen == XScreen.ACCOUNT_DRAWER || screen == XScreen.ACCOUNT_SWITCHER -> Action.READY
++        profilePresent || screen == XScreen.PROFILE -> Action.POP_PROFILE
++        screen == XScreen.HOME && homePresent -> Action.READY
++        screen == XScreen.TWEET_DETAIL -> Action.LEAVE_DETAIL
++        else -> Action.WAIT
++    }
++
++    fun ownProfile(nodes: List<NodeSnapshot>, expectedHandle: String?): Boolean {
++        val profile = ProfileSurfaceEvidence.read(nodes) ?: return false
++        if (!expectedHandle.isNullOrBlank() && profile.handle != XIdentityDetector.normalizeUsername(expectedHandle)) return false
++        return nodes.any { n -> n.visible && n.enabled && labels(n).any { label ->
++            XUiVocabulary.ownProfileSignals.any { label == it || label == "$it, düğme" || label == "$it, button" }
++        } }
++    }
++
++    fun profilePresent(nodes: List<NodeSnapshot>): Boolean = ProfileSurfaceEvidence.read(nodes) != null ||
++        nodes.any { n -> n.visible && labels(n).any { it in XUiVocabulary.ownProfileSignals } }
++
++    fun backIndex(nodes: List<NodeSnapshot>, expectedHandle: String?): Int? {
++        if (!ownProfile(nodes, expectedHandle)) return null
++        val profile = ProfileSurfaceEvidence.read(nodes) ?: return null
++        val headerTop = nodes.filter { n -> n.visible && labels(n).any { AccountSwitcherInspector.dedicatedHandle(it) == profile.handle } }
++            .minOfOrNull { it.bounds.top } ?: return null
++        val viewport = AdaptiveNavigationEvidence.viewport(nodes) ?: return null
++        val width = viewport.right - viewport.left
++        // Only an identified toolbar arrow above the profile header. A tweet
++        // containing "geri" or an unlabelled corner control is never a Back.
++        return nodes.indices.filter { i ->
++            val n = nodes[i]
++            val id = n.viewId.orEmpty().substringAfterLast('/').lowercase()
++            n.visible && n.enabled && !n.editable && n.bounds.top >= viewport.top &&
++                n.bounds.bottom <= headerTop && n.bounds.right - n.bounds.left in 1..(width / 3) &&
++                n.bounds.bottom - n.bounds.top in 1..(width / 3) &&
++                (labels(n).any { label -> XUiVocabulary.backSignals.any { label == it || label == "$it, düğme" || label == "$it, button" } } ||
++                    id in setOf("back", "toolbar_back", "navigate_up"))
++        }.minByOrNull { (nodes[it].bounds.right - nodes[it].bounds.left) * (nodes[it].bounds.bottom - nodes[it].bounds.top) }
++    }
++
++    private fun labels(n: NodeSnapshot) = listOfNotNull(n.text, n.contentDescription).map(XUiVocabulary::normalize)
++}
+--- a/app/src/main/java/com/atmacanext/app/automation/AccountSyncController.kt
++++ b/app/src/main/java/com/atmacanext/app/automation/AccountSyncController.kt
+@@ -16,7 +16,7 @@
+ /** User-started screen navigation only. All state mutations share this object's monitor. */
+ object AccountSyncController {
+     enum class Mode { NONE, IMPORT, SWITCH }
+-    private enum class Stage { IDLE, HOME, DRAWER, SWITCHER, HARVEST, SELECT, SETTLE, VERIFY_DRAWER, PROFILE_PHOTO, SAVING }
++    private enum class Stage { IDLE, HOME, DRAWER, SWITCHER, HARVEST, SELECT, SETTLE, VERIFY_DRAWER, PROFILE_PHOTO, SAVING, RETURN_PROFILE }
+     data class State(
+         val active: Boolean = false, val mode: Mode = Mode.NONE,
+         val message: String = "Hazır", val discovered: Int = 0, val processed: Int = 0,
+@@ -59,6 +59,7 @@
+     private var pendingFollowing: String? = null
+     private var profileTries = 0
+     private var profileLeft = false
++    private var profileReturnAttempts = 0
+     private val navigationGate = AccountNavigationGate()
+ 
+     @Synchronized fun attach(service: AtmacaAccessibilityService) { serviceRef = WeakReference(service) }
+@@ -91,7 +92,7 @@
+         timedTarget = null; targetStartedAt = 0L
+         recoveries = 0; harvestDone = false; harvestSignature = null; stableHarvests = 0; avatarPage = null; avatarBusy = false
+         harvestEndConfirmed = false; harvestHoldUntil = 0L
+-        pendingFollowers = null; pendingFollowing = null; profileTries = 0; profileLeft = false
++        pendingFollowers = null; pendingFollowing = null; profileTries = 0; profileLeft = false; profileReturnAttempts = 0
+         if (mode == Mode.IMPORT) com.atmacanext.app.data.settings.AccountAvatarStore.clear(service)
+         navigationGate.clear()
+         startedAt = SystemClock.elapsedRealtime()
+@@ -135,17 +136,17 @@
+     @Synchronized fun onSnapshot(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, popup: PopupType) {
+         if (!isActive || !checkDeadline(service)) return
+         val now = SystemClock.elapsedRealtime()
+-        if (target != null && target == timedTarget && now - targetStartedAt > 45_000L && stage != Stage.SAVING) {
++        if (target != null && target == timedTarget && now - targetStartedAt > 45_000L && stage !in setOf(Stage.SAVING, Stage.RETURN_PROFILE)) {
+             skipTarget(service, "45 saniyede hesap doğrulanamadı")
+             return
+         }
+         if (now - stageAt > 20_000L) {
+             OperationLog.w("ACCOUNT_SYNC", "Zaman aşımı stage=$stage target=$target screen=$screen")
+-            if (target != null && stage != Stage.SAVING) {
++            if (target != null && stage !in setOf(Stage.SAVING, Stage.RETURN_PROFILE)) {
+                 skipTarget(service, "20 saniyede hesap doğrulanamadı")
+                 return
+             }
+-            if (stage == Stage.SAVING || ++recoveries > 3) {
++            if (stage in setOf(Stage.SAVING, Stage.RETURN_PROFILE) || ++recoveries > 3) {
+                 finish(false, "${_state.value.message}: ekran doğrulanamadı. Kaydedilen hesaplar korundu.")
+                 return
+             }
+@@ -283,6 +284,7 @@
+                         pendingFollowing = account.following
+                         profileTries = 0
+                         profileLeft = false
++                        profileReturnAttempts = 0
+                         XNavigator.execute(service, root, NavigationCommand.OPEN_PROFILE_FROM_DRAWER, account.username.orEmpty(), null)
+                         move(Stage.PROFILE_PHOTO, "@${account.username} profil resmi alınıyor")
+                         tick(service, 350L); return
+@@ -304,32 +306,48 @@
+                 val waited = now - stageAt
+                 val metrics = service.resources.displayMetrics
+                 val nodes = AccessibilityTree.snapshots(root)
+-                val ownProfile = nodes.any { node ->
+-                    val label = listOfNotNull(node.text, node.contentDescription).joinToString(" ").lowercase()
+-                    label.contains("profili düzenle") || label.contains("edit profile")
+-                }
+-                if ((screen == XScreen.PROFILE || ownProfile) && waited >= 280L) {
++                val ownProfile = AccountProfileReturnPolicy.ownProfile(nodes, target)
++                if (ownProfile && waited >= 280L) {
+                     val minPx = (64 * metrics.density).toInt()
+                     val maxPx = (160 * metrics.density).toInt()
+                     val photo = ProfileAvatarEvidence.bounds(nodes, metrics.widthPixels, minPx, maxPx)
+                     OperationLog.i("ACCOUNT_AVATAR", "@$target profil kare=${photo?.let { "${it.left},${it.top} ${it.width()}x${it.height()}" } ?: "yok"} beklenen=${waited}ms")
+-                    save(service, AccountSwitcherInspector.ProfileStats(followers, following), photo, metrics)
++                    save(service, AccountSwitcherInspector.ProfileStats(followers, following), photo, metrics, profileVerified = true)
+                     return
+                 }
+                 if (screen == XScreen.ACCOUNT_DRAWER && profileTries++ < 2) {
+                     XNavigator.execute(service, root, NavigationCommand.OPEN_PROFILE_FROM_DRAWER, target.orEmpty(), null)
+                     tick(service, 300L); return
+                 }
+-                if (waited < 900L) { tick(service, 150L); return }
++                // The supplied device log opens the profile in 1.9–2.4 seconds.
++                // A transient early frame must not save it without its picture.
++                if (waited < 3_500L) { tick(service, 150L); return }
+                 OperationLog.w("ACCOUNT_AVATAR", "@$target profil ${waited}ms içinde açılmadı; fotoğrafsız çıkılıyor")
+                 save(service, AccountSwitcherInspector.ProfileStats(followers, following), null, metrics)
+             }
+-            Stage.SAVING -> {
+-                if (!profileLeft && now - stageAt >= 450L) {
++            Stage.SAVING -> Unit
++            Stage.RETURN_PROFILE -> {
++                val nodes = AccessibilityTree.snapshots(root)
++                val action = AccountProfileReturnPolicy.decide(screen,
++                    AccountProfileReturnPolicy.profilePresent(nodes), HomeTimelineEvidence.matches(nodes))
++                if (action == AccountProfileReturnPolicy.Action.READY) {
+                     profileLeft = true
+-                    val left = service.popProfile()
+-                    OperationLog.i("ACCOUNT_SYNC", "profilden çıkış=$left")
+-                }
++                    OperationLog.i("ACCOUNT_PROFILE_RETURN", "@$target profilden çıkış doğrulandı screen=$screen")
++                    nextAfterProfileReturn(service, screen)
++                    return
++                }
++                if (action == AccountProfileReturnPolicy.Action.POP_PROFILE) {
++                    val accepted = service.popProfile(target, forceSystemBack = profileReturnAttempts > 0)
++                    profileReturnAttempts++
++                    OperationLog.i("ACCOUNT_PROFILE_RETURN", "@$target deneme=$profileReturnAttempts kabul=$accepted screen=$screen; henüz çıkış sayılmadı")
++                } else if (action == AccountProfileReturnPolicy.Action.LEAVE_DETAIL) {
++                    // No corner taps: recover a confirmed detail surface within X.
++                    service.closeAccountScanDetail()
++                }
++                // This transition delay is not divided by the user's speed setting.
++                nextActionAt = now + 500L
++                service.requestAutomationTickExact(500L)
++                return
+             }
+             Stage.IDLE -> Unit
+         }
+@@ -405,6 +423,7 @@
+         stats: AccountSwitcherInspector.ProfileStats,
+         photo: android.graphics.Rect?,
+         metrics: android.util.DisplayMetrics,
++        profileVerified: Boolean = false,
+     ) {
+         val handle = target ?: return
+         val token = generation
+@@ -423,49 +442,54 @@
+             return true
+         }
+         fun persist(bitmap: android.graphics.Bitmap?) {
+-            if (!done.compareAndSet(false, true)) return
+-            if (bitmap != null) {
+-                val kept = runCatching { com.atmacanext.app.data.settings.AccountAvatarStore.write(service, handle, bitmap) }.getOrDefault(false)
+-                if (!kept) OperationLog.w("ACCOUNT_SYNC", "@$handle profil resmi kaydedilmedi")
+-                bitmap.recycle()
+-            }
+-            saveJob = scope.launch {
+-                try {
+-                    val existing = AppServices.repository.snapshotAccountDomains().firstOrNull {
+-                        XIdentityDetector.normalizeUsername(it.username) == handle
+-                    }
+-                    ensureActive()
+-                    val account = existing?.copy(followers = stats.followers!!, following = stats.following!!)
+-                        ?: Account(UUID.nameUUIDFromBytes("x:$handle".toByteArray()).toString(), "@$handle", "",
+-                            stats.followers!!, stats.following!!, "—", 100, AccountAccent.BLUE)
+-                    AppServices.repository.upsertSyncedAccount(account)
+-                    com.atmacanext.app.data.settings.AccountPulse.noteScan(service, handle, stats.followers, stats.following)
+-                    service.runOnAutomationThread { saved(token, handle) }
+-                } catch (cancelled: CancellationException) { throw cancelled }
+-                catch (error: Exception) {
+-                    service.runOnAutomationThread {
+-                        synchronized(this@AccountSyncController) {
+-                            if (generation == token && isActive) finish(false,
+-                                if (error is IllegalArgumentException) error.message ?: "Hesap sınırı doldu"
+-                                else "@$handle kaydedilemedi. Yeniden dene.")
++            synchronized(this@AccountSyncController) {
++                if (generation != token || !isActive || stage != Stage.SAVING || target != handle || !done.compareAndSet(false, true)) {
++                    bitmap?.recycle()
++                    return
++                }
++                if (bitmap != null) {
++                    val kept = runCatching { com.atmacanext.app.data.settings.AccountAvatarStore.write(service, handle, bitmap) }.getOrDefault(false)
++                    if (!kept) OperationLog.w("ACCOUNT_SYNC", "@$handle profil resmi kaydedilmedi")
++                    bitmap.recycle()
++                }
++                saveJob = scope.launch {
++                    try {
++                        val existing = AppServices.repository.snapshotAccountDomains().firstOrNull {
++                            XIdentityDetector.normalizeUsername(it.username) == handle
++                        }
++                        ensureActive()
++                        val account = existing?.copy(followers = stats.followers!!, following = stats.following!!)
++                            ?: Account(UUID.nameUUIDFromBytes("x:$handle".toByteArray()).toString(), "@$handle", "",
++                                stats.followers!!, stats.following!!, "—", 100, AccountAccent.BLUE)
++                        AppServices.repository.upsertSyncedAccount(account)
++                        com.atmacanext.app.data.settings.AccountPulse.noteScan(service, handle, stats.followers, stats.following)
++                        service.runOnAutomationThread { saved(token, handle) }
++                    } catch (cancelled: CancellationException) { throw cancelled }
++                    catch (error: Exception) {
++                        service.runOnAutomationThread {
++                            synchronized(this@AccountSyncController) {
++                                if (generation == token && isActive) finish(false,
++                                    if (error is IllegalArgumentException) error.message ?: "Hesap sınırı doldu"
++                                    else "@$handle kaydedilemedi. Yeniden dene.")
++                            }
+                         }
+                     }
+                 }
+             }
+         }
++        if (!profileVerified) { persist(null); return }
+         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
++            if (generation != token || !isActive || stage != Stage.SAVING || done.get()) return@postDelayed
+             if (photo != null) {
+-                service.captureRegion(photo) { bitmap ->
+-                    if (!profileLeft) { profileLeft = true; service.popProfile() }
++                service.captureProfileRegion(handle, photo) { bitmap ->
+                     if (usable(bitmap)) persist(bitmap) else { bitmap?.recycle(); persist(null) }
+                 }
+             } else {
+                 val top = (90 * metrics.density).toInt()
+                 val bottom = (420 * metrics.density).toInt().coerceAtMost(metrics.heightPixels - 1)
+                 val header = android.graphics.Rect(0, top, metrics.widthPixels, bottom)
+-                service.captureRegion(header) { bitmap ->
+-                    if (!profileLeft) { profileLeft = true; service.popProfile() }
+-                    if (bitmap == null) { persist(null); return@captureRegion }
++                service.captureProfileRegion(handle, header) { bitmap ->
++                    if (bitmap == null) { persist(null); return@captureProfileRegion }
+                     val pixels = IntArray(bitmap.width * bitmap.height)
+                     bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+                     val minSize = (56 * metrics.density).toInt()
+@@ -490,14 +514,17 @@
+         if (token != generation || !isActive || stage != Stage.SAVING) return
+         processed += handle
+         recoveries = 0
++        profileReturnAttempts = 0
++        move(Stage.RETURN_PROFILE, "@$handle kaydedildi; profilden çıkış doğrulanıyor")
++        serviceRef?.get()?.let { it.requestAutomationTickExact(40L) }
++    }
++    private fun nextAfterProfileReturn(service: AtmacaAccessibilityService, screen: XScreen) {
++        val handle = target ?: return
+         if (_state.value.mode == Mode.SWITCH) { finish(true, "@$handle artık X'te etkin"); return }
+         target = AccountScanPolicy.next(discovered, processed, skipped)
+         if (target == null) { finish(skipped.isEmpty(), "${processed.size} hesap güncellendi, ${skipped.size} hesap okunamadı"); return }
+-        move(Stage.HOME, "@$target için ana ekrana dönülüyor")
+-        serviceRef?.get()?.let { service ->
+-            service.launchXHome()
+-            tick(service, 800L)
+-        }
++        move(if (screen == XScreen.HOME) Stage.DRAWER else Stage.SWITCHER, "@$target için hesap menüsüne geçiliyor")
++        tick(service, 100L)
+     }
+     private fun move(next: Stage, message: String) {
+         stage = next; stageAt = SystemClock.elapsedRealtime(); nextActionAt = 0L; publish(message)
+--- a/app/src/main/java/com/atmacanext/app/automation/AtmacaAccessibilityService.kt
++++ b/app/src/main/java/com/atmacanext/app/automation/AtmacaAccessibilityService.kt
+@@ -16,7 +16,7 @@
+ import java.util.concurrent.atomic.AtomicBoolean
+ 
+ /** Yalnızca X/Twitter paketini izler; V19 deeplink koruması ve hesap senkronizasyonu içerir. */
+-class AtmacaAccessibilityService : AccessibilityService() {
++open class AtmacaAccessibilityService : AccessibilityService() {
+     companion object {
+         const val X_PACKAGE = "com.twitter.android"
+         private const val RELAUNCH_GAP_MS = 2_800L
+@@ -493,42 +493,51 @@
+         return cropBitmap(software, bounds)?.also { if (it !== software) software.recycle() }
+     }
+ 
+-    /** Profile pages are often labeled HOME, so pressBack() refuses to leave. Tap the arrow anyway. */
+-    fun popProfile(): Boolean {
+-        val root = freshNavigationRoot()
+-        val nodes = if (root != null) AccessibilityTree.nodes(root) else emptyList()
+-        val labeled = nodes.firstOrNull { node ->
+-            val text = listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(" ").lowercase()
+-            node.isVisibleToUser && (
+-                XUiVocabulary.backSignals.any { text.contains(it) } ||
+-                    node.viewIdResourceName.orEmpty().lowercase().let {
+-                        it.endsWith("/back") || it.contains("navigate_up") || it.contains("toolbar_back")
+-                    }
+-                )
+-        }
+-        if (labeled != null && (labeled.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK) || GestureClick.gestureTap(this, labeled))) {
+-            OperationLog.i("NAV", "profil geri oku")
++    fun closeAccountScanDetail(): Boolean {
++        val root = freshNavigationRoot() ?: return false
++        val snapshots = AccessibilityTree.snapshots(root)
++        if (root.packageName?.toString() != X_PACKAGE || ScreenDetector.detect(root, snapshots) != XScreen.TWEET_DETAIL ||
++            AccountProfileReturnPolicy.profilePresent(snapshots)) return false
++        val accepted = performGlobalAction(GLOBAL_ACTION_BACK)
++        OperationLog.i("ACCOUNT_PROFILE_RETURN", "Beklenmeyen gönderi detayından kontrollü geri=$accepted")
++        return accepted
++    }
++
++    fun captureProfileRegion(expectedHandle: String, bounds: android.graphics.Rect,
++                             onDone: (android.graphics.Bitmap?) -> Unit) {
++        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) { onDone(null); return }
++        fun matches(): Boolean {
++            val root = freshNavigationRoot() ?: return false
++            return root.packageName?.toString() == X_PACKAGE &&
++                AccountProfileReturnPolicy.ownProfile(AccessibilityTree.snapshots(root), expectedHandle)
++        }
++        if (!matches()) { onDone(null); return }
++        captureRegion(bounds) { bitmap ->
++            if (bitmap != null && !matches()) {
++                bitmap.recycle()
++                OperationLog.w("ACCOUNT_AVATAR", "@$expectedHandle profil kimliği değişti; başka ekranın resmi kaydedilmedi")
++                onDone(null)
++            } else onDone(bitmap)
++        }
++    }
++
++    /** The fresh account header is required even when the detector calls it HOME. */
++    fun popProfile(expectedHandle: String? = null, forceSystemBack: Boolean = false): Boolean {
++        val root = freshNavigationRoot() ?: return false
++        if (root.packageName?.toString() != X_PACKAGE) return false
++        val nodes = AccessibilityTree.nodes(root)
++        val snapshots = nodes.map { it.toSnapshot() }
++        if (!AccountProfileReturnPolicy.ownProfile(snapshots, expectedHandle)) return false
++        val back = AccountProfileReturnPolicy.backIndex(snapshots, expectedHandle)?.let(nodes::get)
++        if (!forceSystemBack && back != null && GestureClick.gestureTap(this, back)) {
++            OperationLog.i("ACCOUNT_PROFILE_RETURN", "@$expectedHandle doğrulanmış geri oku kabul edildi; sonraki ekran beklenecek")
+             return true
+         }
+-        val density = resources.displayMetrics.density
+-        val corner = nodes.firstOrNull { node ->
+-            if (!node.isVisibleToUser || !node.isClickable) return@firstOrNull false
+-            val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+-            val size = (72 * density).toInt()
+-            bounds.width() in 24..size && bounds.left < size && bounds.top in (24 * density).toInt()..(130 * density).toInt()
+-        }
+-        if (corner != null && GestureClick.gestureTap(this, corner)) {
+-            OperationLog.i("NAV", "profil sol üst geri")
+-            return true
+-        }
+-        val onProfile = nodes.any { node ->
+-            listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(" ").lowercase().let {
+-                it.contains("profili düzenle") || it.contains("edit profile")
+-            }
+-        }
+-        if (!onProfile) return false
++        val fresh = freshNavigationRoot() ?: return false
++        if (fresh.packageName?.toString() != X_PACKAGE ||
++            !AccountProfileReturnPolicy.ownProfile(AccessibilityTree.snapshots(fresh), expectedHandle)) return false
+         val backed = performGlobalAction(GLOBAL_ACTION_BACK)
+-        OperationLog.i("NAV", "profil sistem geri=$backed")
++        OperationLog.i("ACCOUNT_PROFILE_RETURN", "@$expectedHandle doğrulanmış profil sistem geri=$backed; sonraki ekran beklenecek")
+         return backed
+     }
+ 
+--- a/app/src/main/java/com/atmacanext/app/automation/AutomationRuntime.kt
++++ b/app/src/main/java/com/atmacanext/app/automation/AutomationRuntime.kt
+@@ -242,6 +242,7 @@
+     private var nonFollowerProbeSignature = ""
+     private var nonFollowerUnknownViewports = 0
+     private var nonFollowerScrollMisses = 0
++    private var nonFollowerScrollGeneration = 0L
+ 
+     private var poolLines: List<String> = emptyList()
+     private var poolCursor = 0
+@@ -1198,6 +1199,29 @@
+         }
+     }
+ 
++    private fun scrollNonFollowers(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?,
++                                   reading: NonFollowerFollowingInspector.Reading, forward: Boolean): Boolean {
++        val task = _state.value
++        val token = ++nonFollowerScrollGeneration
++        nonFollowerViewportGate.afterScroll(System.currentTimeMillis(), settleMs = 450L)
++        val accepted = NonFollowerFollowingScroller.scroll(service, root, reading.rows, forward, reading.snapshots,
++            onGestureStarted = { nonFollowerViewportGate.gestureStarted(it) },
++            onGestureFinished = { completed, at ->
++                service.runOnAutomationThread {
++                    val active = _state.value
++                    if (token == nonFollowerScrollGeneration && active.taskId == task.taskId &&
++                        active.sessionId == task.sessionId && active.taskType == TaskType.UNFOLLOW_NON_FOLLOWERS &&
++                        active.flowStage in setOf(XFlowStage.SEEK_UNFOLLOW_DEPTH, XFlowStage.PROCESS_UNFOLLOW) &&
++                        active.status != RuntimeStatus.PAUSED && active.status !in terminalStatuses()) {
++                        nonFollowerViewportGate.gestureFinished(completed, at)
++                        service.requestAutomationTickExact(NonFollowerViewportGate.STABLE_MS)
++                    }
++                }
++            })
++        if (!accepted) nonFollowerViewportGate.reset()
++        return accepted
++    }
++
+     private fun handleNonFollowers(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
+         val current = _state.value
+         val onFollowing = screen == XScreen.FOLLOWING_LIST ||
+@@ -1223,6 +1247,13 @@
+             service.requestAutomationTickExact(NonFollowerViewportGate.POLL_MS)
+             return
+         }
++        if (settled == NonFollowerViewportGate.Decision.CANCELLED) {
++            nonFollowerScrollBoundary.reset()
++            nonFollowerScrollMisses++
++            OperationLog.w("NONFOLLOWER_SCROLL", "İptal edilen kaydırma kişi sayımı/liste sonu üretmedi; deneme=$nonFollowerScrollMisses")
++            service.requestAutomationTickExact(450L)
++            return
++        }
+         if (settled == NonFollowerViewportGate.Decision.TIMED_OUT) {
+             retryNavigationWithDeadline(service, "Kaydırmadan sonra X listesi sabitlenmedi; kişi sayımı korunarak duraklatıldı", System.currentTimeMillis())
+             return
+@@ -1253,14 +1284,13 @@
+                 service.requestAutomationTickExact(20L)
+                 return
+             }
+-            if (!NonFollowerFollowingScroller.scroll(service, root, rows, forward = false, snapshots = reading.snapshots)) {
++            if (!scrollNonFollowers(service, root, reading, forward = false)) {
+                 nonFollowerScrollMisses++
+                 if (nonFollowerScrollMisses < 4) { service.requestAutomationTickExact(450L); return }
+                 retryNavigationWithDeadline(service, "Liste başına kaydırma tamamlanamadı; başlangıç sırası tahmin edilmedi", System.currentTimeMillis())
+                 return
+             }
+             nonFollowerScrollMisses = 0
+-            nonFollowerViewportGate.afterScroll(System.currentTimeMillis())
+             nonFollowerScrollBoundary.afterScroll(signature)
+             service.requestAutomationTickExact(450L)
+             return
+@@ -1330,7 +1360,7 @@
+         }
+         if (listScrolls >= 10000) { pause("Tarama kaydırma sınırında duraklatıldı; ilerleme korundu"); return }
+         if (uncertain > 0) nonFollowerUnknownViewports++
+-        if (!NonFollowerFollowingScroller.scroll(service, root, rows, forward = true, snapshots = reading.snapshots)) {
++        if (!scrollNonFollowers(service, root, reading, forward = true)) {
+             nonFollowerScrollMisses++
+             if (nonFollowerScrollMisses < 4) { service.requestAutomationTickExact(450L); return }
+             retryNavigationWithDeadline(service, "Daha eski kişilere kaydırma tamamlanamadı; yeni kişilere dönülmedi", System.currentTimeMillis())
+@@ -1338,7 +1368,6 @@
+         }
+         nonFollowerScrollMisses = 0
+         // Forward only: no reverse pass can touch the protected recent users.
+-        nonFollowerViewportGate.afterScroll(System.currentTimeMillis())
+         nonFollowerScrollBoundary.afterScroll(signature)
+         service.requestAutomationTickExact(450L)
+     }
+@@ -3538,6 +3567,7 @@
+     }
+ 
+     private fun resetNonFollowerNavigation() {
++        nonFollowerScrollGeneration++
+         nonFollowerFollowingRun = NonFollowerFollowingRun()
+         nonFollowerViewportGate.reset()
+         nonFollowerScrollBoundary.reset()
+--- a/app/src/main/java/com/atmacanext/app/automation/NonFollowerFollowingScroller.kt
++++ b/app/src/main/java/com/atmacanext/app/automation/NonFollowerFollowingScroller.kt
+@@ -4,16 +4,14 @@
+ import android.accessibilityservice.GestureDescription
+ import android.graphics.Path
+ import android.graphics.Rect
+-import android.os.Looper
+ import android.view.accessibility.AccessibilityNodeInfo
+-import java.util.concurrent.CountDownLatch
+-import java.util.concurrent.TimeUnit
+-import java.util.concurrent.atomic.AtomicBoolean
+ 
+ /** A short flick was cancelled by the next read. Drag long enough for X to move the following list. */
+ object NonFollowerFollowingScroller {
+     fun scroll(service: AccessibilityService, root: AccessibilityNodeInfo?, rows: List<NonFollowerFollowingInspector.Row>, forward: Boolean,
+-               snapshots: List<NodeSnapshot>? = null): Boolean {
++               snapshots: List<NodeSnapshot>? = null,
++               onGestureStarted: (Long) -> Unit = {},
++               onGestureFinished: (Boolean, Long) -> Unit = { _, _ -> }): Boolean {
+         if (root == null) return false
+         val access = if (forward) ListViewportController.tryScrollUserRowsForward(root)
+             else ListViewportController.tryScrollUserRowsBackward(root)
+@@ -23,31 +21,39 @@
+         val bounds = ListGestureGeometry.viewport(Rect().also(root::getBoundsInScreen), display.widthPixels, display.heightPixels) ?: return false
+         val viewport = AdaptiveNavigationEvidence.contentViewport(snapshots ?: AccessibilityTree.snapshots(root), bounds)
+         val visible = rows.filter { it.bounds.top >= viewport.top && it.bounds.bottom <= viewport.bottom }
+-        if (visible.isEmpty()) return ListGesture.steady(service, root, forward)
+-        val contentTop = maxOf(viewport.top, visible.first().bounds.top)
+-        val contentBottom = minOf(viewport.bottom, visible.last().bounds.bottom)
++        val contentTop = maxOf(viewport.top, visible.firstOrNull()?.bounds?.top ?: viewport.top)
++        val contentBottom = minOf(viewport.bottom, visible.lastOrNull()?.bounds?.bottom ?: viewport.bottom)
+         val span = contentBottom - contentTop
+-        if (span < 32) return ListGesture.steady(service, root, forward)
++        if (span < 32) return false
+         val distance = NonFollowerScrollStride.distance(contentTop, contentBottom, visible.map { it.bounds.top })
+-        if (distance <= 0f) return ListGesture.steady(service, root, forward)
+         val x = viewport.left + viewport.width() * .18f
+         val start = if (forward) contentBottom - span * .12f else contentTop + span * .12f
+-        val end = if (forward) start - distance else start + distance
+-        if (!ListGestureGeometry.Stroke(x, start, x, end).valid()) return ListGesture.steady(service, root, forward)
++        val end = (if (forward) start - distance else start + distance).coerceIn(contentTop.toFloat(), contentBottom.toFloat())
++        val stroke = if (distance > 0f) ListGestureGeometry.Stroke(x, start, x, end)
++            else ListGestureGeometry.swipe(viewport, rows.map { it.bounds }, forward)
++        if (stroke == null || !stroke.valid()) return false
+         return try {
+-            val path = Path().apply { moveTo(x, start); lineTo(x, end) }
+-            val completed = AtomicBoolean(false)
+-            val latch = CountDownLatch(1)
++            val path = Path().apply { moveTo(stroke.startX, stroke.startY); lineTo(stroke.endX, stroke.endY) }
++            onGestureStarted(System.currentTimeMillis())
+             val drag = GestureDescription.StrokeDescription(path, 0, 280L, false)
+             val accepted = service.dispatchGesture(GestureDescription.Builder().addStroke(drag).build(),
+                 object : AccessibilityService.GestureResultCallback() {
+-                    override fun onCompleted(gestureDescription: GestureDescription?) { completed.set(true); latch.countDown() }
+-                    override fun onCancelled(gestureDescription: GestureDescription?) { latch.countDown() }
++                    override fun onCompleted(gestureDescription: GestureDescription?) {
++                        OperationLog.i("NONFOLLOWER_SCROLL", "dikey hareket tamamlandı forward=$forward")
++                        onGestureFinished(true, System.currentTimeMillis())
++                    }
++                    override fun onCancelled(gestureDescription: GestureDescription?) {
++                        OperationLog.w("NONFOLLOWER_SCROLL", "dikey hareket iptal edildi forward=$forward; liste sonu sayılmayacak")
++                        onGestureFinished(false, System.currentTimeMillis())
++                    }
+                 }, null)
+-            if (!accepted) return ListGesture.steady(service, root, forward)
+-            if (Looper.myLooper() == Looper.getMainLooper()) return true
+-            (latch.await(1800, TimeUnit.MILLISECONDS) && completed.get()) || ListGesture.steady(service, root, forward)
+-        } catch (_: RuntimeException) { ListGesture.steady(service, root, forward) }
+-        catch (_: InterruptedException) { Thread.currentThread().interrupt(); false }
++            OperationLog.i("NONFOLLOWER_SCROLL", "dikey hareket kabul=$accepted forward=$forward rows=${visible.size}")
++            if (!accepted) onGestureFinished(false, System.currentTimeMillis())
++            accepted
++        } catch (error: RuntimeException) {
++            onGestureFinished(false, System.currentTimeMillis())
++            OperationLog.w("NONFOLLOWER_SCROLL", "dikey hareket gönderilemedi: ${error.javaClass.simpleName}")
++            false
++        }
+     }
+ }
+--- a/app/src/main/java/com/atmacanext/app/automation/NonFollowerViewportGate.kt
++++ b/app/src/main/java/com/atmacanext/app/automation/NonFollowerViewportGate.kt
+@@ -2,29 +2,59 @@
+ 
+ /** Gesture completion does not prove that X has finished updating its list. */
+ class NonFollowerViewportGate {
+-    enum class Decision { READY, WAIT, TIMED_OUT }
++    enum class Decision { READY, WAIT, TIMED_OUT, CANCELLED }
+ 
+     private var waiting = false
+     private var startedAt = 0L
+     private var stableSince = 0L
+     private var lastSignature: String? = null
++    private var gesturePending = false
++    private var gestureCancelled = false
++    private var releaseAt = 0L
+     val pending: Boolean get() = waiting
+ 
+     fun reset() {
+         waiting = false
+         lastSignature = null
++        gesturePending = false
++        gestureCancelled = false
+     }
+ 
+-    fun afterScroll(now: Long) {
++    fun afterScroll(now: Long, settleMs: Long = 0L) {
+         waiting = true
+         startedAt = now
+         stableSince = now
+         // Require fresh readings after release; the pre-gesture tree is insufficient.
+         lastSignature = null
++        gesturePending = false
++        gestureCancelled = false
++        releaseAt = now + settleMs - STABLE_MS
++    }
++
++    fun gestureStarted(now: Long) {
++        afterScroll(now)
++        gesturePending = true
++    }
++
++    fun gestureFinished(completed: Boolean, now: Long) {
++        if (!waiting || !gesturePending) return
++        gesturePending = false
++        gestureCancelled = !completed
++        releaseAt = now
++        lastSignature = null
++        stableSince = now
+     }
+ 
+     fun observe(signature: String?, now: Long): Decision {
+         if (!waiting) return Decision.READY
++        if (gestureCancelled) {
++            reset()
++            return Decision.CANCELLED
++        }
++        // Accessibility events can arrive during the drag. Stable old rows are
++        // not proof of completion and must not start a cancelling second drag.
++        if (gesturePending) return if (now - startedAt >= TIMEOUT_MS) Decision.TIMED_OUT else Decision.WAIT
++        if (now - releaseAt < STABLE_MS) return Decision.WAIT
+         if (signature.isNullOrBlank()) {
+             lastSignature = null
+             stableSince = now
+--- a/app/src/main/java/com/atmacanext/app/service/AutomationForegroundService.kt
++++ b/app/src/main/java/com/atmacanext/app/service/AutomationForegroundService.kt
+@@ -79,7 +79,7 @@
+     private var seenActive = false
+     private var receiverRegistered = false
+ 
+-    private val stallWatchdog = AutomationWatchdog(3_000L)
++    private val stallWatchdog = AutomationWatchdog(AutomationStallPolicy.TIMEOUT_MS)
+     private var selfPauseSince = 0L
+     private var watchedTaskId: String? = null
+     private var watchedSessionId: String? = null
+--- /dev/null
++++ b/app/src/test/java/com/atmacanext/app/automation/AccountProfileReturn27_65Test.kt
+@@ -0,0 +1,87 @@
++package com.atmacanext.app.automation
++
++import android.graphics.Rect
++import org.junit.Assert.*
++import org.junit.Test
++
++class AccountProfileReturn27_65Test {
++    private fun node(text: String? = null, desc: String? = null, id: String? = null,
++                     l: Int = 0, t: Int = 0, r: Int = 1080, b: Int = 2400, visible: Boolean = true) =
++        NodeSnapshot(text, desc, id, "android.view.View", true, true,
++            Rect().apply { left = l; top = t; right = r; bottom = b }, visible = visible)
++
++    private fun profile(extra: List<NodeSnapshot> = emptyList()) = listOf(
++        node(), node("Profili düzenle", l = 700, t = 330, r = 1040, b = 400),
++        node("@xhesaplar1", l = 30, t = 500, r = 450, b = 545),
++        node("1.455 Takip ediliyor", l = 30, t = 600, r = 350, b = 650),
++        node("1.551 Takipçiler", l = 380, t = 600, r = 730, b = 650),
++    ) + extra
++
++    @Test fun profileMisclassifiedAsHomeStillNeedsBack() {
++        val nodes = profile()
++        assertTrue(AccountProfileReturnPolicy.ownProfile(nodes, "xhesaplar1"))
++        assertEquals(AccountProfileReturnPolicy.Action.POP_PROFILE,
++            AccountProfileReturnPolicy.decide(XScreen.HOME, AccountProfileReturnPolicy.profilePresent(nodes), true))
++    }
++
++    @Test fun acceptedBackWithoutAnActualScreenChangeCannotAdvanceToNextAccount() {
++        repeat(3) {
++            assertEquals(AccountProfileReturnPolicy.Action.POP_PROFILE,
++                AccountProfileReturnPolicy.decide(XScreen.PROFILE, true, false))
++        }
++        assertEquals(AccountProfileReturnPolicy.Action.READY,
++            AccountProfileReturnPolicy.decide(XScreen.HOME, false, true))
++    }
++
++    @Test fun aHomeClassificationWithoutTimelineEvidenceIsNotAConfirmedReturn() {
++        assertEquals(AccountProfileReturnPolicy.Action.WAIT,
++            AccountProfileReturnPolicy.decide(XScreen.HOME, false, false))
++    }
++
++    @Test fun loadingOrUnexpectedDetailDoesNotSwitchAccounts() {
++        assertEquals(AccountProfileReturnPolicy.Action.WAIT,
++            AccountProfileReturnPolicy.decide(XScreen.UNKNOWN, false, false))
++        assertEquals(AccountProfileReturnPolicy.Action.LEAVE_DETAIL,
++            AccountProfileReturnPolicy.decide(XScreen.TWEET_DETAIL, false, false))
++    }
++
++    @Test fun wrongAccountProfileCannotAuthorizeAGlobalBack() {
++        assertFalse(AccountProfileReturnPolicy.ownProfile(profile(), "atmaca2025"))
++        assertNull(AccountProfileReturnPolicy.backIndex(profile(), "atmaca2025"))
++    }
++
++    @Test fun tweetContainingGeriIsNotTheBackArrow() {
++        val nodes = profile(listOf(node("Geri gel artık", l = 30, t = 100, r = 120, b = 180)))
++        assertNull(AccountProfileReturnPolicy.backIndex(nodes, "xhesaplar1"))
++    }
++
++    @Test fun unlabelledCornerAndScreenWideBackContainersAreIgnored() {
++        assertNull(AccountProfileReturnPolicy.backIndex(profile(listOf(
++            node(l = 30, t = 100, r = 120, b = 180),
++            node(desc = "Geri", l = 0, t = 0, r = 1080, b = 2400),
++        )), "xhesaplar1"))
++    }
++
++    @Test fun identifiedSmallArrowAboveProfileHeaderIsAccepted() {
++        val nodes = profile(listOf(node(desc = "Geri, düğme", l = 30, t = 100, r = 120, b = 180)))
++        assertEquals(nodes.lastIndex, AccountProfileReturnPolicy.backIndex(nodes, "xhesaplar1"))
++    }
++
++    @Test fun backTextInThePostBodyAndInvisibleArrowsAreRejected() {
++        val nodes = profile(listOf(
++            node(desc = "Geri", l = 30, t = 900, r = 120, b = 980),
++            node(desc = "Geri", l = 30, t = 100, r = 120, b = 180, visible = false),
++        ))
++        assertNull(AccountProfileReturnPolicy.backIndex(nodes, "xhesaplar1"))
++    }
++
++    @Test fun aDrawerIsAValidPlaceToContinueAccountSelection() {
++        assertEquals(AccountProfileReturnPolicy.Action.READY,
++            AccountProfileReturnPolicy.decide(XScreen.ACCOUNT_DRAWER, false, false))
++    }
++
++    @Test fun profileCountersBehindAnOpenDrawerCannotHideTheConfirmedMenu() {
++        assertEquals(AccountProfileReturnPolicy.Action.READY,
++            AccountProfileReturnPolicy.decide(XScreen.ACCOUNT_DRAWER, true, false))
++    }
++}
+--- a/app/src/test/java/com/atmacanext/app/automation/FollowResultRecovery26_56Test.kt
++++ b/app/src/test/java/com/atmacanext/app/automation/FollowResultRecovery26_56Test.kt
+@@ -32,7 +32,9 @@
+         watch.reset(1000);assertFalse(watch.isStuck(10999));assertTrue(watch.isStuck(11000))
+     }
+     @Test fun pendingVerificationRemainsWatchable() {
+-        assertTrue(AutomationStallPolicy.shouldWatch(AutomationRuntimeState(taskId="t",sessionId="s",status=RuntimeStatus.VERIFYING)))
++        assertTrue(AutomationStallPolicy.shouldWatch(AutomationRuntimeState(taskId="t",sessionId="s",status=RuntimeStatus.VERIFYING,
++            taskType=com.atmacanext.app.domain.model.TaskType.VERIFIED_FOLLOW,
++            flowStage=XFlowStage.PROCESS_VERIFIED_FOLLOW,activeScreen=XScreen.VERIFIED_FOLLOWERS_LIST)))
+     }
+     @Test fun manualPauseAndIntentionalWaitAreNotRestarted() {
+         assertFalse(AutomationStallPolicy.shouldWatch(AutomationRuntimeState(taskId="t",status=RuntimeStatus.PAUSED)))
+--- /dev/null
++++ b/app/src/test/java/com/atmacanext/app/automation/NonFollowerGesture27_65Test.kt
+@@ -0,0 +1,80 @@
++package com.atmacanext.app.automation
++
++import org.junit.Assert.*
++import org.junit.Test
++
++class NonFollowerGesture27_65Test {
++    @Test fun stableOldRowsDuringThe280MsDragCannotStartAnotherDrag() {
++        val gate = NonFollowerViewportGate()
++        gate.gestureStarted(1_000L)
++        for (at in 1_016L..1_272L step 16L) {
++            assertEquals(NonFollowerViewportGate.Decision.WAIT, gate.observe("unchanged rows", at))
++        }
++        gate.gestureFinished(true, 1_280L)
++        assertEquals(NonFollowerViewportGate.Decision.WAIT, gate.observe("new rows", 1_300L))
++        assertEquals(NonFollowerViewportGate.Decision.WAIT, gate.observe("new rows", 1_312L))
++        assertEquals(NonFollowerViewportGate.Decision.READY, gate.observe("new rows", 1_344L))
++    }
++
++    @Test fun cancellationNeverCreatesACompletedUnchangedScrollBoundary() {
++        val gate = NonFollowerViewportGate()
++        val boundary = NonFollowerScrollBoundary()
++        gate.gestureStarted(1_000L)
++        boundary.afterScroll("old rows")
++        gate.gestureFinished(false, 1_050L)
++        assertEquals(NonFollowerViewportGate.Decision.CANCELLED, gate.observe("old rows", 1_100L))
++        boundary.reset()
++        assertFalse(boundary.observe("old rows"))
++        assertEquals(0, boundary.unchangedAttempts)
++    }
++
++    @Test fun missingCompletionTimesOutInsteadOfApprovingTheOldViewport() {
++        val gate = NonFollowerViewportGate()
++        gate.gestureStarted(1_000L)
++        assertEquals(NonFollowerViewportGate.Decision.WAIT, gate.observe("old rows", 2_000L))
++        assertEquals(NonFollowerViewportGate.Decision.TIMED_OUT, gate.observe("old rows", 3_000L))
++    }
++
++    @Test fun lateCompletionAfterResetCannotAffectTheNextAccount() {
++        val gate = NonFollowerViewportGate()
++        gate.gestureStarted(1_000L)
++        gate.reset()
++        gate.gestureFinished(false, 1_200L)
++        assertEquals(NonFollowerViewportGate.Decision.READY, gate.observe("next account", 1_300L))
++    }
++
++    @Test fun movementAfterReleaseRequiresNewStableRows() {
++        val gate = NonFollowerViewportGate()
++        gate.gestureStarted(1_000L)
++        gate.gestureFinished(true, 1_280L)
++        gate.observe("position 1", 1_312L)
++        gate.observe("position 2", 1_344L)
++        assertEquals(NonFollowerViewportGate.Decision.WAIT, gate.observe("position 2", 1_360L))
++        assertEquals(NonFollowerViewportGate.Decision.READY, gate.observe("position 2", 1_376L))
++    }
++
++    @Test fun semanticScrollAlsoWaitsForItsTransitionDelay() {
++        val gate = NonFollowerViewportGate()
++        gate.afterScroll(1_000L, settleMs = 450L)
++        gate.observe("old rows", 1_016L)
++        assertEquals(NonFollowerViewportGate.Decision.WAIT, gate.observe("old rows", 1_448L))
++        assertEquals(NonFollowerViewportGate.Decision.WAIT, gate.observe("new rows", 1_450L))
++        assertEquals(NonFollowerViewportGate.Decision.READY, gate.observe("new rows", 1_482L))
++    }
++
++    @Test fun watchdogWaitsTenSecondsNotThreeBeforeInterruptingTheList() {
++        val watchdog = AutomationWatchdog(AutomationStallPolicy.TIMEOUT_MS)
++        watchdog.observe("following list", 1_000L)
++        assertFalse(watchdog.isStuck(4_005L))
++        assertFalse(watchdog.isStuck(10_999L))
++        assertTrue(watchdog.isStuck(11_000L))
++    }
++
++    @Test fun realListProgressRestartsTheTenSecondDeadline() {
++        val watchdog = AutomationWatchdog(AutomationStallPolicy.TIMEOUT_MS)
++        watchdog.observe("first 8 users", 1_000L)
++        watchdog.observe("first 12 users", 9_000L)
++        assertFalse(watchdog.isStuck(11_000L))
++        assertTrue(watchdog.isStuck(19_000L))
++    }
++}
+--- a/app/src/test/java/com/atmacanext/app/automation/QuoteReply26_61Test.kt
++++ b/app/src/test/java/com/atmacanext/app/automation/QuoteReply26_61Test.kt
+@@ -192,6 +192,14 @@
+         } finally { AutomationController.stop() }
+     }
+     @Test fun theRealSuccessPathPersistsThePostKeyAndCompletesOnlyTheConfirmedQuota() {
++        val directory = java.nio.file.Files.createTempDirectory("atmaca-quote-stats-test").toFile()
++        val context = object : android.content.ContextWrapper(null) {
++            override fun getApplicationContext(): android.content.Context = this
++            override fun getFilesDir(): java.io.File = directory
++        }
++        val service = object : AtmacaAccessibilityService() {
++            override fun getApplicationContext(): android.content.Context = context
++        }
+         try {
+             reservation(true)
+             @Suppress("UNCHECKED_CAST")
+@@ -199,11 +207,17 @@
+             state.value = state.value.copy(status = RuntimeStatus.VERIFYING)
+             field("discoveryTweetKey").set(AutomationController, expected.key)
+             AutomationController.javaClass.getDeclaredMethod("recordSuccess", AtmacaAccessibilityService::class.java,
+-                String::class.java).apply { isAccessible = true }.invoke(AutomationController, AtmacaAccessibilityService(), expected.key)
+-            assertEquals(RuntimeStatus.COMPLETED, state.value.status)
++                String::class.java).apply { isAccessible = true }.invoke(AutomationController, service, expected.key)
++            // 27.x performs an optional like after the confirmed reply. The
++            // reply quota is already committed and must not be counted twice.
++            assertEquals(XFlowStage.LIKE_SENT_REPLY, state.value.flowStage)
+             assertEquals(1, state.value.verifiedCount)
+             assertEquals(expected.key, state.value.quotePostedKeys)
+             assertNull(state.value.quotePendingKey)
+-        } finally { AutomationController.stop() }
++            AutomationController.javaClass.getDeclaredMethod("leaveAfterReplyLike", AtmacaAccessibilityService::class.java,
++                Boolean::class.javaPrimitiveType).apply { isAccessible = true }.invoke(AutomationController, service, false)
++            assertEquals(RuntimeStatus.COMPLETED, state.value.status)
++            assertEquals(1, state.value.verifiedCount)
++        } finally { AutomationController.stop(); directory.deleteRecursively() }
+     }
+ }
+--- a/app/src/test/java/com/atmacanext/app/domain/engine/QuoteTaskSetup26_61Test.kt
++++ b/app/src/test/java/com/atmacanext/app/domain/engine/QuoteTaskSetup26_61Test.kt
+@@ -15,7 +15,8 @@
+ 
+     @Test fun quoteIsAvailableInTheGeneralNewTaskCatalog() {
+         assertEquals(listOf(TaskType.COMMENT_QUOTE_TARGETS), TASK_TYPES_BY_GROUP.getValue(TaskGroup.QUOTE_COMMENT))
+-        assertEquals(3, TASK_TYPES_BY_GROUP.size)
++        assertEquals(setOf(TaskGroup.FOLLOW, TaskGroup.ENGAGEMENT, TaskGroup.TWEET,
++            TaskGroup.QUOTE_COMMENT, TaskGroup.BULK), TASK_TYPES_BY_GROUP.keys)
+         assertFalse(TaskType.COMMENT_QUOTE_TARGETS.requiresLink)
+         assertTrue(TaskType.COMMENT_QUOTE_TARGETS.supportsGemini)
+     }

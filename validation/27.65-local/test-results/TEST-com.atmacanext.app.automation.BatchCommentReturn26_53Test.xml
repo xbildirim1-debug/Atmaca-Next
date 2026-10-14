@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.BatchCommentReturn26_53Test" tests="32" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.293Z" hostname="7e4fa31aba91" time="0.169">
+  <properties/>
+  <testcase name="correctTopButtonStillWorksWithNestedRepliesPresent" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.046"/>
+  <testcase name="requestedFromHiddenRowsAndTabsIsNotAResult" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="accountReturnWaitsForBackAndBoundsRepeatedAttempts" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.001"/>
+  <testcase name="selectedReplyKeyAloneCannotProveParentWhileItsNestedRepliesAreOpen" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.001"/>
+  <testcase name="omittedTopIdentityDoesNotBorrowCloseNestedFollow" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.006"/>
+  <testcase name="previousPostListsAndComposerUseBackForEveryTaskHandoff" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="accountReturnNeverBacksFromHomeDrawerOrAccountSheet" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="missingFollowReturnsToParentThenStopsBacking" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.001"/>
+  <testcase name="nestedFollowingCannotVerifyTheOpenedCommenter" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.005"/>
+  <testcase name="latePausedSnapshotCannotReopenCompletedAccountTaskAtSameCounter" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="nextAccountClearsBothReturnStacksForAllTaskTypes" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.035"/>
+  <testcase name="missingButtonStillCannotUseNestedFollow" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.005"/>
+  <testcase name="mismatchedTopAuthorCannotBeFollowedViaFallback" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.001"/>
+  <testcase name="malformedAndForeignLinksCannotStartLinkedTask" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.001"/>
+  <testcase name="actualParentAuthorWithLastVisibleCommentCanRestorePosition" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="disabledFollowCannotAuthorizeANewActionOrProveSuccess" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="targetProfileReachedCannotReceiveExtraCommenterBack" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="explicitTaskResetAllowsNewRunAndNormalWaitingSnapshot" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="uncertainCommentReturnDoesNotEnterAnotherReplyOrBlindlyBack" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="everySupportedTaskRunsSecondAccountAndOnlyThenCompletesQueue" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.007"/>
+  <testcase name="linkedTasksAcceptValidXHostsInTheSameJvmAndAndroidCodePath" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="splitTimedNestedHeaderAlsoStopsTopRightFallback" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.005"/>
+  <testcase name="requestedDescriptionIsRecognizedWhenTextIsEmpty" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.001"/>
+  <testcase name="topFollowingAndRequestedReadEvenWhenDisabled" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.02"/>
+  <testcase name="otherTopControlsRemainIneligibleForFollow" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.015"/>
+  <testcase name="lowerSnapshotCannotEraseVerifiedCounterInAnyTaskStatus" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="requestedPlainTextStatusStillReadsInConfirmedRow" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="messageButtonAndNestedFollowCannotFollowTheNestedAuthor" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.011"/>
+  <testcase name="unknownSurfaceNeedsVisibleBackOrBoundedRecovery" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="disabledRequestedIsReadableAndNotClickable" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.0"/>
+  <testcase name="allLinkedTaskTypesStartAndRetainRequestedAccountBeforeVerification" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.002"/>
+  <testcase name="requestAcknowledgementBreaksRevertStreakAndNeverWaitsForApproval" classname="com.atmacanext.app.automation.BatchCommentReturn26_53Test" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

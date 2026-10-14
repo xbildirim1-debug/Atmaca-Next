@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.domain.policy.DailyAccountLimitPolicyTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:28.048Z" hostname="7e4fa31aba91" time="0.0">
+  <properties/>
+  <testcase name="allows task only when whole remaining work fits today's account budget" classname="com.atmacanext.app.domain.policy.DailyAccountLimitPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

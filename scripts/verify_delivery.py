@@ -32,12 +32,13 @@ for report in reports:
     for key in counts:
         counts[key] += values[key]
     name = suite.get("name", "")
-    if ".NonFollower" in name or name.endswith((".NavigationRestart26_60Test", ".QuoteReply26_61Test", ".QuoteTaskSetup26_61Test", ".ReplyTextInput26_62Test")):
+    if ".NonFollower" in name or name.endswith((".AccountProfileReturn27_65Test", ".NavigationRestart26_60Test", ".QuoteReply26_61Test", ".QuoteTaskSetup26_61Test", ".ReplyTextInput26_62Test")):
         new_suites[name] = values
-assert counts["tests"] >= 643 and counts["failures"] == counts["errors"] == counts["skipped"] == 0, counts
+assert counts["tests"] >= 726 and counts["failures"] == counts["errors"] == counts["skipped"] == 0, counts
 for name in ("NavigationRestart26_60Test", "NonFollowerUnfollowCompletionTest", "NonFollowerFollowingInspectorTest",
              "NonFollowerPolicyTest", "NonFollowerScrollProgressTest", "NonFollowerViewportGateTest",
-             "NonFollowerTimingTest", "NonFollowerBatch26_60Test", "QuoteReply26_61Test", "QuoteTaskSetup26_61Test", "ReplyTextInput26_62Test"):
+             "NonFollowerTimingTest", "NonFollowerBatch26_60Test", "QuoteReply26_61Test", "QuoteTaskSetup26_61Test", "ReplyTextInput26_62Test",
+             "AccountProfileReturn27_65Test", "NonFollowerGesture27_65Test"):
     assert any(suite.endswith("." + name) and values["tests"] > 0 for suite, values in new_suites.items()), name
 
 lint_file = Path("app/build/reports/lint-results-debug.xml")
@@ -58,31 +59,33 @@ assert int(manifest.get(android + "versionCode")) == code
 assert manifest.get(android + "versionName") == version
 permissions = [node.get(android + "name") for node in manifest.findall("uses-permission")]
 providers = [node.get(android + "name") for node in manifest.findall("application/provider")]
-assert "android.permission.INTERNET" not in permissions
+assert "android.permission.INTERNET" in permissions  # Existing 27.x Gemini/Pilot connection.
 assert "androidx.startup.InitializationProvider" not in providers
 
 signature = (dist / "SIGNATURE.txt").read_text()
 cert = re.search(r"Signer #1 certificate SHA-256 digest:\s*([a-fA-F0-9]{64})", signature).group(1).lower()
-reference = "9bb1488d50538b0b69427f7b49f5cc809b6b715eeb81a1867e33fe930074b7a5"
+reference = "b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa"
 apk = next(dist.glob("*.apk"))
 with zipfile.ZipFile(apk) as archive:
     assert archive.testzip() is None, "APK CRC failed"
 
 summary = {
-    "version": version, "version_code": code, "application_id": app_id, "build_kind": "github_ci",
-    "source_commit": os.environ["GITHUB_SHA"], "device_tested": False,
-    "run_url": "https://github.com/" + os.environ["GITHUB_REPOSITORY"] + "/actions/runs/" + os.environ["GITHUB_RUN_ID"],
+    "version": version, "version_code": code, "application_id": app_id,
+    "build_kind": "github_ci" if os.environ.get("GITHUB_ACTIONS") == "true" else "local_source_build",
+    "source_commit": os.environ.get("GITHUB_SHA"), "device_tested": False,
+    "run_url": ("https://github.com/" + os.environ["GITHUB_REPOSITORY"] + "/actions/runs/" + os.environ["GITHUB_RUN_ID"])
+        if os.environ.get("GITHUB_ACTIONS") == "true" else None,
     "tests": counts, "new_suites": new_suites, "lint": lint,
     "migration": "PASS: both historical v5 layouts preserved",
-    "signing_cert_sha256": cert, "matches_26_59_local_certificate": cert == reference,
+    "signing_cert_sha256": cert, "matches_uploaded_27_64_certificate": cert == reference,
     "apk": {"filename": apk.name, "bytes": apk.stat().st_size,
             "sha256": hashlib.sha256(apk.read_bytes()).hexdigest(), "crc": "PASS"}
 }
 (dist / "BUILD_VERIFICATION.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
 with (dist / "NOT_DEFTERI.txt").open("a") as notes:
     notes.write("\nGercek APK sertifikasi SHA256: " + cert + "\n")
-    notes.write("26.59 yerel APK ile ayni sertifika: " + str(cert == reference) + "\n")
+    notes.write("Kullanicinin 27.64 APK'si ile ayni sertifika: " + str(cert == reference) + "\n")
     if cert != reference:
-        notes.write("Bu CI APK yerel 26.59 uzerine dogrudan guncelleme olarak kurulamaz. "
+        notes.write("Bu CI APK kullanicinin 27.64 APK'si uzerine dogrudan guncelleme olarak kurulamaz. "
                     "Mevcut uygulamayi kaldirmak yerel kayitlari siler. Ozel imzali uyumlu APK teslimi bekliyor.\n")
 print("BUILD_VERIFICATION=" + json.dumps(summary, ensure_ascii=False), flush=True)

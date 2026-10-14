@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.XAccountSyncEvidenceCp15Test" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.993Z" hostname="7e4fa31aba91" time="0.003">
+  <properties/>
+  <testcase name="counters_require_expected_handle" classname="com.atmacanext.app.automation.XAccountSyncEvidenceCp15Test" time="0.002"/>
+  <testcase name="turkish_profile_counters_are_read" classname="com.atmacanext.app.automation.XAccountSyncEvidenceCp15Test" time="0.0"/>
+  <testcase name="discovery_is_unique_and_capped_at_ten" classname="com.atmacanext.app.automation.XAccountSyncEvidenceCp15Test" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.DiscoveryReturnGuard26_41Test" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.618Z" hostname="7e4fa31aba91" time="0.0">
+  <properties/>
+  <testcase name="returnToDiscoveryTargetNeverBacksOutOfProfile" classname="com.atmacanext.app.automation.DiscoveryReturnGuard26_41Test" time="0.0"/>
+  <testcase name="unrelatedProfileFlowsKeepNormalBackBehavior" classname="com.atmacanext.app.automation.DiscoveryReturnGuard26_41Test" time="0.0"/>
+  <testcase name="returnRouteStillAllowsBackFromTweetDetail" classname="com.atmacanext.app.automation.DiscoveryReturnGuard26_41Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

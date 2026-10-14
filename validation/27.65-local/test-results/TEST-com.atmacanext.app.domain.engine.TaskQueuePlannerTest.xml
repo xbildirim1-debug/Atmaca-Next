@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.domain.engine.TaskQueuePlannerTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:28.047Z" hostname="7e4fa31aba91" time="0.001">
+  <properties/>
+  <testcase name="queue is account-major and filters unsupported inactive and completed work" classname="com.atmacanext.app.domain.engine.TaskQueuePlannerTest" time="0.0"/>
+  <testcase name="next runnable ignores completed skipped and failed items" classname="com.atmacanext.app.domain.engine.TaskQueuePlannerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

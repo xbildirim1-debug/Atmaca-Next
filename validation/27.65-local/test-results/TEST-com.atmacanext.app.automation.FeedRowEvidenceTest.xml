@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.FeedRowEvidenceTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.674Z" hostname="7e4fa31aba91" time="0.01">
+  <properties/>
+  <testcase name="pinnedCardSkipped" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.0"/>
+  <testcase name="recommendationTextIsNeverPostBody" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.0"/>
+  <testcase name="hiddenHeaderCannotProduceRow" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.0"/>
+  <testcase name="timeFromAnotherRowCannotBeBorrowed" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.001"/>
+  <testcase name="mediaDoesNotBecomeTextOrPermitFollowingText" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.0"/>
+  <testcase name="descriptionOnlyBodySupported" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.0"/>
+  <testcase name="repliesWithFollowingLabelsRemainTweetDetail" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.001"/>
+  <testcase name="scaledLayoutHasSameResult" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.002"/>
+  <testcase name="nextPostTextIsNeverBorrowed" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.001"/>
+  <testcase name="identityIgnoresAgeAndActionCounts" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.001"/>
+  <testcase name="bodyMentionIsNotReplyAuthor" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.0"/>
+  <testcase name="combinedHeaderWithoutContainerIsReadable" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.001"/>
+  <testcase name="firstVisibleRandomReplyAuthorIsReadInScreenOrder" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.001"/>
+  <testcase name="profileRecommendationsDoNotBecomeFollowingList" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.001"/>
+  <testcase name="splitAuthorAndTimeWithoutActionsAreReadable" classname="com.atmacanext.app.automation.FeedRowEvidenceTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

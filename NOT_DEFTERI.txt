@@ -1,3 +1,99 @@
+ATMACA NEXT 27.65 — GÜNCEL DEVİR KAYDI
+14 Ekim 2026 / versionCode 213 / com.atmacanext.v258 / Room 6
+
+Esas alınan güncel kaynak: kullanıcının AtmacaNext-27.64-kaynak (1).zip dosyası.
+ZIP SHA256: 4c92d1fd0c1f5c629c6d3262563c71d1b4fb15069b8e18ff5a20da6de7d96887.
+Eski GitHub main 26.63 idi. Yeni 27.x kaynak önce ayrı bir temel commit'e aktarıldı:
+9b94b5d8f70f23d46df77a2febba63cfb8b6c7e9. 27.65 bu temele dar bir yamadır.
+Bu kayıt aşağıdaki tarihsel 26.x / 27.64 notlarından daha günceldir.
+
+SORUN VE DÜZELTME
+1) Hesap tarama: 15:17:37.878 ve 15:17:54.459 'profil geri oku' kabul edilmiş olsa
+   da sonraki kare hâlâ PROFILE idi. Kod kabul edilen tıklamayı çıkış sanıyordu;
+   sonraki hesap için HOME deep link'i, gönderi detayını tekrar açabiliyordu.
+   Yeni SAVING -> RETURN_PROFILE aşaması gerçek çekmece/seçici veya HOME akışını
+   doğrulamadan sıradaki hesabı başlatmaz. Yalnız beklenen kendi profilinde, küçük
+   ve kimliği belirli toolbar geri oku kullanılır. Gönderideki 'geri' metni ve
+   genel köşe düğümleri seçilmez. Etkisiz ilk ok sonrasında yeniden doğrulanan
+   profilde sistem geri denenir. Menü/seçici hazırsa oradan devam edilir.
+   Fotoğrafın öncesi ve sonrası aynı hesap kimliği kontrol edilir; iptal sonrası
+   eski callback yeni hesaba resim veya sayaç yazamaz. Android 8/9/10'da ekran
+   görüntüsü API'si yoksa fotoğrafsız kayıtla devam eder. Profil yüklenmesi logda
+   1.877–2.374 saniyeydi; 900 ms profil açılma eşiği 3500 ms oldu. Bu sabit bekleme
+   değildir: profil/resim hazır olur olmaz sonraki aşamaya geçilir.
+2) Takip etmeyenleri çıkar: 15:18:28.768 pilot ageMs=3005 ile yeniden başlatıyordu.
+   Foreground watchdog'un yanlış 3000 ms değeri ortak 10000 ms kuralına bağlandı.
+   1.8 saniye bloklayan kaydırma latch'i kaldırıldı. Yedek sürükleme asenkron;
+   tamamlanma/iptal callback'i takip edilir. Sürükleme bitmeden eski kararlı kare
+   liste sonu veya hazır ekran sayılamaz. İptal yeni kişi/başarı/sınır sayılmaz;
+   görev/session/kaydırma nesli değişirse eski callback yok sayılır.
+   İlk 100 farklı kişiyi koruma ve takip ilişkisi/kimliği belirsiz kişiyi koruma
+   kuralları değişmedi. Mevcut hız ayarları ve 27.x pilot/Gemini özelliği korunur.
+
+DEĞİŞEN UYGULAMA DOSYALARI
+- automation/AccountProfileReturnPolicy.kt (yeni ekran/kimlik/geri kanıtı)
+- automation/AccountSyncController.kt (kayıt, fotoğraf ve doğrulanmış dönüş)
+- automation/AtmacaAccessibilityService.kt (geri ve hesap kontrollü fotoğraf)
+- automation/NonFollowerFollowingScroller.kt (asenkron sürükleme)
+- automation/NonFollowerViewportGate.kt (tamamlanma, iptal ve taze kare)
+- automation/AutomationRuntime.kt (kaydırma callback'lerinin görevle eşleşmesi)
+- service/AutomationForegroundService.kt (ortak 10 saniye)
+- app/build.gradle.kts (27.65/213; özel anahtar yoksa genel debug derlemesi)
+Testler: 11 AccountProfileReturn27_65Test ve 8 NonFollowerGesture27_65Test.
+Üç eski test düzeni mevcut 27.x davranışına uyarlandı; uygulama mantıkları bu
+nedenle değiştirilmedi: FollowResultRecovery26_56Test, QuoteReply26_61Test,
+QuoteTaskSetup26_61Test. Aynı üç hata orijinal 27.64'te 66 testlik kontrolle
+tekrarlandı. Yorum gönderildikten sonra mevcut LIKE_SENT_REPLY aşaması korunur.
+CI/teslim betikleri sürüm 27.65'e ve mevcut Gemini INTERNET iznine uyarlandı;
+contents:read korunur. Özel signing klasörü depodan ve paketlerden dışlanır.
+
+GERÇEK DOĞRULAMA
+Yerel testDebugUnitTest + lintDebug + :app:assembleDebug: BAŞARILI.
+726 test: 0 başarısız, 0 hata, 0 atlanan; 19 yeni regresyonun tamamı geçti.
+Lint: 0 Error/Fatal, 50 Warning ve 8 Hint. Bu uyarılar giderilmiş sayılmaz.
+İki tarihsel SQLite 5 -> 6 veri koruma kontrolü: PASS.
+APK: 27.65 / 213 / com.atmacanext.v258. APK CRC, manifest ve imza doğrulandı.
+Sertifika SHA256: b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa.
+Kullanıcının ZIP içindeki 27.64 APK'sıyla aynıdır; uygulamayı kaldırmadan üstüne
+kurulur. APK özel anahtarla yerelde derlenmiştir, kaynak pakette anahtar yoktur.
+Genel GitHub CI kendi debug anahtarıyla derler; bu CI APK'sı aynı imzalı teslim
+APK'sı olarak sunulmamalıdır. Cihazdaki sürümün farklı anahtarla kurulduğu başka
+APK'lar için uyum iddia edilmez.
+Yeni fiziksel Android/X testi yapılmadı. Yerel test başarısı cihaz testi değildir.
+Gerçek XML raporları, lint ve derleme kaydı validation/27.65-local altındadır.
+Son kaynak commit'i ve dosya SHA256'ları dış teslim kayıtlarında verilir.
+
+SÜRÜM FARKLARI VE AÇIK KONTROL
+27.64 yüklemesindeki bazı yorum kodları eski 26.63 main'deki iki regresyonla aynı
+API/davranışı taşımıyor: ayrık zamanlı ana gönderi yazarını ayırma ve etkisiz native
+metin yazımı sonrası alternatif girişe geçme. Bu tur hesap tarama/kaydırma yamaları
+bunları yeniden yazmadı. Eski iki test validation/26.63-history altında metin olarak
+korunur, yeni 726 testin içinde çalıştırılmış gibi gösterilmez. Yorum akışı için yeni
+27.65 cihaz logu gerekir. Onaylı takipte 'Geri Takip Et' kuralı, mevcut 27.64
+VerifiedFollowPolicy'deki atlama davranışıyla aynıdır; bu tur ayrıca değiştirilmedi.
+
+CİHAZ KABUL ADIMLARI
+- Uygulamayı kaldırmadan 27.65'i kur; aktif ekran sürümünü kontrol et.
+- Hesap taramasını başlat: her hesapta fotoğraf doğru profilden gelmeli; çıkış
+  RETURN_PROFILE ile doğrulanmalı; fotoğraftan sonra tweet açılmamalı. Son hesap
+  tarama ve Atmaca'ya dönüş denemeleri korunur.
+- Takip etmeyenleri çıkar görevini çalıştır: SEEK_UNFOLLOW_DEPTH ilk 100 kişiyi
+  koruyarak kaymalı, 3 saniyede TASK_RESTART olmamalı. NONFOLLOWER_SCROLL tamamlanma
+  ve iptal kayıtları okunabilir. Hareket hâlindeki eski kare liste sonu sayılamaz.
+- Gerçekten 10 saniye ilerleme olmadığında ortak kurtarma aynı görev/ilerleme ile
+  çalışmalı. Manuel durdurma ve belirsiz gönderim korumaları atlanmamalı.
+- Telefon ve tablet için aynı adımlar: geri okunu kimlik/bounds kanıtı belirler;
+  sabit Redmi koordinatı yoktur. Fiziksel tablet doğrulaması henüz yapılmadı.
+
+GITHUB DURUMU
+Güncel kaynak ve bu dar yama main'e aktarılacaktır; final commit dış teslim
+KAYNAK_COMMIT.txt kaydından ve GitHub başından doğrulanır. Eski sürümler silinmez.
+GitHub Releases yayımlanmadı. AGENTS.md'de belgelenen önceki otomatik onay reddi,
+contents:write yayın workflow'unu kapsamaktadır; bu workflow etkinleştirilmedi.
+Yerel aynı imzalı APK, kaynak, testler, notlar ve checksum ayrı teslim edilir.
+
+--- ÖNCEKİ SÜRÜM KAYDI / TARİHSEL ---
+
 # Atmaca Next 26.62 — boş kalan alt yorum alanı
 
 6 Ekim 2026. Kullanıcı26.61'i telefonda denedi: @pushholder gönderisi açıkken alt “Yanıtını gönder” alanı boş kaldı. 1000033708.jpg görseli incelendi. Paylaşılan log @xhesaplar1 / limit5 /20:03 hesabı seçme sırasında kesiliyor; yorum aşamasının kesin cihaz ağacı/logu yok.26.61'in622 test başarısı cihazda yorumun çalıştığı kanıtı değildi; bu gerçek başarısızlık düzeltme kapsamıdır.
@@ -899,3 +995,6 @@ Aynı paket adıyla 26.5, önceki 26.4'ün üzerine güncelleme olarak kurulamaz
 - Retweetçi görevinde sonraki hedefin profil üst kullanıcı adı geçici olarak erişilemez olduğunda motor bekliyordu. Gönderiler yüzeyi ve hedefin kendi yazar satırı birlikte görünüyorsa hedef doğrulanır; hedef değişiminde yorum/etkileşim/gezinme sayaçları sıfırlanır. Yanlış hedefin tweeti doğrulama sayılmaz.
 - İki cihaz regresyon testi eklendi. versionCode73 / 26.25-comment-follow-click-target-handoff. CI ve fiziksel 26.25 cihaz testi henüz yapılmadı.
 
+
+Gercek APK sertifikasi SHA256: b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa
+Kullanicinin 27.64 APK'si ile ayni sertifika: True

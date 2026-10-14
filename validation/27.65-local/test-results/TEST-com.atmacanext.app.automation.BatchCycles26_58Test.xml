@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.BatchCycles26_58Test" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.464Z" hostname="7e4fa31aba91" time="0.007">
+  <properties/>
+  <testcase name="countdownShowsMinutesAndSeconds" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.004"/>
+  <testcase name="finalRoundDoesNotCreateAnotherWait" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.001"/>
+  <testcase name="directRuntimeCallerRetainsExistingSingleTaskWaitOwnership" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.0"/>
+  <testcase name="countdownNeverGoesNegative" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.0"/>
+  <testcase name="resumedTaskStartsRemainingCycleWithoutLosingTotalProgress" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.0"/>
+  <testcase name="intentionalBatchIntervalKeepsQueueActive" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.001"/>
+  <testcase name="countdownDoesNotShowZeroBeforeDeadline" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.0"/>
+  <testcase name="fourAccountsFinishFirstRoundBeforeSecondRoundStarts" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.0"/>
+  <testcase name="manualPausedTaskIsNotMistakenForCompletedRound" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.0"/>
+  <testcase name="firstAccountCycleHandsOffToSecondBeforeWait" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.001"/>
+  <testcase name="singleAccountRepeatsUseSameRoundBoundary" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.0"/>
+  <testcase name="secondRoundKeepsSameAccountOrder" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.0"/>
+  <testcase name="skippedOrFailedAccountIsNotRevivedForSecondRound" classname="com.atmacanext.app.automation.BatchCycles26_58Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

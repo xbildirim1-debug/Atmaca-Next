@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.VerifiedFollowFlowTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.977Z" hostname="7e4fa31aba91" time="0.003">
+  <properties/>
+  <testcase name="visibleUnselectedVerifiedHeaderIsNotPermission" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.001"/>
+  <testcase name="unchangedFollowDoesNotProveReversion" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.0"/>
+  <testcase name="conflictingDescriptionCannotFollowBack" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.0"/>
+  <testcase name="nextSourceUsesOpenListAndAvoidsOwnAndVisitedProfiles" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.001"/>
+  <testcase name="followsOnlyPlainButtonsInBothLanguages" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.0"/>
+  <testcase name="selectedVerifiedWinsOverNeighborFollowersHeader" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.001"/>
+  <testcase name="hiddenVerifiedSelectionCannotStartFollowing" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.0"/>
+  <testcase name="selectedVerifiedTabHasItsOwnIdentity" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.0"/>
+  <testcase name="threeRealConsecutiveRevertsStopAccount" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.0"/>
+  <testcase name="successfulOrUnknownAttemptBreaksConsecutiveStreak" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.0"/>
+  <testcase name="successWaitsForStableFollowing" classname="com.atmacanext.app.automation.VerifiedFollowFlowTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

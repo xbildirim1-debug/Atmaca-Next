@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.FollowResultRecovery26_56Test" tests="20" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.687Z" hostname="7e4fa31aba91" time="0.003">
+  <properties/>
+  <testcase name="followBackIsAnAvailableVerifiedActionInBothLanguages" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="plainFollowStillWorks" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="followingIsNeverANewAction" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="expectedDrawerProofEndsWaitImmediately" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="noEffectDoesNotIncreaseRevertStreak" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="newRequestedResultCompletesImmediately" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.001"/>
+  <testcase name="pendingVerificationRemainsWatchable" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="followBackWithFollowingStatusIsStillConfirmedSuccess" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="profileFrameWhileOpeningSheetCannotCloseIt" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="transitionGateIsBoundedAndClearsForNewAccount" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="mixedStatusAndActionIsNotANewFollow" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="persistentPlainFollowIsNoEffectRatherThanPauseOrSuccess" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="shortTapWaitCannotBeClassifiedNoEffect" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="actualFollowingRevertKeepsExistingLimitProtection" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="pendingIsNeverANewAction" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="manualPauseAndIntentionalWaitAreNotRestarted" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="noEffectRequiresFullStableWindow" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="missingRowIsNotNoEffectOrSuccess" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="watchdogDeadlineIsTenSeconds" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <testcase name="conflictingStatusesRemainUnresolved" classname="com.atmacanext.app.automation.FollowResultRecovery26_56Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

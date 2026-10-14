@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.EngagementFollowRulesTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.665Z" hostname="7e4fa31aba91" time="0.006">
+  <properties/>
+  <testcase name="contradictoryRequestedAndFollowIsNotSuccess" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.0"/>
+  <testcase name="aPostBodyWithoutDetailHeaderIsNotTweetDetail" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.001"/>
+  <testcase name="countedRepostTabCanBeSelectedWithComposeDecoration" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.0"/>
+  <testcase name="quoteTabAndRepostActionAreNotThePeopleList" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.002"/>
+  <testcase name="twoHourBoundaryAndUnknownTime" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.0"/>
+  <testcase name="composeTweetDetailNeedsNoLegacyResourceIds" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.0"/>
+  <testcase name="countedQuotesSelectedCannotMasqueradeAsRepostSelection" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.0"/>
+  <testcase name="requestedIsCompletedWithoutWaitingForApproval" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.0"/>
+  <testcase name="dynamicRepostCountsAreNotHardcoded" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.001"/>
+  <testcase name="pendingBreaksRevertStreakAndDoesNotCountAsRevert" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.0"/>
+  <testcase name="visibleRepostsAreInsufficientUntilSelected" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.0"/>
+  <testcase name="ageAndCountChangesDoNotCreateANewTweetKey" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.001"/>
+  <testcase name="engagementEntryOpensQuotesViewWithoutReposting" classname="com.atmacanext.app.automation.EngagementFollowRulesTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.NonFollowerScrollProgressTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.761Z" hostname="7e4fa31aba91" time="0.001">
+  <properties/>
+  <testcase name="emptyOrInvalidGeometryCannotProduceADrag" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.001"/>
+  <testcase name="oneLargeRowOnlyMovesPartOfItsHeight" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.0"/>
+  <testcase name="movementBreaksTheBoundaryProof" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.0"/>
+  <testcase name="twoRowViewportRetainsOneCountingAnchor" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.0"/>
+  <testcase name="idleConfirmationReadsNeverProveListEnd" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.0"/>
+  <testcase name="onlyThreeCompletedUnchangedScrollsProveABoundary" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.0"/>
+  <testcase name="denseViewportAdvancesMuchMoreThanOneOrTwoPeopleWithTwoRowsRetained" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.0"/>
+  <testcase name="additionalReadsDoNotInventAdditionalScrollAttempts" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.0"/>
+  <testcase name="variableHeightRowsStillRetainTwoActualPeople" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.0"/>
+  <testcase name="anActionClearsOldScrollHistoryBeforeTheNextCandidate" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.0"/>
+  <testcase name="anotherAccountCannotInheritABoundary" classname="com.atmacanext.app.automation.NonFollowerScrollProgressTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

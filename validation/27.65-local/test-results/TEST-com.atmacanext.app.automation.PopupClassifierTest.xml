@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.PopupClassifierTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.778Z" hostname="7e4fa31aba91" time="0.006">
+  <properties/>
+  <testcase name="rateLimitBeatsGenericDialog" classname="com.atmacanext.app.automation.PopupClassifierTest" time="0.001"/>
+  <testcase name="realNotificationSheetWithDismissControlIsStillDetected" classname="com.atmacanext.app.automation.PopupClassifierTest" time="0.001"/>
+  <testcase name="hiddenOrPlainTextDismissLabelDoesNotTurnBioIntoPrompt" classname="com.atmacanext.app.automation.PopupClassifierTest" time="0.001"/>
+  <testcase name="nativeNotificationDialogWithoutDismissRemainsBlocking" classname="com.atmacanext.app.automation.PopupClassifierTest" time="0.0"/>
+  <testcase name="unfollowConfirmationIsNotTreatedAsGenericPopup" classname="com.atmacanext.app.automation.PopupClassifierTest" time="0.0"/>
+  <testcase name="retryableErrorIsSeparatedFromPermanentError" classname="com.atmacanext.app.automation.PopupClassifierTest" time="0.0"/>
+  <testcase name="bosunatiklamaBioIsNotNotificationDialog" classname="com.atmacanext.app.automation.PopupClassifierTest" time="0.002"/>
+  <testcase name="postAndBioPromptPhrasesWithoutDialogAreIgnored" classname="com.atmacanext.app.automation.PopupClassifierTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.UnfollowRecovery26_59Test" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.975Z" hostname="7e4fa31aba91" time="0.001">
+  <properties/>
+  <testcase name="followingEvidenceMustBeStable" classname="com.atmacanext.app.automation.UnfollowRecovery26_59Test" time="0.0"/>
+  <testcase name="appliedFollowStateCannotRestartAsNoEffect" classname="com.atmacanext.app.automation.UnfollowRecovery26_59Test" time="0.0"/>
+  <testcase name="stopClearsReturnCallbackGuard" classname="com.atmacanext.app.automation.UnfollowRecovery26_59Test" time="0.0"/>
+  <testcase name="earlierFailureWaitsForRecoveryDeadline" classname="com.atmacanext.app.automation.UnfollowRecovery26_59Test" time="0.0"/>
+  <testcase name="missingRowCannotCreateAnotherAction" classname="com.atmacanext.app.automation.UnfollowRecovery26_59Test" time="0.0"/>
+  <testcase name="observedChangeCannotReleaseAttemptBudget" classname="com.atmacanext.app.automation.UnfollowRecovery26_59Test" time="0.0"/>
+  <testcase name="unappliedConfirmationRestartsAtTenSeconds" classname="com.atmacanext.app.automation.UnfollowRecovery26_59Test" time="0.0"/>
+  <testcase name="acceptedConfirmationCannotBeRepeated" classname="com.atmacanext.app.automation.UnfollowRecovery26_59Test" time="0.0"/>
+  <testcase name="conflictingLabelsDoNotProveUnappliedAction" classname="com.atmacanext.app.automation.UnfollowRecovery26_59Test" time="0.0"/>
+  <testcase name="manualPauseCancelsAutomaticReturnCallback" classname="com.atmacanext.app.automation.UnfollowRecovery26_59Test" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

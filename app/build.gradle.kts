@@ -7,15 +7,16 @@ plugins {
 }
 
 val keystoreProperties = Properties().apply {
-    load(rootProject.file("signing/keystore.properties").inputStream())
+    rootProject.file("signing/keystore.properties").takeIf { it.isFile }?.inputStream()?.use { load(it) }
 }
+val hasPrivateSigning = keystoreProperties.getProperty("storeFile")?.let { rootProject.file(it).isFile } == true
 
 android {
     namespace = "com.atmacanext.app"
     compileSdk { version = release(37) { minorApiLevel = 1 } }
 
     signingConfigs {
-        create("atmaca") {
+        if (hasPrivateSigning) create("atmaca") {
             storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
             storePassword = keystoreProperties.getProperty("storePassword")
             keyAlias = keystoreProperties.getProperty("keyAlias")
@@ -29,8 +30,8 @@ android {
         applicationId = "com.atmacanext.v258"
         minSdk = 26
         targetSdk = 36
-        versionCode = 212
-        versionName = "27.64"
+        versionCode = 213
+        versionName = "27.65"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -38,12 +39,12 @@ android {
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("atmaca")
+            if (hasPrivateSigning) signingConfig = signingConfigs.getByName("atmaca")
             isMinifyEnabled = false
             isShrinkResources = false
         }
         release {
-            signingConfig = signingConfigs.getByName("atmaca")
+            if (hasPrivateSigning) signingConfig = signingConfigs.getByName("atmaca")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

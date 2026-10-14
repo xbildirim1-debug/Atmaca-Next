@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.XScreenDetectorTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.999Z" hostname="7e4fa31aba91" time="0.004">
+  <properties/>
+  <testcase name="detectsVerifiedFollowersBeforePlainFollowers" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <testcase name="detectsOwnProfileBeforeFollowingListHeuristic" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.001"/>
+  <testcase name="keyboardCoveredInlineReplyFieldStaysTweetDetail" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <testcase name="fullScreenReplyComposerIsStillComposer" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <testcase name="inlineEditableReplyFieldRemainsTweetDetail" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <testcase name="staleProfileLabelsDoNotOverrideSelectedFollowingTab" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.001"/>
+  <testcase name="scrolledInlineReplyWithRowsDoesNotBecomeComposerWhenToolbarSemanticsDisappear" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <testcase name="detectsTurkishVerifiedFollowersVariantFromWorkingXBuild" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <testcase name="accountSwitcherNeedsRealHandleEvidence" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <testcase name="homeTimelineWithManyTweetActionsIsNotTweetDetail" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <testcase name="explicitTweetDetailEvidenceWinsWithoutGuessingFromActionCount" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.001"/>
+  <testcase name="uiWordsDoNotCreateFakeHandles" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <testcase name="composerRequiresEditableEvidenceInsteadOfFloatingPostButton" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <testcase name="detectsFollowingList" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.001"/>
+  <testcase name="followingTabsAndClickableRowsAreNotMistakenForProfile" classname="com.atmacanext.app.automation.XScreenDetectorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

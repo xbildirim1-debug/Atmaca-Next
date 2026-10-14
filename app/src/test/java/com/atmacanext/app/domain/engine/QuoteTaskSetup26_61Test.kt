@@ -15,7 +15,8 @@ class QuoteTaskSetup26_61Test {
 
     @Test fun quoteIsAvailableInTheGeneralNewTaskCatalog() {
         assertEquals(listOf(TaskType.COMMENT_QUOTE_TARGETS), TASK_TYPES_BY_GROUP.getValue(TaskGroup.QUOTE_COMMENT))
-        assertEquals(3, TASK_TYPES_BY_GROUP.size)
+        assertEquals(setOf(TaskGroup.FOLLOW, TaskGroup.ENGAGEMENT, TaskGroup.TWEET,
+            TaskGroup.QUOTE_COMMENT, TaskGroup.BULK), TASK_TYPES_BY_GROUP.keys)
         assertFalse(TaskType.COMMENT_QUOTE_TARGETS.requiresLink)
         assertTrue(TaskType.COMMENT_QUOTE_TARGETS.supportsGemini)
     }

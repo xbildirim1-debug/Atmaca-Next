@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.CommentMemoryLikeAvatar26_78Test" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.554Z" hostname="7e4fa31aba91" time="0.016">
+  <properties/>
+  <testcase name="drawerAvatarIsTheLargePhotoNotTheBadge" classname="com.atmacanext.app.automation.CommentMemoryLikeAvatar26_78Test" time="0.001"/>
+  <testcase name="accountRemembersACommentedTweetAcrossANewTask" classname="com.atmacanext.app.automation.CommentMemoryLikeAvatar26_78Test" time="0.011"/>
+  <testcase name="textThatStartsAtTheEdgeIsNotUsedAsThePhoto" classname="com.atmacanext.app.automation.CommentMemoryLikeAvatar26_78Test" time="0.003"/>
+  <testcase name="likeIsTriedThenTheReplyStillCountsIfItCannotBeConfirmed" classname="com.atmacanext.app.automation.CommentMemoryLikeAvatar26_78Test" time="0.001"/>
+  <testcase name="unlabeledDrawerStillCropsBesideTheHandle" classname="com.atmacanext.app.automation.CommentMemoryLikeAvatar26_78Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

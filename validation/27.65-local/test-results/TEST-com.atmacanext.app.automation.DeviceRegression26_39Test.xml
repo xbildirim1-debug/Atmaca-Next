@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.DeviceRegression26_39Test" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.587Z" hostname="7e4fa31aba91" time="0.004">
+  <properties/>
+  <testcase name="replySwipeStartsAboveLiveComposerAndKeepsViewportOverlap" classname="com.atmacanext.app.automation.DeviceRegression26_39Test" time="0.003"/>
+  <testcase name="selectedRepostedTabIsVerifiedBeforeUsersAreProcessed" classname="com.atmacanext.app.automation.DeviceRegression26_39Test" time="0.0"/>
+  <testcase name="profileScanWithoutReplyComposerKeepsNormalLongGesture" classname="com.atmacanext.app.automation.DeviceRegression26_39Test" time="0.001"/>
+  <testcase name="quoteEntryVariantsOpenTheEngagementSurface" classname="com.atmacanext.app.automation.DeviceRegression26_39Test" time="0.0"/>
+  <testcase name="turkishRepostedTabWithoutCountIsRecognized" classname="com.atmacanext.app.automation.DeviceRegression26_39Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

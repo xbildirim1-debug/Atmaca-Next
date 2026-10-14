@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.968Z" hostname="7e4fa31aba91" time="0.002">
+  <properties/>
+  <testcase name="confirmationClickedOnlyOnceDuringDismissalAnimation" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.001"/>
+  <testcase name="overlappingFullWidthContainerIsNotUsernameEvidence" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <testcase name="unselectedRowAndHiddenCheckmarkAreNotProof" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <testcase name="targetVisibleInSwitcherIsNotPermissionToUnfollow" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.001"/>
+  <testcase name="precedingFollowingTabCannotAttachToFirstUser" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <testcase name="stuckConfirmationPausesAfterDeadline" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <testcase name="checkmarkWithinOnlyTargetRowIsValid" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <testcase name="nextRowsFollowingButtonCannotFakeTargetReversion" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <testcase name="conflictingRelationshipLabelsNeverCountAsSuccess" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <testcase name="anotherAccountCheckmarkDoesNotSelectRequestedAccount" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <testcase name="displayNameMentioningSelectionIsNotCheckmark" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <testcase name="selectedWholeAccountListIsNotRowProof" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <testcase name="sameRowButtonMatchesAtDifferentScales" classname="com.atmacanext.app.automation.TaskAccountAndUnfollowRegressionTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

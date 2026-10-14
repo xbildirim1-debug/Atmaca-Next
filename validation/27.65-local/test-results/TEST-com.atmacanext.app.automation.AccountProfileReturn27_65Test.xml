@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.AccountProfileReturn27_65Test" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.176Z" hostname="7e4fa31aba91" time="0.018">
+  <properties/>
+  <testcase name="profileMisclassifiedAsHomeStillNeedsBack" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.011"/>
+  <testcase name="backTextInThePostBodyAndInvisibleArrowsAreRejected" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.003"/>
+  <testcase name="profileCountersBehindAnOpenDrawerCannotHideTheConfirmedMenu" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.0"/>
+  <testcase name="identifiedSmallArrowAboveProfileHeaderIsAccepted" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.001"/>
+  <testcase name="loadingOrUnexpectedDetailDoesNotSwitchAccounts" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.0"/>
+  <testcase name="aHomeClassificationWithoutTimelineEvidenceIsNotAConfirmedReturn" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.0"/>
+  <testcase name="wrongAccountProfileCannotAuthorizeAGlobalBack" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.001"/>
+  <testcase name="tweetContainingGeriIsNotTheBackArrow" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.0"/>
+  <testcase name="aDrawerIsAValidPlaceToContinueAccountSelection" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.0"/>
+  <testcase name="unlabelledCornerAndScreenWideBackContainersAreIgnored" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.001"/>
+  <testcase name="acceptedBackWithoutAnActualScreenChangeCannotAdvanceToNextAccount" classname="com.atmacanext.app.automation.AccountProfileReturn27_65Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

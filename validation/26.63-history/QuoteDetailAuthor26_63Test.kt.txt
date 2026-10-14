@@ -115,3 +115,4 @@ class QuoteDetailAuthor26_63Test {
             XFlowStage.SUBMIT_COMPOSER, true, false, true, true, 1, 500))
     }
 }
+

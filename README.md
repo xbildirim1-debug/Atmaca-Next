@@ -1,3 +1,17 @@
+# Atmaca Next 27.65 — hesap tarama ve liste kaydırma düzeltmesi
+
+14 Ekim 2026. Güncel temel kullanıcının **27.64** kaynak ZIP'idir; eski GitHub 26.63 kodundan devam edilmedi. Uygulama kimliği **com.atmacanext.v258**, sürüm kodu **213**, Room **6**.
+
+Profil fotoğrafından sonra gerçek menü/ana akış görülmeden sıradaki hesaba geçilmez. Profil geri oku yalnız beklenen kendi profilinin toolbar kanıtıyla seçilir; geç kalan fotoğraf/kayıt callback'i başka hesabı değiştiremez. Takip etmeyenler listesindeki sürükleme tamamlanmadan eski kare hazır ekran veya liste sonu sayılamaz. Pilotun yanlış 3 saniyelik eşiği ortak 10 saniyeye bağlandı; ilk 100 kişiyi koruma devam eder.
+
+**Yerel doğrulama: 726 test geçti; 19 yeni regresyon; lint 0 hata/fatal (50 uyarı, 8 hint); APK derlemesi, imza, manifest ve SQLite 5→6 veri koruma geçti.** Yeni fiziksel Android/X veya tablet testi yapılmadı. APK kullanıcının 27.64 APK'sıyla aynı b52d8a15… sertifikasıyla derlendi; uygulama kaldırılmadan üzerine kurulabilir. Genel CI debug APK'sı bu imzalı teslimle karıştırılmamalıdır.
+
+[Uygulama devri ve açık kontroller](DEVIR.txt), [gerçek teslim doğrulaması](validation/27.65-local/BUILD_VERIFICATION.json). Özel anahtarlar ve yerel SDK yolları kaynaklara/pakete eklenmez. 26.63'ün yüklenen 27.64'te bulunmayan iki yorum regresyonu tarihsel metin olarak korunur; bu yamada yeniden uygulanmış veya cihazda doğrulanmış sayılmaz.
+
+Kaynak/testler main'e kaydedilir. Güncel commit dış teslim KAYNAK_COMMIT.txt dosyasında bulunur. Releases için önceki `contents:write` otomatik onay reddi nedeniyle yayın workflow'u etkinleştirilmedi; aynı imzalı yerel APK ayrı teslim edilir. Aşağıdaki 26.x kayıtlar tarihsel açıklamalardır.
+
+---
+
 # Atmaca Next 26.62 — boş kalan alt yorum alanı
 
 6 Ekim 2026. Kullanıcı26.61'i telefonda denedi: @pushholder gönderisi açıkken alt “Yanıtını gönder” alanı boş kaldı. 1000033708.jpg görseli incelendi. Paylaşılan log @xhesaplar1 / limit5 /20:03 hesabı seçme sırasında kesiliyor; yorum aşamasının kesin cihaz ağacı/logu yok.26.61'in622 test başarısı cihazda yorumun çalıştığı kanıtı değildi; bu gerçek başarısızlık düzeltme kapsamıdır.

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.CommentMediaReturn26_52Test" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.536Z" hostname="7e4fa31aba91" time="0.017">
+  <properties/>
+  <testcase name="nextAccountClearsCommentSkipRetryAndReturnNavigationState" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.001"/>
+  <testcase name="pageSizedMediaAncestorDoesNotHideAllCommenters" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.001"/>
+  <testcase name="sameAuthorMediaReplyDoesNotExcludeTheirSeparateTextReply" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.002"/>
+  <testcase name="hiddenAndEditableMediaNodesAreIgnored" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.0"/>
+  <testcase name="unresolvedReturnPausesInsteadOfSearchingTargetAgain" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.001"/>
+  <testcase name="reachingTargetAlwaysStopsBackEvenWithOldScreenOrExpiredBudget" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.0"/>
+  <testcase name="smallInlineGifAndPhotoButtonsAreNotAttachments" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.0"/>
+  <testcase name="videoTextCommentersAllRemainDistinctFeedCandidates" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.004"/>
+  <testcase name="actualPhotoVideoAndGifAttachmentsAreSkipped" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.0"/>
+  <testcase name="twoHoursRuleForOriginalTargetPostIsUnchanged" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.0"/>
+  <testcase name="descriptionOfTextIsNotAnAttachment" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.0"/>
+  <testcase name="textMentioningVideoPhotoOrGifIsStillText" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.001"/>
+  <testcase name="retweeterStackReturnsListThenPostThenStopsAtProfile" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.0"/>
+  <testcase name="unlabelledSmallPhotoAvatarIsNotTweetMedia" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.0"/>
+  <testcase name="aScrolledProfileFeedWithoutAHandleIsStillTheOpenedTarget" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.004"/>
+  <testcase name="unconfirmedProfileHomeSearchAndUnknownNeverReceiveBlindBack" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.001"/>
+  <testcase name="actualTargetProfileBlocksBackWithStaleTweetScreenClassification" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.002"/>
+  <testcase name="largeComposeImageWithoutResourceIdIsMedia" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.0"/>
+  <testcase name="previousImageOverlappingTheCurrentBandDoesNotBelongToIt" classname="com.atmacanext.app.automation.CommentMediaReturn26_52Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

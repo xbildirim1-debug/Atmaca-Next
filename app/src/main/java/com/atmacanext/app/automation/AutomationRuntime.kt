@@ -242,6 +242,7 @@ object AutomationController {
     private var nonFollowerProbeSignature = ""
     private var nonFollowerUnknownViewports = 0
     private var nonFollowerScrollMisses = 0
+    private var nonFollowerScrollGeneration = 0L
 
     private var poolLines: List<String> = emptyList()
     private var poolCursor = 0
@@ -1198,6 +1199,29 @@ object AutomationController {
         }
     }
 
+    private fun scrollNonFollowers(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?,
+                                   reading: NonFollowerFollowingInspector.Reading, forward: Boolean): Boolean {
+        val task = _state.value
+        val token = ++nonFollowerScrollGeneration
+        nonFollowerViewportGate.afterScroll(System.currentTimeMillis(), settleMs = 450L)
+        val accepted = NonFollowerFollowingScroller.scroll(service, root, reading.rows, forward, reading.snapshots,
+            onGestureStarted = { nonFollowerViewportGate.gestureStarted(it) },
+            onGestureFinished = { completed, at ->
+                service.runOnAutomationThread {
+                    val active = _state.value
+                    if (token == nonFollowerScrollGeneration && active.taskId == task.taskId &&
+                        active.sessionId == task.sessionId && active.taskType == TaskType.UNFOLLOW_NON_FOLLOWERS &&
+                        active.flowStage in setOf(XFlowStage.SEEK_UNFOLLOW_DEPTH, XFlowStage.PROCESS_UNFOLLOW) &&
+                        active.status != RuntimeStatus.PAUSED && active.status !in terminalStatuses()) {
+                        nonFollowerViewportGate.gestureFinished(completed, at)
+                        service.requestAutomationTickExact(NonFollowerViewportGate.STABLE_MS)
+                    }
+                }
+            })
+        if (!accepted) nonFollowerViewportGate.reset()
+        return accepted
+    }
+
     private fun handleNonFollowers(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
         val current = _state.value
         val onFollowing = screen == XScreen.FOLLOWING_LIST ||
@@ -1221,6 +1245,13 @@ object AutomationController {
             signature.takeIf { rows.isNotEmpty() && rows.all { it.evidence.treeComplete } }, now)
         if (settled == NonFollowerViewportGate.Decision.WAIT) {
             service.requestAutomationTickExact(NonFollowerViewportGate.POLL_MS)
+            return
+        }
+        if (settled == NonFollowerViewportGate.Decision.CANCELLED) {
+            nonFollowerScrollBoundary.reset()
+            nonFollowerScrollMisses++
+            OperationLog.w("NONFOLLOWER_SCROLL", "İptal edilen kaydırma kişi sayımı/liste sonu üretmedi; deneme=$nonFollowerScrollMisses")
+            service.requestAutomationTickExact(450L)
             return
         }
         if (settled == NonFollowerViewportGate.Decision.TIMED_OUT) {
@@ -1253,14 +1284,13 @@ object AutomationController {
                 service.requestAutomationTickExact(20L)
                 return
             }
-            if (!NonFollowerFollowingScroller.scroll(service, root, rows, forward = false, snapshots = reading.snapshots)) {
+            if (!scrollNonFollowers(service, root, reading, forward = false)) {
                 nonFollowerScrollMisses++
                 if (nonFollowerScrollMisses < 4) { service.requestAutomationTickExact(450L); return }
                 retryNavigationWithDeadline(service, "Liste başına kaydırma tamamlanamadı; başlangıç sırası tahmin edilmedi", System.currentTimeMillis())
                 return
             }
             nonFollowerScrollMisses = 0
-            nonFollowerViewportGate.afterScroll(System.currentTimeMillis())
             nonFollowerScrollBoundary.afterScroll(signature)
             service.requestAutomationTickExact(450L)
             return
@@ -1330,7 +1360,7 @@ object AutomationController {
         }
         if (listScrolls >= 10000) { pause("Tarama kaydırma sınırında duraklatıldı; ilerleme korundu"); return }
         if (uncertain > 0) nonFollowerUnknownViewports++
-        if (!NonFollowerFollowingScroller.scroll(service, root, rows, forward = true, snapshots = reading.snapshots)) {
+        if (!scrollNonFollowers(service, root, reading, forward = true)) {
             nonFollowerScrollMisses++
             if (nonFollowerScrollMisses < 4) { service.requestAutomationTickExact(450L); return }
             retryNavigationWithDeadline(service, "Daha eski kişilere kaydırma tamamlanamadı; yeni kişilere dönülmedi", System.currentTimeMillis())
@@ -1338,7 +1368,6 @@ object AutomationController {
         }
         nonFollowerScrollMisses = 0
         // Forward only: no reverse pass can touch the protected recent users.
-        nonFollowerViewportGate.afterScroll(System.currentTimeMillis())
         nonFollowerScrollBoundary.afterScroll(signature)
         service.requestAutomationTickExact(450L)
     }
@@ -3538,6 +3567,7 @@ object AutomationController {
     }
 
     private fun resetNonFollowerNavigation() {
+        nonFollowerScrollGeneration++
         nonFollowerFollowingRun = NonFollowerFollowingRun()
         nonFollowerViewportGate.reset()
         nonFollowerScrollBoundary.reset()

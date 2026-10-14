@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.DiscoverySearchSelectorTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.627Z" hostname="7e4fa31aba91" time="0.007">
+  <properties/>
+  <testcase name="bottomSearchResourceIdWorksWhenThirdAccountOmitsAccessibilityLabel" classname="com.atmacanext.app.automation.DiscoverySearchSelectorTest" time="0.0"/>
+  <testcase name="exactSuggestionBelowQueryIsSelectedCaseInsensitively" classname="com.atmacanext.app.automation.DiscoverySearchSelectorTest" time="0.0"/>
+  <testcase name="otherHandlesMentionsAndFollowRowsAreRejected" classname="com.atmacanext.app.automation.DiscoverySearchSelectorTest" time="0.0"/>
+  <testcase name="verifiedHomeGeometryFindsUnlabeledSecondTabWithoutFixedPixels" classname="com.atmacanext.app.automation.DiscoverySearchSelectorTest" time="0.003"/>
+  <testcase name="queryIsNeverClickedAsResult" classname="com.atmacanext.app.automation.DiscoverySearchSelectorTest" time="0.0"/>
+  <testcase name="ownProfileMagnifierIsNotGlobalSearch" classname="com.atmacanext.app.automation.DiscoverySearchSelectorTest" time="0.0"/>
+  <testcase name="multipleUnidentifiedEditorsAreNotGuessed" classname="com.atmacanext.app.automation.DiscoverySearchSelectorTest" time="0.0"/>
+  <testcase name="unlabeledBottomNodeIsNeverGuessedWithoutHomeAnchor" classname="com.atmacanext.app.automation.DiscoverySearchSelectorTest" time="0.0"/>
+  <testcase name="bottomSearchLabelsWorkInBothLanguagesAndScaledScreens" classname="com.atmacanext.app.automation.DiscoverySearchSelectorTest" time="0.003"/>
+  <testcase name="hiddenDisabledAndAboveQueryMatchesAreRejected" classname="com.atmacanext.app.automation.DiscoverySearchSelectorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

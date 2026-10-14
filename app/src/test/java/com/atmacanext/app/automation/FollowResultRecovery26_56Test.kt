@@ -32,7 +32,9 @@ class FollowResultRecovery26_56Test {
         watch.reset(1000);assertFalse(watch.isStuck(10999));assertTrue(watch.isStuck(11000))
     }
     @Test fun pendingVerificationRemainsWatchable() {
-        assertTrue(AutomationStallPolicy.shouldWatch(AutomationRuntimeState(taskId="t",sessionId="s",status=RuntimeStatus.VERIFYING)))
+        assertTrue(AutomationStallPolicy.shouldWatch(AutomationRuntimeState(taskId="t",sessionId="s",status=RuntimeStatus.VERIFYING,
+            taskType=com.atmacanext.app.domain.model.TaskType.VERIFIED_FOLLOW,
+            flowStage=XFlowStage.PROCESS_VERIFIED_FOLLOW,activeScreen=XScreen.VERIFIED_FOLLOWERS_LIST)))
     }
     @Test fun manualPauseAndIntentionalWaitAreNotRestarted() {
         assertFalse(AutomationStallPolicy.shouldWatch(AutomationRuntimeState(taskId="t",status=RuntimeStatus.PAUSED)))

@@ -1,3 +1,11 @@
+# 27.65 cihaz kabulü (henüz yapılmadı)
+
+27.64 üzerine 27.65/213 kurulmalı. Tüm hesaplar taranmalı; doğru profil fotoğrafı alındıktan sonra RETURN_PROFILE menü/ana akışı doğrulamalı ve sonraki hesap açılmalı. Fotoğraftan çıkışta tweet açılmamalı. Takip etmeyenleri çıkar görevinde ilk 100 farklı kişi korunmalı, 3 saniye pilot yeniden başlatması görülmemeli; sürükleme tamamlandıktan sonra taze satırlar okunmalı. İptal edilen sürükleme liste sonu sayılmamalı. Gerçek 10 saniye hareketsizlikte aynı ilerlemeden kurtarma denenmeli. Telefon ve tablet aynı protokolle ayrı test edilmeli. Manuel pause/stop kontrolü denenmeli.
+
+Tam uygulama devri DEVIR.txt, yerel otomatik sonuç validation/27.65-local içindedir.
+
+--- Tarihsel cihaz protokolleri ---
+
 # 26.62 — alt yorum alanı cihaz kabulü (yeni sürüm henüz denenmedi)
 
 1.26.61 üzerine aynı imzalı APK kurulur; hesap/görevler korunmalı.26.61'de gerçek başarısızlık: @pushholder gönderisi açıldı ama Yanıtını gönder alanı boş kaldı.

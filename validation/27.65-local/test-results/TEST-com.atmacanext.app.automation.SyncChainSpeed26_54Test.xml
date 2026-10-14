@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.SyncChainSpeed26_54Test" tests="33" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.954Z" hostname="7e4fa31aba91" time="0.013">
+  <properties/>
+  <testcase name="fastFollowStillNeedsStableResultAndRejectsRevertedFollow" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="alreadyOpenDrawerCanVerifyFirstAccountImmediately" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="sameCurrentAccountSheetIsDismissedAfterSettleWithoutHomeDeepLink" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="snapshotReadRecoveryPreservesAccountStageAndCounterForEveryTask" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.001"/>
+  <testcase name="backwardsStrokeIsSafeAndHasOppositeDirection" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="staleSheetLabelCannotBackFromFreshHomeOrAnotherApp" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="partialRowsAreClippedAndDoNotTouchTabs" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="rootBoundsAreClippedToDisplayInLandscapeAndPortrait" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="nanInfinityAndNegativeCoordinatesCannotCreateGesture" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="secondAccountStartsWithCleanStallAndSourceHistoryForAllSupportedTasks" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.002"/>
+  <testcase name="exhaustedSecondAccountKeepsTenOfFifteenAndUsesSameListRoute" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.003"/>
+  <testcase name="userPauseIsNeverUndoneByAutomaticReadRecovery" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="sourceSelectionPrefersVisiblePersonOverCachedOffscreenPerson" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.001"/>
+  <testcase name="transientReadRetriesAreBoundedAndResetForNextAccount" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="fastestPresetDividesUiDelaysBySevenExactlyOnce" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="shortSystemOverlayDoesNotRestartSelectedAccount" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="upgradeEnablesSevenTimesSpeedIncludingPreviouslySavedSlowSettings" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.001"/>
+  <testcase name="homeAfterSelectionImmediatelyOpensDrawerWithoutBack" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="sourceCannotBeOwnVisitedHiddenDisabledOrVirtualOffscreenRow" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="tenRowListWithNegativeVirtualRowsNeverBuildsNegativeStroke" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="fastPollingCannotRetapAndCloseDrawerBeforeFirstTapSettles" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="whollyOffscreenRowsUseSafeViewportSwipe" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="staleScrollExceptionAllowsFallbackInsteadOfPausingTask" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.002"/>
+  <testcase name="laterManualTimingChoiceSurvivesAndRemainsBounded" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="relationshipDescriptionIsNeverUsedAsSourceUsername" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.001"/>
+  <testcase name="transientReadDuringFollowDoesNotClearOrResubmitPendingAction" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="switchingAnimationGetsSettleBeforeNavigation" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="zeroAndNegativeRootCannotDispatch" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="temporaryUnknownDuringDrawerAnimationDoesNotRearmTap" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="followedRequestedAndNoButtonUsersRemainSourceCandidates" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="horizontalTabGesturesStayInsideScreen" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="visitedSourcesDoNotCreateProfileCycle" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <testcase name="screenNoiseAndStatusTextCannotResetStallWatchdogForAnyTask" classname="com.atmacanext.app.automation.SyncChainSpeed26_54Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

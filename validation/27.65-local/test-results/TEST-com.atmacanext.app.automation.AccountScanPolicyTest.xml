@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.AccountScanPolicyTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.202Z" hostname="7e4fa31aba91" time="0.005">
+  <properties/>
+  <testcase name="noisyAccessibilityEventsDoNotPostponePendingTick" classname="com.atmacanext.app.automation.AccountScanPolicyTest" time="0.001"/>
+  <testcase name="discoveryIsCappedAtTenDistinctAccounts" classname="com.atmacanext.app.automation.AccountScanPolicyTest" time="0.003"/>
+  <testcase name="successfulAccountsAreVisitedOnceAndInOrder" classname="com.atmacanext.app.automation.AccountScanPolicyTest" time="0.0"/>
+  <testcase name="allFourAccountsAreVisitedEvenWhenFirstCannotBeRead" classname="com.atmacanext.app.automation.AccountScanPolicyTest" time="0.0"/>
+  <testcase name="wrongAccountOrMissingCounterCannotBeSaved" classname="com.atmacanext.app.automation.AccountScanPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

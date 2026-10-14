@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.QuoteReplyRegressionTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.903Z" hostname="7e4fa31aba91" time="0.009">
+  <properties/>
+  <testcase name="visibleUnsentInlineTextIsNotSuccessfulJustBecauseScreenIsTweetDetail" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.001"/>
+  <testcase name="writeAcceptanceDoesNotVerifyDifferentOrEmptyText" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="partialResumeUsesCorrectTargetWithinCycle" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="hiddenCachedEditorCannotReceiveText" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="limitOneAppliesToEveryTargetAndNotJustFirstTarget" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="runtimeUsesAllTargetsAndCarriesConfirmedPostKeysOnPause" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="disabledSendDoesNotAuthorizeSubmission" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="submitNeverClicksTweetOrLowerReplyToolbar" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.001"/>
+  <testcase name="latestYoungPostCanRetryOnlyInQuoteTask" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="unresolvedPreviousSubmissionPausesAndCannotBeSilentlyResubmitted" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="staticReplyEntryOpensWithoutBroadReplyIdMatch" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="editTextClassSupportsLayoutsWithoutEditableFlag" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="inlineEntryIsPreferredAndRetryUsesTheOriginalRatherThanLowerReplyToolbar" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="multipleVisibleEditorsAreAmbiguous" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="originalUntimedAuthorIsNotConfusedWithLowerTimedReplyAuthor" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.001"/>
+  <testcase name="inlineReplyOnTweetDetailIsReadyWithoutWaitingForSeparateComposer" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.001"/>
+  <testcase name="wrongOpenedAuthorWithSameTextIsRejected" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.0"/>
+  <testcase name="changedPostBySameAuthorIsRejected" classname="com.atmacanext.app.automation.QuoteReplyRegressionTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

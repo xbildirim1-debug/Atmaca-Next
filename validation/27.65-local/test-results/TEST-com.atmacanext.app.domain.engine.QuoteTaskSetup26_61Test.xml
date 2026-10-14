@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:28.027Z" hostname="7e4fa31aba91" time="0.016">
+  <properties/>
+  <testcase name="atMostFiveDistinctQuoteTargetsAreBound" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.001"/>
+  <testcase name="mixedCaseDuplicatesAndInvalidHandlesAreNormalizedBeforeCounting" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.001"/>
+  <testcase name="nonFollowerPositionIsPreserved" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.013"/>
+  <testcase name="eachSelectedAccountGetsItsOwnSnapshotInTheSameBatch" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.0"/>
+  <testcase name="aStartedTaskKeepsItsOriginalTargetSnapshotOnEdit" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.0"/>
+  <testcase name="ordinaryTasksDoNotAcquireQuoteTargetRequirements" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.0"/>
+  <testcase name="ownersStandardAndInactiveTargetsDoNotLeakIntoQuoteWork" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.0"/>
+  <testcase name="editingKeepsProgressAcrossAllTargetsAndTheDurableReplyReservation" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.0"/>
+  <testcase name="addingAnotherAccountCannotCopyTheFirstAccountsPostedOrPendingKeys" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.0"/>
+  <testcase name="missingQuoteTargetsCannotCreateARunnableTask" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.0"/>
+  <testcase name="limitIsPerTargetAndRepeatsKeepTheFullTotal" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.0"/>
+  <testcase name="quoteIsAvailableInTheGeneralNewTaskCatalog" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.0"/>
+  <testcase name="unsupportedPerTargetLimitIsNotSilentlyClampedByTheMotor" classname="com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

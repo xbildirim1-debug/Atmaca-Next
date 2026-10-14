@@ -1,0 +1,99 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:processDebugNavigationResources
+> Task :app:parseDebugLocalResources
+> Task :app:generateDebugRFile
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ai/PilotIncident.kt:32:21 Condition is always 'true'.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ai/PilotIncident.kt:35:34 Condition is always 'true'.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/AutomationRuntime.kt:2881:33 Unnecessary safe call on a non-null receiver of type 'TaskType'.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/EngagementListEvidence.kt:47:62 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/ListViewportController.kt:64:32 Elvis operator (?:) always returns the left operand of non-nullable type 'AccessibilityNodeInfo'.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/NodeSnapshot.kt:34:19 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/RelationshipTabInspector.kt:38:52 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/ReplyInputConnection.kt:31:26 Unnecessary safe call on a non-null receiver of type 'CharSequence'.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/ReplyTextTransfer.kt:34:33 Condition is always 'true'.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/TweetAgeEvidence.kt:18:31 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/XTweetInspector.kt:306:51 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/XTweetInspector.kt:319:55 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/XTweetInspector.kt:320:50 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/XTweetInspector.kt:329:111 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/XUiActions.kt:388:20 Unnecessary safe call on a non-null receiver of type 'Pair<AccessibilityNodeInfo, Rect>'.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/automation/XUiActions.kt:646:68 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/data/settings/AccountAvatarStore.kt:92:34 Condition is always 'false'.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/AccountSettingsScreen.kt:32:73 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/AccountSettingsScreen26_42.kt:122:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/DashboardScreen.kt:183:43 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/DashboardScreen26_42.kt:506:47 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/DashboardScreen26_42.kt:579:62 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/LogsScreen.kt:197:127 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/PilotScreen.kt:200:34 Unnecessary safe call on a non-null receiver of type 'PilotChatResult'.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/PilotScreen.kt:208:35 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/TasksScreen.kt:1252:101 Unnecessary non-null assertion (!!) on a non-null receiver of type 'Int'.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/TasksScreen.kt:1341:37 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/main/java/com/atmacanext/app/ui/screens/TasksScreen.kt:1392:59 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+
+The Daemon will expire after the build after running out of JVM Metaspace.
+The project memory settings are likely not configured or are configured to an insufficient value.
+The daemon will restart for the next build, which may increase subsequent build times.
+These settings can be adjusted by setting 'org.gradle.jvmargs' in 'gradle.properties'.
+The currently configured max heap space is '1.3 GiB' and the configured max metaspace is '384 MiB'.
+For more information on how to set these values, please refer to https://docs.gradle.org/9.5.0/userguide/build_environment.html#sec:configuring_jvm_memory in the Gradle documentation.
+To disable this warning, set 'org.gradle.daemon.performance.disable-logging=true'.
+
+> Task :app:javaPreCompileDebug
+> Task :app:compileDebugJavaWithJavac
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:compileDebugNavigationResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+
+> Task :app:compileDebugUnitTestKotlin
+w: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/src/test/java/com/atmacanext/app/automation/SyncChainSpeed26_54Test.kt:182:24 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'Array<(out) CapturedType(*)!>?'.
+
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :app:testDebugUnitTest FAILED
+
+FollowResultRecovery26_56Test > pendingVerificationRemainsWatchable FAILED
+    java.lang.AssertionError at FollowResultRecovery26_56Test.kt:35
+
+QuoteReply26_61Test > theRealSuccessPathPersistsThePostKeyAndCompletesOnlyTheConfirmedQuota FAILED
+    java.lang.reflect.InvocationTargetException at QuoteReply26_61Test.kt:202
+        Caused by: java.lang.NullPointerException at QuoteReply26_61Test.kt:202
+
+QuoteTaskSetup26_61Test > quoteIsAvailableInTheGeneralNewTaskCatalog FAILED
+    java.lang.AssertionError at QuoteTaskSetup26_61Test.kt:18
+
+66 tests completed, 3 failed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: file:///workspace/scratch/71675236270e/AtmacaNext-27.64-baseline/AtmacaNext/app/build/reports/tests/testDebugUnitTest/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 1m 12s
+28 actionable tasks: 28 executed

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.RecentFollowerRegressionTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.914Z" hostname="7e4fa31aba91" time="0.011">
+  <properties/>
+  <testcase name="unselectedVerifiedTitleDoesNotOverrideActualFollowers" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.001"/>
+  <testcase name="topSourceDoesNotNeedFollowButton" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.0"/>
+  <testcase name="changedTopUserIsReadAgainRatherThanRemembered" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.0"/>
+  <testcase name="knownFollowersIsNotPlainFollowers" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.001"/>
+  <testcase name="switchingToActualFollowersAllowsSourceSelection" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.001"/>
+  <testcase name="selectedVerifiedWithoutRowsIsIdentifiedWithoutInventingTargets" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.0"/>
+  <testcase name="ownAndVisitedHandlesAreSkippedWithoutHardcodedNames" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.0"/>
+  <testcase name="rawAndSnapshotTabEvidenceAgreeForSingleSource" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.004"/>
+  <testcase name="selectedFollowersWithoutRowsIsIdentifiedButNoSourceIsInvented" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.0"/>
+  <testcase name="hiddenAndBioMentionsCannotBecomeSource" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.0"/>
+  <testcase name="videoKnownFollowersSelectionIsNotAFollowersList" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.002"/>
+  <testcase name="rawOtherTabCannotFallThroughToFollowersHeuristic" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.001"/>
+  <testcase name="sameUsersStillMovingCannotProveTopOfList" classname="com.atmacanext.app.automation.RecentFollowerRegressionTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

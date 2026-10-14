@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.QuoteDetailMatch26_63Test" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.804Z" hostname="7e4fa31aba91" time="0.028">
+  <properties/>
+  <testcase name="quotedTimedHeaderDoesNotHideTheOpenedHandleBelow" classname="com.atmacanext.app.automation.QuoteDetailMatch26_63Test" time="0.005"/>
+  <testcase name="aReplyUnderTheOpenedPostCannotSupplyEitherAuthorOrText" classname="com.atmacanext.app.automation.QuoteDetailMatch26_63Test" time="0.007"/>
+  <testcase name="thinDetailWithoutReplyChromeStillMatchesTheOpenedPost" classname="com.atmacanext.app.automation.QuoteDetailMatch26_63Test" time="0.001"/>
+  <testcase name="timedParentDoesNotHideTheVerifiedHandleOrThePostText" classname="com.atmacanext.app.automation.QuoteDetailMatch26_63Test" time="0.007"/>
+  <testcase name="handleBelowATallTimedParentIsStillTheOpenedAuthor" classname="com.atmacanext.app.automation.QuoteDetailMatch26_63Test" time="0.002"/>
+  <testcase name="tallTimedParentWithoutAChildHandleStillUsesThePostBody" classname="com.atmacanext.app.automation.QuoteDetailMatch26_63Test" time="0.002"/>
+  <testcase name="hiddenOpenedPostIgnoresReplyAuthorsAndStillMatches" classname="com.atmacanext.app.automation.QuoteDetailMatch26_63Test" time="0.002"/>
+  <testcase name="absoluteTimeDetailWithoutARelativeAgeStillMatches" classname="com.atmacanext.app.automation.QuoteDetailMatch26_63Test" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

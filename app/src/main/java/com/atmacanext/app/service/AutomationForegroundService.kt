@@ -79,7 +79,7 @@ class AutomationForegroundService : Service() {
     private var seenActive = false
     private var receiverRegistered = false
 
-    private val stallWatchdog = AutomationWatchdog(3_000L)
+    private val stallWatchdog = AutomationWatchdog(AutomationStallPolicy.TIMEOUT_MS)
     private var selfPauseSince = 0L
     private var watchedTaskId: String? = null
     private var watchedSessionId: String? = null

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.DiscoveryRobustness26_34Test" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.619Z" hostname="7e4fa31aba91" time="0.002">
+  <properties/>
+  <testcase name="anyEllipsizedFeedHeaderCanResolveToPreviouslyVerifiedTarget" classname="com.atmacanext.app.automation.DiscoveryRobustness26_34Test" time="0.001"/>
+  <testcase name="discoverySignatureTracksMediaMovementAsScrollEvidence" classname="com.atmacanext.app.automation.DiscoveryRobustness26_34Test" time="0.001"/>
+  <testcase name="repostSurfaceMayBeProvenWithoutComposeSelectedFlag" classname="com.atmacanext.app.automation.DiscoveryRobustness26_34Test" time="0.0"/>
+  <testcase name="truncatedPrefixCannotResolveToUnverifiedDifferentTarget" classname="com.atmacanext.app.automation.DiscoveryRobustness26_34Test" time="0.0"/>
+  <testcase name="replyEndLabelsCoverTurkishVariantsAndEnglish" classname="com.atmacanext.app.automation.DiscoveryRobustness26_34Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

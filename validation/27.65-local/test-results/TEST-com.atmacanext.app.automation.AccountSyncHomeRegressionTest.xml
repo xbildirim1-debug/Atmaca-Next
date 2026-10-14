@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.AccountSyncHomeRegressionTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.210Z" hostname="7e4fa31aba91" time="0.045">
+  <properties/>
+  <testcase name="hiddenHomePagerDoesNotOverrideRelationshipList" classname="com.atmacanext.app.automation.AccountSyncHomeRegressionTest" time="0.011"/>
+  <testcase name="profileWithBottomNavigationRemainsProfile" classname="com.atmacanext.app.automation.AccountSyncHomeRegressionTest" time="0.005"/>
+  <testcase name="decoratedHomeTabsAreRecognized" classname="com.atmacanext.app.automation.AccountSyncHomeRegressionTest" time="0.005"/>
+  <testcase name="accountSwitcherAboveFeedStillAllowsImport" classname="com.atmacanext.app.automation.AccountSyncHomeRegressionTest" time="0.006"/>
+  <testcase name="drawerAboveFeedWinsOverHomeAndRawFollowingTab" classname="com.atmacanext.app.automation.AccountSyncHomeRegressionTest" time="0.005"/>
+  <testcase name="selectedFollowingFeedIsHomeInBothLanguages" classname="com.atmacanext.app.automation.AccountSyncHomeRegressionTest" time="0.005"/>
+  <testcase name="videoFeedRemainsHomeWhenTweetAuthorsLoad" classname="com.atmacanext.app.automation.AccountSyncHomeRegressionTest" time="0.002"/>
+  <testcase name="rawSelectedFollowingTabCannotOverrideHomePager" classname="com.atmacanext.app.automation.AccountSyncHomeRegressionTest" time="0.001"/>
+  <testcase name="relationshipListWithBottomNavigationRemainsFollowingList" classname="com.atmacanext.app.automation.AccountSyncHomeRegressionTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

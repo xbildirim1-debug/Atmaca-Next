@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.XDiagnosticSanitizerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.997Z" hostname="7e4fa31aba91" time="0.001">
+  <properties/>
+  <testcase name="handlesAreHashed" classname="com.atmacanext.app.automation.XDiagnosticSanitizerTest" time="0.0"/>
+  <testcase name="arbitraryUserContentIsRedacted" classname="com.atmacanext.app.automation.XDiagnosticSanitizerTest" time="0.001"/>
+  <testcase name="structuralLabelsArePreservedWithoutCounts" classname="com.atmacanext.app.automation.XDiagnosticSanitizerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

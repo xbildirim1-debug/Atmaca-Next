@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.NonFollowerViewportGateTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.775Z" hostname="7e4fa31aba91" time="0.002">
+  <properties/>
+  <testcase name="stableOverlappingWindowsProtectExactlyTheFirst100People" classname="com.atmacanext.app.automation.NonFollowerViewportGateTest" time="0.001"/>
+  <testcase name="movingRowsCannotTriggerCountingOrAnotherScroll" classname="com.atmacanext.app.automation.NonFollowerViewportGateTest" time="0.0"/>
+  <testcase name="freshUnchangedViewportCanStillProveAListBoundary" classname="com.atmacanext.app.automation.NonFollowerViewportGateTest" time="0.001"/>
+  <testcase name="newScrollRequiresNewProofEvenAfterTheLastOneSettled" classname="com.atmacanext.app.automation.NonFollowerViewportGateTest" time="0.0"/>
+  <testcase name="missingTreeBetweenReadsBreaksTheStabilityProof" classname="com.atmacanext.app.automation.NonFollowerViewportGateTest" time="0.0"/>
+  <testcase name="endlessMovementTimesOutWithoutInventingASafeViewport" classname="com.atmacanext.app.automation.NonFollowerViewportGateTest" time="0.0"/>
+  <testcase name="transientDisjointRowsDoNotPauseOrAdvanceTheProtectionCount" classname="com.atmacanext.app.automation.NonFollowerViewportGateTest" time="0.0"/>
+  <testcase name="newAccountDoesNotInheritPendingScroll" classname="com.atmacanext.app.automation.NonFollowerViewportGateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.259Z" hostname="7e4fa31aba91" time="0.013">
+  <properties/>
+  <testcase name="rightGestureViewportExcludesRail" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.002"/>
+  <testcase name="postTextContainingNavigationWordsIsNotAnAnchor" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.001"/>
+  <testcase name="hiddenSearchDoesNotCauseAnotherIconClick" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.001"/>
+  <testcase name="bottomNavigationIsExcludedFromContent" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.0"/>
+  <testcase name="scaledTabletLayoutsWork" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.001"/>
+  <testcase name="ambiguousBlankRailSlotsAreNotGuessed" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.0"/>
+  <testcase name="editableSearchIsNotNavigation" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.001"/>
+  <testcase name="landscapeRailDoesNotRequireBottomSearch" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.0"/>
+  <testcase name="offsetWindowUsesItsOwnEdges" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.001"/>
+  <testcase name="unprovenSideLabelsDoNotTrimContent" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.0"/>
+  <testcase name="duplicateSemanticNodesDoNotInventAmbiguousSearch" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.001"/>
+  <testcase name="missingSearchLabelUsesOnlyProvenRailSlot" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.0"/>
+  <testcase name="unknownGeometryKeepsViewportAndDoesNotInventSearch" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.0"/>
+  <testcase name="disabledSearchIsNotPressed" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.001"/>
+  <testcase name="mirroredRightRailSearchWorks" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.0"/>
+  <testcase name="leftGestureGutterStaysInContent" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.002"/>
+  <testcase name="imageLayoutLeftRailSearchWorks" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.001"/>
+  <testcase name="profileSearchDoesNotReplaceRailSearch" classname="com.atmacanext.app.automation.AdaptiveNavigation26_55Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

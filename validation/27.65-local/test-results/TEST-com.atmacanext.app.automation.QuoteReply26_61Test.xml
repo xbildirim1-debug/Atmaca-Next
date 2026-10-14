@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.QuoteReply26_61Test" tests="33" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.835Z" hostname="7e4fa31aba91" time="0.066">
+  <properties/>
+  <testcase name="aShortExplicitTweetBodyRemainsReadable" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="turkishAndEnglishButtonRoleSuffixesAreAccepted" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="disabledSubmitAndUnrelatedSentenceNeverBecomeSendControls" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="sentNoticesSupportTheViewLinkButNeverTheTweetBody" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="aLowerReplyCannotSupplyTheMissingParagraphOfTheOriginalPost" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="matchingTextOnAProfileIsNotAnOpenedDetail" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="aReplyToolbarBelowThePostCannotBeUsedAsSubmit" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="anAcceptedWriteWithoutTheActualTextDoesNotAuthorizeSubmission" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.003"/>
+  <testcase name="freshProgressAtTheDeadlineWinsOverAnAutomaticRestart" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.002"/>
+  <testcase name="blueReplyUnderTheInlineFieldIsTheSubmitButton" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="targetConflictNeverAuthorizesAWriteEvenWithAnEditor" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="longBodyCanBeAssembledFromSeparateParagraphNodes" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="aRealMultiFrameInlineReplyReachesSubmitOnlyAfterFreshTextIsRead" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.006"/>
+  <testcase name="aClearedDraftAfterSendCountsEvenWhenTheToolbarReplyStays" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="knownComposeEditorCanWorkWithoutTheEditableFlag" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="aDisabledSendRecoversInsteadOfDroppingTheSelectedPost" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.002"/>
+  <testcase name="theRealSuccessPathPersistsThePostKeyAndCompletesOnlyTheConfirmedQuota" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.034"/>
+  <testcase name="aNewOwnReplyInTheOpenedThreadIsConfirmed" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.003"/>
+  <testcase name="losingAPendingActionAfterAnIssuedTapDoesNotAllowResubmission" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="verifiedTextOnAnUnknownKeyboardFrameStillPreparesSubmit" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.002"/>
+  <testcase name="theUnknownDetailSurfaceCanAdvanceWhenAuthorAndPostAreProven" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="theHiddenOldComposerCannotStealTheCurrentReplyText" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="clearingTheEditorAloneIsNotAConfirmedReply" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="anUnidentifiedLowerReplyButtonDoesNotBecomeTheTopSendButton" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="simplyOpeningAQuotePostDoesNotMarkItAsProcessed" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="theOwnReplyCanBeReadAfterItsParentHasScrolledAboveTheViewport" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="anOwnReplyThatExistedBeforeSendingIsNotCountedTwice" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.002"/>
+  <testcase name="aManuallyPausedPreSubmitReservationCanResumeWithoutResettingTheTask" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="aNonClickableSendLabelIsStillAValidMeasuredButtonTarget" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="identicalContentOnTheWrongAuthorCannotOpenAReply" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="gifRowReplyIsSubmitEvenWhenTheFieldIsNotEditable" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.0"/>
+  <testcase name="aDifferentPendingPostCannotBorrowThisRepliesProof" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <testcase name="aMissingReplyControlWaitsUntilTheSameTargetRestartDeadline" classname="com.atmacanext.app.automation.QuoteReply26_61Test" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -192,6 +192,14 @@ class QuoteReply26_61Test {
         } finally { AutomationController.stop() }
     }
     @Test fun theRealSuccessPathPersistsThePostKeyAndCompletesOnlyTheConfirmedQuota() {
+        val directory = java.nio.file.Files.createTempDirectory("atmaca-quote-stats-test").toFile()
+        val context = object : android.content.ContextWrapper(null) {
+            override fun getApplicationContext(): android.content.Context = this
+            override fun getFilesDir(): java.io.File = directory
+        }
+        val service = object : AtmacaAccessibilityService() {
+            override fun getApplicationContext(): android.content.Context = context
+        }
         try {
             reservation(true)
             @Suppress("UNCHECKED_CAST")
@@ -199,11 +207,17 @@ class QuoteReply26_61Test {
             state.value = state.value.copy(status = RuntimeStatus.VERIFYING)
             field("discoveryTweetKey").set(AutomationController, expected.key)
             AutomationController.javaClass.getDeclaredMethod("recordSuccess", AtmacaAccessibilityService::class.java,
-                String::class.java).apply { isAccessible = true }.invoke(AutomationController, AtmacaAccessibilityService(), expected.key)
-            assertEquals(RuntimeStatus.COMPLETED, state.value.status)
+                String::class.java).apply { isAccessible = true }.invoke(AutomationController, service, expected.key)
+            // 27.x performs an optional like after the confirmed reply. The
+            // reply quota is already committed and must not be counted twice.
+            assertEquals(XFlowStage.LIKE_SENT_REPLY, state.value.flowStage)
             assertEquals(1, state.value.verifiedCount)
             assertEquals(expected.key, state.value.quotePostedKeys)
             assertNull(state.value.quotePendingKey)
-        } finally { AutomationController.stop() }
+            AutomationController.javaClass.getDeclaredMethod("leaveAfterReplyLike", AtmacaAccessibilityService::class.java,
+                Boolean::class.javaPrimitiveType).apply { isAccessible = true }.invoke(AutomationController, service, false)
+            assertEquals(RuntimeStatus.COMPLETED, state.value.status)
+            assertEquals(1, state.value.verifiedCount)
+        } finally { AutomationController.stop(); directory.deleteRecursively() }
     }
 }

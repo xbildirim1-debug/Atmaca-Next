@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.NonFollowerPolicyTest" tests="37" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.750Z" hostname="7e4fa31aba91" time="0.01">
+  <properties/>
+  <testcase name="invisibleRowIsUnknown" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="emptyAndInvalidRowsCannotAdvanceBoundary" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="neighborBadgeDoesNotAlterACompleteOwnerRow" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="englishBadgeProtectsItsOwner" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="nonVisibleUnseenPersonIsNotEligible" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.001"/>
+  <testcase name="bottomClippedRowCannotProveAbsence" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.001"/>
+  <testcase name="person101IsEligibleAfterBoundary" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="eachAccountGetsAnIndependentBoundary" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.001"/>
+  <testcase name="first100RemainProtectedWhenListShrinks" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="turkishBadgeProtectsItsOwner" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="repeatedViewportDoesNotAdvanceBoundary" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.001"/>
+  <testcase name="nextPersonsBadgeDoesNotBelongToPreviousPerson" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="badgeWithAccessibilityStateProtectsItsOwner" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.001"/>
+  <testcase name="ownAccountNeverGetsUnfollowed" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="overlappingViewportsCountPeopleOnce" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.001"/>
+  <testcase name="badgeClippedByHeaderCannotBeBorrowed" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="person100StaysProtected" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="mergedRowDescriptionStillProtectsBadgeOwner" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="completeNonMutualRowIsEligible" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="disabledRowIsUnknown" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="topClippedBadgeCannotBecomeAbsentBadge" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="previousPersonsBadgeDoesNotBelongToNextPerson" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="truncatedTreeCannotProveAbsence" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="boundaryInsideViewportProtectsExactly100" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.001"/>
+  <testcase name="whitespaceAndCaseDoNotRemoveMutualFollower" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="invalidHandleIsUnknown" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="reorderedViewportCannotExtendProtectionBoundary" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="mutualFollowerBelowBoundaryIsProtected" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="differentHandleInSubtreeIsUnknown" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="mergedNeighborsCannotProveAbsence" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="offscreenOrEmptyBadgeBoundsCannotBeBorrowed" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="siblingBadgeAboveCardBelongsToNextPerson" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="completedAndUnconfirmedPeopleAreNotClickedAgain" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="alreadyUnfollowedRowIsNotAnAction" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="fewerThan100PeopleNeverProduceAnAction" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="skippedViewportPausesBeforeGuessing100" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <testcase name="caseAndAtPrefixDoNotCountTheSamePersonTwice" classname="com.atmacanext.app.automation.NonFollowerPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

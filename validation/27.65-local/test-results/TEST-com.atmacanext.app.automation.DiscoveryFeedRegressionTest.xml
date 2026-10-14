@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.DiscoveryFeedRegressionTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.593Z" hostname="7e4fa31aba91" time="0.005">
+  <properties/>
+  <testcase name="hiddenTextAndButtonsAreNotPostBody" classname="com.atmacanext.app.automation.DiscoveryFeedRegressionTest" time="0.0"/>
+  <testcase name="bodyIsChosenInsteadOfAuthorVideoAndToolbar" classname="com.atmacanext.app.automation.DiscoveryFeedRegressionTest" time="0.001"/>
+  <testcase name="profileReplyTabIsNotReplyDetail" classname="com.atmacanext.app.automation.DiscoveryFeedRegressionTest" time="0.002"/>
+  <testcase name="mediaOnlyPostDoesNotFallBackToWholeCard" classname="com.atmacanext.app.automation.DiscoveryFeedRegressionTest" time="0.0"/>
+  <testcase name="englishHeaderAndReplyAuthorAreSupported" classname="com.atmacanext.app.automation.DiscoveryFeedRegressionTest" time="0.0"/>
+  <testcase name="suppliedReposterCountIsOnlyATabLabel" classname="com.atmacanext.app.automation.DiscoveryFeedRegressionTest" time="0.0"/>
+  <testcase name="scrolledReplyScreenDoesNotNeedOffscreenTitle" classname="com.atmacanext.app.automation.DiscoveryFeedRegressionTest" time="0.0"/>
+  <testcase name="bodyMentionsAreNotHeaderTimeEvidence" classname="com.atmacanext.app.automation.DiscoveryFeedRegressionTest" time="0.001"/>
+  <testcase name="combinedTurkishHeaderReadsAuthorAndTwoHours" classname="com.atmacanext.app.automation.DiscoveryFeedRegressionTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.DiscoveryHandoff27_20Test" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.615Z" hostname="7e4fa31aba91" time="0.002">
+  <properties/>
+  <testcase name="unknownWaitsUntilSettledAndNeverCountsAsLeft" classname="com.atmacanext.app.automation.DiscoveryHandoff27_20Test" time="0.0"/>
+  <testcase name="homeAndAccountDrawerAreAlreadyUsable" classname="com.atmacanext.app.automation.DiscoveryHandoff27_20Test" time="0.0"/>
+  <testcase name="profilePrefersTheBottomHomeTabOverAnotherBack" classname="com.atmacanext.app.automation.DiscoveryHandoff27_20Test" time="0.0"/>
+  <testcase name="tweetWithoutBottomHomeUsesTheInAppArrow" classname="com.atmacanext.app.automation.DiscoveryHandoff27_20Test" time="0.0"/>
+  <testcase name="handoffStillSeesTheArrowTheDiscoveryReturnSuppresses" classname="com.atmacanext.app.automation.DiscoveryHandoff27_20Test" time="0.0"/>
+  <testcase name="childWithoutArrowIsNotAHomeIntent" classname="com.atmacanext.app.automation.DiscoveryHandoff27_20Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

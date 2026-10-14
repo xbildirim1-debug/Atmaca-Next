@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.DiscoveryVideo27Test" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.643Z" hostname="7e4fa31aba91" time="0.019">
+  <properties/>
+  <testcase name="ordinaryEmptyComposerProfileAndPermissionAreNotLoading" classname="com.atmacanext.app.automation.DiscoveryVideo27Test" time="0.001"/>
+  <testcase name="selectedRepostTabSurvivesMissingEngagementTitleAndFollowingRows" classname="com.atmacanext.app.automation.DiscoveryVideo27Test" time="0.0"/>
+  <testcase name="exactDetailTimeEnforces119And120MinuteBoundary" classname="com.atmacanext.app.automation.DiscoveryVideo27Test" time="0.014"/>
+  <testcase name="conflictingSameRowAgesUseYoungerEvidence" classname="com.atmacanext.app.automation.DiscoveryVideo27Test" time="0.004"/>
+  <testcase name="visibleButUnselectedRepostTabIsNotEnough" classname="com.atmacanext.app.automation.DiscoveryVideo27Test" time="0.0"/>
+  <testcase name="profileFollowCanBeBelowCountersButNotInsidePosts" classname="com.atmacanext.app.automation.DiscoveryVideo27Test" time="0.0"/>
+  <testcase name="resourceBackWorksWithoutTextButHiddenBackDoesNot" classname="com.atmacanext.app.automation.DiscoveryVideo27Test" time="0.0"/>
+  <testcase name="screenshotSparseLoadingSurfaceIsRecoverable" classname="com.atmacanext.app.automation.DiscoveryVideo27Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

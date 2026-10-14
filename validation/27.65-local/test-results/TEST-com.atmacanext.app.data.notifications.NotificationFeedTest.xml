@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.data.notifications.NotificationFeedTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:28.004Z" hostname="7e4fa31aba91" time="0.005">
+  <properties/>
+  <testcase name="clearRemovesEveryEvent" classname="com.atmacanext.app.data.notifications.NotificationFeedTest" time="0.0"/>
+  <testcase name="openingInboxMarksExistingEventsReadWithoutReadingFutureOnes" classname="com.atmacanext.app.data.notifications.NotificationFeedTest" time="0.0"/>
+  <testcase name="inboxKeepsNewestTwoHundredEvents" classname="com.atmacanext.app.data.notifications.NotificationFeedTest" time="0.005"/>
+  <testcase name="differentAccountsAndLaterRunsCreateSeparateNotifications" classname="com.atmacanext.app.data.notifications.NotificationFeedTest" time="0.0"/>
+  <testcase name="duplicateRuntimeEventsCreateOneNotification" classname="com.atmacanext.app.data.notifications.NotificationFeedTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

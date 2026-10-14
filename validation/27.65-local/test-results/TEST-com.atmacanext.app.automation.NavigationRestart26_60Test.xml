@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.NavigationRestart26_60Test" tests="25" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.714Z" hostname="7e4fa31aba91" time="0.012">
+  <properties/>
+  <testcase name="manualPauseCancelsTheActualReturnGuard" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.008"/>
+  <testcase name="aReturnAlreadyInFlightCannotStartAgain" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="staleCallbacksFromAnotherTaskOrSessionAreIgnored" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="aMissingReturnCallbackCannotLeaveAnInfiniteRecoveryGuard" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="reachingTheTargetProfileContinuesItsScan" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="actualRestartPreparationPreservesFourOf35AndAllCycleFields" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="exactReportedSingleCycleFourOf35StaysFourOf35" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="transientNavigationFailureUsesTheFullTenSecondDeadline" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="sixSecondReturnFailureStaysUnderTheWatchdog" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="aPendingActionOrQuoteCheckpointCannotBeDiscarded" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="intervalWaitIsNeverAnUnattendedStall" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="actualRestartKeepsCompletedPeopleSkippedRepliesAndCurrentTarget" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.001"/>
+  <testcase name="missingParentOnHomeRequestsRestartAtTenSeconds" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="stoppedOrManuallyPausedReturnCallbacksAreIgnored" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="oldReturnAttemptCannotCompleteANewerReturn" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="recoveryDoesNotWaitPastDeadlineForAnUnprovenChild" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="parentHeaderWithLateRowsCannotReceiveAnExtraBack" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="everyRunnableTaskUsesTheSameNavigationRecoveryPolicy" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="ambiguousSharedParentAndChildAuthorCannotReceiveAnExtraBack" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="aVisibleParentStopsBackAndRestart" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="manualPauseAndDeviceCooldownCannotBeResumedAutomatically" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="unprovenCommenterDetailBacksBeforeRestartButHomeStillWaits" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="actualStopClearsTheReturnGuardAndSession" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="queuedRunRestartsInsideXInsteadOfTheApp" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.0"/>
+  <testcase name="repeatedRestartWithoutProgressStopsAtItsBoundAndKeepsCount" classname="com.atmacanext.app.automation.NavigationRestart26_60Test" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

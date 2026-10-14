@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.NonFollowerGesture27_65Test" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:27.747Z" hostname="7e4fa31aba91" time="0.001">
+  <properties/>
+  <testcase name="watchdogWaitsTenSecondsNotThreeBeforeInterruptingTheList" classname="com.atmacanext.app.automation.NonFollowerGesture27_65Test" time="0.0"/>
+  <testcase name="cancellationNeverCreatesACompletedUnchangedScrollBoundary" classname="com.atmacanext.app.automation.NonFollowerGesture27_65Test" time="0.0"/>
+  <testcase name="stableOldRowsDuringThe280MsDragCannotStartAnotherDrag" classname="com.atmacanext.app.automation.NonFollowerGesture27_65Test" time="0.0"/>
+  <testcase name="movementAfterReleaseRequiresNewStableRows" classname="com.atmacanext.app.automation.NonFollowerGesture27_65Test" time="0.0"/>
+  <testcase name="realListProgressRestartsTheTenSecondDeadline" classname="com.atmacanext.app.automation.NonFollowerGesture27_65Test" time="0.0"/>
+  <testcase name="missingCompletionTimesOutInsteadOfApprovingTheOldViewport" classname="com.atmacanext.app.automation.NonFollowerGesture27_65Test" time="0.0"/>
+  <testcase name="lateCompletionAfterResetCannotAffectTheNextAccount" classname="com.atmacanext.app.automation.NonFollowerGesture27_65Test" time="0.0"/>
+  <testcase name="semanticScrollAlsoWaitsForItsTransitionDelay" classname="com.atmacanext.app.automation.NonFollowerGesture27_65Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

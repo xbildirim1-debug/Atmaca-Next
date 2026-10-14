@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.domain.engine.QueueResultPolicyTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-14T14:02:28.025Z" hostname="7e4fa31aba91" time="0.001">
+  <properties/>
+  <testcase name="noSuccessfulWorkWithFailureIsFailed" classname="com.atmacanext.app.domain.engine.QueueResultPolicyTest" time="0.0"/>
+  <testcase name="skippedWorkIsPartial" classname="com.atmacanext.app.domain.engine.QueueResultPolicyTest" time="0.001"/>
+  <testcase name="allCompletedIsCompleted" classname="com.atmacanext.app.domain.engine.QueueResultPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
