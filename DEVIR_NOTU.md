@@ -1,3 +1,11 @@
+# 27.65 teslim tamamlandı
+
+Kaynak/testler **main** ve **fix/27.65-profile-return-gesture** üzerinde. [Başarılı main CI](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38580353744), kaynak `8631c5e96faa4ad2009449425d299b1a03ccd20a`: **726 test**, lint **0 hata/fatal** (55 uyarı, 8 hint), APK ve tam paket kontrolü geçti. İlk CI metaspace hatası için yalnız derleme sınırı 384→1024 MiB artırıldı. [Doğrulama ayrıntısı](validation/27.65-ci/RESULT.md).
+
+Kullanıcıya verilen APK yerel aynı imzalı 27.65/213 derlemesidir; 27.64 üzerine kurulur. CI debug APK farklı anahtarlıdır ve güncelleme diye verilmez. Yerel lint: 0 hata, 50 uyarı/8 hint. Yeni fiziksel Android/X/tablet testi yapılmadı. [Uygulama devir notu](DEVIR.txt) günceldir. Releases yayın workflow'u önceki `contents:write` otomatik onay reddi nedeniyle etkinleştirilmedi; APK ve kaynak/test/not paketi ayrı teslim edilir.
+
+---
+
 # Atmaca Next 27.65 — hesap tarama ve liste kaydırma düzeltmesi
 
 14 Ekim 2026. Güncel temel kullanıcının **27.64** kaynak ZIP'idir; eski GitHub 26.63 kodundan devam edilmedi. Uygulama kimliği **com.atmacanext.v258**, sürüm kodu **213**, Room **6**.

@@ -1,3 +1,19 @@
+27.65 TESLİM VE GERÇEK GITHUB SONUCU — 14 Ekim 2026
+Kaynak/testler main ve fix/27.65-profile-return-gesture dallarına kaydedildi.
+Başarılı main CI kaynak commit: 8631c5e96faa4ad2009449425d299b1a03ccd20a.
+CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38580353744
+726 test geçti; lint 0 hata/fatal, 55 uyarı ve 8 hint; APK/tam paket kontrolü geçti.
+Yerel teslim de 726 test / lint 0 hata (50 uyarı, 8 hint) ile doğrulandı.
+İlk GitHub kontrolünde 384 MiB metaspace doldu; sınır 1024 MiB yapıldı.
+Uygulama kaynakları ve aynı imzalı teslim APK'sı bu bellek ayarıyla değiştirilmedi.
+APK SHA256 d1fb5d7a321e6de2b7f76e5d5735cf54ee94446986348346ff9b588a0b636c9c.
+Teslim APK sertifikası b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa,
+kullanıcının 27.64 APK'sıyla aynı. Genel CI APK sertifikası farklıdır; o APK
+üzerine kurulacak teslim olarak sunulmaz. Yeni fiziksel cihaz testi yapılmadı.
+Ayrıntılar validation/27.65-ci/RESULT.md ve gerçek main-job-log.txt içindedir.
+Releases yayın workflow'u önceki contents:write otomatik onay reddi nedeniyle
+etkinleştirilmedi. Kurulacak APK ile tam kaynak/test/not paketi ayrı kaydedildi.
+
 ATMACA NEXT 27.65 — GÜNCEL DEVİR KAYDI
 14 Ekim 2026 / versionCode 213 / com.atmacanext.v258 / Room 6
 
@@ -86,7 +102,7 @@ CİHAZ KABUL ADIMLARI
   sabit Redmi koordinatı yoktur. Fiziksel tablet doğrulaması henüz yapılmadı.
 
 GITHUB DURUMU
-Güncel kaynak ve bu dar yama main'e aktarılacaktır; final commit dış teslim
+Güncel kaynak ve bu dar yama main'e kaydedildi; final commit dış teslim
 KAYNAK_COMMIT.txt kaydından ve GitHub başından doğrulanır. Eski sürümler silinmez.
 GitHub Releases yayımlanmadı. AGENTS.md'de belgelenen önceki otomatik onay reddi,
 contents:write yayın workflow'unu kapsamaktadır; bu workflow etkinleştirilmedi.
