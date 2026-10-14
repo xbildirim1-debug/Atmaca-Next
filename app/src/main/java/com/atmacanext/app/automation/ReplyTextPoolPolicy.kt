@@ -2,12 +2,12 @@ package com.atmacanext.app.automation
 
 /** One prepared line, a space, then the text the user typed. */
 internal object ReplyTextPoolPolicy {
-    fun lines(raw: String, maxChars: Int = 240): List<String> = raw.replace("\r\n", "\n").replace('\r', '\n')
+    fun lines(raw: String, maxChars: Int = 240, maxLines: Int = 500): List<String> = raw.replace("\r\n", "\n").replace('\r', '\n')
         .lineSequence()
         .map { it.trim() }
         .filter { it.isNotBlank() }
-        .take(500)
-        .map { it.take(maxChars.coerceIn(1, 280)) }
+        .take(maxLines.coerceIn(1, 10_000))
+        .map { it.substring(0, it.offsetByCodePoints(0, minOf(maxChars.coerceIn(1, 280), it.codePointCount(0, it.length)))) }
         .toList()
 
     fun comment(line: String, addition: String): String {

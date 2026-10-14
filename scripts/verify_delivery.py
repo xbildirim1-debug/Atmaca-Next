@@ -32,13 +32,13 @@ for report in reports:
     for key in counts:
         counts[key] += values[key]
     name = suite.get("name", "")
-    if ".NonFollower" in name or name.endswith((".AccountProfileReturn27_65Test", ".NavigationRestart26_60Test", ".QuoteReply26_61Test", ".QuoteTaskSetup26_61Test", ".ReplyTextInput26_62Test")):
+    if (".NonFollower" in name or name.endswith((".FastPilot27_66Test", ".TweetBatch27_66Test"))) or name.endswith((".AccountProfileReturn27_65Test", ".NavigationRestart26_60Test", ".QuoteReply26_61Test", ".QuoteTaskSetup26_61Test", ".ReplyTextInput26_62Test")):
         new_suites[name] = values
-assert counts["tests"] >= 726 and counts["failures"] == counts["errors"] == counts["skipped"] == 0, counts
+assert counts["tests"] >= 770 and counts["failures"] == counts["errors"] == counts["skipped"] == 0, counts
 for name in ("NavigationRestart26_60Test", "NonFollowerUnfollowCompletionTest", "NonFollowerFollowingInspectorTest",
              "NonFollowerPolicyTest", "NonFollowerScrollProgressTest", "NonFollowerViewportGateTest",
              "NonFollowerTimingTest", "NonFollowerBatch26_60Test", "QuoteReply26_61Test", "QuoteTaskSetup26_61Test", "ReplyTextInput26_62Test",
-             "AccountProfileReturn27_65Test", "NonFollowerGesture27_65Test"):
+             "AccountProfileReturn27_65Test", "NonFollowerGesture27_65Test", "NonFollowerVideo27_66Test", "FastPilot27_66Test", "TweetBatch27_66Test"):
     assert any(suite.endswith("." + name) and values["tests"] > 0 for suite, values in new_suites.items()), name
 
 lint_file = Path("app/build/reports/lint-results-debug.xml")

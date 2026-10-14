@@ -169,7 +169,14 @@ class AutomationForegroundService : Service() {
         stallJob?.cancel()
         stallJob = scope.launch {
             while (true) {
-                delay(1_000L)
+                delay(com.atmacanext.app.ai.FastPilotPolicy.PULSE_MS)
+                if (!userPaused && !pausedForInternet && AppServices.ready) {
+                    val q = AppServices.orchestrator.state.value
+                    if (q.status == QueueStatus.RUNNING && q.currentItem?.taskId == AutomationController.state.value.taskId) {
+                        AutomationController.requestPilotRead()
+                        AppServices.pilotDirector.observe(AutomationController.pilotObservation, AppServices.pilotEnabled)
+                    } else AppServices.pilotDirector.reset()
+                } else if (AppServices.ready) AppServices.pilotDirector.reset()
                 if (!stallRecoveryInProgress) pilotContinuePaused()
                 if (stallRecoveryInProgress) continue
 

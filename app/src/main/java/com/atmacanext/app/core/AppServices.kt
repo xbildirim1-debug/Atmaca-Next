@@ -34,6 +34,10 @@ object AppServices {
         private set
     lateinit var contentService: GeminiContentService
         private set
+    lateinit var pilotDirector: com.atmacanext.app.ai.PilotDirector
+        private set
+    lateinit var pilotChat: com.atmacanext.app.ai.PilotChatCoordinator
+        private set
     lateinit var notifications: com.atmacanext.app.data.notifications.NotificationStore
         private set
     lateinit var orchestrator: TaskOrchestrator
@@ -45,6 +49,8 @@ object AppServices {
     @Volatile
     var ready: Boolean = false
         private set
+    @Volatile var pilotEnabled: Boolean = true
+        private set
 
     @Synchronized
     fun initialize(context: Context) {
@@ -55,9 +61,11 @@ object AppServices {
         settings = SettingsStore(appContext)
         geminiKeyStore = GeminiKeyStore(appContext)
         contentService = GeminiContentService(geminiKeyStore)
+        pilotDirector = com.atmacanext.app.ai.PilotDirector(contentService, settings.settings)
         notifications = com.atmacanext.app.data.notifications.NotificationStore(appContext)
         com.atmacanext.app.automation.TaskAlerts.attach(appContext)
         orchestrator = TaskOrchestrator(repository, contentService, settings.settings, scope, notifications, appContext)
+        pilotChat = com.atmacanext.app.ai.PilotChatCoordinator(appContext)
         reportExporter = ErrorReportExporter(appContext, repository, settings)
         queueContinuityGuard = BatchQueueContinuityGuard(repository, orchestrator, scope).also { it.start() }
 
@@ -113,6 +121,7 @@ object AppServices {
     }
 
     private fun applyTuning(value: com.atmacanext.app.data.settings.AppSettings) {
+        pilotEnabled = value.pilotEnabled
         AutomationTuning.betweenActionsMs = value.betweenActionsMs
         AutomationTuning.accountSwitchSettleMs = value.accountSwitchSettleMs
         AutomationTuning.rateLimitCooldownMs = value.rateLimitCooldownMinutes * 60_000L

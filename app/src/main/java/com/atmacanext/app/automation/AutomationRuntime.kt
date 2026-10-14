@@ -139,6 +139,73 @@ object AutomationController {
 
     private val _state = MutableStateFlow(AutomationRuntimeState())
     val state = _state.asStateFlow()
+    @Volatile var pilotObservation: com.atmacanext.app.ai.PilotScreenObservation? = null
+        private set
+
+    internal fun observeForPilot(root: AccessibilityNodeInfo?, screen: XScreen, popup: PopupType,
+                                 nodes: List<NodeSnapshot>) {
+        pilotObservation = pilotReading(root, screen, popup, nodes)
+    }
+
+    private fun pilotReading(root: AccessibilityNodeInfo?, screen: XScreen, popup: PopupType,
+                             nodes: List<NodeSnapshot>): com.atmacanext.app.ai.PilotScreenObservation? {
+        if (root?.packageName?.toString() != AtmacaAccessibilityService.X_PACKAGE) return null
+        val current = _state.value.copy(activeScreen = screen)
+        val labels = nodes.filter { it.visible && !it.editable }
+            .mapNotNull { it.text ?: it.contentDescription }.filter(String::isNotBlank).take(40).map { it.take(100) }
+        val fingerprint = (screen.name + popup.name + nodes.filter { it.visible && !it.editable }.take(160)
+            .joinToString("|") { "${it.text}:${it.contentDescription}:${it.bounds.top}:${it.bounds.bottom}" }).hashCode().toString()
+        return com.atmacanext.app.ai.PilotScreenObservation(current, AutomationStallPolicy.signature(current),
+            fingerprint, System.currentTimeMillis(), popup, pendingAction != null || quoteSubmitIssued,
+            settling = System.currentTimeMillis() < nextActionNotBefore || navigationRecoveryReturning || unfollowRecoveryReturning,
+            moving = nonFollowerViewportGate.pending,
+            loading = NavigationSurfaceEvidence.loading(nodes),
+            ownProfile = AccountProfileReturnPolicy.ownProfile(nodes, current.username), labels = labels)
+    }
+
+    fun requestPilotRead() {
+        serviceRef?.get()?.requestAutomationTickExact(0L)
+    }
+
+    fun applyPilotMove(expected: com.atmacanext.app.ai.PilotScreenObservation,
+                       move: com.atmacanext.app.ai.PilotMove, source: String): Boolean {
+        val service = serviceRef?.get() ?: return false
+        return service.runOnAutomationThread {
+            val current = _state.value
+            if (!isSessionActive(current) || current.status == RuntimeStatus.PAUSED ||
+                AccountSyncController.isActive || !com.atmacanext.app.core.AppServices.pilotEnabled ||
+                !appServicesQueueRunning(current)) return@runOnAutomationThread
+            val root = service.freshPilotRoot() ?: return@runOnAutomationThread
+            val nodes = AccessibilityTree.snapshots(root)
+            val screen = ScreenDetector.detect(root, nodes)
+            val popup = PopupClassifier.classify(nodes)
+            val fresh = pilotReading(root, screen, popup, nodes) ?: return@runOnAutomationThread
+            if (!com.atmacanext.app.ai.FastPilotPolicy.matches(expected, fresh) ||
+                move !in com.atmacanext.app.ai.FastPilotPolicy.allowed(fresh, System.currentTimeMillis())) return@runOnAutomationThread
+            val acted = when (move) {
+                com.atmacanext.app.ai.PilotMove.REFRESH -> { service.requestAutomationTickExact(40L); true }
+                com.atmacanext.app.ai.PilotMove.DISMISS -> PopupHandler.handle(root, popup).type in
+                    setOf(PopupResolutionType.DISMISSED, PopupResolutionType.RETRIED)
+                com.atmacanext.app.ai.PilotMove.BACK -> XUiActions.clickVisibleBack(service, root)
+                com.atmacanext.app.ai.PilotMove.OPEN_FOLLOWING -> XUiActions.clickProfileFollowing(service, root)
+                com.atmacanext.app.ai.PilotMove.NONE -> false
+            }
+            if (acted) {
+                val note = "$source: ${move.name}; aynı görev ve ilerleme korunuyor"
+                com.atmacanext.app.ai.PilotBoard.lastMove = note
+                OperationLog.i("PILOT_FAST", note)
+                if (move != com.atmacanext.app.ai.PilotMove.REFRESH) {
+                    nextActionNotBefore = System.currentTimeMillis() + 500L
+                    service.requestAutomationTickExact(500L)
+                }
+            }
+        }
+    }
+
+    private fun appServicesQueueRunning(current: AutomationRuntimeState): Boolean = runCatching {
+        val queue = com.atmacanext.app.core.AppServices.orchestrator.state.value
+        queue.status == com.atmacanext.app.domain.model.QueueStatus.RUNNING && queue.currentItem?.taskId == current.taskId
+    }.getOrDefault(false)
 
     private var serviceRef: WeakReference<AtmacaAccessibilityService>? = null
     private var activeTask: ScheduledTask? = null
@@ -243,6 +310,9 @@ object AutomationController {
     private var nonFollowerUnknownViewports = 0
     private var nonFollowerScrollMisses = 0
     private var nonFollowerScrollGeneration = 0L
+    private var nonFollowerSeekingOverlap = false
+    private var nonFollowerOverlapAttempts = 0
+    private var nonFollowerSurfaceReturnAt = 0L
 
     private var poolLines: List<String> = emptyList()
     private var poolCursor = 0
@@ -507,6 +577,7 @@ object AutomationController {
                     current.activeScreen.name,
                     failed,
                     lastFailed,
+                    current.taskType?.name.orEmpty(),
                 )
                 val recovery = when (pilot) {
                     com.atmacanext.app.ai.PilotPolicy.Move.REFRESH -> "ekranı tazeliyor"
@@ -527,6 +598,9 @@ object AutomationController {
                     )
                 }
                 if (pilot == com.atmacanext.app.ai.PilotPolicy.Move.REFRESH) {
+                    if (current.taskType == TaskType.UNFOLLOW_NON_FOLLOWERS && !nonFollowerViewportGate.pending) {
+                        nonFollowerScrollBoundary.reset()
+                    }
                     _state.value = current.copy(status = RuntimeStatus.RUNNING, message = note)
                     service.requestAutomationTick(280L)
                     return@runOnAutomationThread
@@ -1200,7 +1274,7 @@ object AutomationController {
     }
 
     private fun scrollNonFollowers(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?,
-                                   reading: NonFollowerFollowingInspector.Reading, forward: Boolean): Boolean {
+                                   reading: NonFollowerFollowingInspector.Reading, forward: Boolean, precision: Boolean = false): Boolean {
         val task = _state.value
         val token = ++nonFollowerScrollGeneration
         nonFollowerViewportGate.afterScroll(System.currentTimeMillis(), settleMs = 450L)
@@ -1217,7 +1291,7 @@ object AutomationController {
                         service.requestAutomationTickExact(NonFollowerViewportGate.STABLE_MS)
                     }
                 }
-            })
+            }, precision = precision)
         if (!accepted) nonFollowerViewportGate.reset()
         return accepted
     }
@@ -1227,8 +1301,17 @@ object AutomationController {
         val onFollowing = screen == XScreen.FOLLOWING_LIST ||
             RelationshipTabInspector.selectedTab(root) == RelationshipTabInspector.FOLLOWING
         if (!onFollowing) {
-            if (restoreFollowingTabWithoutAccountRecovery(service, root, now)) return
+            // One verified return attempt per settling window. Repeated deep links reopen the top.
+            if (now - nonFollowerSurfaceReturnAt < 750L) { service.requestAutomationTickExact(250L); return }
+            val own = AccountProfileReturnPolicy.ownProfile(AccessibilityTree.snapshots(root), current.username)
+            if (own && XUiActions.clickProfileFollowing(service, root)) {
+                nonFollowerSurfaceReturnAt = now
+                nextActionNotBefore = now + 500L
+                service.requestAutomationTickExact(500L)
+                return
+            }
             if (now - stageStartedAt < 8_000L) {
+                nonFollowerSurfaceReturnAt = now
                 service.launchXFollowing(current.username.orEmpty())
                 service.requestAutomationTick(500L)
                 return
@@ -1273,6 +1356,9 @@ object AutomationController {
             nonFollowerViewport = signature
             listEndStable = 0
             listScrolls++
+            // Real list movement also counts while locating the top or restoring overlap.
+            _state.value = _state.value.copy(listScrolls = listScrolls)
+            stageStartedAt = now
         }
         if (!nonFollowerAtTop) {
             // A previously opened X list may restore an old scroll position. Count only from a stable top.
@@ -1295,11 +1381,29 @@ object AutomationController {
             service.requestAutomationTickExact(450L)
             return
         }
-        if (!nonFollowerFollowingRun.observe(rows.map { it.evidence.handle })) {
-            retryNavigationWithDeadline(service, "Kaydırmada kişi sırası kesildi; 100 kişi sınırı doğrulanamadı. Görevi yeniden başlat.", System.currentTimeMillis())
+        val handles = rows.map { it.evidence.handle }
+        if (nonFollowerSeekingOverlap && nonFollowerFollowingRun.overlapsPrevious(handles)) {
+            nonFollowerSeekingOverlap = false
+            nonFollowerOverlapAttempts = 0
+            nonFollowerScrollBoundary.reset()
+            OperationLog.i("NONFOLLOWER_OVERLAP", "Önceki kişi aralığı bulundu; korunan kişiler ve ilerleme aynı")
+        }
+        if (nonFollowerSeekingOverlap || !nonFollowerFollowingRun.observe(handles)) {
+            // A fling can skip the retained rows. Restore that exact range before counting anyone.
+            nonFollowerSeekingOverlap = true
+            if (++nonFollowerOverlapAttempts > 8) {
+                retryNavigationWithDeadline(service, "Kişi aralığı geri kaydırmada bulunamadı; ilk 100 korundu", now)
+                return
+            }
+            nonFollowerScrollBoundary.reset()
+            _state.value = _state.value.copy(status = RuntimeStatus.RECOVERING,
+                message = "Atlanan kişi aralığı kısa geri kaydırmayla bulunuyor; ilk 100 korunuyor")
+            OperationLog.w("NONFOLLOWER_OVERLAP", "Örtüşme geri alınıyor; deneme=$nonFollowerOverlapAttempts protected=${nonFollowerFollowingRun.protectedHandles.size}")
+            scrollNonFollowers(service, root, reading, forward = nonFollowerFollowingRun.recoveryForward(handles), precision = true)
+            service.requestAutomationTickExact(450L)
             return
         }
-        _state.value = current.copy(depthUniqueUsers = nonFollowerFollowingRun.seenCount, listScrolls = listScrolls,
+        _state.value = _state.value.copy(depthUniqueUsers = nonFollowerFollowingRun.seenCount, listScrolls = listScrolls,
             message = if (!nonFollowerFollowingRun.ready) "İlk 100 kişi korunuyor: ${nonFollowerFollowingRun.protectedHandles.size}/100"
                 else "İlk 100 kişi korunuyor; daha eski kişiler kontrol ediliyor")
         if (nonFollowerFollowingRun.ready && current.flowStage == XFlowStage.SEEK_UNFOLLOW_DEPTH) {
@@ -1367,6 +1471,9 @@ object AutomationController {
             return
         }
         nonFollowerScrollMisses = 0
+        nonFollowerSeekingOverlap = false
+        nonFollowerOverlapAttempts = 0
+        nonFollowerSurfaceReturnAt = 0L
         // Forward only: no reverse pass can touch the protected recent users.
         nonFollowerScrollBoundary.afterScroll(signature)
         service.requestAutomationTickExact(450L)
@@ -3578,6 +3685,9 @@ object AutomationController {
         nonFollowerProbeSignature = ""
         nonFollowerUnknownViewports = 0
         nonFollowerScrollMisses = 0
+        nonFollowerSeekingOverlap = false
+        nonFollowerOverlapAttempts = 0
+        nonFollowerSurfaceReturnAt = 0L
     }
 
     private fun resetOperationNavigation() {

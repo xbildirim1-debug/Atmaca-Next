@@ -1,3 +1,21 @@
+# Atmaca Next 27.66 — takip etmeyenleri çıkarma ve Pilot
+
+Temel: güncel 27.65 / a270b7380952f22f0525fd9424a3783456cc2ec0. Hesap ekleme kullanıcı tarafından tamam olarak bildirildi; AccountSync değiştirilmedi. Yalnız ilgili liste kaydırması, Pilot, API ayarları ve tweet havuzu değişti.
+
+Yerel video `1000036184.mp4` izlendi: yaklaşık 19–27 sn aynı liste, ardından profil ve 37 sn listenin başına dönüş; son bölümde tekrar aynı kişilerde bekleme. Video gerçek erişilebilirlik düğüm dökümü değildir. Kaynak incelemesinde hareketli parmağı bırakmanın kişi aralığı atlatması ve eski Pilot hata hafızasının listeyi terk etmesi olası nedenler olarak ele alındı.
+
+- Kaydırma: içerik ve kişi satırlarından ölçülen dikey sürükleme sonunda 140 ms sabit tutma; hareket+bekletme tamamlanmadan sonraki eylem açılmaz. Kişi aralığı atlanırsa kısa liste içi düzeltme; ilk 100 farklı kişi korunur. Liste hareketi gerçek ilerleme sayılır. İki yerinde kurtarma ardından kalıcı hareketsizlik sınırlı yeniden başlatılır; bekleyen takipten çıkma tekrar basılmaz.
+- Hızlı Pilot: görev sırasında saniyede yerel kontrol; API yanıtı ayrı çalışır. Görev/hesap/oturum/ilerleme ve taze ekran yeniden doğrulanır. İsteğe bağlı pencereleri kapatabilir, kendi profilindeki Takip ediliyor sayacını açabilir, yanlışlıkla açılan gönderiden dönebilir. Takip edilenler listesinden körlemesine geri çıkmaz; kullanıcı duraklatması, döngü beklemesi, kota, gönderim veya hareket halindeki parmak kesilmez. Ayarlar'daki Hızlı Pilot anahtarı bunu kapatır.
+- Ayarlar > Pilot API Anahtarı: mevcut Android Keystore ile şifreli Gemini anahtar alanı, bağlantı testi ve anahtar alma bağlantısı. Anahtar URL'ye konmaz veya loglanmaz. Model yalnız sınırlı gezinme önerir; yeni hesap/işlem sayacı üretemez.
+- Pilot sohbeti ve toplu üretim: `futbol konseptinde 500 twit metni ekle`. 50'lik partiler, 1–1000 istek, 10.000 havuz kapasitesi; Unicode 280 karakter, tekrar ayıklama, gerçek kaydedilen adet ve iptal. Her parti saklanır; hata/iptalde önceki metinler korunur. Görev durdur/devam komutu ağ veya üretim arkasında beklemez. Sekme değişimi üretimi iptal etmez. Süreç öldürülürse üretim otomatik devam etmez. Gerçek API kullanım limiti veya yanıt süresi için saniyelik garanti verilmez.
+
+Sürüm: 27.66 / versionCode 214; com.atmacanext.v258, Room6, min26/target36/compile37.1. Veritabanı değişikliği yok. 44 yeni regresyon eklendi; toplam beklenen 770. SQLite iki tarihsel v5→v6 düzeni yerelde geçti. Derleme/test/lint sonucu CI tamamlandığında buraya eklenir. Kullanıcı API anahtarıyla canlı 500 metin üretme, yeni APK'nın fiziksel X/tablet testi yapılmadı. Video eski sürümün belirtisini doğrular; yeni sürüm cihaz onayı sayılmaz.
+
+Güncelleme APK'sı eski b52d8a15… sertifikasıyla yeniden imzalanarak ayrıca doğrulanacak. CI debug APK güncelleme diye teslim edilmez. Özel anahtarlar kaynak/test/tam pakete konmaz. Releases otomasyonu önceki otomatik onay reddi nedeniyle etkinleştirilmedi; kaynak main ve çalışma dalına, APK/test/not paketi kalıcı dosya teslimine kaydedilecek.
+
+
+--- Önceki sürüm notları ---
+
 27.65 TESLİM VE GERÇEK GITHUB SONUCU — 14 Ekim 2026
 Kaynak/testler main ve fix/27.65-profile-return-gesture dallarına kaydedildi.
 Başarılı main CI kaynak commit: 8631c5e96faa4ad2009449425d299b1a03ccd20a.

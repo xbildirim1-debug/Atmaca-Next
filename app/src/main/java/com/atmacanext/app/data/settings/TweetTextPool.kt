@@ -2,6 +2,7 @@ package com.atmacanext.app.data.settings
 
 import android.content.Context
 import com.atmacanext.app.automation.ReplyTextPoolPolicy
+import com.atmacanext.app.ai.TweetPoolPolicy
 
 /** Prepared tweets stay on the device and are posted in order, then the list starts over. */
 object TweetTextPool {
@@ -13,7 +14,7 @@ object TweetTextPool {
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun lines(context: Context): List<String> =
-        ReplyTextPoolPolicy.lines(prefs(context).getString(LINES, "").orEmpty(), maxChars = 280)
+        ReplyTextPoolPolicy.lines(prefs(context).getString(LINES, "").orEmpty(), maxChars = 280, maxLines = TweetPoolPolicy.MAX_LINES)
 
     fun count(context: Context): Int = lines(context).size
 
@@ -22,17 +23,20 @@ object TweetTextPool {
     fun sample(context: Context): String = lines(context).firstOrNull().orEmpty()
 
     fun replace(context: Context, raw: String): Int {
-        val stored = ReplyTextPoolPolicy.lines(raw, maxChars = 280)
+        val stored = ReplyTextPoolPolicy.lines(raw, maxChars = 280, maxLines = TweetPoolPolicy.MAX_LINES)
         prefs(context).edit().putString(LINES, stored.joinToString("\n")).putInt(CURSOR, 0).apply()
         return stored.size
     }
 
     fun append(context: Context, raw: String): Int {
-        val existing = lines(context)
-        val added = ReplyTextPoolPolicy.lines(raw, maxChars = 280).filter { it !in existing }
-        val merged = (existing + added).take(500)
-        prefs(context).edit().putString(LINES, merged.joinToString("\n")).apply()
-        return added.size
+        return appendBatch(context, raw.lines()).size
+    }
+
+    @Synchronized
+    fun appendBatch(context: Context, values: List<String>): List<String> {
+        val merged = TweetPoolPolicy.merge(lines(context), values)
+        prefs(context).edit().putString(LINES, merged.lines.joinToString("\n")).apply()
+        return merged.added
     }
 
     fun advance(context: Context): Int {

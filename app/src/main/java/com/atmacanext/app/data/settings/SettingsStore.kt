@@ -27,6 +27,7 @@ data class AppSettings(
     val minimumTweetAgeMinutes: Int = 120,
     val tweetsPerTarget: Int = 5,
     val geminiModel: String = "auto",
+    val pilotEnabled: Boolean = true,
     val setupAcknowledged: Boolean = false,
     val lastReportPath: String? = null,
     val lastReportAt: Long? = null,
@@ -48,6 +49,7 @@ class SettingsStore(private val context: Context) {
         val minimumTweetAgeMinutes = intPreferencesKey("minimum_tweet_age_minutes")
         val tweetsPerTarget = intPreferencesKey("tweets_per_target")
         val geminiModel = stringPreferencesKey("gemini_model")
+        val pilotEnabled = booleanPreferencesKey("pilot_enabled_v2766")
         val setupAcknowledged = booleanPreferencesKey("setup_acknowledged")
         val lastReportPath = stringPreferencesKey("last_report_path")
         val lastReportAt = longPreferencesKey("last_report_at")
@@ -70,6 +72,7 @@ class SettingsStore(private val context: Context) {
             minimumTweetAgeMinutes = (p[Keys.minimumTweetAgeMinutes] ?: 120).coerceIn(120, 1_440),
             tweetsPerTarget = (p[Keys.tweetsPerTarget] ?: 5).coerceIn(1, 5),
             geminiModel = p[Keys.geminiModel]?.trim().orEmpty().ifBlank { "auto" },
+            pilotEnabled = p[Keys.pilotEnabled] ?: true,
             setupAcknowledged = p[Keys.setupAcknowledged] ?: false,
             lastReportPath = p[Keys.lastReportPath],
             lastReportAt = p[Keys.lastReportAt],
@@ -113,6 +116,10 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setGeminiModel(model: String) {
         context.atmacaDataStore.edit { it[Keys.geminiModel] = model.trim().take(80).ifBlank { "auto" } }
+    }
+
+    suspend fun setPilotEnabled(enabled: Boolean) {
+        context.atmacaDataStore.edit { it[Keys.pilotEnabled] = enabled }
     }
 
     suspend fun acknowledgeSetup() {

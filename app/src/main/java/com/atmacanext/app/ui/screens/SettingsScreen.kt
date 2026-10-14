@@ -230,19 +230,28 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             }
 
             item {
-                SectionTitle("Gemini")
+                SectionTitle("Pilot ve API bağlantısı")
                 AtmacaCard {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Hızlı Pilot", fontWeight = FontWeight.Bold)
+                            Text("Görev ekranını her saniye denetler; sohbet ve toplu metin üretimi aynı anahtarı kullanır.", color = TextSecondary, fontSize = 11.sp)
+                        }
+                        androidx.compose.material3.Switch(checked = settings.pilotEnabled,
+                            onCheckedChange = { enabled -> scope.launch { AppServices.settings.setPilotEnabled(enabled) } })
+                    }
+                    Spacer(Modifier.height(12.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.Key, null, tint = AtmacaBlue)
                         Spacer(Modifier.width(8.dp))
-                        Text("API Anahtarı", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                        Text("Pilot API Anahtarı", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
                         StatusPill(if (keyStored) "Kayıtlı" else "Yok", keyStored)
                     }
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = apiKey,
                         onValueChange = { apiKey = it.take(300) },
-                        label = { Text(if (keyStored) "Yeni anahtarla değiştir" else "Gemini API anahtarı") },
+                        label = { Text(if (keyStored) "Yeni anahtarla değiştir" else "Gemini / Pilot API anahtarı") },
                         visualTransformation = PasswordVisualTransformation(),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
@@ -257,6 +266,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                                 runCatching { AppServices.geminiKeyStore.save(apiKey) }
                                     .onSuccess {
                                         keyStored = true
+                                        AppServices.contentService.resetConnection()
                                         apiKey = ""
                                         scope.launch { AppServices.settings.setGeminiModel(modelText) }
                                         Toast.makeText(context, "Gemini anahtarı şifreli kaydedildi", Toast.LENGTH_SHORT).show()
@@ -269,6 +279,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                             enabled = keyStored,
                             onClick = {
                                 AppServices.geminiKeyStore.clear()
+                                AppServices.contentService.resetConnection()
                                 keyStored = false
                                 geminiTestMessage = null
                             },
@@ -292,10 +303,14 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text(if (geminiTesting) "Test ediliyor…" else "Gemini Bağlantısını Test Et") }
+                    ) { Text(if (geminiTesting) "Test ediliyor…" else "Pilot Bağlantısını Test Et") }
                     geminiTestMessage?.let { message ->
                         Text(message, color = if (message.startsWith("Bağlantı başarılı")) Success else TextSecondary, fontSize = 10.sp)
                     }
+                    TextButton(onClick = {
+                        context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://aistudio.google.com/apikey")))
+                    }) { Text("API anahtarı al") }
                     Text("Anahtar Android Keystore ile şifrelenir; loglara ve hata raporuna yazılmaz.", color = TextSecondary, fontSize = 9.sp)
                 }
             }

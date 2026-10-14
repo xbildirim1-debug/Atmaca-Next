@@ -386,6 +386,9 @@ open class AtmacaAccessibilityService : AccessibilityService() {
         acquire = { rootInActiveWindow }, refresh = { it.refresh() },
     )
 
+    internal fun freshPilotRoot(): AccessibilityNodeInfo? = freshNavigationRoot()
+        ?.takeIf { it.packageName?.toString() == X_PACKAGE }
+
     /** Dismiss the current sheet. A swallowed home deep link is never retried here. */
     fun closeAccountSwitcher(): Boolean {
         val root = freshNavigationRoot() ?: return false
@@ -687,7 +690,10 @@ open class AtmacaAccessibilityService : AccessibilityService() {
         val key="$screen|$popup|$nodeCount"
         if (key!=lastUiLogKey) { lastUiLogKey=key; OperationLog.i("UI","screen=$screen popup=$popup nodes~$nodeCount") }
         if (AccountSyncController.isActive) AccountSyncController.onSnapshot(this,root,screen,popup)
-        else AutomationController.onAccessibilitySnapshot(this,root,screen,popup)
+        else {
+            AutomationController.observeForPilot(root, screen, popup, snapshots)
+            AutomationController.onAccessibilitySnapshot(this,root,screen,popup)
+        }
         snapshotRetries.recovered()
     }
 

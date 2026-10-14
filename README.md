@@ -1,3 +1,7 @@
+# Atmaca Next 27.66 — takip etmeyenleri çıkarma ve Pilot
+
+Takip etmeyenleri çıkarma video düzeltmesi; saniyelik Hızlı Pilot, API ayarı, sohbet ve 500 metin üretimi. [Güncel uygulama devri](DEVIR.txt). Derleme doğrulaması sürüyor.
+
 # 27.65 teslim tamamlandı
 
 Kaynak/testler **main** ve **fix/27.65-profile-return-gesture** üzerinde. [Başarılı main CI](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38580353744), kaynak `8631c5e96faa4ad2009449425d299b1a03ccd20a`: **726 test**, lint **0 hata/fatal** (55 uyarı, 8 hint), APK ve tam paket kontrolü geçti. İlk CI metaspace hatası için yalnız derleme sınırı 384→1024 MiB artırıldı. [Doğrulama ayrıntısı](validation/27.65-ci/RESULT.md).

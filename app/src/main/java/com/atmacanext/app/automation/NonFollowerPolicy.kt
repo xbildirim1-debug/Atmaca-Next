@@ -53,6 +53,13 @@ class NonFollowerFollowingRun {
     val seenCount: Int get() = seen.size
     val ready: Boolean get() = protected.size == NonFollowerPolicy.PROTECTED_COUNT
 
+    fun overlapsPrevious(orderedHandles: List<String>): Boolean = previous.isEmpty() ||
+        orderedHandles.any { NonFollowerPolicy.normalizeHandle(it) in previous }
+
+    /** A restored top contains only already-seen people; a forward fling contains new people. */
+    fun recoveryForward(orderedHandles: List<String>): Boolean = orderedHandles.isNotEmpty() &&
+        orderedHandles.all { NonFollowerPolicy.normalizeHandle(it) in seen }
+
     fun observe(orderedHandles: List<String>): Boolean {
         val handles = orderedHandles.map(NonFollowerPolicy::normalizeHandle)
             .filter(NonFollowerPolicy::validHandle).distinct()

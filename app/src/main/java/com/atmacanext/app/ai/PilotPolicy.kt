@@ -3,6 +3,7 @@ package com.atmacanext.app.ai
 import com.atmacanext.app.domain.model.ScheduledTask
 import com.atmacanext.app.domain.model.TaskType
 import java.time.LocalDate
+import org.json.JSONObject
 
 /** On-device director. It does not call a network model. */
 internal object PilotPolicy {
@@ -16,8 +17,13 @@ internal object PilotPolicy {
         screen: String = "",
         failedRecoveries: Int = 0,
         lastFailed: String? = null,
+        taskType: String = "",
     ): Move {
         if (pendingAction) return Move.CONTINUE
+        // This is already the required surface. Back causes the profile/top-list loop in the device video.
+        if (taskType == "UNFOLLOW_NON_FOLLOWERS" && screen == "FOLLOWING_LIST") {
+            return if (attempt >= 3) Move.HOME else Move.REFRESH
+        }
         val unsafeBack = screen in setOf("HOME", "ACCOUNT_DRAWER", "ACCOUNT_SWITCHER", "UNKNOWN", "")
         val escalate = knownStreak >= 3 || failedRecoveries >= 2 || attempt >= 3 || lastFailed == "HOME"
         if (escalate) return Move.HOME
@@ -170,28 +176,19 @@ internal object PilotPolicy {
 
     fun parseModel(raw: String): PilotPlan? {
         val body = raw.trim().removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
-        val start = body.indexOf('{')
-        val end = body.lastIndexOf('}')
-        val clean = if (start >= 0 && end > start) body.substring(start, end + 1) else body
-        if (!clean.startsWith("{")) return null
-        fun text(name: String) = Regex(""""$name"\s*:\s*"([^"]*)"""").find(clean)?.groupValues?.get(1)?.trim()
-        val say = text("say").orEmpty()
-        if (say.isBlank()) return null
-        if (listOf("kota", "quota", "resource_exhausted", "rate limit").any { say.contains(it, true) }) return null
-        val command = runCatching { Command.valueOf(text("command")?.ifBlank { "NONE" } ?: "NONE") }.getOrDefault(Command.NONE)
-        val type = text("taskType")?.takeIf { it.isNotBlank() && it != "null" }?.let { runCatching { TaskType.valueOf(it) }.getOrNull() }
-        val tweets = Regex(""""tweets"\s*:\s*\[(.*?)]""", RegexOption.DOT_MATCHES_ALL).find(clean)?.groupValues?.get(1)
-            ?.let { body -> Regex(""""([^"]*)"""").findAll(body).map { it.groupValues[1].trim() }.filter { it.isNotBlank() }.map { it.take(280) }.toList() }
-            .orEmpty()
-        return PilotPlan(
-            say = say.take(500),
-            command = command,
-            taskType = type,
-            account = text("account")?.removePrefix("@")?.trim()?.takeIf { it.isNotBlank() && it != "null" },
-            all = Regex(""""all"\s*:\s*true""").containsMatchIn(clean),
-            tweets = tweets,
-        )
+        val obj = runCatching { JSONObject(body) }.getOrNull() ?: return null
+        val say = obj.optString("say").trim()
+        if (say.isBlank() || listOf("kota", "quota", "resource_exhausted", "rate limit").any { say.contains(it, true) }) return null
+        val command = runCatching { Command.valueOf(obj.optString("command", "NONE")) }.getOrDefault(Command.NONE)
+        val type = obj.optString("taskType").takeIf { it.isNotBlank() && it != "null" }
+            ?.let { runCatching { TaskType.valueOf(it) }.getOrNull() }
+        val account = obj.optString("account").removePrefix("@").trim().takeIf { it.matches(Regex("[A-Za-z0-9_]{1,15}")) }
+        val values = obj.optJSONArray("tweets")
+        val tweets = (0 until (values?.length() ?: 0)).mapNotNull { values?.optString(it) }
+            .map(TweetPoolPolicy::normalized).filter(TweetPoolPolicy::valid).distinct()
+        return PilotPlan(say.take(2_000), command, type, account, obj.optBoolean("all", false), tweets)
     }
+
 }
 
 internal data class PilotPlan(
