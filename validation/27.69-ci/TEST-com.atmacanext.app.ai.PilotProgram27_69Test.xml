@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.ai.PilotProgram27_69Test" tests="30" skipped="0" failures="0" errors="0" timestamp="2026-10-15T09:21:34.808Z" hostname="runnervmmprz5" time="0.017">
+  <properties/>
+  <testcase name="invalidPreviewCountDoesNotBecomeAGenerationRequest" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="oldAmbiguousTransferReceiptDoesNotGuessTheSourcePool" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.001"/>
+  <testcase name="previewDoesNotModifySavedData" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.005"/>
+  <testcase name="ambiguousPoolOperationsAskForThePoolAndCount" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="onlyNonemptyPoolCanBeSelectedWithoutChatContext" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="missingTaskNameAsksLocallyInsteadOfUsingGemini" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="newReplyGenerationRemainsAGeminiContentOperation" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="anApiQuotaCannotAuthorizeAModelToStopTheProgramQueue" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="reportsAreProgramToolsRatherThanContentRequests" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.001"/>
+  <testcase name="previewContainsActualStoredValuesAndTheActualCount" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="readAuthorizationCannotSwitchAnExplicitPool" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.001"/>
+  <testcase name="poolCountsStaySeparateFromPoolContents" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="largePreviewIsExplicitlyBoundedButReportsTheRealTotal" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.001"/>
+  <testcase name="writingNewExamplesIsNotMistakenForReadingSavedExamples" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="anExplicitTweetReadOverridesTheRecentReplyGeneration" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.001"/>
+  <testcase name="upgradeRemembersThePoolFromTheExistingSuccessfulReceipt" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="screenshotFollowupReadsSavedExamplesWithoutANetworkPlan" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.001"/>
+  <testcase name="movingStoredTextsDoesNotBecomeAShowOrGenerationOperation" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="generalQuestionsAreNotAssumedToBePoolReads" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="simpleExampleWordingUsesTheLocalReader" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.001"/>
+  <testcase name="emptyPoolNeverInventsSampleComments" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="apiSchemaDoesNotOfferLocalProgramOrPoolMutationTools" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="taskControlsRemainDistinctFromGenerationControls" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.001"/>
+  <testcase name="plainChatDoesNotNeedAToolOrInventAProgramAction" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="aModelCannotTransferOrDeleteStoredPoolData" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="explicitPreviewDoesNotFallBackToTheOtherPoolWhenEmpty" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="explicitReplyExamplesDoNotReadTheTweetPool" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="taskInventoryUsesTheLocalRepository" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.001"/>
+  <testcase name="twoNonemptyPoolsWithoutContextAskInsteadOfGuessing" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <testcase name="mixedGenerationAndProgramPlanIsRejectedAsAWhole" classname="com.atmacanext.app.ai.PilotProgram27_69Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

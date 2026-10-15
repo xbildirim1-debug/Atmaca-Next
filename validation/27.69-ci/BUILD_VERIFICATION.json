@@ -1,0 +1,171 @@
+{
+  "version": "27.69",
+  "version_code": 217,
+  "application_id": "com.atmacanext.v258",
+  "build_kind": "github_ci",
+  "source_commit": "47d86590e2cfc46bc2bbec838b6ceca0114c9507",
+  "device_tested": false,
+  "run_url": "https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38712143606",
+  "tests": {
+    "tests": 867,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "new_suites": {
+    "com.atmacanext.app.ai.FastPilot27_66Test": {
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.ai.GeminiQuota27_68Test": {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.ai.PilotIntent27_67Test": {
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.ai.PilotPools27_67Test": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.ai.PilotProgram27_69Test": {
+      "tests": 30,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.ai.PilotReport27_67Test": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.ai.PilotThemes27_67Test": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.ai.TweetBatch27_66Test": {
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.AccountProfileReturn27_65Test": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.DiscoveryPagination27_67Test": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NavigationRestart26_60Test": {
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerFollowingInspectorTest": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerGesture27_65Test": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerPolicyTest": {
+      "tests": 37,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerScrollProgressTest": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerTimingTest": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerUnfollowCompletionTest": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerVideo27_66Test": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.NonFollowerViewportGateTest": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.QuoteReply26_61Test": {
+      "tests": 33,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.automation.ReplyTextInput26_62Test": {
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.domain.engine.NonFollowerBatch26_60Test": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "com.atmacanext.app.domain.engine.QuoteTaskSetup26_61Test": {
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "Fatal": 0,
+    "Error": 0,
+    "Warning": 58,
+    "Information": 0,
+    "Hint": 8
+  },
+  "migration": "PASS: both historical v5 layouts preserved",
+  "signing_cert_sha256": "2ef476ccc8ad4ebd7e0e7bbe0661a27c96de610b2a64b78404e0ddc6f6c8fa34",
+  "matches_uploaded_27_64_certificate": false,
+  "apk": {
+    "filename": "AtmacaNext-27.69.apk",
+    "bytes": 21297064,
+    "sha256": "031b0b7fbe279b630bd547bc48c0a05fd21486d40fedb657ecb1adc7e38aab87",
+    "crc": "PASS"
+  }
+}
