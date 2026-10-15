@@ -26,6 +26,10 @@ object ListGesture {
     fun discoveryBackward(service: AccessibilityService, root: AccessibilityNodeInfo?, recoveryAttempt: Int = 0): Boolean =
         discoverySwipe(service, root, forward = false, recoveryAttempt = recoveryAttempt)
 
+    fun discoveryStep(service: AccessibilityService, root: AccessibilityNodeInfo?, forward: Boolean,
+                      recoveryAttempt: Int, finished: (Boolean) -> Unit): Boolean =
+        discoverySwipe(service, root, forward, recoveryAttempt, finished)
+
     fun left(service: AccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         swipe(service, root, forward = true, horizontal = true)
 
@@ -43,6 +47,7 @@ object ListGesture {
         root: AccessibilityNodeInfo?,
         forward: Boolean,
         recoveryAttempt: Int,
+        finished: ((Boolean) -> Unit)? = null,
     ): Boolean {
         if (root == null) return false
         val screen = ScreenDetector.detect(root)
@@ -67,7 +72,27 @@ object ListGesture {
         val maxStart = if (screen == XScreen.TWEET_DETAIL) 0.62f else 0.76f
         val raw = DiscoveryScrollGesturePolicy.verticalPath(bounds, nodes, forward, maxStart) ?: return false
         val x = DiscoveryScrollGesturePolicy.safeX(bounds, nodes, xRatio, raw.startY, raw.endY)
-        val path = DiscoveryScrollGesturePolicy.liftOffControls(bounds, nodes, x, raw) ?: return false
+        val short = if (finished != null) {
+            val distance = minOf(kotlin.math.abs(raw.startY - raw.endY), bounds.height() * DiscoveryPaginationPace.TRAVEL_RATIO)
+            DiscoveryScrollGesturePolicy.VerticalPath(raw.startY, raw.startY + if (forward) -distance else distance)
+        } else raw
+        val path = DiscoveryScrollGesturePolicy.liftOffControls(bounds, nodes, x, short) ?: return false
+        if (finished != null) {
+            return try {
+                val dragPath = Path().apply { moveTo(x, path.startY); lineTo(x, path.endY) }
+                val drag = GestureDescription.StrokeDescription(dragPath, 0, DiscoveryPaginationPace.MOVE_MS, true)
+                fun dispatch(stroke: GestureDescription.StrokeDescription, done: (Boolean) -> Unit): Boolean =
+                    service.dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(),
+                        object : AccessibilityService.GestureResultCallback() {
+                            override fun onCompleted(gestureDescription: GestureDescription?) = done(true)
+                            override fun onCancelled(gestureDescription: GestureDescription?) = done(false)
+                        }, null)
+                HeldDragSequence({ dispatch(drag, it) }, { done ->
+                    val hold = Path().apply { moveTo(x, path.endY); lineTo(x, path.endY) }
+                    dispatch(drag.continueStroke(hold, 0, DiscoveryPaginationPace.HOLD_MS, false), done)
+                }, finished).start()
+            } catch (_: RuntimeException) { finished(false); false }
+        }
         return dispatchSwipe(
             service,
             x,

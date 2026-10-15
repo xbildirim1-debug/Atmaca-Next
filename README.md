@@ -1,3 +1,22 @@
+# Atmaca Next 27.67 — yorumcu/retweetçi ve Pilot güncellemesi
+
+15 Ekim 2026. Güncel temel: 27.66 / 329e937f69ceccec844158f6cafb5cca3e644de8. Kullanıcının tamam dediği hesap ekleme ve takip etmeyenleri çıkarma akışları korunur. Sürüm 27.67 / 215, paket com.atmacanext.v258, Room6.
+
+Gönderilen 63 saniyelik video ve Pilot ekran görüntüsü yerel dosyalardan incelendi. Videoda profil 8–16 saatlik gönderilere hızla kayıyor; son bölümde “Daha fazlasını keşfet” önerilerinde bekliyor. Bu görüntüler erişilebilirlik düğüm dökümü değildir. Kaynakta 180 ms hareketin tekrar 5'e bölünmesi ve başlığı kaybolan retweetçi listesinin tanınmaması düzeltildi.
+
+Yorumcu ve retweetçi görevinde: kısa, sonu tutularak bırakılan kaydırma; parmak bırakılıp geometri sabitlenmeden işlem yapılmaz. Değişen video süreleri liste ilerlemesi sayılmaz. Yorum önerileri okunmaz; yorum sonu veya tükenen retweetçi listesinde aynı hedefin sonraki uygun gönderisine geri dönülür. Bekleme taramaları kısaltıldı. Kaynaktaki en az iki saatlik ilk uygun tweet kuralı korunur; “son iki tweeti atla” şeklinde değiştirilmedi.
+
+Pilot: üç temaya uygun farklı Sen/Pilot balonları; boş giriş kutusu, resim ekleme ve önizleme. Resim gerçek içerikle API'ye iletilir. Geçmiş sohbet ve gerçek görev/kuyruk/havuz/log bağlamı yapılandırılmış planlayıcıya verilir. Başlat/durdur/duraklat/devam/atla, havuz sayımı, gerçek log raporu ve havuz işlemleri yerel uygulama araçlarıyla yapılır. Modelin yaptım demesi işlem sonucu sayılmaz; gerçek araç sonucu gösterilir.
+
+Tweet ve hazır yorum havuzları ayrı kalır. Son 56 metni diğer havuza taşı komutu 6 yeni üretim açmaz. Taşı/kopyala/sil/geri al işlemleri adet ve hedef doğrular; iki havuz tek kalıcı yazmada değişir. Eski havuzlar ilk erişimde satırlar ve kullanım sırası korunarak alınır. Kısmi kapasitede kaynaktan silme yapılmaz. Üretim 1–1000 metin, 50'lik partiler ve gerçek kaydedilen adetle sürer.
+
+Doğrulama hazırlığı: 47 yeni regresyon, toplam en az817 test bekleniyor; henüz bu sürüm CI sonucu değildir. SQLite tarihsel5→6 iki veri koruma kontrolü yerelde geçti. Derleme/test/lint, aynı anahtarla güncelleme imzası ve paket kontrolü sonuçları tamamlandığında bu dosyaların başına gerçek teslim kaydı eklenecek. Yeni fiziksel Android/X/tablet veya canlı anahtarla resim/500 metin üretim testi yapılmadı.
+
+Kaynak/testler main ve feature/27.67-engagement-pilot dalına kaydedilecek. Özel anahtar kaynak veya pakete eklenmez. Önceki contents:write otomatik onay reddi nedeniyle Releases yayın workflow'u etkinleştirilmez; APK ve tam kaynak/test/not paketi ayrı kalıcı dosya teslim edilir.
+
+
+--- Önceki sürüm kaydı ---
+
 # Atmaca Next 27.66 — takip etmeyenleri çıkarma ve Pilot
 
 Takip etmeyenleri çıkarma video düzeltmesi; saniyelik Hızlı Pilot, API ayarı, sohbet ve 500 metin üretimi. [Güncel uygulama devri](DEVIR.txt). **770 test geçti; lint 0 hata/fatal.** [CI](https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38634197777), [doğrulama](validation/27.66-ci/RESULT.md). Teslim APK 27.64/27.65 ile aynı imzalıdır; yeni fiziksel cihaz/canlı API testi yapılmadı.

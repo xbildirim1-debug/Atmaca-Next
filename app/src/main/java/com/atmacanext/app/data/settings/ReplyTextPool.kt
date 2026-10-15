@@ -1,44 +1,22 @@
 package com.atmacanext.app.data.settings
 
 import android.content.Context
+import com.atmacanext.app.ai.ContentPool
 import com.atmacanext.app.automation.ReplyTextPoolPolicy
 
-/** Prepared reply lines stay on the device. The cursor is shared by every account. */
 object ReplyTextPool {
-    private const val PREFS = "atmaca_reply_pool_v1"
-    private const val LINES = "lines"
-    private const val CURSOR = "cursor"
-
-    private fun prefs(context: Context) =
-        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-
-    fun lines(context: Context): List<String> = ReplyTextPoolPolicy.lines(prefs(context).getString(LINES, "").orEmpty())
-
+    private val pool = ContentPool.REPLY
+    fun lines(context: Context): List<String> = ContentPoolStore.lines(context, pool)
     fun count(context: Context): Int = lines(context).size
-
-    fun cursor(context: Context): Int = prefs(context).getInt(CURSOR, 0)
-
+    fun cursor(context: Context): Int = ContentPoolStore.cursor(context, pool)
     fun sample(context: Context): String = lines(context).firstOrNull().orEmpty()
-
-    /** Replaces the pool and starts again from the first line. */
-    fun replace(context: Context, raw: String): Int {
-        val stored = ReplyTextPoolPolicy.lines(raw)
-        prefs(context).edit().putString(LINES, stored.joinToString("\n")).putInt(CURSOR, 0).apply()
-        return stored.size
-    }
-
+    fun replace(context: Context, raw: String): Int = ContentPoolStore.replace(context, pool, raw)
+    fun append(context: Context, raw: String): Int = appendBatch(context, raw.lines()).size
+    fun appendBatch(context: Context, values: List<String>): List<String> = ContentPoolStore.append(context, pool, values)
+    fun advance(context: Context): Int = ContentPoolStore.advance(context, pool)
     fun comment(context: Context, addition: String): String {
-        val stored = lines(context)
-        if (stored.isEmpty()) return addition.trim().take(280)
-        val line = stored[ReplyTextPoolPolicy.slot(cursor(context), stored.size)]
-        return ReplyTextPoolPolicy.comment(line, addition)
-    }
-
-    fun advance(context: Context): Int {
-        val size = count(context)
-        if (size == 0) return 0
-        val next = ReplyTextPoolPolicy.slot(cursor(context) + 1, size)
-        prefs(context).edit().putInt(CURSOR, next).apply()
-        return next
+        val values = lines(context)
+        return if (values.isEmpty()) addition.trim().take(280)
+        else ReplyTextPoolPolicy.comment(values[ReplyTextPoolPolicy.slot(cursor(context), values.size)], addition)
     }
 }

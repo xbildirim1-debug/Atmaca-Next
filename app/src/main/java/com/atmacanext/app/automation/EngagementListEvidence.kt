@@ -63,6 +63,13 @@ internal object EngagementListEvidence {
         return explicit || repostOnlySurface(nodes)
     }
 
+    /** A selected tab can scroll off screen; keep its verified identity within the same window. */
+    fun continuesVerifiedList(confirmed: Boolean, sameWindow: Boolean, screen: XScreen,
+                              hasRows: Boolean, nodes: List<NodeSnapshot>): Boolean =
+        confirmed && sameWindow && hasRows && screen in setOf(XScreen.ENGAGEMENT_LIST, XScreen.FOLLOWING_LIST,
+            XScreen.FOLLOWERS_LIST, XScreen.UNKNOWN) && nodes.none { n -> n.visible && (n.selected || n.checked) &&
+            listOfNotNull(n.text, n.contentDescription).any(::isCompetingTab) }
+
     fun title(nodes: List<NodeSnapshot>): Boolean = nodes.any { n -> n.visible &&
         listOfNotNull(n.text, n.contentDescription).any {
             XUiVocabulary.normalize(it) in setOf("gönderi etkileşimleri", "post engagements", "tweet engagements")

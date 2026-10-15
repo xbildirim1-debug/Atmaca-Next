@@ -1,49 +1,17 @@
 package com.atmacanext.app.data.settings
 
 import android.content.Context
+import com.atmacanext.app.ai.ContentPool
 import com.atmacanext.app.automation.ReplyTextPoolPolicy
-import com.atmacanext.app.ai.TweetPoolPolicy
 
-/** Prepared tweets stay on the device and are posted in order, then the list starts over. */
 object TweetTextPool {
-    private const val PREFS = "atmaca_tweet_pool_v1"
-    private const val LINES = "lines"
-    private const val CURSOR = "cursor"
-
-    private fun prefs(context: Context) =
-        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-
-    fun lines(context: Context): List<String> =
-        ReplyTextPoolPolicy.lines(prefs(context).getString(LINES, "").orEmpty(), maxChars = 280, maxLines = TweetPoolPolicy.MAX_LINES)
-
+    private val pool = ContentPool.TWEET
+    fun lines(context: Context): List<String> = ContentPoolStore.lines(context, pool)
     fun count(context: Context): Int = lines(context).size
-
-    fun cursor(context: Context): Int = prefs(context).getInt(CURSOR, 0)
-
+    fun cursor(context: Context): Int = ContentPoolStore.cursor(context, pool)
     fun sample(context: Context): String = lines(context).firstOrNull().orEmpty()
-
-    fun replace(context: Context, raw: String): Int {
-        val stored = ReplyTextPoolPolicy.lines(raw, maxChars = 280, maxLines = TweetPoolPolicy.MAX_LINES)
-        prefs(context).edit().putString(LINES, stored.joinToString("\n")).putInt(CURSOR, 0).apply()
-        return stored.size
-    }
-
-    fun append(context: Context, raw: String): Int {
-        return appendBatch(context, raw.lines()).size
-    }
-
-    @Synchronized
-    fun appendBatch(context: Context, values: List<String>): List<String> {
-        val merged = TweetPoolPolicy.merge(lines(context), values)
-        prefs(context).edit().putString(LINES, merged.lines.joinToString("\n")).apply()
-        return merged.added
-    }
-
-    fun advance(context: Context): Int {
-        val size = count(context)
-        if (size == 0) return 0
-        val next = ReplyTextPoolPolicy.slot(cursor(context) + 1, size)
-        prefs(context).edit().putInt(CURSOR, next).apply()
-        return next
-    }
+    fun replace(context: Context, raw: String): Int = ContentPoolStore.replace(context, pool, raw)
+    fun append(context: Context, raw: String): Int = appendBatch(context, raw.lines()).size
+    fun appendBatch(context: Context, values: List<String>): List<String> = ContentPoolStore.append(context, pool, values)
+    fun advance(context: Context): Int = ContentPoolStore.advance(context, pool)
 }

@@ -11,12 +11,13 @@ data class TweetGenerationRequest(val concept: String, val count: Int) {
             val lower = raw.lowercase(Locale.forLanguageTag("tr"))
             val noun = "(?:tweet|twit|twet|metin|gönderi|yazı)"
             val wantsText = Regex("$noun|havuz").containsMatchIn(lower)
+            if (Regex("sil|taşı|tasi|aktar|kopyala|cikar|çıkar").containsMatchIn(lower)) return null
             val creates = Regex("üret|uret|oluştur|olustur|ekle|hazırla|hazirla|yaz").containsMatchIn(lower)
             if (!wantsText || !creates) return null
             val count = Regex("(\\d{1,5})\\s*(?:tane|adet)?\\s*$noun").find(lower)?.groupValues?.get(1)?.toIntOrNull()
                 ?: Regex("$noun\\s*(?:üret|uret|ekle|yaz)?\\s*(\\d{1,5})").find(lower)?.groupValues?.get(1)?.toIntOrNull()
                 ?: Regex("(\\d{1,5})\\s*(?:tane|adet)").find(lower)?.groupValues?.get(1)?.toIntOrNull()
-                ?: 6
+                ?: return null
             return TweetGenerationRequest(raw.trim().take(2_000), count)
         }
     }

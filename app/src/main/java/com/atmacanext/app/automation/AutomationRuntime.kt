@@ -158,7 +158,7 @@ object AutomationController {
         return com.atmacanext.app.ai.PilotScreenObservation(current, AutomationStallPolicy.signature(current),
             fingerprint, System.currentTimeMillis(), popup, pendingAction != null || quoteSubmitIssued,
             settling = System.currentTimeMillis() < nextActionNotBefore || navigationRecoveryReturning || unfollowRecoveryReturning,
-            moving = nonFollowerViewportGate.pending,
+            moving = nonFollowerViewportGate.pending || discoveryPagination.pending,
             loading = NavigationSurfaceEvidence.loading(nodes),
             ownProfile = AccountProfileReturnPolicy.ownProfile(nodes, current.username), labels = labels)
     }
@@ -325,6 +325,58 @@ object AutomationController {
     private var lastDiscoveryDiagnosticAt = 0L
     private var discoveryTargetIndex = 0
     private var discoveryTweetKey: String? = null
+    private val discoveryPagination = DiscoveryPaginationPace()
+    private var discoveryPageResult: Boolean? = null
+    private var discoveryPageGeneration = 0L
+    private var discoveryPageFailures = 0
+    private var repostListWindow: Int? = null
+
+    private fun pacedEngagementTask(): Boolean = _state.value.taskType in setOf(TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW)
+
+    private fun readDiscoveryPage(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, now: Long): Boolean {
+        if (!pacedEngagementTask() || !discoveryPagination.pending) return false
+        when (discoveryPagination.read(DiscoveryPaginationPace.signature(AccessibilityTree.snapshots(root)), now)) {
+            DiscoveryPaginationPace.Reading.WAIT -> { service.requestAutomationTickExact(120L); return true }
+            DiscoveryPaginationPace.Reading.MOVED -> {
+                discoveryPageFailures = 0
+                listScrolls++; listEndStable = 0; discoveryPageResult = true
+                _state.value = _state.value.copy(listScrolls = listScrolls)
+                stageStartedAt = now
+            }
+            DiscoveryPaginationPace.Reading.STILL -> { discoveryPageFailures = 0; discoveryPageResult = false }
+            else -> {
+                discoveryPageResult = null
+                if (++discoveryPageFailures >= 3) {
+                    discoveryPageFailures = 0
+                    retryNavigationWithDeadline(service, "Liste hareketi üç denemede tamamlanamadı; aynı ilerlemeden kurtarılıyor", now)
+                } else service.requestAutomationTickExact(120L)
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun pacedDiscoveryScroll(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, forward: Boolean): Boolean {
+        discoveryPageResult?.let { discoveryPageResult = null; return it }
+        if (discoveryPagination.pending) return true
+        val current = _state.value
+        val token = ++discoveryPageGeneration
+        discoveryPagination.arm(DiscoveryPaginationPace.signature(AccessibilityTree.snapshots(root)), System.currentTimeMillis())
+        val accepted = ListGesture.discoveryStep(service, root, forward, listEndStable) { completed ->
+            service.runOnAutomationThread {
+                val live = _state.value
+                if (token == discoveryPageGeneration && live.taskId == current.taskId && live.sessionId == current.sessionId) {
+                    discoveryPagination.finished(completed, System.currentTimeMillis())
+                    service.requestAutomationTickExact(DiscoveryPaginationPace.READ_MS)
+                }
+            }
+        }
+        if (!accepted) discoveryPagination.reset()
+        nextActionNotBefore = System.currentTimeMillis() + if (accepted) 440L else 120L
+        service.requestAutomationTickExact(if (accepted) 440L else 120L)
+        return accepted
+    }
+
     private val discoverySeenTweets = LinkedHashMap<String, LinkedHashMap<String, Long?>>()
     private val discoveryProcessedTweets = LinkedHashSet<String>()
     private var replyLikeAttempts = 0
@@ -1990,6 +2042,7 @@ object AutomationController {
     }
 
     private fun handleDiscoveryFollow(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
+        if (readDiscoveryPage(service, root, now)) return
         val current = _state.value
         if (current.taskType == TaskType.COMMENT_QUOTE_TARGETS && current.flowStage in setOf(XFlowStage.OPEN_COMPOSER, XFlowStage.FILL_COMPOSER, XFlowStage.SUBMIT_COMPOSER)) {
             handleQuoteReply(service, root, screen, now)
@@ -2099,8 +2152,8 @@ object AutomationController {
                                 "DISCOVERY_HOLD",
                                 "target=@$target progress=${current.verifiedCount}/${current.limit}; limit dolmadı, hedeften çıkılmadı",
                             )
-                            ListGesture.discoveryBackward(service, root, 0)
-                            service.requestAutomationTick(700L)
+                            pacedDiscoveryScroll(service, root, false)
+                            service.requestAutomationTickExact(120L)
                             return
                         }
                         nextDiscoveryTarget(service, "@$target profilinde başka erişilebilir uygun gönderi kalmadı")
@@ -2171,6 +2224,7 @@ object AutomationController {
                 }
                 if (current.taskType == TaskType.RETWEETER_FOLLOW && screen == XScreen.ENGAGEMENT_LIST) {
                     if (EngagementListEvidence.selected(root)) {
+                        repostListWindow = root?.windowId
                         moveStage(XFlowStage.PROCESS_ENGAGEMENT, "Yeniden gönderenler sekmesi doğrulandı")
                     } else if (stageAttempts++ < 6) XUiActions.clickEngagementList(service, root, false)
                     else return nextDiscoveryTweet(service, "Yeniden gönderenler sekmesi doğrulanamadı")
@@ -2254,13 +2308,17 @@ object AutomationController {
                 if (current.taskType != TaskType.COMMENT_QUOTE_TARGETS &&
                     closeAccidentalEngagementSurface(service, root, screen, now)) return
                 val expected = if (current.taskType == TaskType.COMMENTER_FOLLOW) XScreen.TWEET_DETAIL else XScreen.ENGAGEMENT_LIST
-                if (screen != expected || (current.taskType == TaskType.RETWEETER_FOLLOW &&
-                    !EngagementListEvidence.selected(root))) {
+                val repostSelected = current.taskType == TaskType.RETWEETER_FOLLOW && EngagementListEvidence.selected(root)
+                if (repostSelected) repostListWindow = root?.windowId
+                val repostContinues = current.taskType == TaskType.RETWEETER_FOLLOW &&
+                    EngagementListEvidence.continuesVerifiedList(repostListWindow != null, root?.windowId == repostListWindow,
+                        screen, XListInspector.visibleHandleRows(root).isNotEmpty(), AccessibilityTree.snapshots(root))
+                if (!repostContinues && (screen != expected || (current.taskType == TaskType.RETWEETER_FOLLOW && !repostSelected))) {
                     if (current.taskType == TaskType.RETWEETER_FOLLOW && screen in setOf(XScreen.ENGAGEMENT_LIST, XScreen.FOLLOWING_LIST, XScreen.UNKNOWN) &&
                         engagementRestoreAttempts < 2 && now - stageStartedAt >= 1_500L) {
                         engagementRestoreAttempts++
-                        ListGesture.backward(service, root)
-                        nextActionNotBefore = now + taskDelay(900L)
+                        scrollBackwardAndTrack(service, root)
+                        nextActionNotBefore = maxOf(nextActionNotBefore, now + 180L)
                         service.requestAutomationTick(900L)
                     } else if (stageTimedOut(now)) nextDiscoveryTweet(service, "Etkileşim listesi doğrulanamadı") else service.requestAutomationTick(TICK_MS)
                     return
@@ -2286,7 +2344,7 @@ object AutomationController {
                 )
                 val relationship = if (current.taskType == TaskType.COMMENTER_FOLLOW) null else XUiActions.findRelationshipTarget(
                     root,
-                    acceptedLabels = setOf("takip et", "follow"),
+                    acceptedLabels = XUiVocabulary.followActions,
                     excludedHandles = excluded,
                     fromBottom = false,
                 )
@@ -2349,6 +2407,10 @@ object AutomationController {
                         }
                         return
                     }
+                    if (endTop != Int.MAX_VALUE) {
+                        nextDiscoveryTweet(service, "Yorumlar bitti; önerilen gönderiler işlenmeden sıradaki hedef gönderisine dönülüyor")
+                        return
+                    }
                     if (!CommenterViewportPolicy.allowScrollAfterStableEmpty(
                             XTweetInspector.visibleReplyAuthors(root), DiscoveryViewportEvidence.signature(nodes), now)) {
                         OperationLog.i("COMMENT_DRAIN_WAIT", "Ana yorum ağacı yerleşiyor; bekleme liste sonu sayılmadı")
@@ -2358,7 +2420,7 @@ object AutomationController {
                     val visibleNodes = nodes.count { it.visible }
                     // A collapsing tree (header + reply bar only) is not an empty thread.
                     // Three 16ms failures were leaving the tweet before comments loaded.
-                    if (visibleNodes < 45 || now - stageStartedAt < 2_200L) {
+                    if (visibleNodes < 25 || now - stageStartedAt < 650L) {
                         listEndStable = 0
                         service.requestAutomationTickExact(400L)
                         return
@@ -2366,7 +2428,7 @@ object AutomationController {
                 }
                 if (!scrollForwardAndTrack(service, root)) {
                     listEndStable++
-                    if (listEndStable >= 3) nextDiscoveryTweet(service, "Bu gönderide yeni takip edilebilir etkileşim kalmadı")
+                    if (listEndStable >= 2) nextDiscoveryTweet(service, "Bu gönderide yeni takip edilebilir etkileşim kalmadı")
                 }
                 service.requestAutomationTickExact(700L)
             }
@@ -3217,6 +3279,7 @@ object AutomationController {
     }
 
     private fun nextDiscoveryTweet(service: AtmacaAccessibilityService, reason: String) {
+        repostListWindow = null
         val exhaustedKey = discoveryTweetKey
         val exhaustedAttempt = discoveryOpenAttempt?.key
         quoteReplyPost = null
@@ -3479,6 +3542,7 @@ object AutomationController {
     }
 
     private fun moveStage(stage: XFlowStage, message: String) {
+        discoveryPageGeneration++; discoveryPagination.reset(); discoveryPageResult = null
         stageStartedAt = System.currentTimeMillis()
         stageAttempts = 0
         listEndStable = 0
@@ -3487,6 +3551,7 @@ object AutomationController {
     }
 
     private fun scrollForwardAndTrack(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        if (pacedEngagementTask()) return pacedDiscoveryScroll(service, root, true)
         if (_state.value.taskType == TaskType.UNFOLLOW) return pacedUnfollowScroll(service, root, forward = true)
         val signature = if (_state.value.taskType?.isDiscoveryFollow == true || _state.value.taskType == TaskType.COMMENT_QUOTE_TARGETS)
             DiscoveryViewportEvidence.signature(AccessibilityTree.snapshots(root))
@@ -3521,6 +3586,7 @@ object AutomationController {
     }
 
     private fun scrollBackwardAndTrack(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        if (pacedEngagementTask()) return pacedDiscoveryScroll(service, root, false)
         if (_state.value.taskType == TaskType.UNFOLLOW) return pacedUnfollowScroll(service, root, forward = false)
         val signature = ListViewportController.signature(root)
         val changed = lastListSignature.isBlank() || signature != lastListSignature
@@ -3692,6 +3758,7 @@ object AutomationController {
 
     private fun resetOperationNavigation() {
         resetNonFollowerNavigation()
+        discoveryPageGeneration++; discoveryPagination.reset(); discoveryPageResult = null; repostListWindow = null
         quoteReplyPost = null
         quoteEditorScrolls = 0
         quoteResultScrolls = 0

@@ -5,10 +5,14 @@ import org.json.JSONObject
 
 /** JSON stays intact across quoted text, Unicode and bulk responses. */
 internal object GeminiJson {
-    fun payload(prompt: String, maxTokens: Int): JSONObject = JSONObject().apply {
-        put("contents", JSONArray().put(JSONObject().put("parts", JSONArray().put(JSONObject().put("text", prompt)))))
+    fun payload(prompt: String, maxTokens: Int, imageBase64: String? = null, schema: JSONObject? = null): JSONObject = JSONObject().apply {
+        val parts = JSONArray().put(JSONObject().put("text", prompt))
+        imageBase64?.let { parts.put(JSONObject().put("inline_data", JSONObject().put("mime_type", "image/jpeg").put("data", it))) }
+        put("contents", JSONArray().put(JSONObject().put("parts", parts)))
         put("generationConfig", JSONObject().put("temperature", 0.9)
-            .put("maxOutputTokens", maxTokens).put("responseMimeType", "application/json"))
+            .put("maxOutputTokens", maxTokens).put("responseMimeType", "application/json").apply {
+                schema?.let { put("responseJsonSchema", it); put("temperature", .2) }
+            })
     }
 
     fun drafts(raw: String): List<String> {
