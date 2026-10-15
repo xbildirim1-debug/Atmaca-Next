@@ -16,22 +16,22 @@ object PilotGenerationFollowup {
 
     private val references = Regex("\\b(onlari|bunlari|onlardan|bunlardan|onlar|bunlar|ayni|onceki)\\b")
     private val verbs = Regex("\\b(yap|uret|olustur|hazirla|yaz|ekle|tamamla|cikar)\\b")
-    private val blocked = Regex("\\b(gorev\\w*|kuyruk\\w*|otomasyon\\w*|hesap\\w*|takip\\w*|baslat|calistir|durdur|duraklat|sil|tasi|aktar|kopyala|geri al)\\b")
+    private val blocked = Regex("\\b(gorev\\w*|kuyruk\\w*|otomasyon\\w*|hesap\\w*|takip\\w*|yorumcu\\w*|retweetci\\w*|onayli\\w*|begeni\\w*|yer imi|alinti\\w*|baslat|calistir|durdur|duraklat|sil|tasi|aktar|kopyala|geri al)\\b")
     private val negatives = Regex("\\b(yapma|uretme|olusturma|hazirlama|yazma|ekleme|tamamlama|cikarma|istemiyorum|iptal|vazgec|degil)\\b")
     private val digits = Regex("(?<![a-z0-9])(-?[0-9]+)(?![a-z0-9])")
 
     fun mentionedPool(raw: String): ContentPool? {
         val pools = PilotIntentPolicy.pools(raw)
         if (pools.size > 1) return null
-        return pools.singleOrNull() ?: if (Regex("\\byorum\\w*\\b").containsMatchIn(PilotIntentPolicy.normalized(raw))) ContentPool.REPLY else null
+        return pools.singleOrNull() ?: if (Regex("\\byorum(?:u|lar(?:i|dan)?|dan)?\\b").containsMatchIn(PilotIntentPolicy.normalized(raw))) ContentPool.REPLY else null
     }
 
     fun resolve(raw: String, context: PilotGenerationContext?, pending: Pending? = null): Decision {
         val s = PilotIntentPolicy.normalized(raw).trim().trimEnd('.', '!', '?')
-        if (blocked.containsMatchIn(s)) return Decision.None
-        val shortAnswer = pending != null && s.matches(Regex("(?:[0-9]+\\s*(?:tane|adet)?\\s*)?(?:toplam(?:a)?(?:\\s+(?:tamamla|cikar|yap))?|(?:yeni|daha)(?:\\s+(?:uret|ekle|yap|hazirla))?)(?:\\s+(?:onlari|bunlari))?"))
         val total = Regex("\\b(toplam|tamamla|sayisini)\\b").containsMatchIn(s) ||
             Regex("[0-9]+\\s*['’]?\\s*(?:e|a)\\s+cikar\\b").containsMatchIn(s)
+        if (blocked.containsMatchIn(s) || (!total && Regex("\\bcikar\\b").containsMatchIn(s))) return Decision.None
+        val shortAnswer = pending != null && s.matches(Regex("(?:[0-9]+\\s*(?:tane|adet)?\\s*)?(?:toplam(?:a)?(?:\\s+(?:tamamla|cikar|yap))?|(?:yeni|daha)(?:\\s+(?:uret|ekle|yap|hazirla))?)(?:\\s+(?:onlari|bunlari))?"))
         val reference = references.containsMatchIn(s) || Regex("\\bdaha\\b").containsMatchIn(s)
         val candidate = shortAnswer || (digits.containsMatchIn(s) && verbs.containsMatchIn(s) &&
             (reference || total))

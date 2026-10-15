@@ -13,7 +13,7 @@ Kullanıcının 13:11 ekranında örnekler gerçek Hazır yorum havuzundan göst
 - Yerel örnek gösterme, rapor, kuyruk kontrolü ile Gemini yeni içerik/sohbet ayrımı değişmedi. Google kotası yükseltilmez, anahtar/model otomatik değiştirilmez. Veritabanı, X gezinmesi ve kullanıcı havuzları yerinde kalır.
 
 Değişenler: yeni PilotGenerationFollowup.kt ve PilotFollowup27_70Test.kt; PilotChatCoordinator.kt; sürüm ve CI paket/test doğrulaması.
-40 yeni test, toplam en az907 test bekleniyor. Bu hazırlık kaydı yazılırken yeni CI sonucu henüz yok. Fiziksel Android/X/tablet ve canlı Gemini anahtarıyla test yapılmadı. Eski imzayla APK teslimi derleme sonrasında ayrıca doğrulanacak. Özel anahtarlar kaynak/pakette yoktur.
+42 yeni test, toplam en az909 test bekleniyor. Bu hazırlık kaydı yazılırken yeni CI sonucu henüz yok. Fiziksel Android/X/tablet ve canlı Gemini anahtarıyla test yapılmadı. Eski imzayla APK teslimi derleme sonrasında ayrıca doğrulanacak. Özel anahtarlar kaynak/pakette yoktur.
 
 Kaynak yeni fix/27.70-pilot-followups dalına ve mevcut taslak PR13 dalına kaydedilir. Main f5a96f973170cad6933a50be2bf772fd5218d762 üzerinde kalır. Önceki otomatik onay reddi nedeniyle ana dala birleştirme veya Releases yayını yapılmaz. APK, tam kaynak/test/not paketi ve güncel devir ayrı teslim edilir.
 

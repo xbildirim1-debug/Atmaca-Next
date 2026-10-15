@@ -162,4 +162,13 @@ class PilotFollowup27_70Test {
     @Test fun noMutationCanBeCreatedWithoutANonblankTopic() {
         assertTrue(resolve("Onlardan 10 daha üret", context.copy(concept = "")) is PilotGenerationFollowup.Decision.Ask)
     }
+    @Test fun taskTypeNamesAreNeverMistakenForTheReplyPool() {
+        for (s in listOf("Onlardan 1000 yorumcu yap", "Onlardan 1000 retweetçi üret", "Onlardan 1000 onaylı yap", "Onlardan 1000 beğeni yap"))
+            assertEquals(s, PilotGenerationFollowup.Decision.None, resolve(s))
+        assertNull(PilotGenerationFollowup.mentionedPool("yorumcu"))
+    }
+    @Test fun removingTextsIsNotTreatedAsAddingMoreTexts() {
+        assertEquals(PilotGenerationFollowup.Decision.None, resolve("Onlardan 100 tane çıkar ve 100 yeni ekle"))
+        assertEquals(PilotGenerationFollowup.Decision.None, resolve("Onlardan 100 çıkar yeni ekle"))
+    }
 }
