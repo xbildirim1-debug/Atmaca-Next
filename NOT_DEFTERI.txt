@@ -1,3 +1,24 @@
+# Atmaca Next27.69 — program araçları ve Gemini içerik işlerinin ayrılması
+
+15 Ekim2026. Temel:27.68 teslim dalı e78792f4213c22b5144e63738f1afd7759979472; main27.67 üzerinde kaldı.
+Paket com.atmacanext.v258,27.69/versionCode217,Room6.
+
+12:07 kullanıcı ekranında Hazır yorum100/100 kaydı başarılı, ardından “örnek neler var” mesajına Gemini limit0 hatası görüldü. Kullanıcı program içi görevlerle Gemini işlerinin karıştırılmamasını istedi.
+
+- Program araçları (görev yönetimi/listesi, sayaçlar, gerçek log raporu, mevcut metinleri görme/taşıma/silme) yerel komut yolunda çalışır ve sohbet API'sine gönderilmez. Yerel rapor sonrasında otomatik Gemini açıklaması da kaldırıldı. Eksik görev/havuz adı cihazda sorulur.
+- API sohbet şemasında yalnız yeni içerik GENERATE eylemi bulunur. API yanıtı programı başlatma/durdurma veya havuz düzenleme eylemi önerirse tüm bu plan reddedilir. Mevcut metni okuma yeni üretime dönüşmez. Metin üretimini durdurmak program kuyruğunu durdurmaz; programı durdurmak da üretim iptali değildir.
+- “örnek neler var”, “hazır yorumları göster”, “son5 yorumdan örnek göster” mevcut havuzdan en fazla20 gerçek kayıt gösterir. Son havuz ayrı tercihte tutulur;27.68'in son gerçek üretim makbuzundan da bulunur. Hangi havuz olduğu belirsizse sorulur; boş havuza örnek uydurulmaz. Okuma havuzu ve yayın cursor'unu değiştirmez; metin içeriği teşhis loguna kopyalanmaz.
+- Sohbetin orderedCandidates, üretimin pilotCandidates kullanması bulundu. Her iki yol aynı pilotCandidates seçim kuralına alındı; katalogda görünmek kullanılabilir kota kanıtı sayılmaz. Kullanıcının açık model tercihi ve429 bekleme kuralları korunur. Google kotası yükseltilmez,429 üzerine otomatik anahtar/model değişimi yapılmaz.
+- Yeni içerik/görsel inceleme ve genel sohbet Gemini bağlantısındadır. useGemini içeriği gerektiren kayıtlı görev yine içerik üretimi için kota gerektirebilir; yerel kontrol/kayıt okuma bu kotaya bağlanmaz.
+
+Değişenler: PilotProgramPolicy.kt (yeni), PilotIntentPolicy.kt, PilotChatCoordinator.kt, PilotIntentSchema.kt, GeminiContentService.kt, GeminiModelResolver.kt; sürüm/paketleme, test doğrulama ve devir notları. X gezinme/hesap senkronu/veritabanı değişmedi.
+
+30 yeni PilotProgram27_69Test; toplam en az867 bekleniyor. Yeni CI sonucu henüz yok. Fiziksel telefon/X ve canlı Gemini testi yapılmadı. Aynı b52d8a15… anahtarıyla APK teslimi derleme sonrasında doğrulanacak. Özel anahtar depoya/pakete eklenmez.
+
+Kaynak ayrı27.69 çalışma dalı ve mevcut taslak PR13'te tutulacak. Ana dal için önceki otomatik onay reddi geçerli; kullanıcı ana dala birleştirmeye henüz açık onay vermedi. Main'e veya Releases'e yayın yapılmayacak. APK, tam paket ve devir dosyası ayrı teslim edilecek.
+
+--- Önceki teslim kayıtları ---
+
 27.68 TESLİM VE GERÇEK DOĞRULAMA — 15 Ekim 2026
 Uygulama kaynağı: fix/27.68-pilot-quota / 16b3bb23432dd314264a83de7b4caa1d17ae079b.
 Taslak PR: https://github.com/xbildirim1-debug/Atmaca-Next/pull/13 (birleştirilmedi).

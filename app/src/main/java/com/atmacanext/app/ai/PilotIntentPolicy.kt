@@ -5,14 +5,14 @@ import org.json.JSONObject
 import java.text.Normalizer
 import java.util.Locale
 
-enum class PilotTool { GENERATE, TRANSFER, COPY, DELETE_LAST, UNDO_POOL, POOLS, REPORT, STATUS,
+enum class PilotTool { GENERATE, TRANSFER, COPY, DELETE_LAST, UNDO_POOL, POOLS, SHOW_POOL, TASKS, REPORT, STATUS,
     START, STOP, PAUSE, RESUME, SKIP_TASK, SKIP_ACCOUNT, STOP_GENERATION }
 data class PilotAction(val tool: PilotTool, val pool: ContentPool? = null, val destination: ContentPool? = null,
     val count: Int? = null, val concept: String = "", val types: List<TaskType> = emptyList(),
     val account: String? = null, val all: Boolean = false)
 data class PilotToolPlan(val say: String = "", val actions: List<PilotAction> = emptyList())
 
-/** Exact local operations first; ambiguous language goes to the conversational planner. */
+/** Program operations stay local; Gemini only handles conversation, images and new content. */
 object PilotIntentPolicy {
     fun normalized(raw: String): String = Normalizer.normalize(raw, Normalizer.Form.NFD)
         .replace(Regex("\\p{M}+"), "").lowercase(Locale.ROOT).replace('ı', 'i')
@@ -31,6 +31,7 @@ object PilotIntentPolicy {
         val s = normalized(raw).trim().trimEnd('.', '!', '?')
         if (Regex("\\b(geri al|undo)\\b").containsMatchIn(s)) return PilotToolPlan(actions = listOf(PilotAction(PilotTool.UNDO_POOL)))
         if (negative(s)) return null
+        PilotProgramPolicy.examples(raw)?.let { return PilotToolPlan(actions = listOf(it)) }
         val selected = pools(s); val count = number(s)
         val transfer = Regex("\\b(tasi|aktar|transfer|move|kopyala)\\b").containsMatchIn(s) ||
             (Regex("\\b(sil|cikar)\\b").containsMatchIn(s) && Regex("\\bekle\\b").containsMatchIn(s))
@@ -56,6 +57,10 @@ object PilotIntentPolicy {
         if (Regex("kayit|log|hata|sikinti|takil|rapor").containsMatchIn(s) &&
             Regex("incele|analiz|en cok|en sik|neler|neden|rapor|duzelt").containsMatchIn(s))
             return PilotToolPlan(actions = listOf(PilotAction(PilotTool.REPORT)))
+        if (Regex("gorev|kuyruk|otomasyon").containsMatchIn(s) && Regex("neden|takil|hata").containsMatchIn(s))
+            return PilotToolPlan(actions = listOf(PilotAction(PilotTool.REPORT)))
+        if (Regex("gorev(?:ler|leri)?\\b").containsMatchIn(s) && Regex("goster|listele|neler var|hangileri|kac").containsMatchIn(s))
+            return PilotToolPlan(actions = listOf(PilotAction(PilotTool.TASKS)))
         if (Regex("havuz|metin").containsMatchIn(s) && Regex("kac|goster|sayisi|durum").containsMatchIn(s))
             return PilotToolPlan(actions = listOf(PilotAction(PilotTool.POOLS)))
         if (s.matches(Regex("durum|durum ne|ne durumda|ne yapiyorsun|hangi gorevdesin")))
@@ -111,6 +116,9 @@ object PilotIntentPolicy {
             if (mentioned.size == 2 && setOf(action.pool, action.destination) != mentioned.toSet()) return false
         }
         return when (action.tool) {
+            PilotTool.SHOW_POOL -> PilotProgramPolicy.examples(raw)?.let { requested ->
+                (requested.pool == null || requested.pool == action.pool) && requested.count == action.count
+            } == true
             PilotTool.GENERATE -> Regex("\\b(uret|olustur|hazirla|yaz|ekle)\\b").containsMatchIn(s) &&
                 !Regex("\\b(sil|tasi|aktar|cikar)\\b").containsMatchIn(s)
             PilotTool.TRANSFER, PilotTool.COPY -> Regex("\\b(tasi|aktar|kopyala|transfer|move)\\b").containsMatchIn(s) ||
