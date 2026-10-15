@@ -1,3 +1,28 @@
+# Atmaca Next 27.68 — Pilot Gemini kota hatası
+
+15 Ekim 2026. Temel f5a96f973170cad6933a50be2bf772fd5218d762 (27.67).
+Paket com.atmacanext.v258, versionCode216, Room6.
+
+Kullanıcının 11:40 ekranında Gemini 429 kota yanıtı ve “100 tane hazır yorum metni hazırla ekle. şaşırma ve merak içerikli kısa” komutu görüldü. Ekranda kota ayrıntıları kesildiği için dakikalık/günlük/limit0 ayrımı kesin yapılamaz. Google kotası uygulama tarafından yükseltilmez; ücretsiz veya sınırsız API garantisi verilmez.
+
+Düzeltmeler:
+- Hazır yorumdan önceki sayı/tane/adet doğrudan yerel planda REPLY havuzuna bağlanır. Gereksiz sohbet planlama API çağrısı yapılmaz; gerçek metin üretimi yine kullanıcının Gemini anahtarını ve kullanılabilir kotayı gerektirir.
+- Tam 429 JSON ayrıntıları görüntü kısaltmasından önce okunur. Günlük kota, limit0, belirtilen kısa bekleme ve süresi bilinmeyen kota ayrı Türkçe açıklanır. Yalnız kesin günlük kota için America/Los_Angeles gece yarısı sıfırlaması hesaplanır. RetryInfo ve Retry-After içindeki en uzun bekleme korunur.
+- Aynı servis oturumundaki sohbet, üretim, bağlantı testi ve arka plan danışma çağrıları anahtar parmak izi/model bazında ortak bekleme kapısını kullanır. Kota aşılınca başka modele/anahtara otomatik kaçış yapılmaz. Bu bekleme uygulama işlemi yeniden başlatılırsa sıfırlanır; sunucu kotası sıfırlanmış sayılmaz.
+- Günlük, limit0 veya süresi bilinmeyen kotada otomatik üretim denemesi yapılmaz. Geçici 429/503 için en fazla iki kontrollü tekrar; sunucu 60 saniyeden uzun süre verdiyse erken tekrar yerine durum açıklanır. İptal ve daha önce kaydedilmiş kısmi sonuçlar korunur.
+- “neden?” son kota açıklamasını yeni API çağrısı olmadan gösterir. Yerel durdur/duraklat/devam ve havuz işlemleri API'den bağımsızdır. Ayarlar'a resmi Gemini kullanım sınırları bağlantısı eklendi.
+
+Değişen dosyalar: GeminiApiErrors.kt (yeni), GeminiContentService.kt, PilotChatCoordinator.kt, PilotIntentPolicy.kt, SettingsScreen.kt, app/build.gradle.kts, salt contents:read derlemenin paket adları ve verify_delivery.py. Hesap senkronu, yorumcu/retweetçi X gezinmesi veya veritabanı şeması değiştirilmedi.
+
+20 yeni GeminiQuota27_68Test regresyonu eklendi. Toplam en az837 test bekleniyor; yeni derleme/test/lint sonucu henüz yok. Fiziksel Android/X veya canlı Gemini anahtarıyla test yapılmadı. Ekran görüntüsü önceki 27.67'nin hata kanıtıdır. İmza yeni derleme tamamlanınca mevcut b52d8a15… anahtarıyla doğrulanacak; özel anahtar depoya/pakete eklenmez.
+
+Kaynak/testler fix/27.68-pilot-quota dalında hazırlanıyor; main'e kaydedilip mevcut salt-okuma CI çalıştırılacak. Releases yayın workflow'u önceki contents:write otomatik onay reddi nedeniyle etkinleştirilmeyecek. APK ve kaynak/test/not paketi ayrı kalıcı teslim edilecek.
+
+Resmi kaynaklar: https://ai.google.dev/gemini-api/docs/rate-limits ve https://ai.google.dev/gemini-api/docs/troubleshooting (15 Ekim 2026 kontrolü).
+
+
+--- Önceki sürüm kayıtları ---
+
 27.67 TESLİM VE GERÇEK DOĞRULAMA — 15 Ekim 2026
 Kaynak/testler: main ve feature/27.67-engagement-pilot.
 APK uygulama kaynak commit: a64ed332febffd333705fe031d6d1c0f1113f97d.

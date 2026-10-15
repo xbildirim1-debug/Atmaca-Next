@@ -311,6 +311,10 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                         context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
                             android.net.Uri.parse("https://aistudio.google.com/apikey")))
                     }) { Text("API anahtarı al") }
+                    TextButton(onClick = {
+                        context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://aistudio.google.com/rate-limit")))
+                    }) { Text("Gemini kullanım sınırları") }
                     Text("Anahtar Android Keystore ile şifrelenir; loglara ve hata raporuna yazılmaz.", color = TextSecondary, fontSize = 9.sp)
                 }
             }

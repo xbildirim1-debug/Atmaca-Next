@@ -23,7 +23,7 @@ object PilotIntentPolicy {
         return listOfNotNull(tweet.find(s)?.range?.first?.let { it to ContentPool.TWEET },
             reply.find(s)?.range?.first?.let { it to ContentPool.REPLY }).sortedBy { it.first }.map { it.second }
     }
-    private fun number(s: String): Int? = Regex("(?<![0-9])([0-9]+)\\s*(?:tane|adet)?\\s*(?:tweet|twit|twet|metin|metn|yorum|gonderi|yazi)")
+    private fun number(s: String): Int? = Regex("(?<![0-9])([0-9]+)\\s*(?:tane|adet)?\\s*(?:hazir\\s+)?(?:tweet|twit|twet|metin|metn|yorum|gonderi|yazi)")
         .find(s)?.groupValues?.get(1)?.toLongOrNull()?.coerceAtMost(Int.MAX_VALUE.toLong())?.toInt()
         ?: Regex("\\bson\\s+(?:ekledigin\\s+)?([0-9]+)\\b").find(s)?.groupValues?.get(1)?.toIntOrNull()
     private fun negative(s: String): Boolean = Regex("\\b(yapma|silme|tasima|kopyalama|uretme|ekleme|durdurma|baslatma|istemiyorum)\\b").containsMatchIn(s)

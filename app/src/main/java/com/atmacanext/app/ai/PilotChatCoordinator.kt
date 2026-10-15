@@ -30,6 +30,7 @@ class PilotChatCoordinator(context: Context) {
     private var generationVersion = 0L
     private var conversationJob: Job? = null
     private var conversationVersion = 0L
+    private var lastApiFailure: String? = null
     private var imageVersion = 0L
     private val memory = app.getSharedPreferences("pilot_agent_v2767", Context.MODE_PRIVATE)
     private val _state = MutableStateFlow(PilotChatState(
@@ -84,6 +85,11 @@ class PilotChatCoordinator(context: Context) {
         say(true, text.ifBlank { "Bu resmi incele." }, attachment?.path)
         val token = ++conversationVersion
         conversationJob?.cancel()
+        if (attachment == null) GeminiApiErrors.localExplanation(text, lastApiFailure)?.let {
+            _state.update { state -> state.copy(chatting = false) }
+            say(false, it)
+            return
+        }
         val local = if (attachment == null) PilotIntentPolicy.local(text) else null
         if (local != null) {
             _state.update { it.copy(chatting = false) }
@@ -116,6 +122,7 @@ class PilotChatCoordinator(context: Context) {
                 val bytes = attachment?.let { withContext(Dispatchers.IO) { PilotImages.bytes(app, it) } }
                 val rawPlan = AppServices.contentService.pilotConversation(turns, context, settings.geminiModel, bytes)
                 if (token != conversationVersion) return@launch
+                lastApiFailure = null
                 val plan = PilotIntentPolicy.parseModel(rawPlan) ?: error("Pilot yanıtı işlem şemasına uymadı; hiçbir işlem uygulanmadı")
                 if (local?.actions?.any { it.tool == PilotTool.REPORT } == true) {
                     if (plan.say.isNotBlank()) say(false, PilotIntentPolicy.honestChat(plan.say))
@@ -124,7 +131,12 @@ class PilotChatCoordinator(context: Context) {
                     scope.launch { executePlan(plan, text) }
                 } else say(false, PilotIntentPolicy.honestChat(plan.say.ifBlank { "Ne yapmamı istediğini biraz daha açık yazabilir misin?" }))
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { if (token == conversationVersion) say(false, "Pilot yanıtı alınamadı: ${error.message.orEmpty().take(220)}") }
+            catch (error: Exception) { if (token == conversationVersion) {
+                if (error is GeminiApiException && error.statusCode == 429) {
+                    lastApiFailure = error.message
+                    say(false, error.message.orEmpty())
+                } else say(false, "Pilot yanıtı alınamadı: ${error.message.orEmpty().take(220)}")
+            } }
             finally { if (token == conversationVersion) _state.update { it.copy(chatting = false) } }
         }
     }
@@ -213,8 +225,11 @@ class PilotChatCoordinator(context: Context) {
                     var attempts = 0; var values: List<String>? = null
                     while (values == null) {
                         try { values = AppServices.contentService.generateTweetBatch(topic, wanted, batch, avoid, model) }
-                        catch (e: GeminiApiException) { if (e.statusCode !in setOf(429, 503) || ++attempts >= 3) throw e
-                            delay(e.retryAfterMs.coerceIn(5_000L, 60_000L)) }
+                        catch (e: GeminiApiException) {
+                            val wait = GeminiApiErrors.generationRetryDelay(e, ++attempts) ?: throw e
+                            say(false, "Gemini kısa süreli sınır veya yoğunluk bildirdi; en az ${(wait + 999) / 1000} saniye bekleyip yeniden deneyeceğim. Kaydedilen metinler korunuyor.")
+                            delay(wait)
+                        }
                     }; values
                 }, save = { values ->
                     currentCoroutineContext().ensureActive()
@@ -227,11 +242,16 @@ class PilotChatCoordinator(context: Context) {
                 val result = engine.generate(request, existing) { saved, _ ->
                     if (token == generationVersion) _state.update { it.copy(generation = it.generation?.copy(saved = saved)) }
                 }
-                if (token == generationVersion) receipt(action, "${result.saved}/${result.requested} farklı metin ${pool.title} havuzuna kaydedildi.")
+                if (token == generationVersion) {
+                    lastApiFailure = null
+                    receipt(action, "${result.saved}/${result.requested} farklı metin ${pool.title} havuzuna kaydedildi.")
+                }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) { if (token == generationVersion) {
                 val saved = _state.value.generation?.saved ?: 0
-                say(false, "Üretim tamamlanamadı; $saved/$count metin ${pool.title} havuzunda korundu. ${error.message.orEmpty().take(200)}")
+                if (error is GeminiApiException && error.statusCode == 429) lastApiFailure = error.message
+                val reason = if (error is GeminiApiException && error.statusCode == 429) error.message.orEmpty() else error.message.orEmpty().take(200)
+                say(false, "Üretim tamamlanamadı; $saved/$count metin ${pool.title} havuzunda korundu. $reason")
             } } finally { if (token == generationVersion) {
                 _state.update { it.copy(generation = it.generation?.copy(active = false)) }; generationJob = null; refreshCounts()
             } }

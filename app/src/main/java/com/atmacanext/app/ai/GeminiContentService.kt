@@ -14,12 +14,11 @@ import java.net.URL
 
 data class PilotChatResult(val say: String? = null, val failure: String? = null)
 
-class GeminiApiException(val statusCode: Int, message: String, val retryAfterMs: Long = 20_000L) : IllegalStateException(message)
-
 data class GeminiConnectionResult(val model: String, val message: String)
 
 class GeminiContentService(private val keyStore: GeminiKeyStore) {
     fun hasApiKey(): Boolean = keyStore.hasKey()
+    private val rateLimits = GeminiRateLimitGate()
     @Volatile private var cachedModels: List<GeminiModelDescriptor>? = null
     @Volatile private var cachedModelsAt = 0L
     @Volatile private var cachedCredential = ""
@@ -81,7 +80,7 @@ class GeminiContentService(private val keyStore: GeminiKeyStore) {
             } catch (error: GeminiApiException) {
                 last = error.message ?: last
                 if (error.statusCode == 429 || last.contains("quota", true) || last.contains("RESOURCE_EXHAUSTED", true)) {
-                    return@withContext PilotChatResult(failure = "API geçici kullanım sınırına ulaştı. Yerel Pilot görev denetimine devam ediyor.")
+                    return@withContext PilotChatResult(failure = error.message)
                 }
                 if (error.statusCode !in setOf(400, 404)) return@withContext PilotChatResult(failure = last.take(180))
             } catch (cancelled: CancellationException) {
@@ -124,7 +123,7 @@ class GeminiContentService(private val keyStore: GeminiKeyStore) {
         throw last ?: IllegalStateException("Pilot yanıtı alınamadı")
     }
 
-    fun resetConnection() { cachedModels = null; cachedModelsAt = 0L; cachedCredential = ""; PilotQuota.clear() }
+    fun resetConnection() { cachedModels = null; cachedModelsAt = 0L; cachedCredential = ""; PilotQuota.clear(); rateLimits.clear() }
 
     suspend fun generateTweetBatch(concept: String, count: Int, batch: Int, avoid: List<String>, model: String): List<String> = withContext(Dispatchers.IO) {
         val key = keyStore.load()?.takeIf(String::isNotBlank) ?: error("Önce Ayarlar > Pilot API anahtarını ekle")
@@ -193,6 +192,7 @@ class GeminiContentService(private val keyStore: GeminiKeyStore) {
     }
 
     private fun discoverModels(apiKey: String): List<GeminiModelDescriptor> {
+        rateLimits.check(apiKey, "_models")
         val endpoint = URL("https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000")
         val connection = (endpoint.openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
@@ -203,7 +203,7 @@ class GeminiContentService(private val keyStore: GeminiKeyStore) {
         return try {
             val code = connection.responseCode
             val body = readBody(connection, code)
-            if (code !in 200..299) throw httpError(code, body, "Gemini model listesi alınamadı", apiKey)
+            if (code !in 200..299) throw httpError(code, body, "Gemini model listesi alınamadı", apiKey, "_models", connection.getHeaderField("Retry-After"))
             val models = JSONObject(body).optJSONArray("models") ?: JSONArray()
             buildList {
                 for (index in 0 until models.length()) {
@@ -227,6 +227,7 @@ class GeminiContentService(private val keyStore: GeminiKeyStore) {
     private fun request(apiKey: String, model: String, prompt: String, maxTokens: Int = 2_048, timeoutMs: Int = 45_000, imageBase64: String? = null, schema: JSONObject? = null): String {
         val safeModel = GeminiModelResolver.normalize(model).take(80)
         require(safeModel.matches(Regex("[a-z0-9._-]+"))) { "Geçersiz Gemini model adı" }
+        rateLimits.check(apiKey, safeModel)
         val endpoint = URL("https://generativelanguage.googleapis.com/v1beta/models/$safeModel:generateContent")
         val payload = GeminiJson.payload(prompt, maxTokens, imageBase64, schema)
         val connection = (endpoint.openConnection() as HttpURLConnection).apply {
@@ -241,7 +242,7 @@ class GeminiContentService(private val keyStore: GeminiKeyStore) {
             connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
             val code = connection.responseCode
             val body = readBody(connection, code)
-            if (code !in 200..299) throw httpError(code, body, "Gemini isteği başarısız", apiKey)
+            if (code !in 200..299) throw httpError(code, body, "Gemini isteği başarısız", apiKey, safeModel, connection.getHeaderField("Retry-After"))
             val root = JSONObject(body)
             val parts = root.getJSONArray("candidates").getJSONObject(0).getJSONObject("content").getJSONArray("parts")
             buildList {
@@ -259,10 +260,8 @@ class GeminiContentService(private val keyStore: GeminiKeyStore) {
         (if (code in 200..299) connection.inputStream else connection.errorStream)
             ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
 
-    private fun httpError(code: Int, body: String, prefix: String, apiKey: String): GeminiApiException {
-        val reason = runCatching { JSONObject(body).optJSONObject("error")?.optString("message") }.getOrNull()
-        return GeminiApiException(code, "$prefix ($code): ${reason?.replace(apiKey, "[anahtar]")?.take(220) ?: "sunucu hatası"}")
-    }
+    private fun httpError(code: Int, body: String, prefix: String, apiKey: String, model: String, retryAfter: String?): GeminiApiException =
+        GeminiApiErrors.parse(code, body, prefix, apiKey, retryAfter).also { rateLimits.record(apiKey, model, it) }
 
     private fun buildPrompt(task: ScheduledTask, account: Account, count: Int): String = buildString {
         appendLine("Türkçe X içeriği üret. Yalnız geçerli bir JSON dizi döndür; açıklama ve markdown kullanma.")
