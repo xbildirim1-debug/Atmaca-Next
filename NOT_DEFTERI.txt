@@ -1,3 +1,24 @@
+# Atmaca Next 27.70 — Pilot devam cümleleri ve gerçek adet
+
+15 Ekim 2026. Temel: 27.69 teslim dalı 40f846af9a89642075282a4beca0f5292a1e370f.
+Paket com.atmacanext.v258, versionName27.70, versionCode218, Room6.
+
+Kullanıcının 13:11 ekranında örnekler gerçek Hazır yorum havuzundan gösterildi; ardından “1000 tane yap onları.” cümlesi yetki kontrolünde reddedildi. Kullanıcının program görevleri/Gemini içerik işleri ayrımı talimatı korunur.
+
+- Devam cümlesi cihazda çözülür. Önceki gerçekten kaydedilmiş üretimin havuzu ve konusu kullanılır; bunun için sohbet planlama API çağrısı yapılmaz. Yeni metinlerin kendisi yine Gemini anahtarı ve kullanılabilir kota gerektirir.
+- “1000 tane yap onları” toplam/adet ekleme yönünden belirsizdir. Pilot yerelde “toplam1000 mi,1000 yeni mi?” sorar; kullanıcı “toplam” veya “yeni ekle” diye yanıtlayabilir. “Onları toplam1000 yap/tamamla” ve “onlardan1000 yeni üret/1000 tane daha üret” doğrudan ayrılır.
+- Toplama tamamlama anındaki gerçek havuz adedini okur:100→1000 için900 üretir. Zaten hedefe ulaşılmışsa veya aşılmışsa metin silmez, üretim başlatmaz. Tek üretim1000, havuz10000 sınırı korunur; adet sessizce düşürülmez.
+- Konu her havuz için yalnız gerçekten en az bir metin kaydedilince kalıcı tutulur. Kısmi sonuçlar korunur.27.69'dan yükseltmede eski kullanıcı isteği ile gerçek başarılı/kısmi kayıt makbuzu eşleşirse konu kurtarılır; vaat,0 kayıt veya örnek gösterimi başarı sayılmaz.
+- Görev komutları, havuz silme/taşıma/kopyalama eski konuşmadan yetki almaz. Bağlamlı yol yalnız GENERATE üretebilir. İlgisiz mesajda bekleyen adet sorusu ve etkin konu odağı temizlenir. Ekli resim talimatı önceki konunun kaynağı yapılmaz.
+- Yerel örnek gösterme, rapor, kuyruk kontrolü ile Gemini yeni içerik/sohbet ayrımı değişmedi. Google kotası yükseltilmez, anahtar/model otomatik değiştirilmez. Veritabanı, X gezinmesi ve kullanıcı havuzları yerinde kalır.
+
+Değişenler: yeni PilotGenerationFollowup.kt ve PilotFollowup27_70Test.kt; PilotChatCoordinator.kt; sürüm ve CI paket/test doğrulaması.
+40 yeni test, toplam en az907 test bekleniyor. Bu hazırlık kaydı yazılırken yeni CI sonucu henüz yok. Fiziksel Android/X/tablet ve canlı Gemini anahtarıyla test yapılmadı. Eski imzayla APK teslimi derleme sonrasında ayrıca doğrulanacak. Özel anahtarlar kaynak/pakette yoktur.
+
+Kaynak yeni fix/27.70-pilot-followups dalına ve mevcut taslak PR13 dalına kaydedilir. Main f5a96f973170cad6933a50be2bf772fd5218d762 üzerinde kalır. Önceki otomatik onay reddi nedeniyle ana dala birleştirme veya Releases yayını yapılmaz. APK, tam kaynak/test/not paketi ve güncel devir ayrı teslim edilir.
+
+--- Önceki sürümün doğrulanmış kayıtları ---
+
 27.69 TESLİM VE GERÇEK DOĞRULAMA — 15 Ekim2026
 Kullanıcı talimatı: program içi görevler ile Gemini işleri birbirine karıştırılmayacak.
 Uygulama kaynağı: fix/27.69-pilot-local-tools / e5a7bddeaa58b1ba6c88267938451ce0d152a68d.
