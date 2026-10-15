@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.ai.GeminiQuota27_68Test" tests="20" skipped="0" failures="0" errors="0" timestamp="2026-10-15T08:52:36.857Z" hostname="runnervm8k3b6" time="0.091">
+  <properties/>
+  <testcase name="aLongServerDelayIsNotClampedToAnEarlyOneMinuteRetry" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.024"/>
+  <testcase name="screenshotCommandChoosesOneHundredRepliesWithoutAPlannerRequest" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.016"/>
+  <testcase name="fullDailyDetailAfterALongMessageIsReadBeforeDisplayTruncation" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.018"/>
+  <testcase name="whyAfterAQuotaErrorIsExplainedLocally" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.001"/>
+  <testcase name="longestServerDelayWinsAcrossHeaderAndBody" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.001"/>
+  <testcase name="nonQuotaErrorsKeepStatusAndRedactTheCredential" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.006"/>
+  <testcase name="malformedResponseStillGivesSafeTurkishQuotaNotice" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.0"/>
+  <testcase name="fractionalRetryInfoIsRoundedUpNotShortened" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.001"/>
+  <testcase name="gateBlocksOtherCallersUntilTheSameModelsServerDelay" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.006"/>
+  <testcase name="screenshotWithoutDetailsDoesNotInventADailyResetOrRetryLoop" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.0"/>
+  <testcase name="negativeAndOverflowingRetryHintsNeverStartAQuickLoop" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.002"/>
+  <testcase name="zeroDailyQuotaIsUnavailableAndNotAFakeTomorrowPromise" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.0"/>
+  <testcase name="retryAfterHttpDateIsRespected" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.001"/>
+  <testcase name="dailyResetUsesPacificWinterOffset" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.001"/>
+  <testcase name="unrelatedModelAndChangedCredentialAreNotBlockedByStaleState" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.004"/>
+  <testcase name="existingDirectControlsRemainLocalAfterQuotaFailure" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.004"/>
+  <testcase name="shorterLateResponseCannotOverwriteALongerQuotaBlock" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.003"/>
+  <testcase name="temporaryUnavailableUsesBoundedExponentialRetry" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.001"/>
+  <testcase name="preparedReplyCountAlsoSupportsAdetAndNoUnit" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.001"/>
+  <testcase name="preparedReplyNegationDoesNotCreateAMutation" classname="com.atmacanext.app.ai.GeminiQuota27_68Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
