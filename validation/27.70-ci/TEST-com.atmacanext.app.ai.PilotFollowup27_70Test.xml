@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.ai.PilotFollowup27_70Test" tests="42" skipped="0" failures="0" errors="0" timestamp="2026-10-15T14:29:52.976Z" hostname="runnervmmprz5" time="0.063">
+  <properties/>
+  <testcase name="removingTextsIsNotTreatedAsAddingMoreTexts" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.003"/>
+  <testcase name="unrelatedAnswerDoesNotConsumeAPendingQuestionAsAnAction" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.01"/>
+  <testcase name="screenshotInstructionsCannotSupplyARecoveredTopic" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="screenshotHistoryRecoversTheTopicPastExampleReadsAndTheFailedFollowup" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.004"/>
+  <testcase name="totalWithoutAPendingQuestionNeverBorrowsAnOldQuantity" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="pendingCountCanBeExplicitlyCorrected" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.002"/>
+  <testcase name="nativeTaskCommandsNeverInheritGenerationPermission" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="aFailedNewTopicDoesNotOverwriteTheLastSavedTopic" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.002"/>
+  <testcase name="aTotalAnswerUsesThePreviousCountAndConcept" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.002"/>
+  <testcase name="anotherBatchWithoutAPoolNounKeepsTheReplyPool" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="aPromiseOrZeroSavedReceiptDoesNotInventASavedTopic" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="receiptFromTheOtherPoolDoesNotRestoreThisTopic" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="aNewTextAnswerAddsRatherThanCompletes" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="sameTopicSurvivesTurkishDottedAndDotlessLetters" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="negatedRequestsDoNotStartGeneration" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="capacityIsCheckedBeforeAdding" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="zeroAndNegativeAmountsNeverCreateRequests" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="poolEditsCannotBeSmuggledIntoAFollowup" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="partialSuccessAlsoRestoresTheSavedTopic" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.002"/>
+  <testcase name="noMutationCanBeCreatedWithoutANonblankTopic" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="taskTypeNamesAreNeverMistakenForTheReplyPool" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="successfulOldReceiptRestoresTheOriginalConceptOnUpgrade" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="explicitTargetSuffixIsUnderstood" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="aPreviewCannotActAsASuccessfulGenerationReceipt" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="anExplicitDifferentPoolDoesNotInheritTheReplyTopic" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="freshExplicitGenerationStillUsesTheExistingPath" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="missingPriorConceptAsksForThePoolAndTopicWithoutGemini" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="aQuestionNeverStartsGeneration" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="aLargeTargetWithAnAllowedDeltaIsAccepted" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="screenshotReferenceAsksTheOnlyAmbiguousPartLocally" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="completing100ExistingTo1000Generates900" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="numericOverflowDoesNotBecomeThePendingCount" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="completionRechecksTheActualCountAtExecutionTime" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="twoPoolsCannotBeResolvedByAPronoun" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="aTargetAlreadyReachedDoesNothing" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="moreThan1000NewTextsIsRejected" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="aTargetBelowTheCurrentCountNeverDeletesTexts" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="aLargeTargetDoesNotSilentlyReduceTheRequestedDelta" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.007"/>
+  <testcase name="oldBroadAuthorizationIsNotRelaxedForTheWordYap" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <testcase name="readingExamplesDoesNotBecomeNewGeneration" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="explicit1000NewTextsAdds1000ToTheExisting100" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.0"/>
+  <testcase name="multipleCountsAskRatherThanTakingTheFirstNumber" classname="com.atmacanext.app.ai.PilotFollowup27_70Test" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

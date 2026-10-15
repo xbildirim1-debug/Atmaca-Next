@@ -1,3 +1,38 @@
+27.70 TESLİM VE GERÇEK DOĞRULAMA — 15 Ekim 2026
+Kullanıcı ekranı: “örnek göster” sonrası “1000 tane yap onları.” reddediliyordu.
+Artık referans önceki gerçekten kaydedilmiş yorum üretiminin havuz ve konusuna bağlanır.
+Adet belirsizse Pilot yerelde toplam1000/yeni1000 sorar. “Toplam” veya “yeni ekle” yanıtlanabilir.
+100 kayıt varken “Onları toplam1000 yap”900 yeni üretir; “Onlardan1000 yeni üret”1000 ekler.
+Hedef zaten dolu veya aşılmışsa silme/yeni üretim yoktur.1000 üretim/10000 havuz sınırı korunur.
+Son konu yalnız gerçek kayıtla güncellenir. Yükseltmede eski gerçek kayıt makbuzu ve kullanıcı isteği eşleştirilir.
+Yerel görev kontrolü/örnek okuma/rapor/havuz düzenleme Gemini sohbetinden ayrı kalır.
+Bağlamlı yol yalnız GENERATE yapabilir; önceki mesajlar görev veya silme/taşıma yetkisi vermez.
+Google kotası değişmez; yeni metin üretimi kullanılabilir Gemini bağlantısı/anahtarı/kotası gerektirir.
+
+Uygulama kaynağı: 89df15b5f6abe352d9bb6588b9e4b6bf14aa8f34
+Çalışma dalı: fix/27.70-pilot-followups; aynı kaynak mevcut taslak PR13 dalında.
+PR: https://github.com/xbildirim1-debug/Atmaca-Next/pull/13
+Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38751552589
+Test edilen CI checkout: 865bfebf562e7f3c44ce38fdf0bf1e843f72bff9
+Kaynak ZIP'indeki 503 dosya çalışma dalıyla Git blob düzeyinde aynı.
+909 test geçti;42 yeni PilotFollowup27_70Test;0 başarısız/hata/atlanan.
+Lint: {"Fatal": 0, "Error": 0, "Warning": 61, "Information": 0, "Hint": 8}
+İki tarihsel SQLite5→6 veri koruma kontrolü geçti.
+Paket com.atmacanext.v258,27.70/218,Room6,min26/target36.
+APK SHA256: 329ae7cfd2544a4f22121c037e57f7ae15591b9c4ccb10c42b70074b53de7684
+İmza SHA256: b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa
+Mevcut b52d8a15… anahtarıyla güncelleme APK'sı; uygulama kaldırılmadan kurulabilir.
+v2/v3 imza,CRC,16KiB hizalama geçti. İmza dışındaki tüm APK girdileri test edilen CI APK'sıyla aynı.
+BUILD_VERIFICATION.json ham CI APK'sını, UPDATE_VERIFICATION.json kurulum için verilen aynı imzalı APK'yı açıklar.
+Yeni sürüm fiziksel Android/X/tablette ve canlı Gemini anahtarıyla denenmedi.
+Kullanıcı ekranı önceki sürümdeki hatanın kanıtıdır;27.70 cihaz testi sayılmaz.
+Özel anahtarlar depoya/pakete eklenmedi.
+Main f5a96f973170cad6933a50be2bf772fd5218d762 üzerinde. Önceki otomatik onay reddi nedeniyle main'e birleştirme ve Releases yayını yapılmadı.
+Kaynak/testler/raporlar çalışma dalı ve taslak PR'de tutulur.
+Tam pakette kaynak ZIP'i test edilen CI checkout'unun değiştirilmemiş arşividir; bu dış teslim kaydı ZIP içindeki hazırlık notlarından daha günceldir.
+
+--- Uygulama değişiklikleri ve tarihsel notlar ---
+
 # Atmaca Next 27.70 — Pilot devam cümleleri ve gerçek adet
 
 15 Ekim 2026. Temel: 27.69 teslim dalı 40f846af9a89642075282a4beca0f5292a1e370f.
