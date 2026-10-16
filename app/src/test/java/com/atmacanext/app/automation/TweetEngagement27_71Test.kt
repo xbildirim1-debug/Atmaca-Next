@@ -103,5 +103,11 @@ class TweetEngagement27_71Test {
         assertEquals("peer", h.handle); assertEquals(0L, h.ageMinutes)
         assertEquals(1L, XTweetInspector.parseAgeMinutes("1m"))
     }
+    @Test fun menuConfirmationCannotSelectTheMainToolbarEvenWhenItSharesTheMenuColumn() {
+        val nodes = sheet(true).toMutableList()
+        nodes[0] = n("Yeniden gönder", 98, 460, "toolbar_retweet")
+        assertTrue(TweetEngagementEvidence.undoRepostSheet(nodes))
+        assertNull(TweetEngagementEvidence.repostConfirmation(nodes))
+    }
 
 }

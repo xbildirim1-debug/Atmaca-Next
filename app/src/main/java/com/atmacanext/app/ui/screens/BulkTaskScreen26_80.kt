@@ -92,8 +92,9 @@ private fun BulkTaskBody(modifier: Modifier, accounts: List<Account>, locked: Bo
     var link by remember { mutableStateOf("") }
     var extra by remember { mutableStateOf("") }
     var note by remember { mutableStateOf<String?>(null) }
-    val limit = limitText.toIntOrNull()
-    val linkOk = !activeKind.needsLink || link.trim().let { it.startsWith("http") && (it.contains("x.com") || it.contains("twitter.com")) }
+    val singlePost = activeKind.type in setOf(TaskType.LIKE, TaskType.RETWEET, TaskType.BOOKMARK)
+    val limit = if (singlePost) 1 else limitText.toIntOrNull()
+    val linkOk = !activeKind.needsLink || if (singlePost) com.atmacanext.app.automation.AccountEngagementTweetPolicy.validTweetUrl(link) else link.trim().let { it.startsWith("http") && (it.contains("x.com") || it.contains("twitter.com")) }
     val poolOk = when {
         activeKind.needsTweetPool -> TweetTextPool.count(context) > 0
         activeKind.needsCommentPool -> ReplyTextPool.count(context) > 0 || extra.isNotBlank()
@@ -143,7 +144,7 @@ private fun BulkTaskBody(modifier: Modifier, accounts: List<Account>, locked: Bo
             OutlinedTextField(
                 value = link,
                 onValueChange = { link = it.take(240) },
-                label = { Text("X bağlantısı") },
+                label = { Text(if (singlePost) "X gönderi bağlantısı" else "X bağlantısı") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -157,7 +158,8 @@ private fun BulkTaskBody(modifier: Modifier, accounts: List<Account>, locked: Bo
             )
         }
         OutlinedTextField(
-            value = limitText,
+            value = if (singlePost) "1" else limitText,
+            enabled = !singlePost,
             onValueChange = { limitText = it.filter(Char::isDigit).take(2) },
             label = { Text("Adet") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

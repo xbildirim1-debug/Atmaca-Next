@@ -926,6 +926,7 @@ private fun TaskEditorDialog(
         }
     }
 
+    val needsPostLink = selectedTypes.any { it in setOf(TaskType.LIKE, TaskType.RETWEET, TaskType.BOOKMARK) }
     val needsLink = selectedTypes.any(TaskType::requiresLink)
     val needsContent = selectedTypes.any(TaskType::supportsGemini)
     val crossAccount = TaskType.ACCOUNT_ENGAGEMENT in selectedTypes
@@ -948,6 +949,7 @@ private fun TaskEditorDialog(
         limit != null && limit in 1..100 && repeats != null && repeats in 1..100 && interval != null && interval in 1..1_440 &&
         (!crossAccount || (selectedTypes.size == 1 && selectedAccountIds.size >= 2 && availableAccounts.filter { it.id in selectedAccountIds }.all { it.active })) &&
         (!needsLink || validXUrl(targetUrl)) &&
+        (!needsPostLink || com.atmacanext.app.automation.AccountEngagementTweetPolicy.validTweetUrl(targetUrl)) &&
         (!needsContent || if (useGemini) prompt.isNotBlank() else content.isNotBlank() || poolCoversContent) &&
         (!needsQuoteTargets || (limit in 1..QuoteTaskSetupPolicy.MAX_POSTS_PER_TARGET &&
             selectedAccountIds.all { quoteHandlesByAccount[it].orEmpty().isNotEmpty() })) &&
@@ -1121,9 +1123,9 @@ private fun TaskEditorDialog(
                         OutlinedTextField(
                             value = targetUrl,
                             onValueChange = { targetUrl = it.trim() },
-                            label = { Text("X bağlantısı") },
+                            label = { Text(if (needsPostLink) "X gönderi bağlantısı" else "X bağlantısı") },
                             placeholder = { Text("https://x.com/.../status/...") },
-                            isError = targetUrl.isNotBlank() && !validXUrl(targetUrl),
+                            isError = targetUrl.isNotBlank() && (!validXUrl(targetUrl) || (needsPostLink && !com.atmacanext.app.automation.AccountEngagementTweetPolicy.validTweetUrl(targetUrl))),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                         )

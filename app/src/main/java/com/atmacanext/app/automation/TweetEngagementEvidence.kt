@@ -45,6 +45,7 @@ internal object TweetEngagementEvidence {
         val r = nodes[i]
         usable(r) && labels(r).any { it in XUiVocabulary.repostActions || it in XUiVocabulary.undoRepostActions } &&
             nodes.any { q -> usable(q) && labels(q).any { it in quote } && q.bounds.top >= r.bounds.bottom &&
+                q.bounds.top - r.bounds.bottom <= 4 * maxOf(q.bounds.bottom - q.bounds.top, r.bounds.bottom - r.bounds.top) &&
                 kotlin.math.abs(q.bounds.left - r.bounds.left) <= maxOf(q.bounds.bottom - q.bounds.top, r.bounds.bottom - r.bounds.top) }
     }
     fun repostSheet(nodes: List<NodeSnapshot>): Boolean = sheetRows(nodes).isNotEmpty()
