@@ -1870,7 +1870,7 @@ object AutomationController {
         peerHandle = peer; peerAtTop = false; peerScrolls = 0; peerCandidateSince = 0L; peerCandidateKey = null
         moveStage(XFlowStage.OPEN_PEER_PROFILE, "@$peer hesabının en yeni özgün gönderisi aranıyor")
         if (!service.launchXProfile(peer)) fail("Etkileşim hedefinin profili açılamadı")
-        else service.requestAutomationTick(500L)
+        else { nextActionNotBefore = System.currentTimeMillis() + 500L; service.requestAutomationTickExact(500L) }
     }
 
     private fun handleAccountEngagement(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
@@ -1887,11 +1887,13 @@ object AutomationController {
                         peerAtTop = true; peerScrolls = 0
                     }
                     moveStage(XFlowStage.SCAN_PEER_POST, "@$peerHandle için en yeni gönderi seçiliyor; sabitlenmiş gönderinin tarihi de karşılaştırılır")
-                    service.requestAutomationTick(350L)
+                    nextActionNotBefore = now + 350L
+                    service.requestAutomationTickExact(350L)
                 } else if (DiscoveryProfileEvidence.openedTarget(nodes, XIdentityDetector.detectProfileHandle(root), peerHandle) && peerScrolls < 6) {
                     peerScrolls++
                     ListGesture.backward(service, root)
-                    service.requestAutomationTick(650L)
+                    nextActionNotBefore = now + 700L
+                    service.requestAutomationTickExact(700L)
                 } else if (stageTimedOut(now)) pause("@$peerHandle profilinin üst bölümü doğrulanamadı; başka hesaba ait gönderiye işlem yapılmadı.")
                 else service.requestAutomationTick(300L)
             }
@@ -1927,13 +1929,15 @@ object AutomationController {
                     if (performStep(service, root, screen, "open_peer_post", chosen.key) { XTweetInspector.click(service, row) }) {
                         peerPost = DiscoveryTweetOpenRecovery.Attempt(chosen.key, peerHandle, chosen.text, 1, now)
                         moveStage(XFlowStage.OPEN_PEER_POST, "@$peerHandle gönderisinin yazarı ve metni doğrulanıyor")
-                        service.requestAutomationTick(450L)
+                        nextActionNotBefore = now + 450L
+                        service.requestAutomationTickExact(450L)
                     } else if (stageTimedOut(now)) pause("En yeni gönderi açılamadı; eski gönderiye geçilmedi.")
                     else service.requestAutomationTick(300L)
                 } else if (peerScrolls < 5) {
                     peerScrolls++; peerCandidateSince = 0L
                     ListGesture.forward(service, root)
-                    service.requestAutomationTick(650L)
+                    nextActionNotBefore = now + 700L
+                    service.requestAutomationTickExact(700L)
                 } else pause("@$peerHandle için doğrulanabilir özgün gönderi bulunamadı; hedef başarı sayılmadı.")
             }
             XFlowStage.OPEN_PEER_POST -> {
@@ -1946,7 +1950,8 @@ object AutomationController {
                         DiscoveryTweetOpenRecovery.matches(expected, DiscoveryTweetOpenRecovery.Candidate(it.key, it.author, XTweetInspector.text(it), it.ageMinutes), false)
                     }
                     if (row != null && XTweetInspector.click(service, row, expected.count)) peerPost = expected.copy(count = expected.count + 1, at = now)
-                    service.requestAutomationTick(400L)
+                    nextActionNotBefore = now + 400L
+                    service.requestAutomationTickExact(400L)
                 } else if (stageTimedOut(now)) pause("Açılan gönderinin kimliği doğrulanamadı; etkileşim yapılmadı.")
                 else service.requestAutomationTick(300L)
             }
