@@ -1,3 +1,34 @@
+27.71 TESLİM VE GERÇEK DOĞRULAMA — 16 Ekim2026
+Yeni görev: Hesaplar Arası Etkileşim. Kullanım: Görevler > + > Hesaplar Arası Etkileşim > en az2hesap seç > döngü/aralık > Oluştur > Görevi Başlat.
+Her hesap seçili diğer hesapların en yeni özgün tweetinde beğeni + yeniden gönder + kaydet durumlarını kontrol eder. Kendi hesabı atlanır.5hesapta20hedef/60işlem kontrolü/tur.
+RT düğmesinden sonra ekrandaki Yeniden gönder/Alıntı alt menüsünde yalnız Yeniden gönder seçilir. Yapılmış işlem tekrar tıklanıp geri alınmaz. Her hedef ancak üç durum da X üzerinde doğrulanınca ilerler.
+Seçili tweet görevlerinin tüm hesaplarda paylaşımı, hesaplar arası etkileşimden önce yapılır. Hesaplar tek kuyrukta sırayla doğrulanır. Döngü1–100,aralık1–1440dk; varsayılan1tur/5dk.
+Eski beğeni/RT/kaydet görevlerinde görünür ana tweet düğme satırı ve hedef yazar kontrolü kullanılır. Alıntı etiketi menü tanımaya eklendi. Yanıtların düğmeleri ana gönderinin başarısı sayılmaz.
+Bu program görevi Gemini gerektirmez. Önceki Pilot yerel/Gemini ayrımı, kota kuralları ve X sınırında duraklatma korunur.
+Hız ayarı yeni akışın profil/kaydırma oturma beklemesini yeniden kısaltmaz; gerçek zaman son tarihiyle ekran hareketi beklenir.
+Room6 ve uygulama kimliği korundu; hesaplar/havuzlar silinmedi.
+Doğrulanamayan yazar/zaman/metin, salt medya gönderisi veya tarama sınırında özgün gönderi bulunamaması başarı sayılmaz; görev duraklatılır. Ekran görüntüleri erişilebilirlik düğüm dökümü değildir.
+
+Uygulama kaynağı: f328e866695ff77080756df703ef059861c168f4
+Dal: fix/27.71-account-engagement; aynı kaynak mevcut taslak PR13 dalında.
+PR: https://github.com/xbildirim1-debug/Atmaca-Next/pull/13
+Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38855256496
+CI checkout: 279dbd13b901c58d85fa1ba9980048dc3a74796e; kaynak ZIP'indeki 514 dosya Git blob düzeyinde eşleşti.
+964test geçti;55yeni regresyon;0başarısız/hata/atlanan.
+Lint: {"Fatal": 0, "Error": 0, "Warning": 61, "Information": 0, "Hint": 8}
+İki tarihsel SQLite5→6 veri koruma kontrolü geçti.
+Paket com.atmacanext.v258,27.71/219,min26/target36,Room6.
+APK SHA256: 267b03aa2123d612dd13dcb56daa11321027eab1aec8bc3f7d41f7ca75e0c2b9
+İmza SHA256: b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa
+Eski b52d8a15… anahtarıyla güncelleme APK'sı. Mevcut uygulama kaldırılmadan kurulabilir.
+v2/v3,CRC,16KiB hizalama ve imza dışındaki tüm APK girdilerinin CI ile eşleşmesi doğrulandı.
+BUILD_VERIFICATION.json ham CI APK'sını, UPDATE_VERIFICATION.json kurulum APK'sını açıklar.
+Yeni sürüm fiziksel Android/X/tablette ve canlı Gemini anahtarıyla denenmedi; otomatik etkileşimler gerçek hesaplarda çalıştırılmadı.
+Kaynak/test/raporlar çalışma dalı ve taslak PR'de. Önceki otomatik onay reddi nedeniyle main ve Releases değiştirilmedi; main f5a96f973170cad6933a50be2bf772fd5218d762 üzerinde.
+Özel anahtarlar kaynak/pakette yoktur. İç kaynak ZIP'i test edilen checkout'un değiştirilmemiş arşividir; bu dış son teslim kaydı içerideki derleme öncesi hazırlık notlarından daha günceldir.
+
+--- Uygulama değişiklikleri ve tarihsel notlar ---
+
 # Atmaca Next 27.71 — Hesaplar arası etkileşim
 
 16 Ekim2026. Temel:27.70 son teslim dalı039daa0ff6c07facd4c4fd5fb39d9f57e2a627b4.

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.automation.TweetEngagement27_71Test" tests="31" skipped="0" failures="0" errors="0" timestamp="2026-10-16T05:22:48.396Z" hostname="runnervm8k3b6" time="0.016">
+  <properties/>
+  <testcase name="savedBookmarkIsRecognizedWithoutRemovingIt" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.002"/>
+  <testcase name="menuSelectionScalesWithWindowGeometry" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="labelsCanConfirmAlreadyDoneWithoutSelectedFlags" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.006"/>
+  <testcase name="unknownAuthorsTimesAndEmptyTextCannotBeGuessed" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="statisticsAreNotTheActionRow" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.001"/>
+  <testcase name="linkedTargetRequiresTheOpenedPostAuthor" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.001"/>
+  <testcase name="toolbarAloneCannotBeMistakenForTheConfirmationMenu" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="countsAndContentDescriptionsRemainActionEvidence" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="selectedReplyControlsCannotClaimTheMainPostIsDone" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.002"/>
+  <testcase name="quoteTextInAnUnalignedReplyDoesNotBecomeARepostMenu" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="justPostedSecondsAreRecognizedWithoutFallingBackToAnOlderTweet" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="englishQuoteMenuIsSupported" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="undoMenuNeverProvidesAPositiveRepostConfirmation" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="statusLinksWithShareParametersAreAccepted" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="aPinnedPostIsUsedIfItsTimestampReallyIsNewest" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="aSingleAmbiguousActionIsNotARealToolbar" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="hiddenToolbarDoesNotStealTheVisibleMainPost" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.001"/>
+  <testcase name="anOldPinnedPostDoesNotOverrideTheNewOriginalPost" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="plainTextIsNotAnAction" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="hiddenSheetIsNotClicked" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="republishedPostsFromOtherAuthorsAreExcluded" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="menuConfirmationCannotSelectTheMainToolbarEvenWhenItSharesTheMenuColumn" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="checkedLikeIsRecognizedWithoutTogglingItOff" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.001"/>
+  <testcase name="freshCombinedFeedHeadersRetainTheAuthorAndZeroMinuteAge" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="latestOwnPostHasNoTwoHourDiscoveryDelay" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="checkedRepostIsRecognizedWithoutUndo" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="screenshotUsesLikeRepostAndBookmarkControlsOnTheSameRow" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.001"/>
+  <testcase name="oldSheetClassifierAlsoRecognizesTheScreenshotAlintiLabel" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="screenshotAlintiSheetSelectsYenidenGonderRatherThanQuoteOrToolbar" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="profileAndExternalLinksAreRejectedForDirectEngagement" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <testcase name="disabledControlsAreNotClicked" classname="com.atmacanext.app.automation.TweetEngagement27_71Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

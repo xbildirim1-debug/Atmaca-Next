@@ -1,0 +1,38 @@
+{
+  "version": "27.71",
+  "version_code": 219,
+  "application_id": "com.atmacanext.v258",
+  "source_commit": "279dbd13b901c58d85fa1ba9980048dc3a74796e",
+  "build_kind": "draft_pr_ci_original_key_resigned",
+  "ci_run": "https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38855256496",
+  "same_application_bytes_as_ci": true,
+  "matches_uploaded_certificate": true,
+  "signing_cert_sha256": "b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa",
+  "device_tested": false,
+  "live_api_tested": false,
+  "zipalign_16kb": "PASS",
+  "apk": {
+    "filename": "AtmacaNext-27.71.apk",
+    "bytes": 18695579,
+    "sha256": "267b03aa2123d612dd13dcb56daa11321027eab1aec8bc3f7d41f7ca75e0c2b9",
+    "crc": "PASS"
+  },
+  "source_application_commit": "f328e866695ff77080756df703ef059861c168f4",
+  "source_files_verified": 514,
+  "tests": {
+    "tests": 964,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "new_engagement_tests": 55,
+  "lint": {
+    "Fatal": 0,
+    "Error": 0,
+    "Warning": 61,
+    "Information": 0,
+    "Hint": 8
+  },
+  "migration": "PASS: both historical v5 layouts preserved",
+  "physical_device_tested": false
+}
