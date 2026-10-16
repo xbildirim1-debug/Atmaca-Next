@@ -5,14 +5,14 @@ import org.json.JSONObject
 import java.text.Normalizer
 import java.util.Locale
 
-enum class PilotTool { GENERATE, TRANSFER, COPY, DELETE_LAST, UNDO_POOL, POOLS, REPORT, STATUS,
+enum class PilotTool { GENERATE, TRANSFER, COPY, DELETE_LAST, UNDO_POOL, POOLS, SHOW_POOL, TASKS, REPORT, STATUS,
     START, STOP, PAUSE, RESUME, SKIP_TASK, SKIP_ACCOUNT, STOP_GENERATION }
 data class PilotAction(val tool: PilotTool, val pool: ContentPool? = null, val destination: ContentPool? = null,
     val count: Int? = null, val concept: String = "", val types: List<TaskType> = emptyList(),
     val account: String? = null, val all: Boolean = false)
 data class PilotToolPlan(val say: String = "", val actions: List<PilotAction> = emptyList())
 
-/** Exact local operations first; ambiguous language goes to the conversational planner. */
+/** Program operations stay local; Gemini only handles conversation, images and new content. */
 object PilotIntentPolicy {
     fun normalized(raw: String): String = Normalizer.normalize(raw, Normalizer.Form.NFD)
         .replace(Regex("\\p{M}+"), "").lowercase(Locale.ROOT).replace('ı', 'i')
@@ -23,7 +23,7 @@ object PilotIntentPolicy {
         return listOfNotNull(tweet.find(s)?.range?.first?.let { it to ContentPool.TWEET },
             reply.find(s)?.range?.first?.let { it to ContentPool.REPLY }).sortedBy { it.first }.map { it.second }
     }
-    private fun number(s: String): Int? = Regex("(?<![0-9])([0-9]+)\\s*(?:tane|adet)?\\s*(?:tweet|twit|twet|metin|metn|yorum|gonderi|yazi)")
+    private fun number(s: String): Int? = Regex("(?<![0-9])([0-9]+)\\s*(?:tane|adet)?\\s*(?:hazir\\s+)?(?:tweet|twit|twet|metin|metn|yorum|gonderi|yazi)")
         .find(s)?.groupValues?.get(1)?.toLongOrNull()?.coerceAtMost(Int.MAX_VALUE.toLong())?.toInt()
         ?: Regex("\\bson\\s+(?:ekledigin\\s+)?([0-9]+)\\b").find(s)?.groupValues?.get(1)?.toIntOrNull()
     private fun negative(s: String): Boolean = Regex("\\b(yapma|silme|tasima|kopyalama|uretme|ekleme|durdurma|baslatma|istemiyorum)\\b").containsMatchIn(s)
@@ -31,6 +31,7 @@ object PilotIntentPolicy {
         val s = normalized(raw).trim().trimEnd('.', '!', '?')
         if (Regex("\\b(geri al|undo)\\b").containsMatchIn(s)) return PilotToolPlan(actions = listOf(PilotAction(PilotTool.UNDO_POOL)))
         if (negative(s)) return null
+        PilotProgramPolicy.examples(raw)?.let { return PilotToolPlan(actions = listOf(it)) }
         val selected = pools(s); val count = number(s)
         val transfer = Regex("\\b(tasi|aktar|transfer|move|kopyala)\\b").containsMatchIn(s) ||
             (Regex("\\b(sil|cikar)\\b").containsMatchIn(s) && Regex("\\bekle\\b").containsMatchIn(s))
@@ -56,12 +57,16 @@ object PilotIntentPolicy {
         if (Regex("kayit|log|hata|sikinti|takil|rapor").containsMatchIn(s) &&
             Regex("incele|analiz|en cok|en sik|neler|neden|rapor|duzelt").containsMatchIn(s))
             return PilotToolPlan(actions = listOf(PilotAction(PilotTool.REPORT)))
+        if (Regex("gorev|kuyruk|otomasyon").containsMatchIn(s) && Regex("neden|takil|hata").containsMatchIn(s))
+            return PilotToolPlan(actions = listOf(PilotAction(PilotTool.REPORT)))
+        if (Regex("gorev(?:ler|leri)?\\b").containsMatchIn(s) && Regex("goster|listele|neler var|hangileri|kac").containsMatchIn(s))
+            return PilotToolPlan(actions = listOf(PilotAction(PilotTool.TASKS)))
         if (Regex("havuz|metin").containsMatchIn(s) && Regex("kac|goster|sayisi|durum").containsMatchIn(s))
             return PilotToolPlan(actions = listOf(PilotAction(PilotTool.POOLS)))
         if (s.matches(Regex("durum|durum ne|ne durumda|ne yapiyorsun|hangi gorevdesin")))
             return PilotToolPlan(actions = listOf(PilotAction(PilotTool.STATUS)))
         if (Regex("\\b(baslat|calistir|basla)\\b").containsMatchIn(s)) {
-            val types = listOf("onayli" to TaskType.VERIFIED_FOLLOW, "yorumcu" to TaskType.COMMENTER_FOLLOW,
+            val types = listOf("hesaplar arasi" to TaskType.ACCOUNT_ENGAGEMENT, "onayli" to TaskType.VERIFIED_FOLLOW, "yorumcu" to TaskType.COMMENTER_FOLLOW,
                 "retweetci" to TaskType.RETWEETER_FOLLOW, "takip etmeyen" to TaskType.UNFOLLOW_NON_FOLLOWERS,
                 "takipten" to TaskType.UNFOLLOW, "tweet" to TaskType.TEXT_TWEET)
                 .mapNotNull { (word, type) -> Regex("\\b" + Regex.escape(word) + "\\b").find(s)?.range?.first?.let { it to type } }.sortedBy { it.first }.map { it.second }.distinct()
@@ -111,6 +116,9 @@ object PilotIntentPolicy {
             if (mentioned.size == 2 && setOf(action.pool, action.destination) != mentioned.toSet()) return false
         }
         return when (action.tool) {
+            PilotTool.SHOW_POOL -> PilotProgramPolicy.examples(raw)?.let { requested ->
+                (requested.pool == null || requested.pool == action.pool) && requested.count == action.count
+            } == true
             PilotTool.GENERATE -> Regex("\\b(uret|olustur|hazirla|yaz|ekle)\\b").containsMatchIn(s) &&
                 !Regex("\\b(sil|tasi|aktar|cikar)\\b").containsMatchIn(s)
             PilotTool.TRANSFER, PilotTool.COPY -> Regex("\\b(tasi|aktar|kopyala|transfer|move)\\b").containsMatchIn(s) ||

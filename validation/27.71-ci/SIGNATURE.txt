@@ -1,0 +1,17 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=Atmaca Next, OU=Atmaca, O=Atmaca, L=Istanbul, C=TR
+Signer #1 certificate SHA-256 digest: b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa
+Signer #1 certificate SHA-1 digest: 7fe0afa3708d86936787d2999bb4e5edf23b4d84
+Signer #1 certificate MD5 digest: 7ce92c8ba767fd8bbdb9afed752cc029
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 2048
+Signer #1 public key SHA-256 digest: 62daa0a057b628ff9a3c2f5d1e9e322a071c33d22ad54bfbc163319f83710c59
+Signer #1 public key SHA-1 digest: bde54357a588b0bb8a4ec3c1d102a4e1c3009b32
+Signer #1 public key MD5 digest: d01e26ce0d2b07f76e9e1381f23f9fba

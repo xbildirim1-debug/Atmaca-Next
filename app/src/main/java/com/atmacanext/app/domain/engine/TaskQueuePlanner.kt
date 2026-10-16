@@ -26,6 +26,7 @@ object TaskQueuePlanner {
         TaskType.COMMENTER_FOLLOW,
         TaskType.RETWEETER_FOLLOW,
         TaskType.QUOTER_FOLLOW,
+        TaskType.ACCOUNT_ENGAGEMENT,
     )
 
     /**
@@ -52,7 +53,7 @@ object TaskQueuePlanner {
             .filter { it.progress < it.totalLimit }
             .groupBy { it.accountId }
 
-        return buildList {
+        val ordered = buildList {
             activeAccounts.forEach { account ->
                 byAccount[account.id]
                     .orEmpty()
@@ -70,6 +71,10 @@ object TaskQueuePlanner {
                     }
             }
         }
+        // Posts from every selected account finish before cross-account engagement begins.
+        // All existing task types retain their account-major order.
+        return ordered.filter { it.taskType != TaskType.ACCOUNT_ENGAGEMENT } +
+            ordered.filter { it.taskType == TaskType.ACCOUNT_ENGAGEMENT }
     }
 
     fun nextRunnableIndex(items: List<QueueTaskItem>, afterIndex: Int): Int =

@@ -152,7 +152,7 @@ internal object DiscoveryScrollGesturePolicy {
     }
 
     private val sheetRepost = setOf("yeniden gönder", "repost", "retweet")
-    private val sheetQuote = setOf("alıntıla", "quote")
+    private val sheetQuote = setOf("alıntı", "alıntıla", "quote", "quote post", "quote tweet")
 
     /** The repost menu, not the tweet's own action icon and not a tab. */
     fun repostSheet(nodes: List<NodeSnapshot>): Boolean {

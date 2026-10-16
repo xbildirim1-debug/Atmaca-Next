@@ -234,6 +234,12 @@ class TaskOrchestrator(
         val account = repository.snapshotAccountDomains().firstOrNull { it.id == task.accountId }
             ?: return skipAndAdvance("Görev hesabı bulunamadı")
         if (!account.active) return skipAndAdvance("Hesap pasif: ${account.inactiveReason ?: "kullanıcı ayarı"}", skipAccount = true)
+        if (task.type == TaskType.ACCOUNT_ENGAGEMENT) {
+            if (!com.atmacanext.app.domain.engine.AccountEngagementPolicy.valid(task)) return failAndAdvance("Hesaplar arası etkileşim hedefleri geçersiz; görevi düzenle.")
+            val available = repository.snapshotAccountDomains().filter { it.active }.map { com.atmacanext.app.domain.engine.AccountEngagementPolicy.handle(it.username) }.toSet()
+            if (com.atmacanext.app.domain.engine.AccountEngagementPolicy.peers(task).any { it !in available })
+                return failAndAdvance("Seçili etkileşim hesaplarından biri silinmiş veya pasif; görevi düzenle.")
+        }
 
         val targets = when {
             task.type == TaskType.COMMENT_QUOTE_TARGETS -> task.quoteTargetHandles

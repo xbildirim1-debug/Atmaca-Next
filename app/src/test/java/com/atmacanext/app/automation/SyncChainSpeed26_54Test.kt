@@ -223,7 +223,8 @@ class SyncChainSpeed26_54Test {
                 AutomationController.stop()
                 field("stallRecoveryAttempts").setInt(AutomationController, 3)
                 field("stallRecoverySignature").set(AutomationController, "old-account")
-                assertTrue(AutomationController.start(ScheduledTask("second-$type", "2", "@account2", type = type, limit = 15,
+                assertTrue(AutomationController.start(ScheduledTask("second-$type", "2", "@account2", type = type, limit = if (type == TaskType.ACCOUNT_ENGAGEMENT) 1 else 15,
+                    contentPrompt = if (type == TaskType.ACCOUNT_ENGAGEMENT) "pusholder" else null,
                     targetUrl = "https://x.com/pusholder/status/1", contentText = "Metin", mediaUri = "content://image", quoteTargets = "pusholder"), listOf("pusholder")))
                 assertEquals(0, field("stallRecoveryAttempts").getInt(AutomationController))
                 assertEquals("", field("stallRecoverySignature").get(AutomationController))

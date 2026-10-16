@@ -140,27 +140,43 @@ object XUiActions {
         clickByIdOrLabel(service, root, listOf("unfollow"), XUiVocabulary.unfollowConfirmationActions)
 
     fun clickLike(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
-        clickByIdOrLabel(service, root, listOf("toolbar_like", "like_button", "favorite"), XUiVocabulary.likeActions)
+        clickTweetControl(service, root, TweetEngagementEvidence.Action.LIKE)
 
     fun isLiked(root: AccessibilityNodeInfo?): Boolean =
-        hasIdOrLabel(root, listOf("unlike", "liked"), XUiVocabulary.unlikeActions) || selectedNode(root, listOf("like", "favorite"))
+        tweetControl(root, TweetEngagementEvidence.Action.LIKE)?.done == true
 
     fun clickRepost(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
-        clickByIdOrLabel(service, root, listOf("toolbar_retweet", "retweet", "repost"), XUiVocabulary.repostActions)
+        clickTweetControl(service, root, TweetEngagementEvidence.Action.REPOST)
 
     fun clickRepostConfirmation(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
-        val node = findBottomExactAction(root, XUiVocabulary.repostActions) ?: return false
-        return GestureClick.click(service, node)
+        val nodes = AccessibilityTree.nodes(root, maxNodes = 1_200)
+        val index = TweetEngagementEvidence.repostConfirmation(nodes.map { it.toSnapshot() }) ?: return false
+        return GestureClick.click(service, nodes[index])
     }
 
     fun isReposted(root: AccessibilityNodeInfo?): Boolean =
-        hasIdOrLabel(root, listOf("undo_retweet", "undo_repost", "retweeted"), XUiVocabulary.undoRepostActions) || selectedNode(root, listOf("retweet", "repost"))
+        tweetControl(root, TweetEngagementEvidence.Action.REPOST)?.done == true
 
     fun clickBookmark(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
-        clickByIdOrLabel(service, root, listOf("bookmark", "save"), XUiVocabulary.bookmarkActions)
+        clickTweetControl(service, root, TweetEngagementEvidence.Action.BOOKMARK)
 
     fun isBookmarked(root: AccessibilityNodeInfo?): Boolean =
-        hasIdOrLabel(root, listOf("remove_bookmark", "bookmarked"), XUiVocabulary.removeBookmarkActions) || selectedNode(root, listOf("bookmark"))
+        tweetControl(root, TweetEngagementEvidence.Action.BOOKMARK)?.done == true
+
+    private fun tweetControl(root: AccessibilityNodeInfo?, action: TweetEngagementEvidence.Action) =
+        TweetEngagementEvidence.control(AccessibilityTree.snapshots(root, maxNodes = 1_200), action)
+
+    fun clickProfilePosts(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean {
+        val node = AccessibilityTree.nodes(root).firstOrNull { n -> n.isVisibleToUser && n.isEnabled &&
+            listOfNotNull(n.text?.toString(), n.contentDescription?.toString()).any { XUiVocabulary.normalize(it) in setOf("gönderiler", "posts") } } ?: return false
+        return GestureClick.click(service, node)
+    }
+
+    private fun clickTweetControl(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, action: TweetEngagementEvidence.Action): Boolean {
+        val nodes = AccessibilityTree.nodes(root, maxNodes = 1_200)
+        val control = TweetEngagementEvidence.control(nodes.map { it.toSnapshot() }, action) ?: return false
+        return !control.done && GestureClick.click(service, nodes[control.index])
+    }
 
     fun clickReply(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?): Boolean =
         clickByIdOrLabel(service, root, listOf("toolbar_reply", "reply"), XUiVocabulary.replyActions)

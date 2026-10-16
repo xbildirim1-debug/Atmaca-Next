@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" tests="24" skipped="0" failures="0" errors="0" timestamp="2026-10-16T05:22:48.513Z" hostname="runnervm8k3b6" time="0.012">
+  <properties/>
+  <testcase name="accountEngagementIsLocalAndDoesNotNeedAnExternalLinkOrGemini" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.001"/>
+  <testcase name="repeatRoundsPreservePeerOrder" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="duplicateHandlesCannotCreateSelfEngagementThroughAnotherId" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="storedSelfTargetIsRejected" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.001"/>
+  <testcase name="completedActorsAreNotRestartedByTheQueue" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="inactiveAccountsAreRejected" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="editingTheSameSelectionPreservesRealProgress" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="selfIsExcludedForEveryActor" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.002"/>
+  <testcase name="actorsRemainSerialAndInTheExistingDeterministicAccountOrder" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="fiveAccountsHave20BundlesAnd60ActionChecksPerRound" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.001"/>
+  <testcase name="aSingleAccountIsRejected" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="explicitAccountSelectionCannotGrowToUnselectedAccounts" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.001"/>
+  <testcase name="progressRestoresTheNextPeerWithoutStartingFromPeerOne" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="everyOrderedPairOccursExactlyOncePerRound" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.001"/>
+  <testcase name="moreThan10AccountsIsRejectedWithoutSilentDropping" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="changedPeerSelectionResetsProgressAndDoesNotClaimOldWork" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.001"/>
+  <testcase name="malformedHandlesAreRejected" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="everySelectedAccountPostsBeforeAnyCrossAccountEngagement" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.001"/>
+  <testcase name="twoAccountsEachEngageTheOther" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="storedLimitMustEqualThePeerCount" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="duplicateIdsAreRejected" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="pilotStartsOnlySavedCrossAccountTasksThroughTheLocalPath" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="duplicateOrInvalidStoredPeersAreRejected" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.0"/>
+  <testcase name="repeatsAndIntervalAreBounded" classname="com.atmacanext.app.domain.engine.AccountEngagement27_71Test" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

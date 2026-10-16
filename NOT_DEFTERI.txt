@@ -1,3 +1,204 @@
+27.71 TESLİM VE GERÇEK DOĞRULAMA — 16 Ekim2026
+Yeni görev: Hesaplar Arası Etkileşim. Kullanım: Görevler > + > Hesaplar Arası Etkileşim > en az2hesap seç > döngü/aralık > Oluştur > Görevi Başlat.
+Her hesap seçili diğer hesapların en yeni özgün tweetinde beğeni + yeniden gönder + kaydet durumlarını kontrol eder. Kendi hesabı atlanır.5hesapta20hedef/60işlem kontrolü/tur.
+RT düğmesinden sonra ekrandaki Yeniden gönder/Alıntı alt menüsünde yalnız Yeniden gönder seçilir. Yapılmış işlem tekrar tıklanıp geri alınmaz. Her hedef ancak üç durum da X üzerinde doğrulanınca ilerler.
+Seçili tweet görevlerinin tüm hesaplarda paylaşımı, hesaplar arası etkileşimden önce yapılır. Hesaplar tek kuyrukta sırayla doğrulanır. Döngü1–100,aralık1–1440dk; varsayılan1tur/5dk.
+Eski beğeni/RT/kaydet görevlerinde görünür ana tweet düğme satırı ve hedef yazar kontrolü kullanılır. Alıntı etiketi menü tanımaya eklendi. Yanıtların düğmeleri ana gönderinin başarısı sayılmaz.
+Bu program görevi Gemini gerektirmez. Önceki Pilot yerel/Gemini ayrımı, kota kuralları ve X sınırında duraklatma korunur.
+Hız ayarı yeni akışın profil/kaydırma oturma beklemesini yeniden kısaltmaz; gerçek zaman son tarihiyle ekran hareketi beklenir.
+Room6 ve uygulama kimliği korundu; hesaplar/havuzlar silinmedi.
+Doğrulanamayan yazar/zaman/metin, salt medya gönderisi veya tarama sınırında özgün gönderi bulunamaması başarı sayılmaz; görev duraklatılır. Ekran görüntüleri erişilebilirlik düğüm dökümü değildir.
+
+Uygulama kaynağı: f328e866695ff77080756df703ef059861c168f4
+Dal: fix/27.71-account-engagement; aynı kaynak mevcut taslak PR13 dalında.
+PR: https://github.com/xbildirim1-debug/Atmaca-Next/pull/13
+Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38855256496
+CI checkout: 279dbd13b901c58d85fa1ba9980048dc3a74796e; kaynak ZIP'indeki 514 dosya Git blob düzeyinde eşleşti.
+964test geçti;55yeni regresyon;0başarısız/hata/atlanan.
+Lint: {"Fatal": 0, "Error": 0, "Warning": 61, "Information": 0, "Hint": 8}
+İki tarihsel SQLite5→6 veri koruma kontrolü geçti.
+Paket com.atmacanext.v258,27.71/219,min26/target36,Room6.
+APK SHA256: 267b03aa2123d612dd13dcb56daa11321027eab1aec8bc3f7d41f7ca75e0c2b9
+İmza SHA256: b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa
+Eski b52d8a15… anahtarıyla güncelleme APK'sı. Mevcut uygulama kaldırılmadan kurulabilir.
+v2/v3,CRC,16KiB hizalama ve imza dışındaki tüm APK girdilerinin CI ile eşleşmesi doğrulandı.
+BUILD_VERIFICATION.json ham CI APK'sını, UPDATE_VERIFICATION.json kurulum APK'sını açıklar.
+Yeni sürüm fiziksel Android/X/tablette ve canlı Gemini anahtarıyla denenmedi; otomatik etkileşimler gerçek hesaplarda çalıştırılmadı.
+Kaynak/test/raporlar çalışma dalı ve taslak PR'de. Önceki otomatik onay reddi nedeniyle main ve Releases değiştirilmedi; main f5a96f973170cad6933a50be2bf772fd5218d762 üzerinde.
+Özel anahtarlar kaynak/pakette yoktur. İç kaynak ZIP'i test edilen checkout'un değiştirilmemiş arşividir; bu dış son teslim kaydı içerideki derleme öncesi hazırlık notlarından daha günceldir.
+
+--- Uygulama değişiklikleri ve tarihsel notlar ---
+
+# Atmaca Next 27.71 — Hesaplar arası etkileşim
+
+16 Ekim2026. Temel:27.70 son teslim dalı039daa0ff6c07facd4c4fd5fb39d9f57e2a627b4.
+Paket com.atmacanext.v258,27.71/versionCode219,Room6.
+
+Kullanıcı Etkileşim bölümünün çalışmadığını bildirdi; seçilen hesapların birbirlerinin son tweetine sırayla beğeni,RT ve kaydet işlemleri yapmasını istedi. Gönderilen iki ekran: Gönderi ayrıntısında yanıt/RT/beğeni/kaydet/paylaş satırı ve RT sonrasında “Yeniden gönder / Alıntı” alt menüsü. Görseller erişilebilirlik düğüm dökümü veya yeni APK cihaz testi değildir.
+
+- Yeni “Hesaplar Arası Etkileşim” kategorisinde2–10 aktif hesap seçilir. Her aktör için diğer seçili hesaplar hedef olur; kendi hesabına işlem yapılmaz. Limit hedef sayısından hesaplanır; döngü1–100 ve aralık1–1440dk kullanıcı tarafından seçilir. Varsayılan1tur,5dk.5hesap için turda20hedef/60işlem kontrolü vardır.
+- Tek seri kuyruk/aktif hesap doğrulaması korunur. Aynı seçimde tweet görevleri de varsa tüm hesapların paylaşımları etkileşimden önce yürür. Sonraki turda hesaplar yine aynı sırada çalışır; duraklat/devam/durdur mevcut kuyruktadır.
+- Hedefin Gönderiler sekmesi ve profil üst bölümü doğrulanır; kendi yazdığı en yeni görünen gönderinin tarihi karşılaştırılır. Başka yazarların RT'leri seçilmez; sabitlenmiş eski gönderi yeni özgün gönderiyi geçmez. Yeni atılan tweetin şimdi/saniye/dakika zamanları okunur. Bu görevde yorumcu/retweetçi takibinin2saat kuralı uygulanmaz; o modüllerin kuralı değişmedi.
+- Açılan gönderinin yazarı ve metni eşleşmeden beğeni/RT/kaydet yapılmaz. Her hedefte üç postcondition okunur. Yapılmış işlem yeniden tıklanıp geri alınmaz. Hedef ancak üçü de doğrulanırsa1birim ilerler. Bilinmeyen hedef veya okunamayan düğme başarı sayılmaz, görev duraklatılır.
+- Mevcut RT menü tespitinde “Alıntı” etiketi eksikti; eklendi. RT beklenirken doğrulanmış alt menü genel bilinmeyen pencere yolundan önce ele alınır. Yalnız “Yeniden gönder” seçilir; geri alma menüsünde pozitif onay yoktur.
+- Mevcut beğeni/RT/kaydet düğmelerinin bütün ekranı kapsayan araması yerine görünür birincil tweet düğme satırı kullanılır; yanıtların seçili düğmeleri ana gönderi başarısı sayılmaz. Gizli/etkisiz düğmeler ve istatistik sayaçları seçilmez. Doğrudan görevler için gerçek durum bağlantısı ve açılan yazar kontrolü eklendi. Görev oluşturma ekranları da gönderi bağlantısı ister; toplu beğeni/RT tek bağlantı için1hedef oluşturur.
+- Yerel Pilot “hesaplar arası etkileşim görevini başlat” ile kayıtlı görevi seçebilir. Gemini bu görevleri oluşturmaz/yürütmez; içerik üretimi ve program komutu ayrımı korunur. X sınırı gösterirse mevcut duraklatma davranışı korunur.
+- Yeni hedefler mevcut contentPrompt metin alanında, yalnız yeni görev türüne ait satır listesi olarak saklanır. Room şeması/migrasyon ve mevcut hesap/havuz verileri değişmedi. Hedef seçimi değiştirilirse bu görevin ilerlemesi sıfırlanır; aynı hedeflerle düzenlemede gerçek ilerleme korunur.
+
+Sınırlamalar: Erişilebilirlikte yazar/zaman/metni doğrulanamayan, salt medyadan oluşan veya tarama sınırında özgün gönderisi bulunamayan profil güvenle duraklatılır. Ekran resmi düğüm adlarını kanıtlamaz; fiziksel X cihaz testi hâlâ gereklidir.
+55 yeni regresyon testi eklendi; toplam en az964test bekleniyor. Derleme/test/lint sonucu bu hazırlık kaydı yazılırken henüz yok. Fiziksel Android/X/tablet veya canlı Gemini testi yapılmadı. Aynı eski b52d8a15… anahtarıyla teslim imzası CI sonrasında doğrulanacak.
+Kaynak yeni fix/27.71-account-engagement dalına ve mevcut taslak PR13 dalına kaydedilir. Main ve Releases, önceki otomatik onay reddi nedeniyle değiştirilmez. APK, tam kaynak/test/not paketi ve devir ayrı teslim edilir. Özel anahtarlar kaynak/pakette yoktur.
+
+--- Önceki doğrulanmış teslim ---
+
+27.70 TESLİM VE GERÇEK DOĞRULAMA — 15 Ekim 2026
+Kullanıcı ekranı: “örnek göster” sonrası “1000 tane yap onları.” reddediliyordu.
+Artık referans önceki gerçekten kaydedilmiş yorum üretiminin havuz ve konusuna bağlanır.
+Adet belirsizse Pilot yerelde toplam1000/yeni1000 sorar. “Toplam” veya “yeni ekle” yanıtlanabilir.
+100 kayıt varken “Onları toplam1000 yap”900 yeni üretir; “Onlardan1000 yeni üret”1000 ekler.
+Hedef zaten dolu veya aşılmışsa silme/yeni üretim yoktur.1000 üretim/10000 havuz sınırı korunur.
+Son konu yalnız gerçek kayıtla güncellenir. Yükseltmede eski gerçek kayıt makbuzu ve kullanıcı isteği eşleştirilir.
+Yerel görev kontrolü/örnek okuma/rapor/havuz düzenleme Gemini sohbetinden ayrı kalır.
+Bağlamlı yol yalnız GENERATE yapabilir; önceki mesajlar görev veya silme/taşıma yetkisi vermez.
+Google kotası değişmez; yeni metin üretimi kullanılabilir Gemini bağlantısı/anahtarı/kotası gerektirir.
+
+Uygulama kaynağı: 89df15b5f6abe352d9bb6588b9e4b6bf14aa8f34
+Çalışma dalı: fix/27.70-pilot-followups; aynı kaynak mevcut taslak PR13 dalında.
+PR: https://github.com/xbildirim1-debug/Atmaca-Next/pull/13
+Başarılı CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38751552589
+Test edilen CI checkout: 865bfebf562e7f3c44ce38fdf0bf1e843f72bff9
+Kaynak ZIP'indeki 503 dosya çalışma dalıyla Git blob düzeyinde aynı.
+909 test geçti;42 yeni PilotFollowup27_70Test;0 başarısız/hata/atlanan.
+Lint: {"Fatal": 0, "Error": 0, "Warning": 61, "Information": 0, "Hint": 8}
+İki tarihsel SQLite5→6 veri koruma kontrolü geçti.
+Paket com.atmacanext.v258,27.70/218,Room6,min26/target36.
+APK SHA256: 329ae7cfd2544a4f22121c037e57f7ae15591b9c4ccb10c42b70074b53de7684
+İmza SHA256: b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa
+Mevcut b52d8a15… anahtarıyla güncelleme APK'sı; uygulama kaldırılmadan kurulabilir.
+v2/v3 imza,CRC,16KiB hizalama geçti. İmza dışındaki tüm APK girdileri test edilen CI APK'sıyla aynı.
+BUILD_VERIFICATION.json ham CI APK'sını, UPDATE_VERIFICATION.json kurulum için verilen aynı imzalı APK'yı açıklar.
+Yeni sürüm fiziksel Android/X/tablette ve canlı Gemini anahtarıyla denenmedi.
+Kullanıcı ekranı önceki sürümdeki hatanın kanıtıdır;27.70 cihaz testi sayılmaz.
+Özel anahtarlar depoya/pakete eklenmedi.
+Main f5a96f973170cad6933a50be2bf772fd5218d762 üzerinde. Önceki otomatik onay reddi nedeniyle main'e birleştirme ve Releases yayını yapılmadı.
+Kaynak/testler/raporlar çalışma dalı ve taslak PR'de tutulur.
+Tam pakette kaynak ZIP'i test edilen CI checkout'unun değiştirilmemiş arşividir; bu dış teslim kaydı ZIP içindeki hazırlık notlarından daha günceldir.
+
+--- Uygulama değişiklikleri ve tarihsel notlar ---
+
+# Atmaca Next 27.70 — Pilot devam cümleleri ve gerçek adet
+
+15 Ekim 2026. Temel: 27.69 teslim dalı 40f846af9a89642075282a4beca0f5292a1e370f.
+Paket com.atmacanext.v258, versionName27.70, versionCode218, Room6.
+
+Kullanıcının 13:11 ekranında örnekler gerçek Hazır yorum havuzundan gösterildi; ardından “1000 tane yap onları.” cümlesi yetki kontrolünde reddedildi. Kullanıcının program görevleri/Gemini içerik işleri ayrımı talimatı korunur.
+
+- Devam cümlesi cihazda çözülür. Önceki gerçekten kaydedilmiş üretimin havuzu ve konusu kullanılır; bunun için sohbet planlama API çağrısı yapılmaz. Yeni metinlerin kendisi yine Gemini anahtarı ve kullanılabilir kota gerektirir.
+- “1000 tane yap onları” toplam/adet ekleme yönünden belirsizdir. Pilot yerelde “toplam1000 mi,1000 yeni mi?” sorar; kullanıcı “toplam” veya “yeni ekle” diye yanıtlayabilir. “Onları toplam1000 yap/tamamla” ve “onlardan1000 yeni üret/1000 tane daha üret” doğrudan ayrılır.
+- Toplama tamamlama anındaki gerçek havuz adedini okur:100→1000 için900 üretir. Zaten hedefe ulaşılmışsa veya aşılmışsa metin silmez, üretim başlatmaz. Tek üretim1000, havuz10000 sınırı korunur; adet sessizce düşürülmez.
+- Konu her havuz için yalnız gerçekten en az bir metin kaydedilince kalıcı tutulur. Kısmi sonuçlar korunur.27.69'dan yükseltmede eski kullanıcı isteği ile gerçek başarılı/kısmi kayıt makbuzu eşleşirse konu kurtarılır; vaat,0 kayıt veya örnek gösterimi başarı sayılmaz.
+- Görev komutları, havuz silme/taşıma/kopyalama eski konuşmadan yetki almaz. Bağlamlı yol yalnız GENERATE üretebilir. İlgisiz mesajda bekleyen adet sorusu ve etkin konu odağı temizlenir. Ekli resim talimatı önceki konunun kaynağı yapılmaz.
+- Yerel örnek gösterme, rapor, kuyruk kontrolü ile Gemini yeni içerik/sohbet ayrımı değişmedi. Google kotası yükseltilmez, anahtar/model otomatik değiştirilmez. Veritabanı, X gezinmesi ve kullanıcı havuzları yerinde kalır.
+
+Değişenler: yeni PilotGenerationFollowup.kt ve PilotFollowup27_70Test.kt; PilotChatCoordinator.kt; sürüm ve CI paket/test doğrulaması.
+42 yeni test, toplam en az909 test bekleniyor. Bu hazırlık kaydı yazılırken yeni CI sonucu henüz yok. Fiziksel Android/X/tablet ve canlı Gemini anahtarıyla test yapılmadı. Eski imzayla APK teslimi derleme sonrasında ayrıca doğrulanacak. Özel anahtarlar kaynak/pakette yoktur.
+
+Kaynak yeni fix/27.70-pilot-followups dalına ve mevcut taslak PR13 dalına kaydedilir. Main f5a96f973170cad6933a50be2bf772fd5218d762 üzerinde kalır. Önceki otomatik onay reddi nedeniyle ana dala birleştirme veya Releases yayını yapılmaz. APK, tam kaynak/test/not paketi ve güncel devir ayrı teslim edilir.
+
+--- Önceki sürümün doğrulanmış kayıtları ---
+
+27.69 TESLİM VE GERÇEK DOĞRULAMA — 15 Ekim2026
+Kullanıcı talimatı: program içi görevler ile Gemini işleri birbirine karıştırılmayacak.
+Uygulama kaynağı: fix/27.69-pilot-local-tools / e5a7bddeaa58b1ba6c88267938451ce0d152a68d.
+Aynı uygulama değişikliği mevcut taslak PR13 dalında da var: https://github.com/xbildirim1-debug/Atmaca-Next/pull/13
+Başarılı PR CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38712143606
+Test edilen checkout: 47d86590e2cfc46bc2bbec838b6ceca0114c9507. Kaynak ZIP'indeki496 dosya çalışma dalıyla Git blob düzeyinde aynı.
+867 test geçti;30 yeni PilotProgram27_69Test;0 başarısız/hata/atlanan.
+Lint0 Error/Fatal,58 Warning,8 Hint. İki tarihsel SQLite5→6 veri koruma kontrolü geçti.
+Paket com.atmacanext.v258,27.69/217,Room6,min26/target36.
+Aynı b52d8a15… sertifikasıyla güncelleme APK'sı; mevcut27.64–27.68 üzerine uygulama kaldırılmadan kurulabilir.
+APK SHA256: 68ecf2dc2b48aa399f884768f5d63cc452dfc484bbbf98b4c8aa0bdfc17c8318
+İmza SHA256: b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa
+v2/v3 imza,CRC,16 KiB hizalama geçti. İmza dışındaki151 APK girdisi CI ile aynı; yeni PilotProgramPolicy bytecode'da mevcut,3 DEX dosyası27.68'e göre değişti.
+BUILD_VERIFICATION.json ham CI APK'sını; UPDATE_VERIFICATION.json kullanıcının kuracağı aynı imzalı APK'yı açıklar.
+Yeni APK fiziksel telefon/X/tablette ve canlı Gemini anahtarıyla denenmedi. Kullanıcının100/100 kaydı önceki27.68 ekranının kanıtıdır;27.69 cihaz testi sayılmaz.
+Google kotası değiştirilmez. Yerel okuma/komutlar kotaya bağlanmaz; yeni metin üretimi ve sohbet kullanılabilir API bağlantısı/kotası gerektirir.
+Program komutları ve raporlar otomatik sohbet isteği göndermez. API sohbet şeması yalnız GENERATE sunar; program kuyruğu veya havuz düzenleme eylemleri içeren API planı tümüyle reddedilir.
+Okunan örnekler mevcut kayıtların kendisidir; okuma içeriği veya yayın sırasını değiştirmez ve örnek metinlerini teşhis loguna kopyalamaz.
+Özel anahtarlar depoya/pakete konmadı. Main ve Releases güncellenmedi: önceki otomatik onay reddi geçerli, kullanıcı ana dala birleştirmeye açık onay vermedi.
+Main f5a96f973170cad6933a50be2bf772fd5218d762 üzerinde. Kaynak ve gerçek raporlar ayrı çalışma dalı ve taslak PR13'te tutulur.
+Tam paketteki kaynak ZIP'i test edilen CI checkout'unun değiştirilmemiş arşividir. Bu dış son teslim kaydı ZIP içindeki derleme öncesi notlardan daha günceldir.
+
+--- 27.69 uygulama değişiklikleri ve tarihsel notlar ---
+
+# Atmaca Next27.69 — program araçları ve Gemini içerik işlerinin ayrılması
+
+15 Ekim2026. Temel:27.68 teslim dalı e78792f4213c22b5144e63738f1afd7759979472; main27.67 üzerinde kaldı.
+Paket com.atmacanext.v258,27.69/versionCode217,Room6.
+
+12:07 kullanıcı ekranında Hazır yorum100/100 kaydı başarılı, ardından “örnek neler var” mesajına Gemini limit0 hatası görüldü. Kullanıcı program içi görevlerle Gemini işlerinin karıştırılmamasını istedi.
+
+- Program araçları (görev yönetimi/listesi, sayaçlar, gerçek log raporu, mevcut metinleri görme/taşıma/silme) yerel komut yolunda çalışır ve sohbet API'sine gönderilmez. Yerel rapor sonrasında otomatik Gemini açıklaması da kaldırıldı. Eksik görev/havuz adı cihazda sorulur.
+- API sohbet şemasında yalnız yeni içerik GENERATE eylemi bulunur. API yanıtı programı başlatma/durdurma veya havuz düzenleme eylemi önerirse tüm bu plan reddedilir. Mevcut metni okuma yeni üretime dönüşmez. Metin üretimini durdurmak program kuyruğunu durdurmaz; programı durdurmak da üretim iptali değildir.
+- “örnek neler var”, “hazır yorumları göster”, “son5 yorumdan örnek göster” mevcut havuzdan en fazla20 gerçek kayıt gösterir. Son havuz ayrı tercihte tutulur;27.68'in son gerçek üretim makbuzundan da bulunur. Hangi havuz olduğu belirsizse sorulur; boş havuza örnek uydurulmaz. Okuma havuzu ve yayın cursor'unu değiştirmez; metin içeriği teşhis loguna kopyalanmaz.
+- Sohbetin orderedCandidates, üretimin pilotCandidates kullanması bulundu. Her iki yol aynı pilotCandidates seçim kuralına alındı; katalogda görünmek kullanılabilir kota kanıtı sayılmaz. Kullanıcının açık model tercihi ve429 bekleme kuralları korunur. Google kotası yükseltilmez,429 üzerine otomatik anahtar/model değişimi yapılmaz.
+- Yeni içerik/görsel inceleme ve genel sohbet Gemini bağlantısındadır. useGemini içeriği gerektiren kayıtlı görev yine içerik üretimi için kota gerektirebilir; yerel kontrol/kayıt okuma bu kotaya bağlanmaz.
+
+Değişenler: PilotProgramPolicy.kt (yeni), PilotIntentPolicy.kt, PilotChatCoordinator.kt, PilotIntentSchema.kt, GeminiContentService.kt, GeminiModelResolver.kt; sürüm/paketleme, test doğrulama ve devir notları. X gezinme/hesap senkronu/veritabanı değişmedi.
+
+30 yeni PilotProgram27_69Test; toplam en az867 bekleniyor. Yeni CI sonucu henüz yok. Fiziksel telefon/X ve canlı Gemini testi yapılmadı. Aynı b52d8a15… anahtarıyla APK teslimi derleme sonrasında doğrulanacak. Özel anahtar depoya/pakete eklenmez.
+
+Kaynak ayrı27.69 çalışma dalı ve mevcut taslak PR13'te tutulacak. Ana dal için önceki otomatik onay reddi geçerli; kullanıcı ana dala birleştirmeye henüz açık onay vermedi. Main'e veya Releases'e yayın yapılmayacak. APK, tam paket ve devir dosyası ayrı teslim edilecek.
+
+--- Önceki teslim kayıtları ---
+
+27.68 TESLİM VE GERÇEK DOĞRULAMA — 15 Ekim 2026
+Uygulama kaynağı: fix/27.68-pilot-quota / 16b3bb23432dd314264a83de7b4caa1d17ae079b.
+Taslak PR: https://github.com/xbildirim1-debug/Atmaca-Next/pull/13 (birleştirilmedi).
+Başarılı PR CI: https://github.com/xbildirim1-debug/Atmaca-Next/actions/runs/38708544183
+Test edilen CI checkout: 51a6674ded2a282cc0fa30ca032cdfdf97ef0a8b; kaynak ZIP'indeki489 dosya çalışma dalıyla Git blob düzeyinde eşleşti.
+837 test geçti; 20 yeni Gemini kota/komut regresyonu; 0 başarısız/hata/atlanan.
+Lint0 Error/Fatal,57 Warning,8 Hint. İki tarihsel SQLite5→6 kontrolü geçti.
+Paket com.atmacanext.v258,27.68/216,Room6,min26/target36.
+APK eski b52d8a15… sertifikasıyla imzalandı. Mevcut27.64–27.67 üzerine uygulama kaldırılmadan güncellenebilir.
+APK SHA256: a3c69ec7d790772b05d57d39787a5f96ebd2ec1897b126726adcb50d12773aa8
+İmza SHA256: b52d8a15d0dbeb9e16ee7629aa44c026a991c4b8374eaf61134d1556f0da21fa
+APK imza v2/v3, CRC ve16 KiB hizalama geçti. İmza dışındaki151 APK girdisi CI ile aynı.
+BUILD_VERIFICATION.json ham CI derlemesini; UPDATE_VERIFICATION.json kullanıcının kuracağı aynı imzalı APK'yı açıklar.
+Google kotası değiştirilmedi; ücretsiz/sınırsız API veya başarılı canlı üretim garantisi verilmez.
+Yeni APK fiziksel Android/X/tablette ve canlı Gemini anahtarıyla denenmedi.
+Otomatik onay denetimi ana dala doğrudan gönderimi, kullanıcı bu yayını açıkça istemediği gerekçesiyle reddetti.
+Bu nedenle main f5a96f973170cad6933a50be2bf772fd5218d762 üzerinde kaldı; kaynak/testler taslak PR13 dalında.
+Ana dala birleştirme ve Releases yayını yapılmadı. Özel anahtarlar depoya/pakete eklenmedi.
+Tam paketteki kaynak ZIP'i test edilen CI checkout'unun değiştirilmemiş489 dosyalık arşividir; bu dış teslim kaydı derleme öncesi hazırlık notlarından daha günceldir.
+
+--- 27.68 değişiklik açıklaması ve önceki kayıtlar ---
+
+# Atmaca Next 27.68 — Pilot Gemini kota hatası
+
+15 Ekim 2026. Temel f5a96f973170cad6933a50be2bf772fd5218d762 (27.67).
+Paket com.atmacanext.v258, versionCode216, Room6.
+
+Kullanıcının 11:40 ekranında Gemini 429 kota yanıtı ve “100 tane hazır yorum metni hazırla ekle. şaşırma ve merak içerikli kısa” komutu görüldü. Ekranda kota ayrıntıları kesildiği için dakikalık/günlük/limit0 ayrımı kesin yapılamaz. Google kotası uygulama tarafından yükseltilmez; ücretsiz veya sınırsız API garantisi verilmez.
+
+Düzeltmeler:
+- Hazır yorumdan önceki sayı/tane/adet doğrudan yerel planda REPLY havuzuna bağlanır. Gereksiz sohbet planlama API çağrısı yapılmaz; gerçek metin üretimi yine kullanıcının Gemini anahtarını ve kullanılabilir kotayı gerektirir.
+- Tam 429 JSON ayrıntıları görüntü kısaltmasından önce okunur. Günlük kota, limit0, belirtilen kısa bekleme ve süresi bilinmeyen kota ayrı Türkçe açıklanır. Yalnız kesin günlük kota için America/Los_Angeles gece yarısı sıfırlaması hesaplanır. RetryInfo ve Retry-After içindeki en uzun bekleme korunur.
+- Aynı servis oturumundaki sohbet, üretim, bağlantı testi ve arka plan danışma çağrıları anahtar parmak izi/model bazında ortak bekleme kapısını kullanır. Kota aşılınca başka modele/anahtara otomatik kaçış yapılmaz. Bu bekleme uygulama işlemi yeniden başlatılırsa sıfırlanır; sunucu kotası sıfırlanmış sayılmaz.
+- Günlük, limit0 veya süresi bilinmeyen kotada otomatik üretim denemesi yapılmaz. Geçici 429/503 için en fazla iki kontrollü tekrar; sunucu 60 saniyeden uzun süre verdiyse erken tekrar yerine durum açıklanır. İptal ve daha önce kaydedilmiş kısmi sonuçlar korunur.
+- “neden?” son kota açıklamasını yeni API çağrısı olmadan gösterir. Yerel durdur/duraklat/devam ve havuz işlemleri API'den bağımsızdır. Ayarlar'a resmi Gemini kullanım sınırları bağlantısı eklendi.
+
+Değişen dosyalar: GeminiApiErrors.kt (yeni), GeminiContentService.kt, PilotChatCoordinator.kt, PilotIntentPolicy.kt, SettingsScreen.kt, app/build.gradle.kts, salt contents:read derlemenin paket adları ve verify_delivery.py. Hesap senkronu, yorumcu/retweetçi X gezinmesi veya veritabanı şeması değiştirilmedi.
+
+20 yeni GeminiQuota27_68Test regresyonu eklendi. Toplam en az837 test bekleniyor; yeni derleme/test/lint sonucu henüz yok. Fiziksel Android/X veya canlı Gemini anahtarıyla test yapılmadı. Ekran görüntüsü önceki 27.67'nin hata kanıtıdır. İmza yeni derleme tamamlanınca mevcut b52d8a15… anahtarıyla doğrulanacak; özel anahtar depoya/pakete eklenmez.
+
+Kaynak/testler fix/27.68-pilot-quota dalında hazırlanıyor; main'e kaydedilip mevcut salt-okuma CI çalıştırılacak. Releases yayın workflow'u önceki contents:write otomatik onay reddi nedeniyle etkinleştirilmeyecek. APK ve kaynak/test/not paketi ayrı kalıcı teslim edilecek.
+
+Resmi kaynaklar: https://ai.google.dev/gemini-api/docs/rate-limits ve https://ai.google.dev/gemini-api/docs/troubleshooting (15 Ekim 2026 kontrolü).
+
+
+--- Önceki sürüm kayıtları ---
+
 27.67 TESLİM VE GERÇEK DOĞRULAMA — 15 Ekim 2026
 Kaynak/testler: main ve feature/27.67-engagement-pilot.
 APK uygulama kaynak commit: a64ed332febffd333705fe031d6d1c0f1113f97d.

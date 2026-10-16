@@ -5,7 +5,7 @@ data class GeminiModelDescriptor(
     val supportedGenerationMethods: Set<String>,
 )
 
-/** Chooses only text models that the current API key explicitly reports as usable. */
+/** Catalog support is not proof of a usable quota. HTTP quota errors remain authoritative. */
 object GeminiModelResolver {
     fun orderedCandidates(
         models: List<GeminiModelDescriptor>,
@@ -25,7 +25,7 @@ object GeminiModelResolver {
             .toList()
     }
 
-    /** Free-tier chat prefers Flash-Lite. It has the larger daily allowance. */
+    /** Use one auto selection policy for chat and content; explicit model preferences stay first. */
     fun pilotCandidates(models: List<GeminiModelDescriptor>, requestedModel: String?): List<String> {
         val ordered = orderedCandidates(models, requestedModel)
         val requested = normalize(requestedModel).takeUnless { it.isBlank() || it == "auto" }

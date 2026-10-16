@@ -170,6 +170,8 @@ class BatchCommentReturn26_53Test {
                 field("engagerReturnLastBackAt").setLong(controller, 1400)
                 field("engagerParentAuthor").set(controller, "oldparent")
                 val started = controller.start(ScheduledTask("new-$type", "2", "account2", type = type,
+                    limit = if (type == TaskType.ACCOUNT_ENGAGEMENT) 1 else 35,
+                    contentPrompt = if (type == TaskType.ACCOUNT_ENGAGEMENT) "pusholder" else null,
                     contentText = "Metin", quoteTargets = "pusholder", targetUrl = "https://x.com/pusholder/status/1", mediaUri = "content://image"), listOf("pusholder"))
                 assertTrue(type.toString(), started)
                 assertFalse(controller.state.value.accountVerified)

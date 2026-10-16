@@ -30,6 +30,8 @@ class PilotChatCoordinator(context: Context) {
     private var generationVersion = 0L
     private var conversationJob: Job? = null
     private var conversationVersion = 0L
+    private var lastApiFailure: String? = null
+    private var pendingGeneration: PilotGenerationFollowup.Pending? = null
     private var imageVersion = 0L
     private val memory = app.getSharedPreferences("pilot_agent_v2767", Context.MODE_PRIVATE)
     private val _state = MutableStateFlow(PilotChatState(
@@ -39,6 +41,21 @@ class PilotChatCoordinator(context: Context) {
         replyCount = ContentPoolStore.lines(app, ContentPool.REPLY).size))
     val state = _state.asStateFlow()
 
+    private fun generationContext(): PilotGenerationContext? {
+        // An empty focus is deliberate: an unrelated conversation must not reuse a pool pronoun.
+        val stored = memory.getString("followup_pool", null)
+        val pool = runCatching { ContentPool.valueOf(stored ?: memory.getString("last_pool", "").orEmpty()) }.getOrNull()
+            ?: (if (stored == null) PilotProgramPolicy.recentPool(memory.getString("last_receipt", null)) else null)
+            ?: return null
+        val concept = memory.getString("generation_concept_${pool.name}", null)?.takeIf { it.isNotBlank() }
+        if (concept != null) return PilotGenerationContext(pool, concept)
+        return PilotGenerationFollowup.recover(pool, _state.value.lines.map {
+            PilotGenerationFollowup.Turn(it.mine, it.text, it.imagePath != null)
+        })?.also { memory.edit().putString("generation_concept_${pool.name}", it.concept.take(2_000)).apply() }
+    }
+
+    private fun clearGenerationFocus() { memory.edit().putString("followup_pool", "").apply() }
+
     private fun refreshCounts() { _state.update { it.copy(poolCount = ContentPoolStore.lines(app, ContentPool.TWEET).size,
         replyCount = ContentPoolStore.lines(app, ContentPool.REPLY).size) } }
     private fun say(mine: Boolean, text: String, image: String? = null) {
@@ -47,6 +64,8 @@ class PilotChatCoordinator(context: Context) {
         PilotChatStore.save(app, _state.value.lines.map { PilotChatStore.Line(it.mine, it.text, it.imagePath) })
     }
     private suspend fun receipt(action: PilotAction, result: String) {
+        val pool = action.destination ?: action.pool
+        if (pool != null) memory.edit().putString("last_pool", pool.name).apply()
         memory.edit().putString("last_receipt", "${action.tool}: $result").apply()
         say(false, result)
         // A log write cannot turn a successfully committed pool edit into a reported failure.
@@ -72,7 +91,7 @@ class PilotChatCoordinator(context: Context) {
         generationVersion++; generationJob?.cancel(); generationJob = null
         if (job?.active == true) {
             _state.update { it.copy(generation = job.copy(active = false)) }
-            say(false, "Üretim durduruldu; ${job.saved}/${job.requested} metin ${job.pool.title} havuzunda korundu.")
+            say(false, "Gemini metin üretimi durduruldu; ${job.saved}/${job.requested} metin ${job.pool.title} havuzunda korundu.")
         }
     }
     fun send(raw: String) {
@@ -84,12 +103,41 @@ class PilotChatCoordinator(context: Context) {
         say(true, text.ifBlank { "Bu resmi incele." }, attachment?.path)
         val token = ++conversationVersion
         conversationJob?.cancel()
+        val followup = if (attachment == null) PilotGenerationFollowup.resolve(text, generationContext(), pendingGeneration)
+            else PilotGenerationFollowup.Decision.None
+        pendingGeneration = null
+        when (followup) {
+            is PilotGenerationFollowup.Decision.Ask -> {
+                pendingGeneration = followup.pending
+                _state.update { it.copy(chatting = false) }
+                say(false, followup.message)
+                return
+            }
+            is PilotGenerationFollowup.Decision.Ready -> {
+                _state.update { it.copy(chatting = false) }
+                scope.launch { executeFollowup(followup.request) }
+                return
+            }
+            PilotGenerationFollowup.Decision.None -> Unit
+        }
+        if (attachment == null) GeminiApiErrors.localExplanation(text, lastApiFailure)?.let {
+            _state.update { state -> state.copy(chatting = false) }
+            say(false, it)
+            return
+        }
         val local = if (attachment == null) PilotIntentPolicy.local(text) else null
         if (local != null) {
             _state.update { it.copy(chatting = false) }
+            if (local.actions.none { it.tool == PilotTool.GENERATE }) lastApiFailure = null
+            if (local.actions.none { it.tool in setOf(PilotTool.GENERATE, PilotTool.SHOW_POOL) }) clearGenerationFocus()
             scope.launch { executePlan(local, text) }
-            // A report is real local data. The model may additionally explain the evidence.
-            if (local.actions.none { it.tool == PilotTool.REPORT }) return
+            return
+        }
+        clearGenerationFocus()
+        if (attachment == null) PilotProgramPolicy.clarification(text)?.let {
+            _state.update { state -> state.copy(chatting = false) }
+            say(false, it)
+            return
         }
         if (!AppServices.contentService.hasApiKey()) {
             if (local == null) say(false, "Ayarlar > Pilot API anahtarını ekle. Görev kontrolü ve havuz işlemleri cihazda çalışıyor; bu mesajı anlamak için sohbet bağlantısı gerekli.")
@@ -116,17 +164,39 @@ class PilotChatCoordinator(context: Context) {
                 val bytes = attachment?.let { withContext(Dispatchers.IO) { PilotImages.bytes(app, it) } }
                 val rawPlan = AppServices.contentService.pilotConversation(turns, context, settings.geminiModel, bytes)
                 if (token != conversationVersion) return@launch
+                lastApiFailure = null
                 val plan = PilotIntentPolicy.parseModel(rawPlan) ?: error("Pilot yanıtı işlem şemasına uymadı; hiçbir işlem uygulanmadı")
-                if (local?.actions?.any { it.tool == PilotTool.REPORT } == true) {
-                    if (plan.say.isNotBlank()) say(false, PilotIntentPolicy.honestChat(plan.say))
+                if (!PilotProgramPolicy.acceptsNetworkPlan(plan)) {
+                    say(false, "Bu sohbet yanıtıyla program görevlerinde veya havuz kayıtlarında değişiklik yapılmadı. Yapmamı istediğin program işlemini açıkça belirt.")
                 } else if (plan.actions.isNotEmpty()) {
                     // Execute outside the network job; a newer chat cannot cancel a committed edit's receipt.
                     scope.launch { executePlan(plan, text) }
                 } else say(false, PilotIntentPolicy.honestChat(plan.say.ifBlank { "Ne yapmamı istediğini biraz daha açık yazabilir misin?" }))
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { if (token == conversationVersion) say(false, "Pilot yanıtı alınamadı: ${error.message.orEmpty().take(220)}") }
+            catch (error: Exception) { if (token == conversationVersion) {
+                if (error is GeminiApiException && error.statusCode == 429) {
+                    lastApiFailure = error.message
+                    say(false, error.message.orEmpty())
+                } else say(false, "Pilot yanıtı alınamadı: ${error.message.orEmpty().take(220)}")
+            } }
             finally { if (token == conversationVersion) _state.update { it.copy(chatting = false) } }
         }
+    }
+
+    /** The only output of a resolved follow-up is GENERATE; program commands still require the current message. */
+    private suspend fun executeFollowup(request: PilotGenerationFollowup.Request) = execution.withLock {
+        try {
+            check(_state.value.generation?.active != true) { "Metin üretimi zaten sürüyor. Önce bitmesini bekle veya üretimi durdur." }
+            val current = ContentPoolStore.lines(app, request.context.pool).size
+            val action = PilotGenerationFollowup.action(request, current)
+            if (action == null) say(false, "${request.context.pool.title} havuzunda zaten $current metin var; hedef ${request.quantity}. Yeni üretim yapılmadı, kayıtlı metinler korundu.")
+            else {
+                if (request.mode == PilotGenerationFollowup.Mode.TOTAL)
+                    say(false, "${request.context.pool.title}: $current kayıt var. Toplamı ${request.quantity} yapmak için ${action.count} yeni metin üretilecek.")
+                generate(action)
+            }
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (error: Exception) { say(false, "Üretim başlatılamadı: ${error.message.orEmpty().take(240)}") }
     }
 
     private suspend fun executePlan(plan: PilotToolPlan, raw: String) = execution.withLock {
@@ -136,7 +206,10 @@ class PilotChatCoordinator(context: Context) {
         for (action in plan.actions) {
             try {
                 val result = execute(action)
-                if (result.isNotBlank()) receipt(action, result)
+                if (result.isNotBlank()) {
+                    // Stored text previews stay in the user's chat; do not copy their contents into diagnostic logs.
+                    if (action.tool == PilotTool.SHOW_POOL) say(false, result) else receipt(action, result)
+                }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) {
                 say(false, "İşlem uygulanamadı: ${error.message.orEmpty().take(240)}")
@@ -163,6 +236,27 @@ class PilotChatCoordinator(context: Context) {
                 refreshCounts(); result
             }
             PilotTool.POOLS -> { refreshCounts(); "Tweet metinleri: ${_state.value.poolCount}. Hazır yorum metinleri: ${_state.value.replyCount}. Havuzlar ayrı tutuluyor." }
+            PilotTool.SHOW_POOL -> {
+                val remembered = runCatching { ContentPool.valueOf(memory.getString("last_pool", "").orEmpty()) }.getOrNull()
+                    ?: PilotProgramPolicy.recentPool(memory.getString("last_receipt", null))
+                refreshCounts()
+                val pool = PilotProgramPolicy.selectPool(action.pool, remembered, _state.value.poolCount, _state.value.replyCount)
+                if (pool == null) {
+                    if (_state.value.poolCount == 0 && _state.value.replyCount == 0) "İki metin havuzu da boş; gösterilecek kayıtlı metin yok."
+                    else "Hangi havuzdaki örnekleri göstereyim: tweet metinleri mi, hazır yorum metinleri mi?"
+                } else {
+                    val result = withContext(Dispatchers.IO) { PilotProgramPolicy.show(pool, ContentPoolStore.lines(app, pool), action.count ?: 5) }
+                    memory.edit().putString("last_pool", pool.name).apply()
+                    memory.edit().putString("followup_pool", pool.name).apply()
+                    result
+                }
+            }
+            PilotTool.TASKS -> AppServices.repository.tasks.first().let { tasks ->
+                if (tasks.isEmpty()) "Kayıtlı program görevi yok. Görevler bölümünden görev ekleyebilirsin."
+                else "Kayıtlı program görevleri (${tasks.size}):\n" + tasks.take(30).joinToString("\n") {
+                    "${it.username} · ${it.type.title} · ${it.progress}/${it.totalLimit} · ${it.status}"
+                } + if (tasks.size > 30) "\nİlk 30 görev gösteriliyor." else ""
+            }
             PilotTool.REPORT -> PilotLogReport.summarize(AppServices.repository.snapshotLogs(2_000))
             PilotTool.STATUS -> AutomationController.state.value.let { "${it.username.orEmpty()} · ${it.status} · ${it.activeScreen}/${it.flowStage} · ${it.verifiedCount}/${it.limit}\n${q.message}" }
             PilotTool.STOP_GENERATION -> { check(_state.value.generation?.active == true) { "Etkin metin üretimi yok" }; stopGeneration(); "" }
@@ -204,8 +298,9 @@ class PilotChatCoordinator(context: Context) {
         require(existing.size + count <= TweetPoolPolicy.MAX_LINES) { "Havuzda yeterli yer yok" }
         val token = ++generationVersion
         val request = TweetGenerationRequest("${pool.title} için: ${action.concept}", count)
+        memory.edit().putString("followup_pool", pool.name).apply()
         _state.update { it.copy(generation = PilotGeneration(action.concept, count, pool = pool)) }
-        say(false, "$count metin üretilip ${pool.title} havuzuna eklenecek. Kaydedilen gerçek adedi göstereceğim.")
+        say(false, "Gemini ile $count yeni metin üretimi başlatılıyor. ${pool.title} havuzuna kaydedilen gerçek adedi göstereceğim.")
         generationJob = scope.launch {
             try {
                 val model = AppServices.settings.settings.first().geminiModel
@@ -213,13 +308,19 @@ class PilotChatCoordinator(context: Context) {
                     var attempts = 0; var values: List<String>? = null
                     while (values == null) {
                         try { values = AppServices.contentService.generateTweetBatch(topic, wanted, batch, avoid, model) }
-                        catch (e: GeminiApiException) { if (e.statusCode !in setOf(429, 503) || ++attempts >= 3) throw e
-                            delay(e.retryAfterMs.coerceIn(5_000L, 60_000L)) }
+                        catch (e: GeminiApiException) {
+                            val wait = GeminiApiErrors.generationRetryDelay(e, ++attempts) ?: throw e
+                            say(false, "Gemini kısa süreli sınır veya yoğunluk bildirdi; en az ${(wait + 999) / 1000} saniye bekleyip yeniden deneyeceğim. Kaydedilen metinler korunuyor.")
+                            delay(wait)
+                        }
                     }; values
                 }, save = { values ->
                     currentCoroutineContext().ensureActive()
                     if (token != generationVersion) throw CancellationException("Yeni üretim sürümü")
                     ContentPoolStore.append(app, pool, values).also { added ->
+                        if (added.isNotEmpty()) memory.edit()
+                            .putString("generation_concept_${pool.name}", action.concept.take(2_000))
+                            .putString("last_pool", pool.name).apply()
                         _state.update { s -> s.copy(generation = s.generation?.let { it.copy(saved = it.saved + added.size) }) }
                         refreshCounts()
                     }
@@ -227,11 +328,16 @@ class PilotChatCoordinator(context: Context) {
                 val result = engine.generate(request, existing) { saved, _ ->
                     if (token == generationVersion) _state.update { it.copy(generation = it.generation?.copy(saved = saved)) }
                 }
-                if (token == generationVersion) receipt(action, "${result.saved}/${result.requested} farklı metin ${pool.title} havuzuna kaydedildi.")
+                if (token == generationVersion) {
+                    lastApiFailure = null
+                    receipt(action, "Gemini üretimi tamamlandı: ${result.saved}/${result.requested} farklı metin ${pool.title} havuzuna kaydedildi.")
+                }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) { if (token == generationVersion) {
                 val saved = _state.value.generation?.saved ?: 0
-                say(false, "Üretim tamamlanamadı; $saved/$count metin ${pool.title} havuzunda korundu. ${error.message.orEmpty().take(200)}")
+                if (error is GeminiApiException && error.statusCode == 429) lastApiFailure = error.message
+                val reason = if (error is GeminiApiException && error.statusCode == 429) error.message.orEmpty() else error.message.orEmpty().take(200)
+                say(false, "Gemini üretimi tamamlanamadı; $saved/$count metin ${pool.title} havuzunda korundu. $reason")
             } } finally { if (token == generationVersion) {
                 _state.update { it.copy(generation = it.generation?.copy(active = false)) }; generationJob = null; refreshCounts()
             } }
