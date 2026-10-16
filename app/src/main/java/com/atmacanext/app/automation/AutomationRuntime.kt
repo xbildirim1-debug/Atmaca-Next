@@ -47,6 +47,10 @@ enum class XFlowStage {
     RETURN_ENGAGEMENT,
     WAIT_INTERVAL,
     LIKE_SENT_REPLY,
+    OPEN_PEER_PROFILE,
+    SCAN_PEER_POST,
+    OPEN_PEER_POST,
+    ENGAGE_PEER_POST,
 }
 
 data class AutomationRuntimeState(
@@ -208,6 +212,14 @@ object AutomationController {
     }.getOrDefault(false)
 
     private var serviceRef: WeakReference<AtmacaAccessibilityService>? = null
+    private var peerPost: DiscoveryTweetOpenRecovery.Attempt? = null
+    private var peerHandle = ""
+    private var peerAction = 0
+    private var peerScrolls = 0
+    private var peerAtTop = false
+    private var peerBest: AccountEngagementTweetPolicy.Post? = null
+    private var peerCandidateSince = 0L
+    private var peerCandidateKey: String? = null
     private var activeTask: ScheduledTask? = null
     private var preparedContents: List<String> = emptyList()
     private var engagerHandle: String? = null
@@ -405,6 +417,8 @@ object AutomationController {
         if (current.taskId != null && current.status !in terminalStatuses()) return false
         val action = task.type.toAction() ?: return false
         if (task.type.requiresLink && !validXUrl(task.targetUrl)) return false
+        if (task.type in setOf(TaskType.LIKE, TaskType.RETWEET, TaskType.BOOKMARK) && !AccountEngagementTweetPolicy.validTweetUrl(task.targetUrl)) return false
+        if (task.type == TaskType.ACCOUNT_ENGAGEMENT && !com.atmacanext.app.domain.engine.AccountEngagementPolicy.valid(task)) return false
         val requestedTargets = if (task.type == TaskType.COMMENT_QUOTE_TARGETS && task.quoteTargetHandles.isNotEmpty()) task.quoteTargetHandles else targets
         if ((task.type.isDiscoveryFollow || task.type == TaskType.COMMENT_QUOTE_TARGETS) && requestedTargets.isEmpty()) return false
         val pooled = task.type == TaskType.COMMENT_QUOTE_TARGETS &&
@@ -798,6 +812,12 @@ object AutomationController {
             return
         }
 
+        if (pending?.kind == PendingKind.RETWEET && popup in setOf(PopupType.NONE, PopupType.UNKNOWN_DIALOG) &&
+            TweetEngagementEvidence.repostSheet(AccessibilityTree.snapshots(root))) {
+            verifyPendingAction(service, root, screen, now, pending)
+            return
+        }
+
         if (popup != PopupType.NONE) {
             if (popup == PopupType.RATE_LIMIT) {
                 pendingAction = null
@@ -846,6 +866,7 @@ object AutomationController {
             TaskType.UNFOLLOW, TaskType.UNFOLLOW_NON_FOLLOWERS -> handleUnfollow(service, root, screen, now)
             TaskType.VERIFIED_FOLLOW -> handleVerifiedFollow(service, root, screen, now)
             TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW, TaskType.COMMENT_QUOTE_TARGETS -> handleDiscoveryFollow(service, root, screen, now)
+            TaskType.ACCOUNT_ENGAGEMENT -> handleAccountEngagement(service, root, screen, now)
             TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET -> handlePost(service, root, screen, now)
             TaskType.FOLLOW, TaskType.LIKE, TaskType.RETWEET, TaskType.BOOKMARK, TaskType.COMMENT, TaskType.QUOTE -> handleLinkedAction(service, root, screen, now)
             else -> fail("Bu eski görev türü V24 motorunda çalıştırılmaz")
@@ -1122,6 +1143,7 @@ object AutomationController {
                 service.requestAutomationTick(300L)
             }
             TaskType.COMMENTER_FOLLOW, TaskType.RETWEETER_FOLLOW, TaskType.QUOTER_FOLLOW, TaskType.COMMENT_QUOTE_TARGETS -> openDiscoveryTarget(service)
+            TaskType.ACCOUNT_ENGAGEMENT -> openPeerProfile(service)
             TaskType.TEXT_TWEET -> {
                 // Çekmece kapanınca alttaki ana sayfa duruyor. Home intent burada
                 // X'i baştan açıp ilk saniyede sağa sola sıçratıyordu.
@@ -1839,6 +1861,126 @@ object AutomationController {
         }
     }
 
+    private fun openPeerProfile(service: AtmacaAccessibilityService) {
+        val current = _state.value
+        val task = activeTask ?: return
+        val peer = com.atmacanext.app.domain.engine.AccountEngagementPolicy.peer(task, current.verifiedCount)
+            ?: return fail("Etkileşim hesabı bulunamadı")
+        if (peer != peerHandle) { peerPost = null; peerAction = 0; peerBest = null }
+        peerHandle = peer; peerAtTop = false; peerScrolls = 0; peerCandidateSince = 0L; peerCandidateKey = null
+        moveStage(XFlowStage.OPEN_PEER_PROFILE, "@$peer hesabının en yeni özgün gönderisi aranıyor")
+        if (!service.launchXProfile(peer)) fail("Etkileşim hedefinin profili açılamadı")
+        else service.requestAutomationTick(500L)
+    }
+
+    private fun handleAccountEngagement(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
+        val nodes = AccessibilityTree.snapshots(root, maxNodes = 1_200)
+        when (_state.value.flowStage) {
+            XFlowStage.OPEN_PEER_PROFILE -> {
+                val profile = ProfileSurfaceEvidence.read(nodes)
+                if (profile?.handle == peerHandle) {
+                    if (!peerAtTop) {
+                        if (!XUiActions.clickProfilePosts(service, root)) {
+                            if (stageTimedOut(now)) pause("Gönderiler sekmesi açılamadı; yanıtlar işlenmedi.") else service.requestAutomationTick(300L)
+                            return
+                        }
+                        peerAtTop = true; peerScrolls = 0
+                    }
+                    moveStage(XFlowStage.SCAN_PEER_POST, "@$peerHandle için en yeni gönderi seçiliyor; sabitlenmiş gönderinin tarihi de karşılaştırılır")
+                    service.requestAutomationTick(350L)
+                } else if (DiscoveryProfileEvidence.accepts(nodes, peerHandle, XIdentityDetector.detectProfileHandle(root)) && peerScrolls < 6) {
+                    peerScrolls++
+                    ListGesture.backward(service, root)
+                    service.requestAutomationTick(650L)
+                } else if (stageTimedOut(now)) pause("@$peerHandle profilinin üst bölümü doğrulanamadı; başka hesaba ait gönderiye işlem yapılmadı.")
+                else service.requestAutomationTick(300L)
+            }
+            XFlowStage.SCAN_PEER_POST -> {
+                if (!DiscoveryProfileEvidence.accepts(nodes, peerHandle, XIdentityDetector.detectProfileHandle(root))) {
+                    if (stageTimedOut(now)) pause("Etkileşim profili değişti; hedef doğrulanamadı.") else service.requestAutomationTick(300L)
+                    return
+                }
+                if (nodes.any { it.visible && (it.selected || it.checked) && listOfNotNull(it.text, it.contentDescription).any { label -> XUiVocabulary.normalize(label) in setOf("yanıtlar", "replies", "medya", "media") } }) {
+                    pause("Gönderiler yerine başka profil sekmesi açık; etkileşim yapılmadı.")
+                    return
+                }
+                val rows = XTweetInspector.visibleTweets(root, now, includePinned = true)
+                    .filter { it.author == peerHandle && !it.authorTruncated }
+                val posts = rows.map { AccountEngagementTweetPolicy.Post(it.key, it.author, XTweetInspector.text(it), it.ageMinutes, it.pinned) }
+                val expected = peerPost
+                val chosen = if (expected != null) posts.firstOrNull {
+                    DiscoveryTweetOpenRecovery.matches(expected, DiscoveryTweetOpenRecovery.Candidate(it.key, it.author, it.text, it.age), false)
+                } else {
+                    val latest = AccountEngagementTweetPolicy.latest(posts + listOfNotNull(peerBest), peerHandle)
+                    peerBest = latest
+                    if (posts.any { !it.pinned && it.text.isNotBlank() && it.age != null }) latest else null
+                }
+                if (chosen != null) {
+                    val row = rows.firstOrNull { it.key == chosen.key }
+                    if (row == null) {
+                        peerPost = DiscoveryTweetOpenRecovery.Attempt(chosen.key, peerHandle, chosen.text, 0, now)
+                        openPeerProfile(service)
+                        return
+                    }
+                    if (peerCandidateKey != chosen.key || peerCandidateSince == 0L) { peerCandidateKey = chosen.key; peerCandidateSince = now; service.requestAutomationTick(250L); return }
+                    if (now - peerCandidateSince < 200L) { service.requestAutomationTick(100L); return }
+                    if (performStep(service, root, screen, "open_peer_post", chosen.key) { XTweetInspector.click(service, row) }) {
+                        peerPost = DiscoveryTweetOpenRecovery.Attempt(chosen.key, peerHandle, chosen.text, 1, now)
+                        moveStage(XFlowStage.OPEN_PEER_POST, "@$peerHandle gönderisinin yazarı ve metni doğrulanıyor")
+                        service.requestAutomationTick(450L)
+                    } else if (stageTimedOut(now)) pause("En yeni gönderi açılamadı; eski gönderiye geçilmedi.")
+                    else service.requestAutomationTick(300L)
+                } else if (peerScrolls < 5) {
+                    peerScrolls++; peerCandidateSince = 0L
+                    ListGesture.forward(service, root)
+                    service.requestAutomationTick(650L)
+                } else pause("@$peerHandle için doğrulanabilir özgün gönderi bulunamadı; hedef başarı sayılmadı.")
+            }
+            XFlowStage.OPEN_PEER_POST -> {
+                val expected = peerPost ?: return pause("Etkileşim gönderisi kayboldu")
+                if (screen == XScreen.TWEET_DETAIL && !FeedRowEvidence.profileFeed(nodes) && ReplyComposerEvidence.matchesPost(nodes, expected)) {
+                    moveStage(XFlowStage.ENGAGE_PEER_POST, "@$peerHandle gönderisinde beğeni, yeniden gönder ve kaydetme başlıyor")
+                    service.requestAutomationTick(200L)
+                } else if (now - expected.at >= 1_200L && expected.count < 3 && FeedRowEvidence.profileFeed(nodes)) {
+                    val row = XTweetInspector.visibleTweets(root, now, includePinned = true).firstOrNull {
+                        DiscoveryTweetOpenRecovery.matches(expected, DiscoveryTweetOpenRecovery.Candidate(it.key, it.author, XTweetInspector.text(it), it.ageMinutes), false)
+                    }
+                    if (row != null && XTweetInspector.click(service, row, expected.count)) peerPost = expected.copy(count = expected.count + 1, at = now)
+                    service.requestAutomationTick(400L)
+                } else if (stageTimedOut(now)) pause("Açılan gönderinin kimliği doğrulanamadı; etkileşim yapılmadı.")
+                else service.requestAutomationTick(300L)
+            }
+            XFlowStage.ENGAGE_PEER_POST -> {
+                val expected = peerPost ?: return pause("Etkileşim hedefi kayboldu")
+                if (screen != XScreen.TWEET_DETAIL || !ReplyComposerEvidence.matchesPost(nodes, expected)) {
+                    if (stageTimedOut(now)) pause("Etkileşim sırasında gönderi değişti; işlem duraklatıldı.") else service.requestAutomationTick(300L)
+                    return
+                }
+                val action = TweetEngagementEvidence.Action.entries[peerAction.coerceIn(0, 2)]
+                val control = TweetEngagementEvidence.control(nodes, action)
+                if (control?.done == true) { recordSuccess(service, expected.key); return }
+                val accepted = control != null && performStep(service, root, screen, "peer_${action.name}", expected.key) {
+                    when (action) {
+                        TweetEngagementEvidence.Action.LIKE -> XUiActions.clickLike(service, root)
+                        TweetEngagementEvidence.Action.REPOST -> XUiActions.clickRepost(service, root)
+                        TweetEngagementEvidence.Action.BOOKMARK -> XUiActions.clickBookmark(service, root)
+                    }
+                }
+                if (accepted) {
+                    val kind = when (action) { TweetEngagementEvidence.Action.LIKE -> PendingKind.LIKE
+                        TweetEngagementEvidence.Action.REPOST -> PendingKind.RETWEET
+                        TweetEngagementEvidence.Action.BOOKMARK -> PendingKind.BOOKMARK }
+                    pendingAction = PendingAction(kind, expected.key)
+                    _state.value = _state.value.copy(status = RuntimeStatus.VERIFYING, lastActionAt = now,
+                        message = "@$peerHandle: ${when(action) { TweetEngagementEvidence.Action.LIKE -> "Beğeni"; TweetEngagementEvidence.Action.REPOST -> "Yeniden gönder"; TweetEngagementEvidence.Action.BOOKMARK -> "Kaydetme" }} sonucu doğrulanıyor")
+                    service.requestAutomationTick(350L)
+                } else if (stageTimedOut(now)) pause("${action.name} düğmesi güvenle bulunamadı; hedef tamamlandı sayılmadı.")
+                else service.requestAutomationTick(300L)
+            }
+            else -> openPeerProfile(service)
+        }
+    }
+
     private fun handleLinkedAction(service: AtmacaAccessibilityService, root: AccessibilityNodeInfo?, screen: XScreen, now: Long) {
         val current = _state.value
         val type = current.taskType ?: return
@@ -1854,7 +1996,14 @@ object AutomationController {
                 } else if (stageTimedOut(now)) retryNavigationWithDeadline(service, "Bağlantı X içinde beklenen ekrana açılmadı", now)
                 else service.requestAutomationTick(TICK_MS)
             }
-            XFlowStage.PERFORM_LINK_ACTION -> when (type) {
+            XFlowStage.PERFORM_LINK_ACTION -> {
+                if (type in setOf(TaskType.LIKE, TaskType.RETWEET, TaskType.BOOKMARK) &&
+                    (screen != XScreen.TWEET_DETAIL || !AccountEngagementTweetPolicy.linkedTarget(AccessibilityTree.snapshots(root), activeTask?.targetUrl))) {
+                    if (stageTimedOut(now)) pause("Bağlantıdaki gönderi yazarı/ekranı doğrulanamadı; etkileşim yapılmadı.")
+                    else service.requestAutomationTick(300L)
+                    return
+                }
+                when (type) {
                 TaskType.FOLLOW -> {
                     if (XUiActions.isDirectFollowing(root)) recordSuccess(service, XIdentityDetector.detectProfileHandle(root)?.let { "@$it" })
                     else if (performStep(service, root, screen, "direct_follow", activeTask?.targetUrl) { XUiActions.clickDirectFollow(service, root) }) {
@@ -1902,6 +2051,7 @@ object AutomationController {
                     }
                 }
                 else -> Unit
+                }
             }
             XFlowStage.OPEN_COMPOSER -> {
                 if (screen == XScreen.COMPOSER) {
@@ -2570,6 +2720,19 @@ object AutomationController {
         pending: PendingAction,
     ) {
         val elapsed = now - pending.startedAt
+        if (_state.value.taskType == TaskType.ACCOUNT_ENGAGEMENT && pending.kind in setOf(PendingKind.LIKE, PendingKind.RETWEET, PendingKind.BOOKMARK) &&
+            !TweetEngagementEvidence.repostSheet(AccessibilityTree.snapshots(root)) &&
+            (peerPost == null || !ReplyComposerEvidence.matchesPost(AccessibilityTree.snapshots(root), peerPost!!))) {
+            if (elapsed >= ACTION_TIMEOUT_MS) pause("Etkileşim hedefi değişti veya sonucu okunamadı; işlem tekrar tıklanmadı.")
+            else service.requestAutomationTick(300L)
+            return
+        }
+        if (_state.value.taskType in setOf(TaskType.LIKE, TaskType.RETWEET, TaskType.BOOKMARK) &&
+            !TweetEngagementEvidence.repostSheet(AccessibilityTree.snapshots(root)) &&
+            (screen != XScreen.TWEET_DETAIL || !AccountEngagementTweetPolicy.linkedTarget(AccessibilityTree.snapshots(root), activeTask?.targetUrl))) {
+            if (elapsed >= ACTION_TIMEOUT_MS) pause("Etkileşimin gönderi hedefi doğrulanamadı; sonuç başarı sayılmadı.") else service.requestAutomationTick(300L)
+            return
+        }
         when (pending.kind) {
             PendingKind.UNFOLLOW -> {
                 val handle = pending.target ?: return fail("Takipten çıkma hedefi kayboldu")
@@ -2679,7 +2842,14 @@ object AutomationController {
                 else if (elapsed >= ACTION_TIMEOUT_MS) fail("Beğeni sonucu doğrulanamadı") else service.requestAutomationTick(400L)
             }
             PendingKind.RETWEET -> {
-                if (XUiActions.isReposted(root)) recordSuccess(service, pending.target)
+                val frame = AccessibilityTree.snapshots(root)
+                if (TweetEngagementEvidence.undoRepostSheet(frame)) {
+                    if (!pending.confirmationClicked) {
+                        XUiActions.clickVisibleBack(service, root)
+                        pendingAction = pending.copy(confirmationClicked = true, startedAt = now)
+                    } else if (elapsed >= ACTION_TIMEOUT_MS) { pause("Yeniden gönder menüsü kapanmadı; geri alma seçilmedi."); return }
+                    service.requestAutomationTick(350L)
+                } else if (!TweetEngagementEvidence.repostSheet(frame) && XUiActions.isReposted(root)) recordSuccess(service, pending.target)
                 else if (!pending.confirmationClicked && XUiActions.clickRepostConfirmation(service, root)) {
                     pendingAction = pending.copy(confirmationClicked = true, startedAt = now)
                     service.requestAutomationTick(450L)
@@ -2757,6 +2927,18 @@ object AutomationController {
 
     private fun recordSuccess(service: AtmacaAccessibilityService, target: String?) {
         val current = _state.value
+        if (current.taskType == TaskType.ACCOUNT_ENGAGEMENT) {
+            pendingAction = null
+            peerAction++
+            stageStartedAt = System.currentTimeMillis()
+            if (peerAction < 3) {
+                _state.value = current.copy(status = RuntimeStatus.RUNNING, lastActionAt = System.currentTimeMillis(),
+                    message = "@$peerHandle gönderisinde $peerAction/3 etkileşim doğrulandı; sıradaki işlem hazırlanıyor")
+                service.requestAutomationTick(200L)
+                return
+            }
+            peerAction = 0; peerPost = null; peerHandle = ""; peerBest = null
+        }
         if (current.taskType == TaskType.COMMENT_QUOTE_TARGETS) {
             val key = quoteReplyPost?.key ?: discoveryTweetKey
             key?.let {
@@ -2795,6 +2977,12 @@ object AutomationController {
             poolCursor = com.atmacanext.app.data.settings.ReplyTextPool.advance(service)
             OperationLog.i("REPLY_POOL", "kullanılan=$used/${poolLines.size} sıradaki=${poolCursor + 1}")
             _state.value = _state.value.copy(message = "$next/${current.limit} doğrulandı. Havuz ${poolCursor + 1}/${poolLines.size}")
+        }
+        if (current.taskType == TaskType.ACCOUNT_ENGAGEMENT) {
+            _state.value = _state.value.copy(message = "$next/${current.limit} hedefte beğeni + yeniden gönder + kaydet doğrulandı")
+            if (cycleTargetReached(next)) finishCycleOrTask(service, "Hesaplar arası etkileşim turu tamamlandı")
+            else openPeerProfile(service)
+            return
         }
         if (current.taskType == TaskType.TEXT_TWEET) {
             if (tweetLines.isNotEmpty()) {
@@ -3842,6 +4030,7 @@ object AutomationController {
     }
 
     private fun resetTransient(clearSession: Boolean) {
+        peerPost = null; peerHandle = ""; peerAction = 0; peerBest = null; peerAtTop = false; peerScrolls = 0; peerCandidateSince = 0L; peerCandidateKey = null
         navigationRecoveryReturning = false
         navigationRestartAttempts = 0
         discoveryReopenAttempts = 0
@@ -3903,6 +4092,7 @@ object AutomationController {
         TaskType.TEXT_TWEET -> AutomationAction.POST_TEXT
         TaskType.IMAGE_TWEET -> AutomationAction.POST_IMAGE
         TaskType.FOLLOW -> AutomationAction.FOLLOW
+        TaskType.ACCOUNT_ENGAGEMENT -> AutomationAction.LIKE
         TaskType.LIKE -> AutomationAction.LIKE
         TaskType.RETWEET -> AutomationAction.RETWEET
         TaskType.BOOKMARK -> AutomationAction.BOOKMARK

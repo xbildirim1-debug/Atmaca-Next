@@ -39,7 +39,8 @@ enum class TaskType(val title: String) {
     PUBLISH("Eski içerik paylaşımı"),
     TREND("Trend paylaşımı"),
     COMMUNITY("Topluluk etkileşimi"),
-    SYNC("Hesap senkronizasyonu");
+    SYNC("Hesap senkronizasyonu"),
+    ACCOUNT_ENGAGEMENT("Hesaplar arası etkileşim");
 
     val isUnfollowAction: Boolean
         get() = this == UNFOLLOW || this == UNFOLLOW_NON_FOLLOWERS

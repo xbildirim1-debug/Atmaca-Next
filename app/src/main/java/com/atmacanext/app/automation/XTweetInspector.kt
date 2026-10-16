@@ -22,12 +22,13 @@ object XTweetInspector {
         val authorTruncated: Boolean = false,
         /** True when a card-only post must be opened through the age side of its combined header. */
         val openViaHeaderTrailing: Boolean = false,
+        val pinned: Boolean = false,
     )
 
-    fun visibleTweets(root: AccessibilityNodeInfo?, nowMillis: Long = System.currentTimeMillis()): List<TweetRow> {
+    fun visibleTweets(root: AccessibilityNodeInfo?, nowMillis: Long = System.currentTimeMillis(), includePinned: Boolean = false): List<TweetRow> {
         if (root == null) return emptyList()
         val flatNodes = AccessibilityTree.nodes(root, maxNodes = 1_200)
-        val flatRows = FeedRowEvidence.rows(flatNodes.map { it.toSnapshot() }).map { r ->
+        val flatRows = FeedRowEvidence.rows(flatNodes.map { it.toSnapshot() }, includePinned).map { r ->
             val header = flatNodes[r.headerIndex]
             val body = r.bodyIndex?.let(flatNodes::get)
             val rowNode = tweetRowAncestor(header) ?: header
@@ -44,6 +45,7 @@ object XTweetInspector {
                 header,
                 r.authorTruncated,
                 openViaHeaderTrailing = body == null && ageNode == null && combinedHeader,
+                pinned = r.pinned,
             )
         }
 
@@ -69,7 +71,7 @@ object XTweetInspector {
                 val rowLabels = AccessibilityTree.nodes(row, 180)
                     .flatMap { listOfNotNull(it.text?.toString(), it.contentDescription?.toString()) }
                     .map(XUiVocabulary::normalize)
-                if (rowLabels.any { it in setOf("pinned", "sabitlendi", "sabitlenmiş", "promoted", "reklam") }) return@mapNotNull null
+                if (rowLabels.any { it in setOf("promoted", "reklam") || (!includePinned && it in setOf("pinned", "sabitlendi", "sabitlenmiş")) }) return@mapNotNull null
                 val key = statusKey(corpus) ?: stableTextKey(rowLabels.joinToString(" | "))
                 if (key.isBlank()) return@mapNotNull null
                 val bounds = Rect().also(row::getBoundsInScreen)
@@ -130,6 +132,7 @@ object XTweetInspector {
                     headerNode,
                     authorTruncated,
                     openViaHeaderTrailing = bodyTarget == null && timestampNode == null && combinedHeader,
+                    pinned = rowLabels.any { it in setOf("pinned", "sabitlendi", "sabitlenmiş") },
                 )
             }
             .distinctBy(TweetRow::key)

@@ -9,6 +9,7 @@ internal object FeedRowEvidence {
         val bodyIndex: Int?,
         val key: String,
         val authorTruncated: Boolean = false,
+        val pinned: Boolean = false,
     )
 
     private data class HeaderCandidate(
@@ -24,7 +25,7 @@ internal object FeedRowEvidence {
     private fun sameLine(a: NodeSnapshot, b: NodeSnapshot) =
         maxOf(a.bounds.top, b.bounds.top) < minOf(a.bounds.bottom, b.bounds.bottom)
 
-    fun rows(nodes: List<NodeSnapshot>): List<Row> {
+    fun rows(nodes: List<NodeSnapshot>, includePinned: Boolean = false): List<Row> {
         val headers = nodes.indices.mapNotNull { i ->
             val n = nodes[i]
             if (!usable(n)) return@mapNotNull null
@@ -87,14 +88,16 @@ internal object FeedRowEvidence {
             val marked = nodes.any { n -> usable(n) && n.bounds.bottom <= header.bounds.bottom &&
                 n.bounds.top >= header.bounds.top - (header.bounds.bottom - header.bounds.top) * 2 &&
                 labels(n).any { XUiVocabulary.normalize(it) in setOf("pinned", "sabitlendi", "sabitlenmiş", "promoted", "reklam") } }
-            if (marked) return@mapIndexedNotNull null
+            if (marked && (!includePinned || nodes.any { n -> usable(n) && n.bounds.bottom <= header.bounds.bottom &&
+                    n.bounds.top >= header.bounds.top - (header.bounds.bottom - header.bounds.top) * 2 &&
+                    labels(n).any { XUiVocabulary.normalize(it) in setOf("promoted", "reklam") } })) return@mapIndexedNotNull null
             val body = TweetContentEvidence.bodyIndex(band.map(nodes::get), header.bounds.bottom)?.let(band::get)
             val text = body?.let { nodes[it].text ?: nodes[it].contentDescription }.orEmpty().trim()
             // Counts, relative age, scroll position and toolbar state are not post identity.
             val key = java.security.MessageDigest.getInstance("SHA-256")
                 .digest("$author|${item.truncated}|$text".toByteArray())
                 .joinToString("") { "%02x".format(it) }
-            Row(author, age, index, body, key, authorTruncated = item.truncated)
+            Row(author, age, index, body, key, authorTruncated = item.truncated, pinned = marked)
         }
     }
 

@@ -133,6 +133,7 @@ internal enum class TaskGroup(val title: String, val shortTitle: String) {
     TWEET("Tweet", "Tweet"),
     QUOTE_COMMENT("Yorum Alıntısı", "Yorum"),
     BULK("Toplu görev", "Toplu"),
+    CROSS_ACCOUNT("Hesaplar Arası Etkileşim", "Hesaplar Arası"),
 }
 
 internal val TASK_TYPES_BY_GROUP = mapOf(
@@ -150,6 +151,7 @@ internal val TASK_TYPES_BY_GROUP = mapOf(
         TaskType.BOOKMARK,
         TaskType.COMMENT,
     ),
+    TaskGroup.CROSS_ACCOUNT to listOf(TaskType.ACCOUNT_ENGAGEMENT),
     TaskGroup.TWEET to listOf(TaskType.TEXT_TWEET),
     TaskGroup.QUOTE_COMMENT to listOf(TaskType.COMMENT_QUOTE_TARGETS),
     TaskGroup.BULK to listOf(
@@ -786,6 +788,10 @@ private fun TaskCard(
                 TaskMetric("Limit", task.limit.toString(), Icons.Filled.TaskAlt, Modifier.weight(1f))
                 TaskMetric("Aralık", "${task.intervalMinutes} dk", Icons.Filled.Schedule, Modifier.weight(1f))
             }
+            if (task.type == TaskType.ACCOUNT_ENGAGEMENT) {
+                Spacer(Modifier.height(7.dp))
+                Text("Her hedefte: Beğeni + Yeniden gönder + Kaydet • Hedef başına üç işlem doğrulanır", color = TextSecondary, fontSize = 10.sp)
+            }
             if (task.targetUrl?.isNotBlank() == true) {
                 Spacer(Modifier.height(9.dp))
                 Surface(shape = RoundedCornerShape(12.dp), color = AppBackground) {
@@ -922,6 +928,7 @@ private fun TaskEditorDialog(
 
     val needsLink = selectedTypes.any(TaskType::requiresLink)
     val needsContent = selectedTypes.any(TaskType::supportsGemini)
+    val crossAccount = TaskType.ACCOUNT_ENGAGEMENT in selectedTypes
     val needsImage = TaskType.IMAGE_TWEET in selectedTypes
     val scalable = selectedTypes.any { it in SCALABLE_TYPES }
     val needsQuoteTargets = TaskType.COMMENT_QUOTE_TARGETS in selectedTypes
@@ -939,6 +946,7 @@ private fun TaskEditorDialog(
             selectedTypes.none { it.supportsGemini && it != TaskType.TEXT_TWEET && it != TaskType.COMMENT_QUOTE_TARGETS })
     val valid = selectedAccountIds.isNotEmpty() && selectedTypes.isNotEmpty() &&
         limit != null && limit in 1..100 && repeats != null && repeats in 1..100 && interval != null && interval in 1..1_440 &&
+        (!crossAccount || (selectedTypes.size == 1 && selectedAccountIds.size >= 2 && availableAccounts.filter { it.id in selectedAccountIds }.all { it.active })) &&
         (!needsLink || validXUrl(targetUrl)) &&
         (!needsContent || if (useGemini) prompt.isNotBlank() else content.isNotBlank() || poolCoversContent) &&
         (!needsQuoteTargets || (limit in 1..QuoteTaskSetupPolicy.MAX_POSTS_PER_TARGET &&
@@ -1031,6 +1039,7 @@ private fun TaskEditorDialog(
                                             TaskGroup.TWEET -> "Hesaptan sıradaki hazır tweet"
                                             TaskGroup.QUOTE_COMMENT -> "Her hesabın Alıntı Hedeflerine yorum"
                                             TaskGroup.BULK -> "Takip, tweet ve yorumu aynı akışta seç"
+                                            TaskGroup.CROSS_ACCOUNT -> "Seçili hesapların son tweetine beğeni, RT ve kaydetme"
                                         },
                                         color = TextSecondary,
                                         fontSize = 8.sp,
@@ -1050,7 +1059,7 @@ private fun TaskEditorDialog(
                             color = if (checked) taskSoftColor(type) else CardBackground,
                             border = BorderStroke(1.dp, if (checked) taskColor(type).copy(alpha = 0.32f) else Divider),
                             modifier = Modifier.fillMaxWidth().clickable(enabled = original == null) {
-                                selectedTypes = if (checked) selectedTypes - type else selectedTypes + type
+                                selectedTypes = if (checked) selectedTypes - type else if (type == TaskType.ACCOUNT_ENGAGEMENT) setOf(type) else (selectedTypes - TaskType.ACCOUNT_ENGAGEMENT) + type
                             },
                         ) {
                             Row(
@@ -1060,7 +1069,7 @@ private fun TaskEditorDialog(
                                 Checkbox(
                                     checked = checked,
                                     onCheckedChange = {
-                                        if (original == null) selectedTypes = if (checked) selectedTypes - type else selectedTypes + type
+                                        if (original == null) selectedTypes = if (checked) selectedTypes - type else if (type == TaskType.ACCOUNT_ENGAGEMENT) setOf(type) else (selectedTypes - TaskType.ACCOUNT_ENGAGEMENT) + type
                                     },
                                     enabled = original == null,
                                 )
@@ -1104,6 +1113,9 @@ private fun TaskEditorDialog(
                     }
                 }
 
+                if (crossAccount) {
+                    item(key = "cross-account-help") { Text("En az 2 hesap seç. Her hesap diğer seçili hesapların en yeni özgün gönderisine beğeni, yeniden gönder ve kaydet işlemlerini yapar. Kendi hesabı atlanır. Her turda hesaplar sırayla çalışır; yapılmış işlemler geri alınmaz.", color = TextSecondary, fontSize = 11.sp) }
+                }
                 if (needsLink) {
                     item(key = "target-link") {
                         OutlinedTextField(
@@ -1157,9 +1169,9 @@ private fun TaskEditorDialog(
                     val fields: @Composable (Modifier) -> Unit = { fieldModifier ->
                         Column(fieldModifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
-                            value = if (scalable) limitText else "1",
+                            value = if (crossAccount) (selectedAccountIds.size - 1).coerceAtLeast(0).toString() else if (scalable) limitText else "1",
                             onValueChange = { if (scalable) limitText = it.filter(Char::isDigit).take(3) },
-                            label = { Text("Limit") },
+                            label = { Text(if (crossAccount) "Diğer hesap sayısı" else "Limit") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             enabled = scalable,
                             singleLine = true,
@@ -1188,9 +1200,9 @@ private fun TaskEditorDialog(
                     } else {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
-                                value = if (scalable) limitText else "1",
+                                value = if (crossAccount) (selectedAccountIds.size - 1).coerceAtLeast(0).toString() else if (scalable) limitText else "1",
                                 onValueChange = { if (scalable) limitText = it.filter(Char::isDigit).take(3) },
-                                label = { Text("Limit") },
+                                label = { Text(if (crossAccount) "Diğer hesap sayısı" else "Limit") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 enabled = scalable,
                                 singleLine = true,
@@ -1230,7 +1242,10 @@ private fun TaskEditorDialog(
                 shape = RoundedCornerShape(13.dp),
                 onClick = {
                     val selectedAccounts = availableAccounts.filter { it.id in selectedAccountIds }
-                    val tasks = if (original != null) {
+                    val tasks = if (crossAccount) {
+                        com.atmacanext.app.domain.engine.AccountEngagementPolicy.create(selectedAccounts, repeats!!, interval!!,
+                            originals?.firstOrNull()?.time?.takeIf { it.startsWith(LOGICAL_TASK_PREFIX) } ?: "$LOGICAL_TASK_PREFIX${UUID.randomUUID()}:ACCOUNT_ENGAGEMENT", originals.orEmpty())
+                    } else if (original != null) {
                         val perCycle = if (scalable) limit!! else 1
                         val existingByAccount = originals.orEmpty().associateBy(ScheduledTask::accountId)
                         val groupKey = originals.orEmpty().firstNotNullOfOrNull { it.time.takeIf { value -> value.startsWith(LOGICAL_TASK_PREFIX) } }
@@ -1329,6 +1344,7 @@ private fun taskGroup(type: TaskType): TaskGroup = when (type) {
     TaskType.BOOKMARK,
     TaskType.COMMENT -> TaskGroup.ENGAGEMENT
 
+    TaskType.ACCOUNT_ENGAGEMENT -> TaskGroup.CROSS_ACCOUNT
     TaskType.COMMENT_QUOTE_TARGETS -> TaskGroup.QUOTE_COMMENT
     TaskType.TEXT_TWEET, TaskType.IMAGE_TWEET, TaskType.PUBLISH -> TaskGroup.TWEET
 
@@ -1341,6 +1357,7 @@ private fun groupIcon(group: TaskGroup): ImageVector = when (group) {
     TaskGroup.TWEET -> Icons.Filled.Send
     TaskGroup.QUOTE_COMMENT -> Icons.Filled.ChatBubble
     TaskGroup.BULK -> Icons.Filled.AutoAwesome
+    TaskGroup.CROSS_ACCOUNT -> Icons.Filled.Groups
 }
 
 private fun taskGroupColor(group: TaskGroup): Color = when (group) {
@@ -1349,6 +1366,7 @@ private fun taskGroupColor(group: TaskGroup): Color = when (group) {
     TaskGroup.TWEET -> Purple
     TaskGroup.QUOTE_COMMENT -> Purple
     TaskGroup.BULK -> BrandGreen
+    TaskGroup.CROSS_ACCOUNT -> Teal
 }
 
 private fun taskGroupSoftColor(group: TaskGroup): Color = when (group) {
@@ -1357,6 +1375,7 @@ private fun taskGroupSoftColor(group: TaskGroup): Color = when (group) {
     TaskGroup.TWEET -> SoftPurple
     TaskGroup.QUOTE_COMMENT -> SoftPurple
     TaskGroup.BULK -> SoftGreen
+    TaskGroup.CROSS_ACCOUNT -> SoftBlue
 }
 
 private fun taskSoftColor(type: TaskType): Color = when (taskGroup(type)) {
@@ -1365,6 +1384,7 @@ private fun taskSoftColor(type: TaskType): Color = when (taskGroup(type)) {
     TaskGroup.TWEET -> SoftPurple
     TaskGroup.QUOTE_COMMENT -> SoftPurple
     TaskGroup.BULK -> SoftGreen
+    TaskGroup.CROSS_ACCOUNT -> SoftBlue
 }
 
 private fun statusLabel(status: TaskStatus): String = when (status) {

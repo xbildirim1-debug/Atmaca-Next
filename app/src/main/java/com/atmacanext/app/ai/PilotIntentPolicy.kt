@@ -66,7 +66,7 @@ object PilotIntentPolicy {
         if (s.matches(Regex("durum|durum ne|ne durumda|ne yapiyorsun|hangi gorevdesin")))
             return PilotToolPlan(actions = listOf(PilotAction(PilotTool.STATUS)))
         if (Regex("\\b(baslat|calistir|basla)\\b").containsMatchIn(s)) {
-            val types = listOf("onayli" to TaskType.VERIFIED_FOLLOW, "yorumcu" to TaskType.COMMENTER_FOLLOW,
+            val types = listOf("hesaplar arasi" to TaskType.ACCOUNT_ENGAGEMENT, "onayli" to TaskType.VERIFIED_FOLLOW, "yorumcu" to TaskType.COMMENTER_FOLLOW,
                 "retweetci" to TaskType.RETWEETER_FOLLOW, "takip etmeyen" to TaskType.UNFOLLOW_NON_FOLLOWERS,
                 "takipten" to TaskType.UNFOLLOW, "tweet" to TaskType.TEXT_TWEET)
                 .mapNotNull { (word, type) -> Regex("\\b" + Regex.escape(word) + "\\b").find(s)?.range?.first?.let { it to type } }.sortedBy { it.first }.map { it.second }.distinct()
