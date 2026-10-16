@@ -93,4 +93,15 @@ class TweetEngagement27_71Test {
         assertTrue(AccountEngagementTweetPolicy.linkedTarget(nodes, "https://x.com/peer/status/123"))
         assertFalse(AccountEngagementTweetPolicy.linkedTarget(nodes, "https://x.com/other/status/123"))
     }
+    @Test fun justPostedSecondsAreRecognizedWithoutFallingBackToAnOlderTweet() {
+        for (text in listOf("şimdi", "az önce", "now", "just now", "15 sn", "30 saniye önce", "10s", "20 seconds ago"))
+            assertEquals(text, 0L, XTweetInspector.parseAgeMinutes(text))
+        assertFalse(XTweetInspector.eligibleAge(XTweetInspector.parseAgeMinutes("30 sn")))
+    }
+    @Test fun freshCombinedFeedHeadersRetainTheAuthorAndZeroMinuteAge() {
+        val h = TweetContentEvidence.header("Hesap @peer · 15 sn")!!
+        assertEquals("peer", h.handle); assertEquals(0L, h.ageMinutes)
+        assertEquals(1L, XTweetInspector.parseAgeMinutes("1m"))
+    }
+
 }

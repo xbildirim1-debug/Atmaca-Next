@@ -1888,7 +1888,7 @@ object AutomationController {
                     }
                     moveStage(XFlowStage.SCAN_PEER_POST, "@$peerHandle için en yeni gönderi seçiliyor; sabitlenmiş gönderinin tarihi de karşılaştırılır")
                     service.requestAutomationTick(350L)
-                } else if (DiscoveryProfileEvidence.accepts(nodes, peerHandle, XIdentityDetector.detectProfileHandle(root)) && peerScrolls < 6) {
+                } else if (DiscoveryProfileEvidence.openedTarget(nodes, XIdentityDetector.detectProfileHandle(root), peerHandle) && peerScrolls < 6) {
                     peerScrolls++
                     ListGesture.backward(service, root)
                     service.requestAutomationTick(650L)
@@ -1896,7 +1896,7 @@ object AutomationController {
                 else service.requestAutomationTick(300L)
             }
             XFlowStage.SCAN_PEER_POST -> {
-                if (!DiscoveryProfileEvidence.accepts(nodes, peerHandle, XIdentityDetector.detectProfileHandle(root))) {
+                if (!DiscoveryProfileEvidence.openedTarget(nodes, XIdentityDetector.detectProfileHandle(root), peerHandle)) {
                     if (stageTimedOut(now)) pause("Etkileşim profili değişti; hedef doğrulanamadı.") else service.requestAutomationTick(300L)
                     return
                 }

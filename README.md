@@ -7,7 +7,7 @@ Kullanıcı Etkileşim bölümünün çalışmadığını bildirdi; seçilen hes
 
 - Yeni “Hesaplar Arası Etkileşim” kategorisinde2–10 aktif hesap seçilir. Her aktör için diğer seçili hesaplar hedef olur; kendi hesabına işlem yapılmaz. Limit hedef sayısından hesaplanır; döngü1–100 ve aralık1–1440dk kullanıcı tarafından seçilir. Varsayılan1tur,5dk.5hesap için turda20hedef/60işlem kontrolü vardır.
 - Tek seri kuyruk/aktif hesap doğrulaması korunur. Aynı seçimde tweet görevleri de varsa tüm hesapların paylaşımları etkileşimden önce yürür. Sonraki turda hesaplar yine aynı sırada çalışır; duraklat/devam/durdur mevcut kuyruktadır.
-- Hedefin Gönderiler sekmesi ve profil üst bölümü doğrulanır; kendi yazdığı en yeni görünen gönderinin tarihi karşılaştırılır. Başka yazarların RT'leri seçilmez; sabitlenmiş eski gönderi yeni özgün gönderiyi geçmez. Bu görevde yorumcu/retweetçi takibinin2saat kuralı uygulanmaz; o modüllerin kuralı değişmedi.
+- Hedefin Gönderiler sekmesi ve profil üst bölümü doğrulanır; kendi yazdığı en yeni görünen gönderinin tarihi karşılaştırılır. Başka yazarların RT'leri seçilmez; sabitlenmiş eski gönderi yeni özgün gönderiyi geçmez. Yeni atılan tweetin şimdi/saniye/dakika zamanları okunur. Bu görevde yorumcu/retweetçi takibinin2saat kuralı uygulanmaz; o modüllerin kuralı değişmedi.
 - Açılan gönderinin yazarı ve metni eşleşmeden beğeni/RT/kaydet yapılmaz. Her hedefte üç postcondition okunur. Yapılmış işlem yeniden tıklanıp geri alınmaz. Hedef ancak üçü de doğrulanırsa1birim ilerler. Bilinmeyen hedef veya okunamayan düğme başarı sayılmaz, görev duraklatılır.
 - Mevcut RT menü tespitinde “Alıntı” etiketi eksikti; eklendi. RT beklenirken doğrulanmış alt menü genel bilinmeyen pencere yolundan önce ele alınır. Yalnız “Yeniden gönder” seçilir; geri alma menüsünde pozitif onay yoktur.
 - Mevcut beğeni/RT/kaydet düğmelerinin bütün ekranı kapsayan araması yerine görünür birincil tweet düğme satırı kullanılır; yanıtların seçili düğmeleri ana gönderi başarısı sayılmaz. Gizli/etkisiz düğmeler ve istatistik sayaçları seçilmez. Doğrudan görevler için gerçek durum bağlantısı ve açılan yazar kontrolü eklendi.
@@ -15,7 +15,7 @@ Kullanıcı Etkileşim bölümünün çalışmadığını bildirdi; seçilen hes
 - Yeni hedefler mevcut contentPrompt metin alanında, yalnız yeni görev türüne ait satır listesi olarak saklanır. Room şeması/migrasyon ve mevcut hesap/havuz verileri değişmedi. Hedef seçimi değiştirilirse bu görevin ilerlemesi sıfırlanır; aynı hedeflerle düzenlemede gerçek ilerleme korunur.
 
 Sınırlamalar: Erişilebilirlikte yazar/zaman/metni doğrulanamayan, salt medyadan oluşan veya tarama sınırında özgün gönderisi bulunamayan profil güvenle duraklatılır. Ekran resmi düğüm adlarını kanıtlamaz; fiziksel X cihaz testi hâlâ gereklidir.
-52 yeni regresyon testi eklendi; toplam en az961test bekleniyor. Derleme/test/lint sonucu bu hazırlık kaydı yazılırken henüz yok. Fiziksel Android/X/tablet veya canlı Gemini testi yapılmadı. Aynı eski b52d8a15… anahtarıyla teslim imzası CI sonrasında doğrulanacak.
+54 yeni regresyon testi eklendi; toplam en az963test bekleniyor. Derleme/test/lint sonucu bu hazırlık kaydı yazılırken henüz yok. Fiziksel Android/X/tablet veya canlı Gemini testi yapılmadı. Aynı eski b52d8a15… anahtarıyla teslim imzası CI sonrasında doğrulanacak.
 Kaynak yeni fix/27.71-account-engagement dalına ve mevcut taslak PR13 dalına kaydedilir. Main ve Releases, önceki otomatik onay reddi nedeniyle değiştirilmez. APK, tam kaynak/test/not paketi ve devir ayrı teslim edilir. Özel anahtarlar kaynak/pakette yoktur.
 
 --- Önceki doğrulanmış teslim ---

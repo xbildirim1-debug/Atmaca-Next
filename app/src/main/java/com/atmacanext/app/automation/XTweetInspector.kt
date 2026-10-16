@@ -307,7 +307,11 @@ object XTweetInspector {
 
     internal fun parseAgeMinutes(raw: String?, nowMillis: Long = System.currentTimeMillis()): Long? {
         val text = raw.orEmpty().trim().lowercase(Locale("tr", "TR"))
-        Regex("^(\\d{1,4})\\s*(?:dk|dak|dakika|min|mins|minutes)(?:\\s*(?:ago|önce))?$").find(text)?.let {
+        if (text in setOf("şimdi", "az önce", "now", "just now")) return 0L
+        Regex("^(\\d{1,4})\\s*(?:sn|saniye|s|sec|secs|second|seconds)(?:\\s*(?:ago|önce))?$").find(text)?.let {
+            return it.groupValues[1].toLongOrNull()?.div(60L)
+        }
+        Regex("^(\\d{1,4})\\s*(?:dk|dak|dakika|m|min|mins|minutes)(?:\\s*(?:ago|önce))?$").find(text)?.let {
             return it.groupValues[1].toLongOrNull()
         }
         Regex("^(\\d{1,3})\\s*(?:sa|saat|h|hr|hrs|hours)(?:\\s*(?:ago|önce))?$").find(text)?.let {
